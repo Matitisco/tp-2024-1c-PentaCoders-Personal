@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <utils/hello.h>
+#include <utils/utils.h>
 
 int main(int argc, char* argv[]) {
-    decir_hola("Kernel");
-    return 0;
+
 }
+// Va a ser cliente y servidor ya que envia procesos a la cpu y pide cosas a memoria y recibe las interrupciones de los disp de I/O, respectivamente.
+
+// El Kernel como Servidor
