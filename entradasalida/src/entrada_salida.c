@@ -1,10 +1,8 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <utils.h>
-#include </home/utnso/tp-2024-1c-PentaCoders/entradasalida/include/entrada_salida.h>
+#include <../include/entrada_salida.h>
 
-int main(int argc, char* argv[]) {
-    int conexion;
+int main(int argc, char *argv[])
+{
+	int conexion;
 	char *ip;
 	char *puerto;
 	char *valor;
@@ -32,7 +30,7 @@ int main(int argc, char* argv[]) {
 	ip = config_get_string_value(config, "IP");
 	puerto = config_get_string_value(config, "PUERTO");
 	// Loggeamos el valor de config
-	//log_info(logger, "El valor de la CLAVE es %s, el valor del IP es %s y el valor del PUERTO es %s \n", valor, ip, puerto);
+	// log_info(logger, "El valor de la CLAVE es %s, el valor del IP es %s y el valor del PUERTO es %s \n", valor, ip, puerto);
 
 	/* ---------------- LEER DE CONSOLA ---------------- */
 
@@ -53,7 +51,6 @@ int main(int argc, char* argv[]) {
 	paquete(conexion);
 
 	terminar_programa(conexion, logger, config);
-
 }
 
 t_log *iniciar_logger(void)
@@ -84,13 +81,13 @@ void leer_consola(t_log *logger)
 	char *leido;
 	// La primera te la dejo de yapa
 	leido = readline("> ");
-	log_info(logger, leido);
+	log_info(logger, "%s", leido);
 	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
 	while (strcmp(leido, "") != 0)
 	{
 		free(leido);
 		leido = readline("> ");
-		log_info(logger, leido);
+		log_info(logger, "%s", leido);
 	}
 
 	// ¡No te olvides de liberar las lineas antes de regresar!
@@ -116,7 +113,7 @@ void paquete(int conexion)
 
 	// Envio Paquete
 
-	enviar_paquete(paquete,conexion);
+	enviar_paquete(paquete, conexion);
 
 	// Elimino el paquete
 

@@ -1,7 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <utils.h>
-#include </home/utnso/tp-2024-1c-PentaCoders/kernel/include/kernel.h>
+#include <../include/kernel.h>
 
 int main(int argc, char* argv[]) {
     //PROBAMOS AL KERNEL COMO SERVIDOR Y AL DISP I/O COMO CLIENTE
