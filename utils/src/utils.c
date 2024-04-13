@@ -131,7 +131,7 @@ int iniciar_servidor(void)
 
 	// Escuchamos las conexiones entrantes
 	listen(socket_servidor, SOMAXCONN);
-	
+
 	// Libero
 	freeaddrinfo(servinfo);
 	log_trace(logger, "Listo para escuchar a mi cliente");
@@ -200,4 +200,29 @@ t_list *recibir_paquete(int socket_cliente)
 	}
 	free(buffer);
 	return valores;
+}
+
+// UTILS GENERALES
+
+t_log *iniciar_logger(char *path_log, char *nombre_log)
+{
+	t_log *nuevo_logger;
+	nuevo_logger = log_create(path_log, nombre_log, 1, LOG_LEVEL_INFO);
+	if (nuevo_logger == NULL)
+	{
+		return NULL;
+	};
+	return nuevo_logger;
+}
+
+t_config *iniciar_config(char* config_path)
+{
+	t_config *nuevo_config;
+	nuevo_config = config_create(config_path);
+	if (nuevo_config == NULL)
+	{
+		printf("\nNo se pudo leer la config");
+		exit(2);
+	}
+	return nuevo_config;
 }

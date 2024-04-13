@@ -63,8 +63,8 @@ int recibir_operacion(int);
 void iterator(char *value);
 
 // I_O UTILS
-t_log *iniciar_logger(void);
-t_config *iniciar_config(void);
+t_log *iniciar_logger(char* path_log,char* nombre_log);
+t_config *iniciar_config(char* config_path);
 void leer_consola(t_log *);
 void paquete(int);
 void terminar_programa(int, t_log *, t_config *);
