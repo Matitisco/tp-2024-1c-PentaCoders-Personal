@@ -8,7 +8,6 @@ int main(int argc, char* argv[]) {
 	char* puerto_memoria;
 	
 
-
     logger = log_create("server.log", "Memoria", 1, LOG_LEVEL_DEBUG);
 
 	config_memoria = iniciar_config("memoria.config");
@@ -49,4 +48,4 @@ void iterator(char* value) {
 	log_info(logger,"%s", value);
 }
 
-// Va a ser cliente y servidor ya que envia procesos a la cpu y pide cosas a memoria y recibe las interrupciones de los disp de I/O, respectivamente.
+// MEMORIA ES SERVIDOR DE TODOS

@@ -1,13 +1,18 @@
 #include "../include/kernel.h"
 
 
-
 int main(int argc, char* argv[]) {
 	char* puerto_escucha;
 
 	char* ip;
 	char* puerto_memoria;
 	int conexion_memoria;
+	int conexion_cpu;
+	char*puerto_cpu;
+	//char*puerto_cpu_dispatch; //esto va si va el tema de los puertos esos
+	
+	//char *puerto_cpu_interrupt;
+	int conexion_cpu;
 	t_config* config;
 	
 	logger = log_create("kernel.log", "Kernel", 1, LOG_LEVEL_DEBUG);
@@ -21,12 +26,20 @@ int main(int argc, char* argv[]) {
 	puerto_escucha = config_get_string_value(config,"PUERTO_ESCUCHA");
 
 
-	//	SE CONECTA A MEMORIA
+	//KERNEL SE CONECTA A MEMORIA
 	conexion_memoria = crear_conexion(logger, "Memoria", ip, puerto_memoria);
 	enviar_mensaje("hola", conexion_memoria);
 
-
-
+	 //KERNEL SE CONECTA A CPU
+	
+	
+    puerto_cpu = config_get_string_value(config,"PUERTO_CPU"); //Este va si no va la parte del dispatch y el interrupt
+	conexion_cpu= crear_conexion(logger, "CPU", ip, puerto_cpu);
+	enviar_mensaje("aloo", conexion_cpu);
+	/*
+	 puerto_cpu_dispatch= config_get_string_value(config,"PUERTO_CPU_DISPATCH");
+    puerto_cpu_interrupt= config_get_istring_value(config,"PUERTO_CPU_INTERRUPT");
+	 */
 
 
 
