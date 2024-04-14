@@ -1,31 +1,59 @@
-#include <../include/kernel.h>
+#include "../include/kernel.h"
+
+
 
 int main(int argc, char* argv[]) {
-    //PROBAMOS AL KERNEL COMO SERVIDOR Y AL DISP I/O COMO CLIENTE
-    logger = log_create("log.log", "Servidor", 1, LOG_LEVEL_DEBUG);
+	char* puerto_escucha;
 
-	int server_fd = iniciar_servidor();
+	char* ip;
+	char* puerto_memoria;
+	int conexion_memoria;
+	t_config* config;
+	
+	logger = log_create("kernel.log", "Kernel", 1, LOG_LEVEL_DEBUG);
+
+
+	// CONFIG
+	config = iniciar_config("kernel.config");
+
+	ip = config_get_string_value(config,"IP_MEMORIA");
+	puerto_memoria = config_get_string_value(config,"PUERTO_MEMORIA");
+	puerto_escucha = config_get_string_value(config,"PUERTO_ESCUCHA");
+
+
+	//	SE CONECTA A MEMORIA
+	conexion_memoria = crear_conexion(logger, "Memoria", ip, puerto_memoria);
+	enviar_mensaje("hola", conexion_memoria);
+
+
+
+
+
+
+
+	//	KERNEL COMO SERVER
+	int server_fd = iniciar_servidor(logger,"Kernel",ip, puerto_escucha);
 	log_info(logger, "Servidor listo para recibir al cliente");
-	int cliente_fd = esperar_cliente(server_fd);
+	int cliente_fd = esperar_cliente(logger, "Kernel" ,server_fd);
 
 	t_list* lista;
 	while (1) {
 		int cod_op = recibir_operacion(cliente_fd);
 		switch (cod_op) {
-		case MENSAJE:
-			recibir_mensaje(cliente_fd);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(cliente_fd);
-			log_info(logger, "Me llegaron los siguientes valores:\n");
-			list_iterate(lista, (void*) iterator);
-			break;
-		case -1:
-			log_error(logger, "el cliente se desconecto. Terminando servidor");
-			return EXIT_FAILURE;
-		default:
-			log_warning(logger,"Operacion desconocida. No quieras meter la pata");
-			break;
+			case MENSAJE:
+				recibir_mensaje(cliente_fd);
+				break;
+			case PAQUETE:
+				lista = recibir_paquete(cliente_fd);
+				log_info(logger, "Me llegaron los siguientes valores:\n");
+				list_iterate(lista, (void*) iterator);
+				break;
+			case -1:
+				log_error(logger, "el cliente se desconecto. Terminando servidor");
+				return EXIT_FAILURE;
+			default:
+				log_warning(logger,"Operacion desconocida. No quieras meter la pata");
+				break;
 		}
 	}
 	return EXIT_SUCCESS;

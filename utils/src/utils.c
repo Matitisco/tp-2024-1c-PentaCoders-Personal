@@ -17,28 +17,6 @@ void *serializar_paquete(t_paquete *paquete, int bytes)
 	return magic;
 }
 
-int crear_conexion(char *ip, char *puerto)
-{
-	struct addrinfo hints;
-	struct addrinfo *server_info;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-
-	getaddrinfo(ip, puerto, &hints, &server_info);
-
-	// Ahora vamos a crear el socket.
-	int socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
-	// Ahora que tenemos el socket, vamos a conectarlo
-	connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
-
-	freeaddrinfo(server_info);
-
-	return socket_cliente;
-}
-
 void enviar_mensaje(char *mensaje, int socket_cliente)
 {
 	t_paquete *paquete = malloc(sizeof(t_paquete));
@@ -101,53 +79,11 @@ void eliminar_paquete(t_paquete *paquete)
 	free(paquete);
 }
 
-void liberar_conexion(int socket_cliente)
-{
-	close(socket_cliente);
-}
 
 // UTILS DE SERVIDOR
 
 t_log *logger;
 
-int iniciar_servidor(void)
-{
-	int socket_servidor;
-
-	struct addrinfo hints, *servinfo, *p;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-
-	getaddrinfo(NULL, PUERTO, &hints, &servinfo);
-
-	// Creamos el socket de escucha del servidor
-	socket_servidor = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-
-	// Asociamos el socket a un puerto
-	bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
-
-	// Escuchamos las conexiones entrantes
-	listen(socket_servidor, SOMAXCONN);
-
-	// Libero
-	freeaddrinfo(servinfo);
-	log_trace(logger, "Listo para escuchar a mi cliente");
-
-	return socket_servidor;
-}
-
-int esperar_cliente(int socket_servidor)
-{
-
-	// Aceptamos un nuevo cliente
-	int socket_cliente = accept(socket_servidor, NULL, NULL);
-	log_info(logger, "Se conecto un cliente!");
-
-	return socket_cliente;
-}
 
 int recibir_operacion(int socket_cliente)
 {
@@ -221,7 +157,7 @@ t_config *iniciar_config(char* config_path)
 	nuevo_config = config_create(config_path);
 	if (nuevo_config == NULL)
 	{
-		printf("\nNo se pudo leer la config");
+		printf("\nNo se pudo leer la config\n");
 		exit(2);
 	}
 	return nuevo_config;

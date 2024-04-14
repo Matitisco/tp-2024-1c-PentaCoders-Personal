@@ -4,8 +4,8 @@ int main(int argc, char *argv[])
 {
 	int conexion;
 	char *ip;
-	char *puerto;
-	char *valor;
+	char *PUERTO_KERNEL;
+
 
 	t_log *logger;
 	t_config *config;
@@ -17,11 +17,11 @@ int main(int argc, char *argv[])
 
 	/* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
 
-	config = iniciar_config("src/entrada_salida.config");
+	config = iniciar_config("entrada_salida.config");
 
-	valor = config_get_string_value(config, "CLAVE");
-	ip = config_get_string_value(config, "IP");
-	puerto = config_get_string_value(config, "PUERTO");
+	
+	ip = config_get_string_value(config, "IP_KERNEL");
+	PUERTO_KERNEL = config_get_string_value(config, "PUERTO_KERNEL");
 
 	/* ---------------- LEER DE CONSOLA ---------------- */
 
@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
 
 	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
 
-	conexion = crear_conexion(ip, puerto);
-	enviar_mensaje(valor, conexion);
+	conexion = crear_conexion(logger, "Kernel", ip, PUERTO_KERNEL);
+	enviar_mensaje("prueba", conexion);
 	paquete(conexion);
 	terminar_programa(conexion, logger, config);
 }
