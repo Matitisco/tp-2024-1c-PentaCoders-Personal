@@ -1,7 +1,7 @@
 #include <../include/cpu.h>
 
 int main(int argc, char* argv[]) {
-    char* puerto_escucha;
+    char* puerto_memoria;
 
 	char* ip;
 	
@@ -14,11 +14,13 @@ int main(int argc, char* argv[]) {
 	// CONFIG
 	config = iniciar_config("cpu.config");
      /* LA CPU COMO CLIENTE DE MEMORIA */
+	ip = config_get_string_value(config,"IP_MEMORIA");
+	puerto_memoria = config_get_string_value(config,"PUERTO_ESCUCHA_DISPATCH");
 
 
     /* LA CPU COMO SERVER DE KERNEL */
 
-   int server_fd = iniciar_servidor(logger,"SERVIDOR CPU",ip, puerto_escucha);
+   	int server_fd = iniciar_servidor(logger,"SERVIDOR CPU",ip, puerto_memoria);
 	log_info(logger, "Servidor KERNEL listo para recibir al cliente CPU");
 	int cliente_fd = esperar_cliente(logger, "Kernel" ,server_fd);
 
@@ -45,9 +47,11 @@ int main(int argc, char* argv[]) {
 	return EXIT_SUCCESS;
     
 }
+
+
 void iterator(char* value){
 	log_info(logger,"%s", value);
-    }
+}
 
 
 

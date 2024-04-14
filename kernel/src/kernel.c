@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
 	//char*puerto_cpu_dispatch; //esto va si va el tema de los puertos esos
 	
 	//char *puerto_cpu_interrupt;
-	int conexion_cpu;
+	
 	t_config* config;
 	
 	logger = log_create("kernel.log", "Kernel", 1, LOG_LEVEL_DEBUG);
@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 	 //KERNEL SE CONECTA A CPU
 	
 	
-    puerto_cpu = config_get_string_value(config,"PUERTO_CPU"); //Este va si no va la parte del dispatch y el interrupt
+    puerto_cpu = config_get_string_value(config,"PUERTO_CPU_DISPATCH"); //Este va si no va la parte del dispatch y el interrupt
 	conexion_cpu= crear_conexion(logger, "CPU", ip, puerto_cpu);
 	enviar_mensaje("aloo", conexion_cpu);
 	/*
