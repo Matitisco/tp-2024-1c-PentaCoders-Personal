@@ -2,9 +2,9 @@
 
 int main(int argc, char *argv[])
 {
-	int conexion;
+	int conexion,conexion_memoria;
 	char *ip;
-	char *PUERTO_KERNEL;
+	char *PUERTO_KERNEL,*puerto_memoria;
 
 
 	t_log *logger;
@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
 	
 	ip = config_get_string_value(config, "IP_KERNEL");
 	PUERTO_KERNEL = config_get_string_value(config, "PUERTO_KERNEL");
+	puerto_memoria = config_get_string_value(config, "PUERTO_MEMORIA");
 
 	/* ---------------- LEER DE CONSOLA ---------------- */
 
@@ -29,9 +30,17 @@ int main(int argc, char *argv[])
 
 	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
 
+	// I/O a Kernel
 	conexion = crear_conexion(logger, "Kernel", ip, PUERTO_KERNEL);
 	enviar_mensaje("prueba", conexion);
 	paquete(conexion);
+
+	// I/O a Memoria
+	conexion_memoria = crear_conexion(logger, "Memoria", ip, puerto_memoria);
+	enviar_mensaje("hola memoria, soy i/o", conexion_memoria);
+	paquete(conexion_memoria);
+
+	terminar_programa(conexion_memoria, logger, config);
 	terminar_programa(conexion, logger, config);
 }
 
