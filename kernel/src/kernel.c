@@ -9,8 +9,7 @@ int main(int argc, char* argv[]) {
 	int conexion_memoria;
 	int conexion_cpu;
 	char*puerto_cpu;
-	//char*puerto_cpu_dispatch; //esto va si va el tema de los puertos esos
-	
+	//char*puerto_cpu_dispatch;
 	//char *puerto_cpu_interrupt;
 	
 	t_config* config;
@@ -25,17 +24,14 @@ int main(int argc, char* argv[]) {
 	puerto_memoria = config_get_string_value(config,"PUERTO_MEMORIA");
 	puerto_escucha = config_get_string_value(config,"PUERTO_ESCUCHA");
 
-
 	//KERNEL SE CONECTA A MEMORIA
 	conexion_memoria = crear_conexion(logger, "Memoria", ip, puerto_memoria);
-	enviar_mensaje("hola", conexion_memoria);
+	enviar_mensaje("Kernel  esta conectado a memoria", conexion_memoria);
 
-	 //KERNEL SE CONECTA A CPU
-	
-	
+	//KERNEL SE CONECTA A CPU
     puerto_cpu = config_get_string_value(config,"PUERTO_CPU_DISPATCH"); //Este va si no va la parte del dispatch y el interrupt
 	conexion_cpu= crear_conexion(logger, "CPU", ip, puerto_cpu);
-	enviar_mensaje("aloo", conexion_cpu);
+	enviar_mensaje("Kernel esta conectado a CPU", conexion_cpu);
 	/*
 	 puerto_cpu_dispatch= config_get_string_value(config,"PUERTO_CPU_DISPATCH");
     puerto_cpu_interrupt= config_get_istring_value(config,"PUERTO_CPU_INTERRUPT");

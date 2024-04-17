@@ -1,58 +1,31 @@
 #include <../include/cpu.h>
 
 int main(int argc, char* argv[]) {
-    char* puerto_memoria;
-
-	char* ip;
-	
-    t_config* config;
+    char* PUERTO_MEMORIA, IP;
+	int CONEXION_MEMORIA;
+    t_config* CONFIG;
+	t_log* logger;
 	
 	logger = log_create("Cpu.log", "CPU", 1, LOG_LEVEL_DEBUG);
 
-
-
 	// CONFIG
-	config = iniciar_config("../cpu.config");
-
-
-     /* LA CPU COMO CLIENTE DE MEMORIA */
-	//tengo que hacer CPU como cliente de memoria
+	CONFIG = iniciar_config("../cpu.config");
+	IP = config_get_string_value(CONFIG,"IP_MEMORIA");
+	PUERTO_MEMORIA = config_get_string_value(CONFIG,"PUERTO_MEMORIA");
+	CONEXION_MEMORIA = crear_conexion(logger,"Memoria",IP, PUERTO_MEMORIA);
+    // CPU SE CONECTA A MEMORIA
 	/*
 	Falta que CPU inicie servidor como INTERRUPT y como DISPATCH
 	Kernel a CPU está a la mitad
 	*/
-	ip = config_get_string_value(config,"IP_MEMORIA");
-	puerto_memoria = config_get_string_value(config,"PUERTO_MEMORIA");
-	
-	int conexion_memoria = crear_conexion(logger,"Memoria",ip, puerto_memoria);
 
-	t_log* logger = iniciar_logger("cpu.log", "CPU");
-	enviar_mensaje("Hola soy CPU",conexion_memoria);
+    /* MEMORIA COMO SERVER DE CPU*/
+	logger = iniciar_logger("cpu.log", "CPU");
+	enviar_mensaje("CPU Se conecto a Memoria",CONEXION_MEMORIA);
 
-/*	
-	uint32_t handshake = 1;
-	uint32_t result;
-
-	send(conexion, &handshake, sizeof(uint32_t), 0);
-	recv(conexion, &result, sizeof(uint32_t), MSG_WAITALL);
-
-	if(result == -1){
-		log_error(logger, "No se pudo realizar el handshake \n");
-	}else if (result == 0) {
-		log_info(logger, "Handshake realizado con exito \n");
-	}
-
-	// Enviamos al servidor el valor de CLAVE como mensaje
-	enviar_mensaje(valor, conexion);
-	log_info(logger, "Mensaje enviado \n");
-	paquete(conexion);
-	terminar_programa(conexion, logger, config);
-*/
-
-    /* LA CPU COMO SERVER DE KERNEL */
-
-   	int server_fd = iniciar_servidor(logger,"SERVIDOR CPU",ip, puerto_memoria);
-	log_info(logger, "Servidor KERNEL listo para recibir al cliente CPU");
+    // CPU COMO SERVER DE KERNEL
+   	int server_fd = iniciar_servidor(logger,"SERVIDOR CPU",IP, PUERTO_MEMORIA);
+	log_info(logger, "Servidor CPU listo para recibir al cliente KERNEL");
 	int cliente_fd = esperar_cliente(logger, "Kernel" ,server_fd);
 
 	t_list* lista;
@@ -69,7 +42,7 @@ int main(int argc, char* argv[]) {
 				break;
 			case -1:
 				log_error(logger, "el cliente se desconecto. Terminando servidor");
-				return EXIT_FAILURE;
+				//return EXIT_FAILURE;
 			default:
 				log_warning(logger,"Operacion desconocida. No quieras meter la pata");
 				break;
