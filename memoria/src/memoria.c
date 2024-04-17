@@ -1,21 +1,39 @@
 #include <../include/memoria.h>
 
+
+struct config_memoria {
+	t_config* config;
+    char* ip_memoria;
+	char* puerto_memoria;
+	//int tam_memoria;
+	//int tam_pagina;
+	//char* path_instrucciones;
+	//int retardo_respuesta;
+};
+
+struct config_memoria* config_memoria(){
+	struct config_memoria* valores_config = malloc(sizeof(struct config_memoria));
+
+	//creo el config
+	valores_config->config = iniciar_config("../memoria.config");
+
+	valores_config->ip_memoria = config_get_string_value(valores_config->config,"IP");
+	valores_config->puerto_memoria = config_get_string_value(valores_config->config,"PUERTO_ESCUCHA");
+
+	return valores_config;
+}
+
+
 int main(int argc, char* argv[]) {
     
-	t_config* config_memoria;
-
-	char* ip_memoria;
-	char* puerto_memoria;
+	logger = log_create("server.log", "Memoria", 1, LOG_LEVEL_DEBUG);
 	
+	struct config_memoria* valores_config = config_memoria();	//config
 
-    logger = log_create("server.log", "Memoria", 1, LOG_LEVEL_DEBUG);
 
-	config_memoria = iniciar_config("../memoria.config");
 
-	ip_memoria = config_get_string_value(config_memoria,"IP");
-	puerto_memoria = config_get_string_value(config_memoria,"PUERTO_ESCUCHA");
-
-	int server_fd = iniciar_servidor(logger, "Memoria", ip_memoria, puerto_memoria);
+	
+	int server_fd = iniciar_servidor(logger, "Memoria", valores_config->ip_memoria, valores_config->puerto_memoria);
 
 
 	log_info(logger, "Servidor listo para recibir al cliente");
@@ -42,6 +60,8 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	return EXIT_SUCCESS;
+
+	free(valores_config);
 }
 
 void iterator(char* value) {

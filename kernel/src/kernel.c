@@ -1,47 +1,49 @@
 #include "../include/kernel.h"
 
+struct config_kernel {
+	t_config* config;
+    char* puerto_escucha;
+	char* ip_memoria;
+	char* puerto_memoria;
+	char* ip_cpu;
+	char*puerto_cpu_dispatch;
+	char *puerto_cpu_interrupt;	
+};
+
+struct config_kernel* config_kernel(){
+	struct config_kernel* configuracion = (struct config_kernel*) malloc(sizeof(struct config_kernel));
+
+	configuracion->config = iniciar_config("../kernel.config");
+
+	configuracion->ip_memoria = config_get_string_value(configuracion->config,"IP_MEMORIA");
+	configuracion->puerto_memoria = config_get_string_value(configuracion->config,"PUERTO_MEMORIA");
+	configuracion->puerto_escucha = config_get_string_value(configuracion->config,"PUERTO_ESCUCHA");
+	configuracion->puerto_cpu_dispatch = config_get_string_value(configuracion->config,"PUERTO_CPU_DISPATCH");
+	configuracion->puerto_cpu_interrupt= config_get_string_value(configuracion->config,"PUERTO_CPU_INTERRUPT");
+
+	return configuracion;
+}
 
 int main(int argc, char* argv[]) {
-	char* puerto_escucha;
-
-	char* ip;
-	char* puerto_memoria;
 	int conexion_memoria;
 	int conexion_cpu;
-	char*puerto_cpu;
-	//char*puerto_cpu_dispatch;
-	//char *puerto_cpu_interrupt;
-	
-	t_config* config;
-	
 	logger = log_create("kernel.log", "Kernel", 1, LOG_LEVEL_DEBUG);
 
-
 	// CONFIG
-	config = iniciar_config("../kernel.config");
 
-	ip = config_get_string_value(config,"IP_MEMORIA");
-	puerto_memoria = config_get_string_value(config,"PUERTO_MEMORIA");
-	puerto_escucha = config_get_string_value(config,"PUERTO_ESCUCHA");
+	struct config_kernel* configuracion_kernel = config_kernel();
 
 	//KERNEL SE CONECTA A MEMORIA
-	conexion_memoria = crear_conexion(logger, "Memoria", ip, puerto_memoria);
+	conexion_memoria = crear_conexion(logger, "Memoria", configuracion_kernel->ip_memoria, configuracion_kernel->puerto_memoria);
 	enviar_mensaje("Kernel  esta conectado a memoria", conexion_memoria);
 
 	//KERNEL SE CONECTA A CPU
-    puerto_cpu = config_get_string_value(config,"PUERTO_CPU_DISPATCH"); //Este va si no va la parte del dispatch y el interrupt
-	conexion_cpu= crear_conexion(logger, "CPU", ip, puerto_cpu);
+	conexion_cpu= crear_conexion(logger, "CPU", configuracion_kernel->ip_cpu, configuracion_kernel->puerto_cpu_dispatch);
 	enviar_mensaje("Kernel esta conectado a CPU", conexion_cpu);
-	/*
-	 puerto_cpu_dispatch= config_get_string_value(config,"PUERTO_CPU_DISPATCH");
-    puerto_cpu_interrupt= config_get_istring_value(config,"PUERTO_CPU_INTERRUPT");
-	 */
-
-
 
 
 	//	KERNEL COMO SERVER
-	int server_fd = iniciar_servidor(logger,"Kernel",ip, puerto_escucha);
+	int server_fd = iniciar_servidor(logger,"Kernel",configuracion_kernel->ip_cpu, configuracion_kernel->puerto_escucha);
 	log_info(logger, "Servidor listo para recibir al cliente");
 	int cliente_fd = esperar_cliente(logger, "Kernel" ,server_fd);
 

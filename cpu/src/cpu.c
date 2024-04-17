@@ -1,31 +1,59 @@
 #include <../include/cpu.h>
 
+
+struct config_cpu{
+	t_config* config;
+	char *ip_memoria;
+	char *puerto_memoria;
+	//char* puerto_escucha_dispatch;
+	//char* puerto_escucha_interrupt;
+	//char* algoritmo_tlb;
+	//int cantidad_entradas_tlb;
+};
+
+
+
+struct config_cpu* config_cpu(){
+	struct config_cpu* valores_config = malloc(sizeof(struct config_cpu));
+
+	//creo el config
+	valores_config->config = iniciar_config("../cpu.config");
+
+
+	valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP_MEMORIA");
+	valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_MEMORIA");
+
+
+	return valores_config;
+}
+
+
 int main(int argc, char *argv[])
 {
-	char *PUERTO_MEMORIA, *IP;
-	int CONEXION_MEMORIA;
-	t_config *config;
+	
+	int conexion_memoria;
 	t_log *logger;
+
+	/* ---------------- LOGGING ---------------- */
 
 	logger = log_create("Cpu.log", "CPU", 1, LOG_LEVEL_DEBUG);
 	logger = iniciar_logger("cpu.log", "CPU");
-	// CONFIG
-	config = iniciar_config("../cpu.config");
-	IP = config_get_string_value(config, "IP_MEMORIA");
-	PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
-	CONEXION_MEMORIA = crear_conexion(logger, "Memoria", IP, PUERTO_MEMORIA);
-	// CPU SE CONECTA A MEMORIA
-	/*
-	Falta que CPU inicie servidor como INTERRUPT y como DISPATCH
-	Kernel a CPU está a la mitad
-	*/
 
-	/* MEMORIA COMO SERVER DE CPU*/
 
-	enviar_mensaje("CPU Se conecto a Memoria", CONEXION_MEMORIA);
+	/* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
+
+	struct config_cpu* valores_config = config_cpu();	
+
+
+	
+	// CPU SE CONECTA A MEMORIA 				Falta que CPU inicie servidor como INTERRUPT y como DISPATCH
+
+	conexion_memoria = crear_conexion(logger, "Memoria", valores_config->ip_memoria, valores_config->puerto_memoria);
+
+	enviar_mensaje("CPU Se conecto a Memoria", conexion_memoria);
 
 	// CPU COMO SERVER DE KERNEL
-	int server_fd = iniciar_servidor(logger, "SERVIDOR CPU", IP, PUERTO_MEMORIA);
+	int server_fd = iniciar_servidor(logger, "SERVIDOR CPU", valores_config->ip_memoria, valores_config->puerto_memoria);
 	log_info(logger, "Servidor CPU listo para recibir al cliente KERNEL");
 	int cliente_fd = esperar_cliente(logger, "Kernel", server_fd);
 
