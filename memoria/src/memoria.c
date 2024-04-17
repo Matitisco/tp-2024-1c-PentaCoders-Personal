@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
 
     logger = log_create("server.log", "Memoria", 1, LOG_LEVEL_DEBUG);
 
-	config_memoria = iniciar_config("memoria.config");
+	config_memoria = iniciar_config("../memoria.config");
 
 	ip_memoria = config_get_string_value(config_memoria,"IP");
 	puerto_memoria = config_get_string_value(config_memoria,"PUERTO_ESCUCHA");

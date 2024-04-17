@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 
 
 	// CONFIG
-	config = iniciar_config("kernel.config");
+	config = iniciar_config("../kernel.config");
 
 	ip = config_get_string_value(config,"IP_MEMORIA");
 	puerto_memoria = config_get_string_value(config,"PUERTO_MEMORIA");

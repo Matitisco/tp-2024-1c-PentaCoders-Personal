@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
 	/* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
 
-	config = iniciar_config("entrada_salida.config");
+	config = iniciar_config("../entrada_salida.config");
 
 	
 	ip = config_get_string_value(config, "IP_KERNEL");

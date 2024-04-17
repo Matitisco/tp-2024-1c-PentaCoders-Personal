@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
 
 
 	// CONFIG
-	config = iniciar_config("cpu.config");
+	config = iniciar_config("../cpu.config");
 
 
      /* LA CPU COMO CLIENTE DE MEMORIA */
