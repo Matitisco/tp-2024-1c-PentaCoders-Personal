@@ -14,11 +14,6 @@ int crear_conexion(t_log* logger, const char* server_name, char* ip, char* puert
 void liberar_conexion(int* socket_cliente);
 
 
-/*	
-int iniciar_servidor(void);
-int esperar_cliente(int);
-//void liberar_conexion(int socket_cliente);
-//int crear_conexion(char *ip, char *puerto);
-*/
+
 
 #endif

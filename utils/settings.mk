@@ -2,7 +2,7 @@
 LIBS=commons pthread readline m
 
 # Custom libraries' paths
-STATIC_LIBPATHS=
+STATIC_LIBPATHS= 
 
 # Compiler flags
 CDEBUG=-g -Wall -DDEBUG -fdiagnostics-color=always

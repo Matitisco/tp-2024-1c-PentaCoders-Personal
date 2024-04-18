@@ -81,8 +81,7 @@ void eliminar_paquete(t_paquete *paquete)
 
 
 // UTILS DE SERVIDOR
-
-t_log *logger;
+//t_log *logger;
 
 
 int recibir_operacion(int socket_cliente)
@@ -161,4 +160,36 @@ t_config *iniciar_config(char* config_path)
 		exit(2);
 	}
 	return nuevo_config;
+}
+// TERMINAR PROGRAMA
+void terminar_programa(int conexion, t_log *logger, t_config *config)
+{
+	if (logger != NULL)
+	{
+		log_destroy(logger);
+	}
+	if (config != NULL)
+	{
+		config_destroy(config);
+	}
+	if (conexion != 0)
+	{
+		liberar_conexion(conexion);
+	}
+}
+void paquete(int conexion)
+{
+	char *leido = NULL;
+	t_paquete *paquete = crear_paquete();
+
+	leido = readline(">");
+	while (strcmp(leido, "") != 0)
+	{
+		agregar_a_paquete(paquete, leido, strlen(leido) - 1);
+		free(leido);
+		leido = readline("> ");
+	}
+	free(leido);
+	enviar_paquete(paquete, conexion);
+	eliminar_paquete(paquete);
 }

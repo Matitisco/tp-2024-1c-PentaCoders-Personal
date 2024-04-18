@@ -15,7 +15,6 @@
 #include <sys/socket.h>
 #include <commons/collections/list.h>
 #include <assert.h>
-
 #include "../include/sockets.h"
 
 // Puerto para el servidor
