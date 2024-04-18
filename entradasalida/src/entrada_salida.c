@@ -2,28 +2,14 @@
 
 int main(int argc, char *argv[])
 {
-	/* ---------------- LOGGING ---------------- */
-
+	struct config_io *valores_config = config_io();
 	logger = iniciar_logger("entrada_salida.log", "ENTRADA_SALIDA");
-	/* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
 
-	config = iniciar_config("entrada_salida.config");
+	levantarCliente(conexion_memoria, logger, "Servidor Memoria", valores_config->ip_memoria, valores_config->puerto_memoria, "ENTRADA/SALIDA se conecta a Memoria");
+	levantarCliente(conexion_kernel, logger, "Servidor Kernel", valores_config->ip_kernel, valores_config->puerto_kernel, "ENTRADA/SALIDA se conecta a Kernel");
 
-	ip = config_get_string_value(config, "IP_KERNEL");
-	PUERTO_KERNEL = config_get_string_value(config, "PUERTO_KERNEL");
-	PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
-
-	/* ---------------- LEER DE CONSOLA ---------------- */
-
-	leer_consola(logger);
-
-	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
-	levantarCliente(conexion_kernel, logger, "Servidor Kernel", ip, PUERTO_KERNEL, "ENTRADA/SALIDA se conecta a Kernel");
-
-	levantarCliente(conexion_memoria, logger, "Servidor Memoria", ip, PUERTO_MEMORIA, "ENTRADA/SAL|IDA se conecta a Memoria");
-
-	// terminar_programa(conexion_memoria, logger, config);
-	// terminar_programa(conexion_kernel, logger, config);
+	terminar_programa(conexion_memoria, logger, valores_config->config);
+	terminar_programa(conexion_kernel, logger, valores_config->config);
 }
 
 // FUNCIONES
