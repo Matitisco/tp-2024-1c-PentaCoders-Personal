@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
 	levantarCliente(conexion_kernel, logger, "Servidor Kernel", valores_config->ip_kernel, valores_config->puerto_kernel, "ENTRADA/SALIDA se conecta a Kernel");
 
 	terminar_programa(conexion_memoria, logger, valores_config->config);
-	terminar_programa(conexion_kernel, logger, valores_config->config);
+	liberarConexion(conexion_kernel);
 }
 
 // FUNCIONES

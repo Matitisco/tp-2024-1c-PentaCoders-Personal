@@ -9,7 +9,6 @@ int main(int argc, char *argv[])
 	// LEVANTAMOS EL SERVIDOR DE MEMORIA
 	levantarServidor(logger, valores_config->puerto_memoria, valores_config->ip_memoria, "SERVIDOR MEMORIA");
 
-	// terminar_programa(NULL, logger, config_memoria);
-	config_destroy(valores_config->config);
-	log_destroy(logger);
+	destruirConfig(valores_config->config);
+	destruirLog(logger);
 }

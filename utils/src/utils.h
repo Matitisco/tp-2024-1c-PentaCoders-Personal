@@ -67,4 +67,11 @@ t_config *iniciar_config(char *config_path);
 void leer_consola(t_log *);
 void paquete(int);
 void terminar_programa(int, t_log *, t_config *);
+
+void destruirLog(t_log *logger);
+
+void destruirConfig(t_config *config);
+
+void liberarConexion(int conexion);
+
 #endif

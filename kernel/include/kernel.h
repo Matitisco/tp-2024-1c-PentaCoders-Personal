@@ -6,6 +6,8 @@
 #include "../../utils/src/utils.h"
 #include "../include/registros.h"
 #include "../include/conexiones.h"
+#include "../include/operaciones.h"
+#include "../include/menu.h"
 
 int conexion_memoria, conexion_cpu;
 
@@ -46,17 +48,10 @@ struct pcb
 
 // FUNCIONES
 
-void iniciar_consola_interactiva(t_log *logger);
+// void iniciar_consola_interactiva(t_log *logger);
 void gestionar_peticiones_memoria();
 void gestionar_peticiones_interfaces();
 void planificar_ejecucion_procesos();
 void mostrar_operaciones_realizables();
-void ejecutar_operacion(char *codigo_operacion, t_log *logger);
 
-void ejecutar_script();
-void iniciar_proceso();
-void detener_proceso();
-void iniciar_planificacion();
-void detener_planificacion();
-void listar_procesos_x_estado();
 #endif
