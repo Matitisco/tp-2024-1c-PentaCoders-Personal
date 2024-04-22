@@ -4,36 +4,59 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../../utils/src/utils.h"
+#include "../include/registros.h"
 #include "../include/conexiones.h"
 
-
-int conexion_memoria,conexion_cpu;
+int conexion_memoria, conexion_cpu;
 
 t_log *logger;
-struct config_kernel {
-	t_config* config;
-    char* puerto_escucha;
-	char* ip_memoria;
-	char* puerto_memoria;
-	char* ip_cpu;
-	char*puerto_cpu_dispatch;
-	char *puerto_cpu_interrupt;	
+struct config_kernel
+{
+	t_config *config;
+	char *puerto_escucha;
+	char *ip_memoria;
+	char *puerto_memoria;
+	char *ip_cpu;
+	char *puerto_cpu_dispatch;
+	char *puerto_cpu_interrupt;
 };
 
-struct config_kernel* config_kernel(){
-	struct config_kernel* configuracion = (struct config_kernel*) malloc(sizeof(struct config_kernel));
+struct config_kernel *config_kernel()
+{
+	struct config_kernel *configuracion = (struct config_kernel *)malloc(sizeof(struct config_kernel));
 
 	configuracion->config = iniciar_config("kernel.config");
 
-	configuracion->ip_memoria = config_get_string_value(configuracion->config,"IP_MEMORIA");
-	configuracion->ip_cpu = config_get_string_value(configuracion->config,"IP_CPU");
-	configuracion->puerto_memoria = config_get_string_value(configuracion->config,"PUERTO_MEMORIA");
-	configuracion->puerto_escucha = config_get_string_value(configuracion->config,"PUERTO_ESCUCHA");
-	configuracion->puerto_cpu_dispatch = config_get_string_value(configuracion->config,"PUERTO_CPU_DISPATCH");
-	configuracion->puerto_cpu_interrupt= config_get_string_value(configuracion->config,"PUERTO_CPU_INTERRUPT");
+	configuracion->ip_memoria = config_get_string_value(configuracion->config, "IP_MEMORIA");
+	configuracion->ip_cpu = config_get_string_value(configuracion->config, "IP_CPU");
+	configuracion->puerto_memoria = config_get_string_value(configuracion->config, "PUERTO_MEMORIA");
+	configuracion->puerto_escucha = config_get_string_value(configuracion->config, "PUERTO_ESCUCHA");
+	configuracion->puerto_cpu_dispatch = config_get_string_value(configuracion->config, "PUERTO_CPU_DISPATCH");
+	configuracion->puerto_cpu_interrupt = config_get_string_value(configuracion->config, "PUERTO_CPU_INTERRUPT");
 
 	return configuracion;
 }
 
+struct pcb
+{
+	int pid;	 // identificador del proceso
+	int quantum; // unidad de tiempo usada en VRR
+	registros registros;
+};
 
+// FUNCIONES
+
+void iniciar_consola_interactiva(t_log *logger);
+void gestionar_peticiones_memoria();
+void gestionar_peticiones_interfaces();
+void planificar_ejecucion_procesos();
+void mostrar_operaciones_realizables();
+void ejecutar_operacion(char *codigo_operacion, t_log *logger);
+
+void ejecutar_script();
+void iniciar_proceso();
+void detener_proceso();
+void iniciar_planificacion();
+void detener_planificacion();
+void listar_procesos_x_estado();
 #endif

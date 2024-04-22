@@ -6,7 +6,8 @@
 #include "../../utils/src/utils.h"
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
     uint32_t PC;
     uint8_t BX;
     uint8_t CX;
@@ -17,7 +18,6 @@ typedef struct {
     uint32_t EDX;
     uint32_t SI;
     uint32_t DI;
-}registros;
-
+} registros;
 
 #endif

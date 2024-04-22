@@ -6,8 +6,8 @@
 #include "../../utils/src/utils.h"
 #include <stdint.h>
 
-
-typedef enum {
+typedef enum
+{
     SET,
     MOV_IN,
     MOV_OUT,
@@ -27,7 +27,6 @@ typedef enum {
     IO_FS_TRUNCATE,
     IO_FS_READ,
     EXIT
-}tipoDeInstruccion;
-
+} tipoDeInstruccion;
 
 #endif
