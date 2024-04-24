@@ -6,8 +6,8 @@
 #include "../../utils/src/utils.h"
 #include <stdint.h>
 
-
-typedef enum {
+typedef enum
+{
     SET,
     MOV_IN,
     MOV_OUT,
@@ -33,7 +33,7 @@ typedef struct{
 	tipoDeInstruccion codigo;
 	char* par1;
 	char* par2;
-}tipo_instruccion;
+}instruccion;
 
 
 #endif

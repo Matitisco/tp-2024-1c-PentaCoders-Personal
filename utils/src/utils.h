@@ -54,7 +54,6 @@ extern t_log *logger;
 
 void *recibir_buffer(int *, int);
 
-
 t_list *recibir_paquete(int);
 void recibir_mensaje(int);
 int recibir_operacion(int);
@@ -63,9 +62,16 @@ int recibir_operacion(int);
 void iterator(char *value);
 
 // I_O UTILS
-t_log *iniciar_logger(char* path_log,char* nombre_log);
-t_config *iniciar_config(char* config_path);
+t_log *iniciar_logger(char *path_log, char *nombre_log);
+t_config *iniciar_config(char *config_path);
 void leer_consola(t_log *);
 void paquete(int);
 void terminar_programa(int, t_log *, t_config *);
+
+void destruirLog(t_log *logger);
+
+void destruirConfig(t_config *config);
+
+void liberarConexion(int conexion);
+
 #endif

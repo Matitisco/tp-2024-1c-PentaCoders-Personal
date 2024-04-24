@@ -4,9 +4,6 @@
 
 int main(int argc, char *argv[])
 {
-	FILE *f;
-	char* pathCualquiera;
-	char buffer[1024] = {0}; //tengo que crear el buffer en algun .h
 
 	logger = iniciar_logger("memoria.log", "MEMORIA");
 	struct config_memoria *valores_config = config_memoria();
@@ -15,15 +12,9 @@ int main(int argc, char *argv[])
 	levantarServidor(logger, valores_config->puerto_memoria, valores_config->ip_memoria, "SERVIDOR MEMORIA");
 
 	// terminar_programa(NULL, logger, config_memoria);
-	config_destroy(valores_config->config);
-	log_destroy(logger);
-	f = txt_open_for_append(pathCualquiera);
-    if (f == NULL) {
-        perror("Failed to open file");
-        exit(1);
-    }
-
-
+	
+	destruirConfig(valores_config->config);
+	destruirLog(logger);
 
 }
 void enviarInstruccion(char *pathArch){
@@ -36,8 +27,8 @@ void enviarInstruccion(char *pathArch){
  }
 
 }
-tipo_instruccion* crearInstruccion(char* linea) {
-    tipo_instruccion* instruccion = malloc(sizeof(tipo_instruccion));
+instruccion* crearInstruccion(char* linea) {
+   instruccion* instruccion = malloc(sizeof(instruccion));
     char* token = strtok(linea, " "); // El primer token es el código de la instrucción.
     instruccion->codigo = strdup(token);
 
@@ -52,7 +43,7 @@ t_list * pasajeDeArchivoAListaInstrucciones(char * pathArch){
 	char * linea ; //este seria el buffer para ir leyendo el archivo
 	while(fgets(linea, sizeo(linea), arch)){ // voy leyendo el archivo
 		strtok(linea, "\n");
-		tipo_instruccion*unaInstruccion = crearInstruccion(linea);
+		instruccion*unaInstruccion = crearInstruccion(linea);
 		list_add(listInstrucciones, unaInstruccion); //agrego unaInstruccion a la lista
 	}
 }
@@ -67,5 +58,4 @@ uint32_t recibir_codigo(int unSocket ){
 	}
 
 }
-
 

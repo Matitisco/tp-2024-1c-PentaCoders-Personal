@@ -79,10 +79,8 @@ void eliminar_paquete(t_paquete *paquete)
 	free(paquete);
 }
 
-
 // UTILS DE SERVIDOR
-//t_log *logger;
-
+// t_log *logger;
 
 int recibir_operacion(int socket_cliente)
 {
@@ -150,7 +148,7 @@ t_log *iniciar_logger(char *path_log, char *nombre_log)
 	return nuevo_logger;
 }
 
-t_config *iniciar_config(char* config_path)
+t_config *iniciar_config(char *config_path)
 {
 	t_config *nuevo_config;
 	nuevo_config = config_create(config_path);
@@ -164,14 +162,27 @@ t_config *iniciar_config(char* config_path)
 // TERMINAR PROGRAMA
 void terminar_programa(int conexion, t_log *logger, t_config *config)
 {
+	destruirLog(logger);
+	destruirConfig(config);
+	liberar_conexion(conexion);
+}
+
+void destruirLog(t_log *logger)
+{
 	if (logger != NULL)
 	{
 		log_destroy(logger);
 	}
+}
+void destruirConfig(t_config *config)
+{
 	if (config != NULL)
 	{
 		config_destroy(config);
 	}
+}
+void liberarConexion(int conexion)
+{
 	if (conexion != 0)
 	{
 		liberar_conexion(conexion);

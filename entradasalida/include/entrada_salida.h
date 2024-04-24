@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <utils.h>
 #include "../../utils/src/utils.h"
+#include "../../utils/src/sockets.c"
 #include "../include/conexiones.h"
 
 t_log *logger;
@@ -28,7 +29,7 @@ struct config_io* config_io(){
 	struct config_io* valores_config = malloc(sizeof(struct config_io));
 
 	//creo el config
-	valores_config->config = iniciar_config("../entrada_salida.config");
+	valores_config->config = iniciar_config("entrada_salida.config");
 
 	valores_config->ip = config_get_string_value(valores_config->config, "IP_KERNEL");
 	valores_config->puerto_kernel = config_get_string_value(valores_config->config, "PUERTO_KERNEL");
