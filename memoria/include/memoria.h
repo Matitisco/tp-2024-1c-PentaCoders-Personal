@@ -9,6 +9,7 @@
  
 
 t_log* logger;
+int socket_cpu;
 
 struct config_memoria {
 	t_config* config;

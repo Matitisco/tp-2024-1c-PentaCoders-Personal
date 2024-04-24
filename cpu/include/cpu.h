@@ -11,6 +11,7 @@
 char *PUERTO_MEMORIA;
 int CONEXION_A_MEMORIA;
 t_log *logger;
+int socket_memoria;
 struct config_cpu{
 	t_config* config;
 	char *ip_memoria;

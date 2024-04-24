@@ -18,6 +18,14 @@ typedef struct {
     uint32_t SI;
     uint32_t DI;
 }registros;
+typedef struct 
+{
+    uint32_t pid;
+    uint32_t pc;
+    registros*registro;
+
+
+}tipo_cde;
 
 
 #endif

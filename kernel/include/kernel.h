@@ -34,6 +34,27 @@ struct config_kernel* config_kernel(){
 
 	return configuracion;
 }
+typedef enum {
+	NEW,
+	READY,
+	EXEC,
+	BLOCKED,
+	EXIT
+	
+}t_estados;
+//Estructura PCB
+typedef struct{
+	//t_cde* cde;
+	t_estados estado;
+	char* path;
+	int prioridad;
+	t_list* archivos_abiertos;
+	t_list* archivos_solicitados;
+	t_list* recursos_asignados;
+	t_list* recursos_solicitados;
+	bool flag_clock;
+	bool fin_q;
+}t_pcb;
 
 
 #endif

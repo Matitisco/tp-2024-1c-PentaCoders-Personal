@@ -29,5 +29,11 @@ typedef enum {
     EXIT
 }tipoDeInstruccion;
 
+typedef struct{
+	tipoDeInstruccion codigo;
+	char* par1;
+	char* par2;
+}tipo_instruccion;
+
 
 #endif
