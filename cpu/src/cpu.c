@@ -1,8 +1,8 @@
-#include <../include/cpu.h>
+#include "../include/cpu.h"
+#include <string.h>
 #include "utils/include/instrucciones.h"
 #include "utils/src/serializacion.h"
 #include "kernel/include/kernel.h"
-#include <string.h>
 #include "utils/include/registros.h"
 int main(int argc, char *argv[])
 {
@@ -36,15 +36,16 @@ void recibirPCB(tipo_buffer*buffer,t_pcb*pcb){
 
 }
 void pedirInstruccionAMemoria(){
+tipo_cde*cde;
 enviar_codigo(socket_memoria, PEDIDO_INSTRUCCION);//Pido la instruccion
 tipo_buffer*buffer = crear_buffer();
 envio_buffer(buffer,socket_memoria);
 destroy_buffer((buffer));
 //actualizo el buffer escribiendo
-escribo_buffer(envio_buffer, tipo_cde->pid);
-escribo_buffer(envio_buffer, tipo_cde->pc);
+escribo_buffer(envio_buffer, cde->pid);
+escribo_buffer(envio_buffer, cde->pc);
 envio_buffer(buffer, socket_memoria);
-tipo_cde->pc++;// actualizo el contexto de ejercicion
+cde->pc++;// actualizo el contexto de ejercicion
 destroy_buffer(buffer);
 t_buffer* buffer_recibido = recibir_buffer(socket_memoria);
 //instruccion_a_ejecutar = buffer_read_instruccion(buffer_recibido);
@@ -63,7 +64,32 @@ void escribo_buffer(t_buffer* buffer, uint8_t entero){
 
 
 
+//Contexto de ejecucion
+void ejecutarCicloInstruccion(int instruccion, uint32_t PC){
+	tipoInstruccion(instruccion);
+	PC++;
+	//actualizarle pc a ¿memoria?
+}
 
-
-
-   
+void tipoInstruccion(int instruccion){
+	switch (instruccion)
+	{
+	case SET:
+		/* code */
+		break;
+	case SUM:
+		/* code */
+		break;
+	case SUB:
+		/* code */
+		break;
+	case JNZ:
+		/* code */
+		break;
+	case IO_GEN_SLEEP:
+		/* code */
+		break;
+	default:
+		break;
+	}
+}

@@ -38,4 +38,17 @@ struct config_cpu *config_cpu()
 	return valores_config;
 }
 
+//INSTRUCCIONES
+typedef enum
+{
+	SET,
+	SUM,
+	SUB,
+	JNZ,
+	IO_GEN_SLEEP
+} instruccion;
+
+void ejecutarCicloInstruccion(int instruccion, uint32_t PC);
+void tipoInstruccion(int instruccion);
+
 #endif
