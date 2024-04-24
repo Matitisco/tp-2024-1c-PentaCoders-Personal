@@ -11,3 +11,33 @@ int main(int argc, char *argv[])
 	levantarCliente(CONEXION_A_MEMORIA, logger, "SERVIDOR  MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "CPU SE CONECTO A MEMORIA");
 	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config->config);
 }
+
+//Contexto de ejecucion
+void ejecutarCicloInstruccion(int instruccion, uint32_t PC){
+	tipoInstruccion(instruccion);
+	PC++;
+	//actualizarle pc a ¿memoria?
+}
+
+void tipoInstruccion(int instruccion){
+	switch (instruccion)
+	{
+	case SET:
+		/* code */
+		break;
+	case SUM:
+		/* code */
+		break;
+	case SUB:
+		/* code */
+		break;
+	case JNZ:
+		/* code */
+		break;
+	case IO_GEN_SLEEP:
+		/* code */
+		break;
+	default:
+		break;
+	}
+}
