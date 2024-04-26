@@ -52,6 +52,13 @@ pthread_mutex_t *mutex_estado_ejecutando;
 // SEMAFOROS
 sem_t *semaforo_ready;
 
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso a la cola New
+{
+    pthread_mutex_lock(cola_estado->mutex_estado);
+    queue_push(cola_estado->estado, pcb);
+    pthread_mutex_unlock(&mutex_estado_ejecutando);
+}
+
 // PASAR PROCESO DE READY A EXECUTE
 void ready_a_execute(colaEstado *cola_ready)
 { // Esto sirve solo para FIFO y RR    - VER DE CAMBIAR LOGICA EN CASO DE VRR CON UN IF
@@ -196,9 +203,3 @@ t_pcb *obtener_siguiente_ready(colaEstado *cola_ready)
 } */
 // AGREGADOS A COLAS DE ESTADOS CON SEMAFOROS
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso a la cola New
-{
-    pthread_mutex_lock(cola_estado->mutex_estado);
-    queue_push(cola_estado->estado, pcb);
-    pthread_mutex_unlock(&mutex_estado_ejecutando);
-}

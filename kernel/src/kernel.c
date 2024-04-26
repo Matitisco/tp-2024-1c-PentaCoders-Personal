@@ -1,4 +1,5 @@
 #include "../include/kernel.h"
+#include "../include/operaciones.h"
 
 // DEFINICION VARIABLES GLOBAL DE ESTADOS
 colaEstado *cola_new_global;
@@ -22,13 +23,13 @@ int main(int argc, char *argv[])
 	struct config_kernel *valores_config = inicializar_config_kernel();
 
 	// KERNEL COMO SERVER DE I0
-	levantarServidor(logger, valores_config->puerto_escucha, valores_config->ip_memoria, "SERVIDOR KERNEL");
+	//levantarServidor(logger, valores_config->puerto_escucha, valores_config->ip_memoria, "SERVIDOR KERNEL");
 	// KERNEL COMO CLIENTE
-	conexion_memoria_desde_kernel = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "KERNEL SE CONECTO A MEMORIA");
-	conexion_cpu = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
+	//conexion_memoria_desde_kernel = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "KERNEL SE CONECTO A MEMORIA");
+	//conexion_cpu = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
 
 	// CONSOLA INTERACTIVA
-	// iniciar_consola_interactiva(logger);
+	iniciar_consola_interactiva(logger);
 
 	terminar_programa(conexion_cpu, logger, valores_config->config);
 	liberarConexion(conexion_memoria_desde_kernel);

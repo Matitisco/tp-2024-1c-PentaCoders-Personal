@@ -25,7 +25,7 @@ typedef struct
     uint32_t pid;
     uint32_t pc;
     t_registros *registro;
-    t_instruccion instrucciones;
+    t_instruccion* instrucciones;
 
 } t_cde;
 

@@ -3,12 +3,13 @@
 void iniciar_consola_interactiva(t_log *logger)
 {
     char *opcion;
+
     while (1)
     {
         mostrar_operaciones_realizables();
         opcion = readline("Ingrese un valor para realizar una de las siguientes acciones: ");
-        ejecutar_operacion(cod_operacion, logger);
-        free(cod_operacion);
+        ejecutar_operacion(opcion, logger);
+        free(opcion);
     }
 }
 
@@ -24,7 +25,6 @@ void mostrar_operaciones_realizables()
 
 // 2 NEW => IP => 1 a ready =>
 
-
 void ejecutar_operacion(char *opcion, t_log *logger)
 {
     codigoOp cod_op = obtenerCodigo(opcion, logger);
@@ -35,23 +35,23 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         ejecutar_script();
         exit(1);
         break;
-    case 2:
+    case INICIAR_PROCESO:
         iniciar_proceso();
         exit(1);
         break;
-    case 3:
+    case FINALIZAR_PROCESO:
         detener_proceso();
         exit(1);
         break;
-    case 4:
+    case INICIAR_PLANIFICACION:
         iniciar_planificacion();
         exit(1);
         break;
-    case 5:
+    case DETENER_PLANIFICACION:
         detener_planificacion();
         exit(1);
         break;
-    case 6:
+    case LISTAR_ESTADOS:
         listar_procesos_x_estado();
         exit(1);
     default:
@@ -62,14 +62,30 @@ void ejecutar_operacion(char *opcion, t_log *logger)
     }
 }
 
-/* codigoOp obtenerCodigo(char* opcion,t_log* logger){
-    switch (opcion)
+codigoOp obtenerCodigo(char *opcion, t_log *logger)
+{
+    if (strcmp(opcion, "1") == 0)
     {
-    case strcmp(opcion,"1"):
         return EJECUTAR_SCRIPT;
-        break;
-    
-    default:
-        break;
     }
-} */
+    if (strcmp(opcion, "2") == 0)
+    {
+        return INICIAR_PROCESO;
+    }
+    if (strcmp(opcion, "3") == 0)
+    {
+        return FINALIZAR_PROCESO;
+    }
+    if (strcmp(opcion, "4") == 0)
+    {
+        return INICIAR_PLANIFICACION;
+    }
+    if (strcmp(opcion, "5") == 0)
+    {
+        return DETENER_PLANIFICACION;
+    }
+    if (strcmp(opcion, "6") == 0)
+    {
+        return LISTAR_ESTADOS;
+    }
+}

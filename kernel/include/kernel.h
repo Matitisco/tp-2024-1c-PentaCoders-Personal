@@ -6,13 +6,10 @@
 #include "../../utils/src/utils.h"
 #include "../include/registros.h"
 #include "../include/conexiones.h"
-#include "../include/operaciones.h"
-#include "../include/menu.h"
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <semaphore.h>
 #include <pthread.h>
-
 // t_log *logger;
 
 // ENUMS
@@ -48,19 +45,18 @@ struct config_kernel
 	char *puerto_cpu_interrupt;
 };
 
-//INICIALIZAR CONFIG KERNEL
+// INICIALIZAR CONFIG KERNEL
 struct config_kernel *inicializar_config_kernel();
 
-
 // PCB
-typedef struct
+typedef struct 
 {
 	t_cde *cde;		  // contexto de ejecucion
 	t_estados estado; // estado del proceso
 	// int prioridad no va por ahora
-	// int pid;	 // lo dejamos en registros.h
+	//int pid;	 // lo dejamos en registros.h
 	int quantum; // unidad de tiempo usada en VRR
-} t_pcb;
+}t_pcb;
 
 // COLAS
 
@@ -87,7 +83,7 @@ void inicializarEstados();
 
 // FUNCIONES
 
-// void iniciar_consola_interactiva(t_log *logger);
+void iniciar_consola_interactiva(t_log *logger);
 void gestionar_peticiones_memoria();
 void gestionar_peticiones_interfaces();
 void planificar_ejecucion_procesos();
