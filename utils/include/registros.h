@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../../utils/src/utils.h"
+#include "../../utils/include/instrucciones.h"
 #include <stdint.h>
 
 typedef struct
@@ -18,14 +19,14 @@ typedef struct
     uint32_t EDX;
     uint32_t SI;
     uint32_t DI;
-}registros;
-typedef struct 
+} t_registros;
+typedef struct
 {
     uint32_t pid;
     uint32_t pc;
-    registros*registro;
+    t_registros *registro;
+    t_instruccion instrucciones;
 
-
-}tipo_cde;
+} t_cde;
 
 #endif

@@ -8,10 +8,35 @@
 #include "../include/conexiones.h"
 #include "../include/operaciones.h"
 #include "../include/menu.h"
+#include <commons/collections/list.h>
+#include <commons/collections/queue.h>
+#include <semaphore.h>
+#include <pthread.h>
 
-int conexion_memoria, conexion_cpu;
+// t_log *logger;
 
-t_log *logger;
+// ENUMS
+
+typedef enum
+{
+	NEW,
+	READY,
+	EXEC,
+	BLOCKED,
+	FINISHED
+
+} t_estados;
+
+typedef enum
+{
+	FIFO,
+	RR,
+	VRR
+} t_alg_planificadores;
+
+// ESTRUCTURAS
+
+// CONFIG KERNEL
 struct config_kernel
 {
 	t_config *config;
@@ -23,49 +48,42 @@ struct config_kernel
 	char *puerto_cpu_interrupt;
 };
 
-struct config_kernel *config_kernel()
+//INICIALIZAR CONFIG KERNEL
+struct config_kernel *inicializar_config_kernel();
+
+
+// PCB
+typedef struct
 {
-	struct config_kernel *configuracion = (struct config_kernel *)malloc(sizeof(struct config_kernel));
-
-	configuracion->config = iniciar_config("kernel.config");
-
-	configuracion->ip_memoria = config_get_string_value(configuracion->config, "IP_MEMORIA");
-	configuracion->ip_cpu = config_get_string_value(configuracion->config, "IP_CPU");
-	configuracion->puerto_memoria = config_get_string_value(configuracion->config, "PUERTO_MEMORIA");
-	configuracion->puerto_escucha = config_get_string_value(configuracion->config, "PUERTO_ESCUCHA");
-	configuracion->puerto_cpu_dispatch = config_get_string_value(configuracion->config, "PUERTO_CPU_DISPATCH");
-	configuracion->puerto_cpu_interrupt = config_get_string_value(configuracion->config, "PUERTO_CPU_INTERRUPT");
-
-	return configuracion;
-}
-typedef enum {
-	NEW,
-	READY,
-	EXEC,
-	BLOCKED,
-	EXIT
-	
-}t_estados;
-//Estructura PCB
-typedef struct{
-	//t_cde* cde;
-	t_estados estado;
-	char* path;
-	int prioridad;
-	t_list* archivos_abiertos;
-	t_list* archivos_solicitados;
-	t_list* recursos_asignados;
-	t_list* recursos_solicitados;
-	bool flag_clock;
-	bool fin_q;
-}t_pcb;
-
-struct pcb
-{
-	int pid;	 // identificador del proceso
+	t_cde *cde;		  // contexto de ejecucion
+	t_estados estado; // estado del proceso
+	// int prioridad no va por ahora
+	// int pid;	 // lo dejamos en registros.h
 	int quantum; // unidad de tiempo usada en VRR
-	registros registros;
-};
+} t_pcb;
+
+// COLAS
+
+typedef struct
+{
+	t_queue *estado;
+	pthread_mutex_t *mutex_estado;
+} colaEstado;
+
+// DECLARACION VARIABLES GLOBALES
+
+extern colaEstado *cola_new_global;
+extern colaEstado *cola_ready_global;
+extern colaEstado *cola_exec_global;
+extern colaEstado *cola_bloqueado_global;
+extern colaEstado *cola_exit_global;
+
+// CONSTRUCTOR/INICIALIZADOR COLAS ESTADOS
+
+colaEstado *constructorColaEstado();
+
+// INICIALIZAR 5 COLAS ESTADOS
+void inicializarEstados();
 
 // FUNCIONES
 

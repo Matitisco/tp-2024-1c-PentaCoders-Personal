@@ -19,8 +19,6 @@ typedef enum {
 
 
 
-
-
 void levantarServidor(t_log *logger, char *puerto, char *ip, char *nombreServidor);
-void levantarCliente(int unaConexion, t_log *logger, char *nombreDelServidor, char *ip, char *puerto, char *mensaje);
+int levantarCliente(t_log *logger, char *nombreDelServidor, char *ip, char *puerto, char *mensaje);
 #endif

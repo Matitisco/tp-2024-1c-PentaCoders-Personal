@@ -2,7 +2,6 @@
 
 void iniciar_consola_interactiva(t_log *logger)
 {
-
     char *opcion;
     while (1)
     {
@@ -22,6 +21,9 @@ void mostrar_operaciones_realizables()
     printf("5-Detener Planificacion\n");
     printf("6-Listar Procesos por Estado\n");
 }
+
+// 2 NEW => IP => 1 a ready =>
+
 
 void ejecutar_operacion(char *opcion, t_log *logger)
 {
@@ -60,7 +62,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
     }
 }
 
-codigoOp obtenerCodigo(char* opcion,t_log* logger){
+/* codigoOp obtenerCodigo(char* opcion,t_log* logger){
     switch (opcion)
     {
     case strcmp(opcion,"1"):
@@ -70,4 +72,4 @@ codigoOp obtenerCodigo(char* opcion,t_log* logger){
     default:
         break;
     }
-}
+} */

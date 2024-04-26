@@ -10,7 +10,7 @@
 
 char *PUERTO_MEMORIA;
 int CONEXION_A_MEMORIA;
-t_log *logger;
+//t_log *logger;
 int socket_memoria;
 struct config_cpu
 {

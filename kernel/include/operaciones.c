@@ -14,6 +14,7 @@ void detener_proceso()
 }
 void iniciar_planificacion()
 {
+    
     printf("Iniciar Planificacion");
 }
 void detener_planificacion()

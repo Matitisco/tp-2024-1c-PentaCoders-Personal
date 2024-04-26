@@ -9,7 +9,7 @@
 #include "../include/conexiones.h"
 
 t_log *logger;
-int conexion_kernel,conexion_memoria;
+int conexion_kernel,conexion_memoria_desde_IO;
 
 struct config_io{
 	t_config* config;
