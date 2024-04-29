@@ -11,32 +11,25 @@ int main(int argc, char *argv[])
 	// CONFIG
 	struct config_cpu *valores_config = config_cpu();
 	// Falta que CPU inicie servidor como INTERRUPT y como DISPATCH
-	levantarServidor(logger, valores_config->puerto_escucha_dispatch, valores_config->ip_kernel, "SERVIDOR CPU");
+	levantarServidor(logger, valores_config->puerto_escucha_dispatch, valores_config->ip_kernel, "SERVIDOR CPU DISPATCH");
+	levantarServidor(logger, valores_config->puerto_escucha_interrupt,valores_config->ip_kernel, "SERVIDOR CPU INTERRUPT");
 	levantarCliente(CONEXION_A_MEMORIA, logger, "SERVIDOR  MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "CPU SE CONECTO A MEMORIA");
 	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config->config);
 }
-void recibirPCB(tipo_buffer *buffer, t_pcb *pcb)
-{
-	// Tomo como condiciom que el PCB V a estar cuando me lo pases serializado y yo lo voya  deserializar
-	// con la funcion memcpy
-	// me pasan el pcb y el buffer
-	memcpy(&(pcb->estado), buffer, sizeof(int));
-	memcpy(&(pcb->prioridad), buffer + sizeof(int), sizeof(int));
-	memcpy(&(pcb->flag_clock), buffer + 2 * sizeof(int), sizeof(int));
-	memcpy(&(pcb->fin_q), buffer + 3 * sizeof(int), sizeof(int));
+void recibir_cde(){
+	mensaje_kernel_cpu codigo= recibir_codigo(socket_kernel_dispatch);
+	t_buffer*buffer = recibir_buffer(socket_kernel_dispatch);
+	if(codigo == EJECUTAR_PROCESO){
+		ejecutarproceso();
+	}
 
-	// Deserialización del campo 'path'
-	int path_length;
-	memcpy(&path_length, buffer + 4 * sizeof(int), sizeof(int));
-	pcb->path = (char *)malloc(path_length + 1);
-	memcpy(pcb->path, buffer + 5 * sizeof(int), path_length);
-	pcb->path[path_length] = '\0'; // Agregar el carácter nulo al final
+}
+void ejecutarproceso(){
+	return 0;
 }
 void pedirInstruccionAMemoria()
 {
-	/* DUDA DE NATI: BUFFER ES PAQUETE????
-	*/
-	tipo_cde *cde;
+	t_cde *cde;
 	enviar_codigo(socket_memoria, PEDIDO_INSTRUCCION); // Pido la instruccion
 	tipo_buffer *buffer = crear_buffer();
 	envio_buffer(buffer, socket_memoria);
@@ -47,20 +40,12 @@ void pedirInstruccionAMemoria()
 	envio_buffer(buffer, socket_memoria);
 	cde->pc++; // actualizo el contexto de ejercicion
 	destroy_buffer(buffer);
-	// ANOTACION LOCA DE NACHO LAS 23.19 HS: ¿UN BUFFER EN REALIDAD ES UN PAQUETE?
-	t_buffer *buffer_recibido = recibir_buffer(socket_memoria);
-	// instruccion_a_ejecutar = buffer_read_instruccion(buffer_recibido);
-	// destroy_buffer(buffer_recibido);
-	// instruccion_actualizada = instruccion_a_ejecutar->codigo;
-	// ejecutar_instruccion(cde, instruccion_a_ejecutar);
+	t_buffer *otro_buffer= recibir_buffer(socket_memoria);
+	//t_instrucion *instruccion_a_ejecutar = leer_buffer(otro_buffer); Falta implementar al funcion leer_buffer
+	//destruir_buffer(buffer);
+	
 }
-void escribo_buffer(t_buffer *buffer, uint8_t entero)
-{
-	buffer->stream = realloc(buffer->stream, buffer->size + sizeof(uint8_t));
 
-	memcpy(buffer->stream + buffer->size, &entero, sizeof(uint8_t));
-	buffer->size += sizeof(uint8_t);
-}
 
 // Contexto de ejecucion
 void ejecutarCicloInstruccion(int instruccion, uint32_t PC)

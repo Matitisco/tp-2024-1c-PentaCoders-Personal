@@ -204,3 +204,4 @@ void paquete(int conexion)
 	enviar_paquete(paquete, conexion);
 	eliminar_paquete(paquete);
 }
+

@@ -7,11 +7,15 @@
 #include <sockets.c>
 #include "../../utils/src/utils.h"
 #include "../include/conexiones.h"
+#include  "utils/include/instrucciones.h"
 
 char *PUERTO_MEMORIA;
 int CONEXION_A_MEMORIA;
 //t_log *logger;
 int socket_memoria;
+int socket_kernel_dispatch;
+int socket_kernel_interrupt;
+
 struct config_cpu
 {
 	t_config *config;
@@ -39,14 +43,6 @@ struct config_cpu *config_cpu()
 }
 
 //INSTRUCCIONES
-typedef enum
-{
-	SET,
-	SUM,
-	SUB,
-	JNZ,
-	IO_GEN_SLEEP
-} instruccion;
 
 void ejecutarCicloInstruccion(int instruccion, uint32_t PC);
 void tipoInstruccion(int instruccion);

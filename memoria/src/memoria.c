@@ -20,17 +20,113 @@ void enviarInstruccion(char *pathArch)
 {
 	mensaje_cpu_kernel codigoCPU = recibir_codigo(socket_cpu);
 	if (codigoCPU == PEDIDO_INSTRUCCION)
-	{
+	{ /*
+		t_buffer *buffer = recibir_buffer(socket_cpu);
 
-		t_list *listaInstrucciones = pasajeDeArchivoAListaInstrucciones(pathArch);
+		int pid = leer_buffer(buffer);
+		int pc = leer_buffer(buffer);
+		destruir_buffer(buffer);
+		t_pcb*proceso= buscarPCBEnColaPorPid(pid);
+
+
+		t_list *listaInstrucciones = list_get(proceso->cde->instrucciones);
+		buffer = crear_buffer();
+		escribir_buffer(buffer, instruccion);
+		enviar_buffer(buffer, socket_cpu);
+		destruir_buffer();
+
+*/
 		/*ENVIAR LA INSTRUCCION  A CPU CON EL SOCKET_CPU
 		*/
+
 		
 	}
 }
-instruccion *crearInstruccion(char *linea)
+/* Dejo estas dos funciones que hicimos en kernel, tambien la vamos a necesitar en memoria t_pcb *buscarProceso(uint32_t pid)
 {
-	instruccion *instruccion = malloc(sizeof(instruccion));
+    t_pcb *pcb_buscada = NULL;
+    colaEstado *colas[] = {cola_new_global, cola_ready_global, cola_exec_global, cola_exit_global}; // Hace vector de colas
+
+    for (int i = 0; i < sizeof(colas) / sizeof(colas[0]); i++) // va fijandose si en cada posicion del vector esta ese pid
+    {
+
+        if ((pcb_buscada = buscarPCBEnColaPorPid(pid, colas[i]->estado, colas[i]->nombreEstado)) != NULL) // busqueda
+        {
+            // pcb_buscada = buscarPCBEnColaPorPid(pid, colas[i]->estado, colas[i]->nombreEstado);
+            return pcb_buscada;
+            break;
+        }
+    }
+    if (pcb_buscada == NULL)
+    {
+        printf("No se pudo encontrar ningun PCB asociado al PID %u\n", pid);
+    }
+
+    return pcb_buscada;
+}
+
+t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
+{
+
+    t_pcb *pcb_buscada;
+
+    // Verificar si la lista está vacía
+    if (queue_is_empty(cola))
+    {
+        printf("El estado %s está vacío.\n", nombreCola);
+        return NULL;
+    }
+
+    t_queue *colaAux = queue_create();
+    // Copiar los elementos a una cola auxiliar y mostrarlos
+
+    while (!queue_is_empty(cola)) // vacia la cola y mientras buscar el elemento
+    {
+        t_pcb *pcb = queue_pop(cola);
+
+        if (pcb->cde->pid == pid_buscado)
+        {
+            pcb_buscada = pcb;
+        }
+
+        queue_push(colaAux, pcb_buscada);
+    }
+
+    // Restaurar la cola original
+    while (!queue_is_empty(colaAux))
+    {
+        queue_push(cola, queue_pop(colaAux));
+    }
+
+    // Liberar memoria de la cola auxiliar y sus elementos
+    while (!queue_is_empty(colaAux))
+    {
+        free(queue_pop(colaAux));
+    }
+    queue_destroy(colaAux);
+
+    if (pcb_buscada != NULL)
+    {
+        if (pcb_buscada->cde != NULL)
+        {
+            printf("Se encontró el proceso PID: %i en %s \n", pcb_buscada->cde->pid, nombreCola);
+        }
+        else
+        {
+            printf("El PCB encontrado no tiene un puntero válido a cde.\n");
+        }
+    }
+    else
+    {
+        printf("No se encontró el proceso en %s.\n", nombreCola);
+    }
+
+    return pcb_buscada;
+}
+*/
+t_instruccion *crearInstruccion(char *linea)
+{
+	t_instruccion *instruccion = malloc(sizeof(instruccion));
 	char *token = strtok(linea, " "); // El primer token es el código de la instrucción.
 	instruccion->codigo = strdup(token);
 
@@ -48,21 +144,7 @@ t_list *pasajeDeArchivoAListaInstrucciones(char *pathArch)
 	while (fgets(linea, sizeo(linea), arch))
 	{ // voy leyendo el archivo
 		strtok(linea, "\n");
-		instruccion *unaInstruccion = crearInstruccion(linea);
+		t_instruccion *unaInstruccion = crearInstruccion(linea);
 		list_add(listInstrucciones, unaInstruccion); // agrego unaInstruccion a la lista
-	}
-}
-uint32_t recibir_codigo(int unSocket)
-{
-	int codigo;
-	ssize_t unResultado = recv(socket, &codigo, sizeof(int), MSG_WAITALL);
-	if (unResultado == -1)
-	{
-		perror("Error con el  recv");
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		return codigo;
 	}
 }

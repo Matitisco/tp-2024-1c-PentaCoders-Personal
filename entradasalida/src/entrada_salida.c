@@ -7,9 +7,9 @@ int main(int argc, char *argv[])
 
 	levantarCliente(conexion_memoria_desde_IO, logger, "Servidor Memoria", valores_config->ip_memoria, valores_config->puerto_memoria, "ENTRADA/SALIDA se conecta a Memoria");
 	levantarCliente(conexion_kernel, logger, "Servidor Kernel", valores_config->ip_kernel, valores_config->puerto_kernel, "ENTRADA/SALIDA se conecta a Kernel");
-
 	terminar_programa(conexion_memoria_desde_IO, logger, valores_config->config);
 	liberarConexion(conexion_kernel);
+
 }
 
 // FUNCIONES

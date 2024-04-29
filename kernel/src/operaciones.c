@@ -9,9 +9,23 @@ void ejecutar_script()
 // VER TEMA DEL PATH QUE NO ESTA DEL TODO CLARO
 void iniciar_proceso()
 {
-    t_pcb *proceso = crear_proceso();
+    t_pcb *proceso = crear_proceso();//Creo nuestro nuevo proceso
+    enviar_codigo(socket_memoria, SOLICITUD_INICIAR_PROCESO);//Le pido si pueod iniciar el proceso
+    t_buffer*buffer= crear_buffer();
+    escribir_buffer(buffer,proceso->cde->pid);
+    enviar_buffer(buffer,socket_memoria);
+    destruir_buffer(buffer);
+    mensaje_kernel_memoria codigo = recibir_codigo(socket_memoria);
+    if(codigo == INICIAR_PROCESO_CORRECTO){
     agregar_a_estado(proceso, cola_new_global);
-    log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso));
+    //Aca ella agrega semaforos pero creo que nosotros al tener la cola sincronizada nos lo evitamos
+    log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso)); //se muestra el logger
+
+    }else if(codigo == INICIAR_PROCESO_ERROR){
+        log_info(logger, "No se pudo crear el proceso %u", proceso->cde->pid); //se muestra que no se pudo
+    }
+
+
 }
 
 t_pcb *crear_proceso()
@@ -42,12 +56,23 @@ t_cde *iniciar_cde()
 // DETENER PROCESO
 void finalizar_proceso(uint32_t PID)
 {
-    t_pcb *proceso = buscarProceso(PID);
+
+    t_pcb *proceso = buscarProceso(PID); //buscamos en las colas 
     log_info(logger, "Se finalizo el proceso %u \n", PID);
-    // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
-    // log_info(logger, "Finalizar el proceso %u - Motivo: %s\n", PID, mostrarMotivo(motivoFinalizar));
-    agregar_a_estado(proceso, cola_exit_global);
+    
+
+
+    mensaje_kernel_cpu otroCodigo = recibir_codigo(socket_memoria);
+    if(otroCodigo == FINALIZAR_PROCESO)
+    {
+        log_info(logger,"PID %u -Destruir pcb", proceso->cde->pid);
+       
+    agregar_a_estado(proceso, cola_exit_global);//moverlo a la cola de exit 
     liberar_proceso(proceso);
+    }else if (otroCodigo == ERROR_FINALIZAR_PROCESO){
+           // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
+    // log_info(logger, "Finalizar el proceso %u - Motivo: %s\n", PID, mostrarMotivo(motivoFinalizar));
+    }
 }
 
 // INICIAR PLANIFICACION
@@ -206,3 +231,13 @@ void liberar_archivos(t_pcb *proceso)
     //PREGUNTAR QUE HACE ESTA FUNCION RAWRA
 }
 */
+
+void enviar_cde(t_cde*cde){
+    enviar_codigo(socket_cpu_dispatch, EJECUTAR_PROCESO);//Le pido si pueod iniciar el proceso
+    t_buffer*buffer= crear_buffer();
+    escribir_buffer(buffer,cde->pid);
+    escribir_buffer(buffer, cde->pc);
+    enviar_buffer(buffer,socket_cpu_dispatch);
+    destruir_buffer(buffer);
+
+}

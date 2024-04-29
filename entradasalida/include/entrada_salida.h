@@ -10,6 +10,8 @@
 
 t_log *logger;
 int conexion_kernel,conexion_memoria_desde_IO;
+int socket_memoria;
+int socket_kernel;
 
 struct config_io{
 	t_config* config;

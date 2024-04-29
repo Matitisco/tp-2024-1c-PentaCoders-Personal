@@ -6,6 +6,7 @@
 #include "../../utils/src/utils.h"
 #include "../include/registros.h"
 #include "../include/conexiones.h"
+#include "../../utils/include/serializacion.h"
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <semaphore.h>
@@ -13,6 +14,8 @@
 // t_log *logger;
 
 // ENUMS
+
+
 
 typedef enum
 {
@@ -69,6 +72,11 @@ typedef struct
 	pthread_mutex_t *mutex_estado;
 	
 } colaEstado;
+int socket_memoria;
+int socket_cpu_dispatch;
+int socket_cpu_interrupt;
+
+
 
 // DECLARACION VARIABLES GLOBALES
 

@@ -17,9 +17,6 @@
 #include <assert.h>
 #include "../include/sockets.h"
 
-// Puerto para el servidor
-#define PUERTO "4444"
-
 // CLIENTE
 
 typedef enum
@@ -39,6 +36,30 @@ typedef struct
 	op_code codigo_operacion;
 	t_buffer *buffer;
 } t_paquete;
+
+typedef enum {
+    EJECUTAR_PROCESO,
+	INTERRUPT,
+	DESALOJO,
+	CDE,
+}mensaje_kernel_cpu;
+
+typedef enum {
+
+	PEDIDO_INSTRUCCION
+
+}mensaje_cpu_memoria;
+
+typedef enum {
+	SOLICITUD_INICIAR_PROCESO,
+	INICIAR_PROCESO_CORRECTO,
+	INICIAR_PROCESO_ERROR,
+	SOLICITUD_FINALIZAR_PROCESO,
+	FINALIZAR_PROCESO,
+	ERROR_FINALIZAR_PROCESO
+
+}mensaje_kernel_memoria;
+
 
 
 void enviar_mensaje(char *mensaje, int socket_cliente);
