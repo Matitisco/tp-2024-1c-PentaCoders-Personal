@@ -2,6 +2,7 @@
 #define MENU_H_
 
 #include "../include/kernel.h"
+#include "../include/operaciones.h"
 // #include <commons/log.h>
 
 typedef enum 

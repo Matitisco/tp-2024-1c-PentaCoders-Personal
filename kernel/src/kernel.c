@@ -23,10 +23,10 @@ int main(int argc, char *argv[])
 	struct config_kernel *valores_config = inicializar_config_kernel();
 
 	// KERNEL COMO SERVER DE I0
-	//levantarServidor(logger, valores_config->puerto_escucha, valores_config->ip_memoria, "SERVIDOR KERNEL");
+	// levantarServidor(logger, valores_config->puerto_escucha, valores_config->ip_memoria, "SERVIDOR KERNEL");
 	// KERNEL COMO CLIENTE
-	//conexion_memoria_desde_kernel = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "KERNEL SE CONECTO A MEMORIA");
-	//conexion_cpu = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
+	// conexion_memoria_desde_kernel = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "KERNEL SE CONECTO A MEMORIA");
+	// conexion_cpu = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
 
 	// CONSOLA INTERACTIVA
 	iniciar_consola_interactiva(logger);
@@ -50,11 +50,12 @@ void planificar_ejecucion_procesos()
 	printf("Planificar Ejecucion procesos");
 }
 
-colaEstado *constructorColaEstado()
+colaEstado *constructorColaEstado(char *nombre)
 {
 	colaEstado *cola_estado_generica;
 	cola_estado_generica = malloc(sizeof(colaEstado));
-
+	cola_estado_generica->nombreEstado = nombre;
+	//strcpy(cola_estado_generica->nombreEstado, nombre);
 	cola_estado_generica->estado = queue_create();
 	cola_estado_generica->mutex_estado = malloc(sizeof(pthread_mutex_t));
 
@@ -65,11 +66,11 @@ colaEstado *constructorColaEstado()
 
 void inicializarEstados()
 {
-	cola_new_global = constructorColaEstado();
-	cola_ready_global = constructorColaEstado();
-	cola_exec_global = constructorColaEstado();
-	cola_bloqueado_global = constructorColaEstado();
-	cola_exit_global = constructorColaEstado();
+	cola_new_global = constructorColaEstado("NEW");
+	cola_ready_global = constructorColaEstado("READY");
+	cola_exec_global = constructorColaEstado("EXEC");
+	cola_bloqueado_global = constructorColaEstado("BLOCK");
+	cola_exit_global = constructorColaEstado("EXIT");
 }
 
 struct config_kernel *inicializar_config_kernel()

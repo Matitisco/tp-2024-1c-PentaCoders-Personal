@@ -32,15 +32,6 @@ Al recibir el Contexto de Ejecución del proceso en ejecución,
 en caso de que el motivo de desalojo implique replanificar se seleccionará
 el siguiente proceso a ejecutar según indique el algoritmo. Durante este período la CPU se quedará esperando el nuevo contexto.
 
-*/
-/*
-t_queue *estado_new;
-t_list *estado_ready;
-t_list *estado_exec;
-t_list *estado_exit;
-t_queue *estado_bloqueado;
-*/
-
 // PASAR A KERNEL. H PARA QUE LO UTILICE LARGO PLAZO
 
 // MUTEX -
@@ -48,17 +39,16 @@ pthread_mutex_t *mutex_pcb_ejecutando;
 pthread_mutex_t *mutex_estado_ejecutando;
 
 // pthread_mutex_init(mutex, NULL) INICIALIZAR EN EL MAIN -ACORDARSE
-
-// SEMAFOROS
+ SEMAFOROS
 sem_t *semaforo_ready;
-
+*/
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso a la cola New
 {
-    pthread_mutex_lock(cola_estado->mutex_estado);
+    //pthread_mutex_lock(cola_estado->mutex_estado);
     queue_push(cola_estado->estado, pcb);
-    pthread_mutex_unlock(&mutex_estado_ejecutando);
+    //pthread_mutex_unlock(cola_estado->mutex_estado);
 }
-
+/*
 // PASAR PROCESO DE READY A EXECUTE
 void ready_a_execute(colaEstado *cola_ready)
 { // Esto sirve solo para FIFO y RR    - VER DE CAMBIAR LOGICA EN CASO DE VRR CON UN IF

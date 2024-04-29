@@ -33,12 +33,7 @@ typedef struct
 {
     t_tipoDeInstruccion codigo;
     // parametros que puede llegar a recibir la instruccion ( ej. mov ac bx son dos parametros)
-    char *par1;
-    char *par2;
-    char *par3;
-    char *par4;
-    char *par5;
-    //
+    t_list* parametros;
 } t_instruccion;
 
 #endif

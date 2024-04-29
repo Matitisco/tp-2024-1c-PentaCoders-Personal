@@ -3,7 +3,6 @@
 void iniciar_consola_interactiva(t_log *logger)
 {
     char *opcion;
-
     while (1)
     {
         mostrar_operaciones_realizables();
@@ -28,7 +27,6 @@ void mostrar_operaciones_realizables()
 void ejecutar_operacion(char *opcion, t_log *logger)
 {
     codigoOp cod_op = obtenerCodigo(opcion, logger);
-    // hay que convertir el char a int o algo similar usando cmp
     switch (cod_op)
     {
     case EJECUTAR_SCRIPT:
@@ -37,11 +35,12 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         break;
     case INICIAR_PROCESO:
         iniciar_proceso();
-        exit(1);
+        // exit(1); // momentaneo es solo para que no quede en loop
         break;
     case FINALIZAR_PROCESO:
-        detener_proceso();
-        exit(1);
+        char *pid = readline("Ingrese el PID del Proceso a Finalizar: ");
+        finalizar_proceso(atoi(pid));
+        //exit(1);
         break;
     case INICIAR_PLANIFICACION:
         iniciar_planificacion();

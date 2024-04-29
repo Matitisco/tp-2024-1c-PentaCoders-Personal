@@ -49,21 +49,25 @@ struct config_kernel
 struct config_kernel *inicializar_config_kernel();
 
 // PCB
-typedef struct 
+typedef struct t_pcb
 {
 	t_cde *cde;		  // contexto de ejecucion
 	t_estados estado; // estado del proceso
 	// int prioridad no va por ahora
-	//int pid;	 // lo dejamos en registros.h
-	int quantum; // unidad de tiempo usada en VRR
-}t_pcb;
+	t_list *archivosAsignados;
+	t_list *recursosAsignados;
+	char* path;
+	int prioridad;
+} t_pcb;
 
 // COLAS
 
 typedef struct
 {
+	char* nombreEstado;
 	t_queue *estado;
 	pthread_mutex_t *mutex_estado;
+	
 } colaEstado;
 
 // DECLARACION VARIABLES GLOBALES
@@ -76,7 +80,7 @@ extern colaEstado *cola_exit_global;
 
 // CONSTRUCTOR/INICIALIZADOR COLAS ESTADOS
 
-colaEstado *constructorColaEstado();
+colaEstado *constructorColaEstado(char *nombre);
 
 // INICIALIZAR 5 COLAS ESTADOS
 void inicializarEstados();

@@ -9,7 +9,7 @@
 
 typedef struct
 {
-    uint32_t PC;
+    //uint32_t PC;
     uint8_t BX;
     uint8_t CX;
     uint8_t DX;
