@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "../src/utils.h"
+#include "utils.h"
 #include "../include/sockets.h"
 
 void levantarServidor(t_log *logger, char *puerto, char *ip, char *nombreServidor);

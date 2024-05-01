@@ -11,8 +11,12 @@ int main(int argc, char *argv[])
     struct config_memoria *valores_config = config_memoria();
 
     // LEVANTAMOS EL SERVIDOR DE MEMORIA
-    //levantarServidorMemoria(logger, valores_config->puerto_memoria, valores_config->ip_memoria);
-    crearHilos();
+    // levantarServidorMemoria(logger, valores_config->puerto_memoria, valores_config->ip_memoria);
+    args_CPU = crearArgumento(valores_config->puerto_memoria,valores_config->ip_memoria);
+    args_KERNEL = crearArgumento(valores_config->puerto_memoria,valores_config->ip_memoria);
+    args_IO = crearArgumento(valores_config->puerto_memoria,valores_config->ip_memoria); 
+
+    crearHilos(args_CPU,args_IO,args_KERNEL);
 
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
@@ -21,14 +25,20 @@ int main(int argc, char *argv[])
     destruirConfig(valores_config->config);
     destruirLog(logger);
 }
-
+t_args crearArgumento(char *puerto, char *ip)
+{
+    t_args a;
+    a.logger = logger;
+    strcpy(a.puerto,puerto);
+    strcpy(a.ip,ip);
+}
 void crearHilos()
 {
-    pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args);
-    pthread_create(&hiloKernel, NULL, recibirKernel, (void *)args);
-    pthread_create(&hiloIO, NULL, recibirIO, (void *)args);
+    pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
+    pthread_create(&hiloKernel, NULL, recibirKernel, (void *)args_KERNEL);
+    pthread_create(&hiloIO, NULL, recibirIO, (void *)args_IO);
 }
-
+void recibirIO(t_log *logger, char *puerto, char *ip);
 void recibirKernel(t_log *logger, char *puerto, char *ip)
 {
     /*
@@ -58,15 +68,15 @@ tener en cuenta que las peticiones pueden ocupar más de una página.
             list_iterate(lista, (void *)iterator);
             break;
         case SOLICITUD_INICIAR_PROCESO:
-           // tipo_buffer *buffer = recibir_buffer(sizeof(uint32_t), cliente_fd);
-            //t_list *listInstrucciones = leerArchivoConInstrucciones(char *pathArch);
-            
-            //agregar_Instrucciones_Al_CDE(listInstrucciones,buffer);
-            // agregamos insutrcciones al cde, identificamos al cde usando su id 
-            log_info(logger,"La Solicitud de Iniciar Proceso se Realizo con Exito");
-            
+            // tipo_buffer *buffer = recibir_buffer(sizeof(uint32_t), cliente_fd);
+            // t_list *listInstrucciones = leerArchivoConInstrucciones(char *pathArch);
+
+            // agregar_Instrucciones_Al_CDE(listInstrucciones,buffer);
+            //  agregamos insutrcciones al cde, identificamos al cde usando su id
+            log_info(logger, "La Solicitud de Iniciar Proceso se Realizo con Exito");
+
         case SOLICITUD_FINALIZAR_PROCESO:
-            //liberar_memoria_proceso(unproceso);
+            // liberar_memoria_proceso(unproceso);
             log_info("Se aprueba finalizar el proces");
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
@@ -79,7 +89,7 @@ tener en cuenta que las peticiones pueden ocupar más de una página.
     return EXIT_SUCCESS;
 }
 
-void recibirCPU(t_log * logger, char *puerto, char *ip) 
+void recibirCPU(t_log *logger, char *puerto, char *ip)
 {
     int server_fd = iniciar_servidor(logger, "Memoria", ip, puerto);
     log_info(logger, "Servidor Memoria listo para recibir CPU");
@@ -99,20 +109,20 @@ void recibirCPU(t_log * logger, char *puerto, char *ip)
             list_iterate(lista, (void *)iterator);
             break;
         case PEDIDO_INSTRUCCION:
-/*             tipo_buffer *buffer = recibir_buffer(socket_cpu);
+            /*             tipo_buffer *buffer = recibir_buffer(socket_cpu);
 
-            int pid = leer_buffer(buffer);
-            int pc = leer_buffer(buffer);
-            destruir_buffer(buffer);
-            t_pcb*proceso= buscarPCBEnColaPorPid(pid);
+                        int pid = leer_buffer(buffer);
+                        int pc = leer_buffer(buffer);
+                        destruir_buffer(buffer);
+                        t_pcb*proceso= buscarPCBEnColaPorPid(pid);
 
-            t_list *listaInstrucciones = list_get(proceso->cde->instrucciones);
-            buffer = crear_buffer();
-            escribir_buffer(buffer, instruccion);
-            enviar_buffer(buffer, socket_cpu);
-            destruir_buffer(); */
+                        t_list *listaInstrucciones = list_get(proceso->cde->instrucciones);
+                        buffer = crear_buffer();
+                        escribir_buffer(buffer, instruccion);
+                        enviar_buffer(buffer, socket_cpu);
+                        destruir_buffer(); */
             printf("Se aprueba pedido instruccion");
-        //case ACCESO_ESPACIO_USUARIO:
+        // case ACCESO_ESPACIO_USUARIO:
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             return EXIT_FAILURE;
@@ -120,8 +130,8 @@ void recibirCPU(t_log * logger, char *puerto, char *ip)
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
             break;
         }
-    return EXIT_SUCCESS;
-}
+        return EXIT_SUCCESS;
+    }
 }
 
 t_instruccion *crearInstruccion(char *linea)
@@ -129,7 +139,6 @@ t_instruccion *crearInstruccion(char *linea)
     t_instruccion *instruccion = malloc(sizeof(instruccion));
     char *token = strtok(linea, " "); // El primer token es el código de la instrucción.
     instruccion->codigo = atoi(strdup(token));
-    
 
     return instruccion;
 }
@@ -138,7 +147,6 @@ t_list *leerArchivoConInstrucciones(char *pathArch)
 {
     t_list *listInstrucciones = list_create(); // creo el puntero a la lista
     FILE *arch = fopen(pathArch, "r");
-
 
     if (arch == NULL)
     {
@@ -155,46 +163,56 @@ t_list *leerArchivoConInstrucciones(char *pathArch)
     return listInstrucciones;
 }
 
-
-
 /*
 t_list* parsearArchivo(char* pathArchivo, t_log* logger){
-	t_list* listaInstrucciones = list_create();
+    t_list* listaInstrucciones = list_create();
 
-	FILE* archivoInstrucciones = fopen(pathArchivo, "r");
-	int length = 50;
+    FILE* archivoInstrucciones = fopen(pathArchivo, "r");
+    int length = 50;
 
-	// Aca guarda un renglon del .txt
-	char instruccion[50];
+    // Aca guarda un renglon del .txt
+    char instruccion[50];
 
-	// Aca guarda los parametros recibidos
-	char* parametro;
+    // Aca guarda los parametros recibidos
+    char* parametro;
 
-	t_instruccion* instr;
+    t_instruccion* instr;
 
-	while(fgets(instruccion, length, archivoInstrucciones)){
-		strtok(instruccion, "\n");
+    while(fgets(instruccion, length, archivoInstrucciones)){
+        strtok(instruccion, "\n");
 
-		instr = malloc(sizeof(t_instruccion));
-		instr->par1 = NULL;
-		instr->par2 = NULL;
-		instr->par3 = NULL;
+        instr = malloc(sizeof(t_instruccion));
+        instr->par1 = NULL;
+        instr->par2 = NULL;
+        instr->par3 = NULL;
 
-		parametro = strtok(instruccion, " ");
+        parametro = strtok(instruccion, " ");
 
-		instr->codigo = obtenerCodigoInstruccion(parametro);
+        instr->codigo = obtenerCodigoInstruccion(parametro);
 
-		int indice = 1;
+        int indice = 1;
 
-		parametro = strtok(NULL, " ");
-		while(parametro != NULL){
-			escribirCharParametroInstruccion(indice, instr, parametro);
-			indice++;
-			parametro = strtok(NULL, " ");
-		}
+        parametro = strtok(NULL, " ");
+        while(parametro != NULL){
+            escribirCharParametroInstruccion(indice, instr, parametro);
+            indice++;
+            parametro = strtok(NULL, " ");
+        }
 
-		list_add(listaInstrucciones, instr);
-	}
-	fclose(archivoInstrucciones);
-	return listaInstrucciones;
+        list_add(listaInstrucciones, instr);
+    }
+    fclose(archivoInstrucciones);
+    return listaInstrucciones;
 }*/
+struct config_memoria *config_memoria()
+{
+	struct config_memoria *valores_config = malloc(sizeof(struct config_memoria));
+
+	// creo el config
+	valores_config->config = iniciar_config("memoria.config");
+
+	valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
+	valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
+
+	return valores_config;
+}

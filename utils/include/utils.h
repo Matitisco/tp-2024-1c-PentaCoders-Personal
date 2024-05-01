@@ -15,10 +15,17 @@
 #include <sys/socket.h>
 #include <commons/collections/list.h>
 #include <assert.h>
-#include "../include/serializacion.h"
-#include "../include/sockets.h"
+#include "sockets.h"
 
 // CLIENTE
+
+typedef struct
+{
+    uint32_t size;
+    uint32_t offset;
+    void *stream;
+
+} tipo_buffer;
 
 typedef enum
 {
@@ -29,6 +36,11 @@ typedef enum
 	INICIAR_PROCESO_ERROR,
 	SOLICITUD_FINALIZAR_PROCESO,
 	FINALIZAR_PROCESO,
+	EJECUTAR_SCRIPT,
+    INICIAR_PROCESO,
+    INICIAR_PLANIFICACION,
+    DETENER_PLANIFICACION,
+    LISTAR_ESTADOS,
 	ERROR_FINALIZAR_PROCESO,
 	PEDIDO_INSTRUCCION,
 	PEDIDO_PCB
@@ -85,7 +97,6 @@ void destruirConfig(t_config *config);
 void liberarConexion(int conexion);
 
 
-
-
+t_paquete *crear_paquete(void);
 
 #endif

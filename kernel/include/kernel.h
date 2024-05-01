@@ -3,20 +3,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "../../utils/src/utils.h"
-#include "../include/registros.h"
-#include "../include/conexiones.h"
-#include "../../utils/include/serializacion.h"
+#include "../../utils/include/utils.h"
+#include "../../utils/include/registros.h"
+#include "../../utils/include/conexiones.h"
+//#include "../../utils/include/serializacion.h"
+//#include "../../utils/include/instrucciones.h"
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <semaphore.h>
 #include <pthread.h>
-// t_log *logger;
-
-// ENUMS
-
-
-
 typedef enum
 {
 	NEW,
@@ -75,8 +70,6 @@ typedef struct
 int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
-
-
 
 // DECLARACION VARIABLES GLOBALES
 

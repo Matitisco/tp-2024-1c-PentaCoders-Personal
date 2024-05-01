@@ -17,7 +17,7 @@ void iniciar_proceso()
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
 
-    mensaje_kernel_memoria codigo = recibir_cod(socket_memoria);
+    op_code codigo = recibir_cod(socket_memoria);
     if (codigo == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global);
@@ -50,8 +50,8 @@ t_cde *iniciar_cde()
 
     cde->registro = malloc(sizeof(t_registros));
     cde->registro = NULL;
-    cde->instrucciones = malloc(sizeof(t_instruccion));
-    cde->instrucciones->parametros = list_create();
+    cde->lista_instrucciones = malloc(sizeof(t_list));
+    cde->lista_instrucciones = list_create();
     return cde;
 }
 // DETENER PROCESO
@@ -61,7 +61,7 @@ void finalizar_proceso(uint32_t PID)
     t_pcb *proceso = buscarProceso(PID); // buscamos en las colas
     log_info(logger, "Se finalizo el proceso %u \n", PID);
 
-    mensaje_kernel_cpu otroCodigo = recibir_codigo(socket_memoria);
+    op_code otroCodigo = recibir_cod(socket_memoria);
     if (otroCodigo == FINALIZAR_PROCESO)
     {
         log_info(logger, "PID %u -Destruir pcb", proceso->cde->pid);
@@ -75,7 +75,6 @@ void finalizar_proceso(uint32_t PID)
         // log_info(logger, "Finalizar el proceso %u - Motivo: %s\n", PID, mostrarMotivo(motivoFinalizar));
     }
 }
-
 // INICIAR PLANIFICACION
 void iniciar_planificacion()
 {
@@ -151,7 +150,7 @@ void liberar_proceso(t_pcb *proceso)
 }
 void liberar_cde(t_pcb *proceso)
 {
-    free(proceso->cde->instrucciones);
+    free(proceso->cde->lista_instrucciones);
     free(proceso->cde->registro);
     free(proceso->cde);
     // free(proceso->cde->pc);
@@ -174,7 +173,19 @@ void liberar_archivos(t_pcb *proceso)
     //PREGUNTAR QUE HACE ESTA FUNCION RAWRA
 }
 */
+/*
+void enviar_cde(int conexion, t_cde *cde, int codOP) //----IMPLEMENTAR----
+{
+    t_paquete *paquete = crear_paquete_op_code(codOP);
 
+    agregar_cde_a_paquete(paquete, cde);
+
+    enviar_paquete(paquete, conexion);
+
+    eliminar_paquete(paquete);
+}*/
+
+/*
 void enviar_cde(t_cde *cde)
 {
     enviar_codigo(socket_cpu_dispatch, EJECUTAR_PROCESO); // Le pido si pueod iniciar el proceso
@@ -183,7 +194,7 @@ void enviar_cde(t_cde *cde)
     escribir_buffer(buffer, cde->pc);
     enviar_buffer(buffer, socket_cpu_dispatch);
     destruir_buffer(buffer);
-}
+}*/
 
 
 

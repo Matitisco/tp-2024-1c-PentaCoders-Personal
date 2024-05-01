@@ -1,5 +1,5 @@
 #include "../include/kernel.h"
-#include "../include/operaciones.h"
+//#include "../include/operaciones.h"
 
 // DEFINICION VARIABLES GLOBAL DE ESTADOS
 colaEstado *cola_new_global;

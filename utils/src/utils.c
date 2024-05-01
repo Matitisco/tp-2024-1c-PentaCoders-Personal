@@ -1,16 +1,4 @@
-#include <utils.h>
-
-// UTILS DE CLIENTE
-
-
-
-
-
-
-
-
-
-
+#include "../include/utils.h"
 
 void *serializar_paquete(t_paquete *paquete, int bytes)
 {
@@ -46,13 +34,13 @@ void enviar_mensaje(char *mensaje, int socket_cliente)
 	free(a_enviar);
 	eliminar_paquete(paquete);
 }
-
+/*
 void crear_buffer(t_paquete *paquete)
 {
 	paquete->buffer = malloc(sizeof(tipo_buffer));
 	paquete->buffer->size = 0;
 	paquete->buffer->stream = NULL;
-}
+}*/
 
 t_paquete *crear_paquete(void)
 {
@@ -154,7 +142,7 @@ t_list *recibir_paquete(int socket_cliente)
 	t_list *valores = list_create();
 	int tamanio;
 
-	buffer = recibir_buffer(&size, socket_cliente);
+	buffer = recibir_buffer_propio(socket_cliente);
 	while (desplazamiento < size)
 	{
 		memcpy(&tamanio, buffer + desplazamiento, sizeof(int));

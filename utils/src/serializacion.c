@@ -1,5 +1,8 @@
 #include "../include/serializacion.h"
 
+
+
+
 /*----------------------------------- CODIGO -----------------------------------*/
 
 // ENVIAR CODIGO
@@ -81,13 +84,13 @@ uint32_t leer_buffer_entero(tipo_buffer *buffer)
     return entero;
 }
 
-t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer)
+t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer) //falta poner las de 4 parametros
 {
     t_instruccion *instruccion = malloc(sizeof(t_instruccion));
     instruccion->parametros = list_create();
     uint8_t codigo;
 
-    instruccion->codigo = codigo = leer_buffer_uint8(buffer);
+    instruccion->codigo = codigo = leer_buffer_entero(buffer);
 
     switch (codigo)
     {
@@ -101,7 +104,7 @@ t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer)
     case COPY_STRING:
     case SIGNAL:
     case IO_GEN_SLEEP:
-        paramBufferALista(2, buffer);
+        paramBufferALista(instruccion, 2, buffer);
         break;
     case IO_STDIN_READ:
     case IO_STDOUT_WRITE:
@@ -109,13 +112,13 @@ t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer)
     case IO_FS_DELETE:
     case IO_FS_WRITE:
     case IO_FS_TRUNCATE:
-        paramBufferALista(3, buffer);
+        paramBufferALista(instruccion, 3, buffer);
         break;
     case IO_FS_READ:
-        paramBufferALista(5, buffer);
+        paramBufferALista(instruccion, 5, buffer);
         break;
     case EXIT:
-        paramBufferALista(0, buffer);
+        paramBufferALista(instruccion, 0, buffer);
         break;
     default:
         log_info(logger, "No se reconoce la instrucción");
@@ -125,10 +128,11 @@ t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer)
     return instruccion;
 }
 
-void paramBufferALista(int cantParam, tipo_buffer *buffer)
+void paramBufferALista(t_instruccion *instruccion, int cantParam, tipo_buffer *buffer)
 {
     char *parametro;
     size_t size;
+
 
     for (int i = 0; i < cantParam; i++)
     {
@@ -136,7 +140,20 @@ void paramBufferALista(int cantParam, tipo_buffer *buffer)
         list_add(instruccion->parametros, parametro);
     }
 }
+char *leer_buffer_string(tipo_buffer *buffer, uint32_t *tam)
+{
+    (*tam) = leer_buffer_entero(buffer);
+    char *cadena = malloc((*tam) + 1);
 
+    memcpy(cadena, buffer->stream + buffer->offset, (*tam));
+    buffer->offset += (*tam);
+
+    *(cadena + (*tam)) = '\0';
+
+    return cadena;
+}
+
+/*
 t_registros *leer_buffer_registros(tipo_buffer *buffer)
 {
     t_registros *reg = malloc(sizeof(t_registros));
@@ -154,18 +171,7 @@ t_registros *leer_buffer_registros(tipo_buffer *buffer)
 
     return reg;
 }
-char *leer_buffer_string(tipo_buffer *buffer, uint32_t *tam)
-{
-    (*tam) = leer_buffer_uint32(buffer);
-    char *cadena = malloc((*tam) + 1);
 
-    memcpy(cadena, buffer->stream + buffer->offset, (*tam));
-    buffer->offset += (*tam);
-
-    *(cadena + (*tam)) = '\0';
-
-    return cadena;
-}
 
 void *leer_buffer_pagina(tipo_buffer *buffer, uint32_t tamPagina) // PARA MEMORIA
 {
@@ -182,3 +188,4 @@ void *leer_buffer_pagina(tipo_buffer *buffer, uint32_t tamPagina) // PARA MEMORI
 
     return paginaLeida;
 }
+*/

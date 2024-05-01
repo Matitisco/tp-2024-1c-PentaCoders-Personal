@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "../../utils/src/utils.h"
+#include "utils.h"
 #include <stdint.h>
 
 typedef enum

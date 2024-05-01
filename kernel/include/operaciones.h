@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include "kernel.h"
 #include "../include/cortoPlazo.h"
-#include "../include/serializacion.h"
-
 /* typedef enum motivoFinalizar{
     SUCCESS,
     INVALID_RESOURCE,

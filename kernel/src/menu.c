@@ -26,7 +26,7 @@ void mostrar_operaciones_realizables()
 
 void ejecutar_operacion(char *opcion, t_log *logger)
 {
-    codigoOp cod_op = obtenerCodigo(opcion, logger);
+    op_code cod_op = obtenerCodigo(opcion, logger);
     switch (cod_op)
     {
     case EJECUTAR_SCRIPT:
@@ -61,7 +61,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
     }
 }
 
-codigoOp obtenerCodigo(char *opcion, t_log *logger)
+op_code obtenerCodigo(char *opcion, t_log *logger)
 {
     if (strcmp(opcion, "1") == 0)
     {
