@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "kernel.h"
 #include "../include/cortoPlazo.h"
+#include "../include/serializacion.h"
 
 /* typedef enum motivoFinalizar{
     SUCCESS,
@@ -20,7 +21,7 @@ void detener_planificacion();
 void listar_procesos_x_estado();
 
 /*Funciones de busuqeda del proceso*/
-t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
+
 
 
 t_pcb *buscarProceso(uint32_t pid);
@@ -35,5 +36,7 @@ void liberar_proceso(t_pcb *proceso);
 void liberar_cde(t_pcb *proceso);
 void liberar_recursos(t_pcb *proceso);
 void liberar_archivos(t_pcb *proceso);
+
+t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
 
 #endif

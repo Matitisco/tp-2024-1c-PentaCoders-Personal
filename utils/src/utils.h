@@ -15,26 +15,30 @@
 #include <sys/socket.h>
 #include <commons/collections/list.h>
 #include <assert.h>
+#include "../include/serializacion.h"
 #include "../include/sockets.h"
 
 // CLIENTE
 
 typedef enum
 {
-	MENSAJE,
-	PAQUETE
+	MENSAJE, 
+	PAQUETE,
+	SOLICITUD_INICIAR_PROCESO,
+	INICIAR_PROCESO_CORRECTO,
+	INICIAR_PROCESO_ERROR,
+	SOLICITUD_FINALIZAR_PROCESO,
+	FINALIZAR_PROCESO,
+	ERROR_FINALIZAR_PROCESO,
+	PEDIDO_INSTRUCCION,
+	PEDIDO_PCB
 } op_code;
 
-typedef struct
-{
-	int size;
-	void *stream;
-} t_buffer;
 
 typedef struct
 {
 	op_code codigo_operacion;
-	t_buffer *buffer;
+	tipo_buffer *buffer;
 } t_paquete;
 
 typedef enum {
@@ -43,22 +47,6 @@ typedef enum {
 	DESALOJO,
 	CDE,
 }mensaje_kernel_cpu;
-
-typedef enum {
-
-	PEDIDO_INSTRUCCION
-
-}mensaje_cpu_memoria;
-
-typedef enum {
-	SOLICITUD_INICIAR_PROCESO,
-	INICIAR_PROCESO_CORRECTO,
-	INICIAR_PROCESO_ERROR,
-	SOLICITUD_FINALIZAR_PROCESO,
-	FINALIZAR_PROCESO,
-	ERROR_FINALIZAR_PROCESO
-
-}mensaje_kernel_memoria;
 
 
 
@@ -72,6 +60,7 @@ void eliminar_paquete(t_paquete *paquete);
 // SERVIDOR
 
 extern t_log *logger;
+
 
 void *recibir_buffer(int *, int);
 
@@ -94,5 +83,9 @@ void destruirLog(t_log *logger);
 void destruirConfig(t_config *config);
 
 void liberarConexion(int conexion);
+
+
+
+
 
 #endif

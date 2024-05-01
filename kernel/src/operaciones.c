@@ -9,25 +9,26 @@ void ejecutar_script()
 // VER TEMA DEL PATH QUE NO ESTA DEL TODO CLARO
 void iniciar_proceso()
 {
-    t_pcb *proceso = crear_proceso();//Creo nuestro nuevo proceso
-    enviar_codigo(socket_memoria, SOLICITUD_INICIAR_PROCESO);//Le pido si pueod iniciar el proceso
-    t_buffer*buffer= crear_buffer();
-    escribir_buffer(buffer,proceso->cde->pid);
-    enviar_buffer(buffer,socket_memoria);
+    t_pcb *proceso = crear_proceso();                           // Creo nuestro nuevo proceso
+    enviar_cod_enum(socket_memoria, SOLICITUD_INICIAR_PROCESO); // Le pido si puedo iniciar el proceso
+    // Envia buffer a memoria despues de que recibio el OpCode
+    tipo_buffer *buffer = crear_buffer();
+    escribir_buffer(buffer, proceso->cde->pid);
+    enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
-    mensaje_kernel_memoria codigo = recibir_codigo(socket_memoria);
-    if(codigo == INICIAR_PROCESO_CORRECTO){
-    agregar_a_estado(proceso, cola_new_global);
-    //Aca ella agrega semaforos pero creo que nosotros al tener la cola sincronizada nos lo evitamos
-    log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso)); //se muestra el logger
 
-    }else if(codigo == INICIAR_PROCESO_ERROR){
-        log_info(logger, "No se pudo crear el proceso %u", proceso->cde->pid); //se muestra que no se pudo
+    mensaje_kernel_memoria codigo = recibir_cod(socket_memoria);
+    if (codigo == INICIAR_PROCESO_CORRECTO)
+    {
+        agregar_a_estado(proceso, cola_new_global);
+        // Aca ella agrega semaforos pero creo que nosotros al tener la cola sincronizada nos lo evitamos
+        log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso)); // se muestra el logger
     }
-
-
+    else if (codigo == INICIAR_PROCESO_ERROR)
+    {
+        log_info(logger, "No se pudo crear el proceso %u", proceso->cde->pid); // se muestra que no se pudo
+    }
 }
-
 t_pcb *crear_proceso()
 {
     t_pcb *proceso_nuevo = malloc(sizeof(t_pcb)); // reservamos memoria para el proceso           // por ahora en 0;
@@ -57,21 +58,21 @@ t_cde *iniciar_cde()
 void finalizar_proceso(uint32_t PID)
 {
 
-    t_pcb *proceso = buscarProceso(PID); //buscamos en las colas 
+    t_pcb *proceso = buscarProceso(PID); // buscamos en las colas
     log_info(logger, "Se finalizo el proceso %u \n", PID);
-    
-
 
     mensaje_kernel_cpu otroCodigo = recibir_codigo(socket_memoria);
-    if(otroCodigo == FINALIZAR_PROCESO)
+    if (otroCodigo == FINALIZAR_PROCESO)
     {
-        log_info(logger,"PID %u -Destruir pcb", proceso->cde->pid);
-       
-    agregar_a_estado(proceso, cola_exit_global);//moverlo a la cola de exit 
-    liberar_proceso(proceso);
-    }else if (otroCodigo == ERROR_FINALIZAR_PROCESO){
-           // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
-    // log_info(logger, "Finalizar el proceso %u - Motivo: %s\n", PID, mostrarMotivo(motivoFinalizar));
+        log_info(logger, "PID %u -Destruir pcb", proceso->cde->pid);
+
+        agregar_a_estado(proceso, cola_exit_global); // moverlo a la cola de exit
+        liberar_proceso(proceso);
+    }
+    else if (otroCodigo == ERROR_FINALIZAR_PROCESO)
+    {
+        // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
+        // log_info(logger, "Finalizar el proceso %u - Motivo: %s\n", PID, mostrarMotivo(motivoFinalizar));
     }
 }
 
@@ -121,6 +122,71 @@ t_pcb *buscarProceso(uint32_t pid)
 
     return pcb_buscada;
 }
+
+
+// FUNCION MOSTRAR MOTIVO
+/* char *mostrarMotivo(enum motivoFinalizar motivo)
+{
+    if (motivo == SUCCESS)
+    {
+        return "SUCCESS";
+    }
+    else if (motivo == INVALID_RESOURCE)
+    {
+        return "INVALID_RESOURCE";
+    }
+    else if (motivo == INVALID_WRITE)
+    {
+        return "INVALID_WRITE";
+    }
+} */
+
+// FUNCION DE LIBERACIONES
+void liberar_proceso(t_pcb *proceso)
+{
+    liberar_cde(proceso);
+    liberar_recursos(proceso);
+    liberar_archivos(proceso);
+    // liberar_memoria(proceso); CONSULTAR QUE HACE
+}
+void liberar_cde(t_pcb *proceso)
+{
+    free(proceso->cde->instrucciones);
+    free(proceso->cde->registro);
+    free(proceso->cde);
+    // free(proceso->cde->pc);
+    // free(proceso->cde->pid);
+    // list_destroy(proceso->cde->instrucciones->parametros);
+    // free(proceso->cde->registro);
+    //  free(proceso->cde->instrucciones->codigo);
+}
+
+void liberar_recursos(t_pcb *proceso)
+{
+    list_destroy(proceso->recursosAsignados);
+}
+void liberar_archivos(t_pcb *proceso)
+{
+    free(proceso->archivosAsignados);
+}
+/*void liberar_memoria(t_pcb *proceso)
+{
+    //PREGUNTAR QUE HACE ESTA FUNCION RAWRA
+}
+*/
+
+void enviar_cde(t_cde *cde)
+{
+    enviar_codigo(socket_cpu_dispatch, EJECUTAR_PROCESO); // Le pido si pueod iniciar el proceso
+    tipo_buffer *buffer = crear_buffer();
+    escribir_buffer(buffer, cde->pid);
+    escribir_buffer(buffer, cde->pc);
+    enviar_buffer(buffer, socket_cpu_dispatch);
+    destruir_buffer(buffer);
+}
+
+
+
 
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
@@ -179,65 +245,4 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
     }
 
     return pcb_buscada;
-}
-
-// FUNCION MOSTRAR MOTIVO
-/* char *mostrarMotivo(enum motivoFinalizar motivo)
-{
-    if (motivo == SUCCESS)
-    {
-        return "SUCCESS";
-    }
-    else if (motivo == INVALID_RESOURCE)
-    {
-        return "INVALID_RESOURCE";
-    }
-    else if (motivo == INVALID_WRITE)
-    {
-        return "INVALID_WRITE";
-    }
-} */
-
-// FUNCION DE LIBERACIONES
-void liberar_proceso(t_pcb *proceso)
-{
-    liberar_cde(proceso);
-    liberar_recursos(proceso);
-    liberar_archivos(proceso);
-    // liberar_memoria(proceso); CONSULTAR QUE HACE
-}
-void liberar_cde(t_pcb *proceso)
-{
-    free(proceso->cde->instrucciones);
-    free(proceso->cde->registro);
-    free(proceso->cde);
-    // free(proceso->cde->pc);
-    // free(proceso->cde->pid);
-    // list_destroy(proceso->cde->instrucciones->parametros);
-    // free(proceso->cde->registro);
-    //  free(proceso->cde->instrucciones->codigo);
-}
-
-void liberar_recursos(t_pcb *proceso)
-{
-    list_destroy(proceso->recursosAsignados);
-}
-void liberar_archivos(t_pcb *proceso)
-{
-    free(proceso->archivosAsignados);
-}
-/*void liberar_memoria(t_pcb *proceso)
-{
-    //PREGUNTAR QUE HACE ESTA FUNCION RAWRA
-}
-*/
-
-void enviar_cde(t_cde*cde){
-    enviar_codigo(socket_cpu_dispatch, EJECUTAR_PROCESO);//Le pido si pueod iniciar el proceso
-    t_buffer*buffer= crear_buffer();
-    escribir_buffer(buffer,cde->pid);
-    escribir_buffer(buffer, cde->pc);
-    enviar_buffer(buffer,socket_cpu_dispatch);
-    destruir_buffer(buffer);
-
 }

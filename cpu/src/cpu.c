@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 }
 void recibir_cde(){
 	mensaje_kernel_cpu codigo= recibir_codigo(socket_kernel_dispatch);
-	t_buffer*buffer = recibir_buffer(socket_kernel_dispatch);
+	tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch);
 	if(codigo == EJECUTAR_PROCESO){
 		ejecutarproceso();
 	}
@@ -40,7 +40,7 @@ void pedirInstruccionAMemoria()
 	envio_buffer(buffer, socket_memoria);
 	cde->pc++; // actualizo el contexto de ejercicion
 	destroy_buffer(buffer);
-	t_buffer *otro_buffer= recibir_buffer(socket_memoria);
+	tipo_buffer *otro_buffer= recibir_buffer(socket_memoria);
 	//t_instrucion *instruccion_a_ejecutar = leer_buffer(otro_buffer); Falta implementar al funcion leer_buffer
 	//destruir_buffer(buffer);
 	

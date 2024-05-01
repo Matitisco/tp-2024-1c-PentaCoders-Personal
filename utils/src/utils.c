@@ -2,6 +2,16 @@
 
 // UTILS DE CLIENTE
 
+
+
+
+
+
+
+
+
+
+
 void *serializar_paquete(t_paquete *paquete, int bytes)
 {
 	void *magic = malloc(bytes);
@@ -22,7 +32,7 @@ void enviar_mensaje(char *mensaje, int socket_cliente)
 	t_paquete *paquete = malloc(sizeof(t_paquete));
 
 	paquete->codigo_operacion = MENSAJE;
-	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer = malloc(sizeof(tipo_buffer));
 	paquete->buffer->size = strlen(mensaje) + 1;
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
@@ -39,7 +49,7 @@ void enviar_mensaje(char *mensaje, int socket_cliente)
 
 void crear_buffer(t_paquete *paquete)
 {
-	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer = malloc(sizeof(tipo_buffer));
 	paquete->buffer->size = 0;
 	paquete->buffer->stream = NULL;
 }
@@ -93,8 +103,8 @@ int recibir_operacion(int socket_cliente)
 		return -1;
 	}
 }
-
-void *recibir_buffer(int *size, int socket_cliente)
+// lo reemplazamos por el nuestro
+/* void *recibir_buffer(int *size, int socket_cliente)
 {
 	void *buffer;
 
@@ -103,12 +113,35 @@ void *recibir_buffer(int *size, int socket_cliente)
 	recv(socket_cliente, buffer, *size, MSG_WAITALL);
 
 	return buffer;
+} */
+tipo_buffer *recibir_buffer_propio(int socket)
+{
+    tipo_buffer *buffer = crear_buffer();
+    if (buffer == NULL)
+    {
+        // Manejar error de creación de buffer
+        return NULL;
+    }
+    // Recibo el tamaño del buffer y reservo espacio en memoria
+    recv(socket, &(buffer->size), sizeof(uint32_t), MSG_WAITALL);
+    if (buffer->size > 0)
+    {
+        buffer->stream = malloc(buffer->size);
+        if (buffer->stream == NULL)
+        {
+            // Manejar error de malloc
+            destruir_buffer(buffer);
+            return NULL;
+        }
+        // Recibo stream del buffer
+        recv(socket, buffer->stream, buffer->size, MSG_WAITALL);
+    }
+    return buffer;
 }
 
 void recibir_mensaje(int socket_cliente)
 {
-	int size;
-	char *buffer = recibir_buffer(&size, socket_cliente);
+	tipo_buffer *buffer = recibir_buffer_propio(socket_cliente);
 	log_info(logger, "Me llego el mensaje %s", buffer);
 	free(buffer);
 }
@@ -117,7 +150,7 @@ t_list *recibir_paquete(int socket_cliente)
 {
 	int size;
 	int desplazamiento = 0;
-	void *buffer;
+	tipo_buffer *buffer;
 	t_list *valores = list_create();
 	int tamanio;
 
