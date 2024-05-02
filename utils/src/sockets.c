@@ -59,6 +59,20 @@ int esperar_cliente(t_log* logger, const char* name, int socket_servidor) {
     return socket_cliente;
 }
 
+/*
+int esperar_cliente(int socket_servidor,t_log* logger, t_config* config)
+{
+	// Quitar esta línea cuando hayamos terminado de implementar la funcion
+	//assert(!"no implementado!");
+
+	// Aceptamos un nuevo cliente
+	int socket_cliente;
+	socket_cliente = accept(socket_servidor, NULL, NULL);
+	log_info(logger, "Se conecto un cliente: %d", socket_cliente);
+	return socket_cliente;
+}
+*/
+
 // CLIENTE SE INTENTA CONECTAR A SERVER ESCUCHANDO EN IP:PUERTO
 int crear_conexion(t_log* logger, const char* server_name, char* ip, char* puerto) {
     struct addrinfo hints, *servinfo;

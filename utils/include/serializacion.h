@@ -12,7 +12,13 @@
 // FUNCIONES DEL BUFFER
 tipo_buffer *crear_buffer();
 void destruir_buffer(tipo_buffer *unBuffer);
-void escribir_buffer(tipo_buffer *buffer, uint8_t entero);
+
+
+void escribir_buffer_entero(tipo_buffer *buffer, uint8_t entero);
+void escribir_buffer_string(tipo_buffer* buffer, char* cadena);
+
+
+
 void enviar_buffer(tipo_buffer *buffer, int socket);
 
 uint32_t leer_buffer_entero(tipo_buffer *buffer);
@@ -24,7 +30,7 @@ void *leer_buffer_pagina(tipo_buffer *buffer, uint32_t tamPagina);
 // FUNCIONES DE COD OP
 void enviar_cod_enum(int socket_servidor, uint32_t cod);
 uint32_t recibir_cod(int socket_cliente);
-
+int recibir_operacion(int socket_cliente);
 tipo_buffer *recibir_buffer_propio(int socket);
 
 // void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde);

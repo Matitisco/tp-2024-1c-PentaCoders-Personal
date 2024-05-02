@@ -40,7 +40,6 @@ void iterator(char *value)
 int levantarCliente(t_log *logger, char *nombreDelServidor, char *ip, char *puerto, char *mensaje)
 {
     int unaConexion = crear_conexion(logger, nombreDelServidor, ip, puerto);
-    enviar_mensaje(mensaje, unaConexion);
-
+    //enviar_mensaje(mensaje, unaConexion);
     return unaConexion;
 }

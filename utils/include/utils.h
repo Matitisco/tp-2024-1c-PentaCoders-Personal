@@ -16,9 +16,6 @@
 #include <commons/collections/list.h>
 #include <assert.h>
 #include "sockets.h"
-
-// CLIENTE
-
 typedef struct
 {
     uint32_t size;

@@ -34,13 +34,6 @@ void enviar_mensaje(char *mensaje, int socket_cliente)
 	free(a_enviar);
 	eliminar_paquete(paquete);
 }
-/*
-void crear_buffer(t_paquete *paquete)
-{
-	paquete->buffer = malloc(sizeof(tipo_buffer));
-	paquete->buffer->size = 0;
-	paquete->buffer->stream = NULL;
-}*/
 
 t_paquete *crear_paquete(void)
 {
@@ -78,55 +71,32 @@ void eliminar_paquete(t_paquete *paquete)
 }
 
 // UTILS DE SERVIDOR
-// t_log *logger;
-
-int recibir_operacion(int socket_cliente)
-{
-	int cod_op;
-	if (recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) > 0)
-		return cod_op;
-	else
-	{
-		close(socket_cliente);
-		return -1;
-	}
-}
-// lo reemplazamos por el nuestro
-/* void *recibir_buffer(int *size, int socket_cliente)
-{
-	void *buffer;
-
-	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
-	buffer = malloc(*size);
-	recv(socket_cliente, buffer, *size, MSG_WAITALL);
-
-	return buffer;
-} */
+/*
 tipo_buffer *recibir_buffer_propio(int socket)
 {
-    tipo_buffer *buffer = crear_buffer();
-    if (buffer == NULL)
-    {
-        // Manejar error de creación de buffer
-        return NULL;
-    }
-    // Recibo el tamaño del buffer y reservo espacio en memoria
-    recv(socket, &(buffer->size), sizeof(uint32_t), MSG_WAITALL);
-    if (buffer->size > 0)
-    {
-        buffer->stream = malloc(buffer->size);
-        if (buffer->stream == NULL)
-        {
-            // Manejar error de malloc
-            destruir_buffer(buffer);
-            return NULL;
-        }
-        // Recibo stream del buffer
-        recv(socket, buffer->stream, buffer->size, MSG_WAITALL);
-    }
-    return buffer;
+	tipo_buffer *buffer = crear_buffer();
+	if (buffer == NULL)
+	{
+		// Manejar error de creación de buffer
+		return NULL;
+	}
+	// Recibo el tamaño del buffer y reservo espacio en memoria
+	recv(socket, &(buffer->size), sizeof(uint32_t), MSG_WAITALL);
+	if (buffer->size > 0)
+	{
+		buffer->stream = malloc(buffer->size);
+		if (buffer->stream == NULL)
+		{
+			// Manejar error de malloc
+			destruir_buffer(buffer);
+			return NULL;
+		}
+		// Recibo stream del buffer
+		recv(socket, buffer->stream, buffer->size, MSG_WAITALL);
+	}
+	return buffer;
 }
-
+*/
 void recibir_mensaje(int socket_cliente)
 {
 	tipo_buffer *buffer = recibir_buffer_propio(socket_cliente);
@@ -225,4 +195,3 @@ void paquete(int conexion)
 	enviar_paquete(paquete, conexion);
 	eliminar_paquete(paquete);
 }
-

@@ -26,6 +26,7 @@ typedef struct
     uint32_t pc;
     t_registros *registro;
     t_list *lista_instrucciones;
+    char* path;
 
 } t_cde;
 
