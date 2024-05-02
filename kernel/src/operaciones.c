@@ -1,6 +1,8 @@
 /* #include "../include/operaciones.h"
 
 uint32_t PID_GLOBAL = 0;
+int socket_memoria;
+
 // EJECUTAR SCRIPT
 void ejecutar_script()
 {

@@ -2,9 +2,17 @@
 #define OPERACIONES_H_
 
 #include <stdint.h>
+<<<<<<< HEAD
+#include "kernel.h"
+#include "../include/cortoPlazo.h"
+#include "../../utils/include/serializacion.h"
+
+/* typedef enum motivoFinalizar{
+=======
 #include "../include/kernel.h"
 // #include "cortoPlazo.h"
 typedef enum motivoFinalizar{
+>>>>>>> refs/remotes/origin/main
     SUCCESS,
     INVALID_RESOURCE,
     INVALID_WRITE
@@ -38,4 +46,9 @@ void liberar_archivos(t_pcb *proceso);
 
 
 
+<<<<<<< HEAD
+
+#endif
+=======
 #endif */
+>>>>>>> refs/remotes/origin/main

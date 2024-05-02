@@ -8,6 +8,14 @@
 #include <semaphore.h>
 #include <pthread.h>
 
+<<<<<<< HEAD
+//#include "cortoPlazo.h"
+//#include "menu.h"
+//#include "operaciones.h"
+
+
+
+=======
 #include "../../utils/include/utils.h"
 #include "../../utils/include/registros.h"
 #include "../../utils/include/conexiones.h"
@@ -17,6 +25,7 @@
 // VARIABLES
 
 // ENUMS
+>>>>>>> refs/remotes/origin/main
 typedef enum
 {
 	NEW,
@@ -64,6 +73,13 @@ typedef struct
 	pthread_mutex_t *mutex_estado;
 
 } colaEstado;
+<<<<<<< HEAD
+
+extern int socket_memoria;
+extern int socket_cpu_dispatch;
+extern int socket_cpu_interrupt;
+=======
+>>>>>>> refs/remotes/origin/main
 
 // DECLARACION VARIABLES GLOBALES
 

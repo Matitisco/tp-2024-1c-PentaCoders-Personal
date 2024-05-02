@@ -3,12 +3,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <utils.h>
-#include "../../utils/src/utils.h"
-#include "../../utils/src/sockets.c"
-#include "../include/conexiones.h"
+#include "../../utils/include/sockets.h"
+#include "../../utils/include/utils.h"
+#include "../../utils/include/conexiones.h"
 
-t_log *logger;
+extern t_log *logger;
 int conexion_kernel,conexion_memoria_desde_IO;
 int socket_memoria;
 int socket_kernel;

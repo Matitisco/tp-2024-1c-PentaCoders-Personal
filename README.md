@@ -23,6 +23,15 @@ archivo `makefile`. Para compilar un módulo, es necesario ejecutar el comando
 
 El ejecutable resultante se guardará en la carpeta `bin` del módulo.
 
+Para ejecutar el los modulos hay dos comandos basicos, hay que moverse ala carpeta del modulo especifico que contiene el makefile:
+```bash
+# para compilar el modulo
+make
+# para limpiar los objetos y ejecutable
+make clean
+
+```
+
 ## Importar desde Visual Studio Code
 
 Para importar el workspace, debemos abrir el archivo `tp.code-workspace` desde
