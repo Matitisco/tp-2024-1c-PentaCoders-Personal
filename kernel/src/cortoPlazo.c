@@ -1,4 +1,4 @@
-/* #include "../include/cortoPlazo.h"
+#include "../include/cortoPlazo.h"
 /*
 TRANSICIONES CORTO PLAZO
 
@@ -32,7 +32,7 @@ el siguiente proceso a ejecutar según indique el algoritmo. Durante este perío
 // PASAR A KERNEL. H PARA QUE LO UTILICE LARGO PLAZO
 
 // MUTEX -
-/*
+
 pthread_mutex_t *mutex_pcb_ejecutando;
 pthread_mutex_t *mutex_estado_ejecutando;
 
@@ -64,10 +64,9 @@ void ready_a_execute(colaEstado *cola_ready)
 
         log_info(logger, "Se agrego un proceso %d  a Execute desde Ready\n", pcb->cde->pid);
     }
-}*/
+}
 
 // OBTENER SIGUIENTE PROCESO
-/*
 t_pcb *obtener_siguiente_ready(colaEstado *cola_ready)
 {
     pthread_mutex_lock(cola_ready->mutex_estado); // mutex para estado ready y controlar la condicion de carrera
@@ -88,7 +87,7 @@ void simular_ejecucion_proceso(t_pcb *proceso)
     // enviar_cde(conexion_cpu, cde, CE); // ENVIO PROCESO A PUERTO DISPATCH
 
     // semaforo de iniciar ejecucion
-    while (QUANTUM > 0)
+/*     while (QUANTUM > 0)
     {
         if (proceso_completado())
         {
@@ -102,7 +101,7 @@ void simular_ejecucion_proceso(t_pcb *proceso)
         {
             break;
         }
-    }
+    } */
 }
 
 t_cde *obtener_cde(t_pcb *proceso)
@@ -141,10 +140,10 @@ void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde)
 
     // agregar_tabla_segmentos_a_paquete(paquete, ce->tabla_segmentos);  //----IMPLEMENTAR----
     //  log_trace(logger, "agrego tabla de segmentos");
-}*/
+}
 
 // serializaciones
-/*
+
 void agregar_lista_instrucciones_a_paquete(t_paquete *paquete, t_list *instrucciones)
 {
 
@@ -198,6 +197,5 @@ t_paquete *crear_paquete_op_code(int codOP)
     // IMPLEMENTAR
     t_paquete *paqueteEjemplo = crear_paquete();
     return paqueteEjemplo;
-}*/
+}
 // AGREGADOS A COLAS DE ESTADOS CON SEMAFOROS
- 

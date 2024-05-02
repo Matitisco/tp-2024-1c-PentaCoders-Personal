@@ -1,4 +1,4 @@
-/* #ifndef CORTOPLAZO_H_
+#ifndef CORTOPLAZO_H_
 #define CORTOPLAZO_H_
 #include <unistd.h>
 #include "../include/kernel.h"
@@ -19,4 +19,4 @@ void agregar_a_estado(t_pcb *pcb,colaEstado *cola_estado);
 void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde);
 
 
-#endif */
+#endif
