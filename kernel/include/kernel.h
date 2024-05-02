@@ -22,7 +22,7 @@
 
 // VARIABLES
 extern uint32_t PID_GLOBAL;
-
+extern t_log* logger;
 // ENUMSs
 typedef enum
 {
