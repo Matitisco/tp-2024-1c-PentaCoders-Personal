@@ -9,22 +9,27 @@ int main(int argc, char *argv[])
 
 	//CPU como server de KERNEL
 	//levantarServidor(logger, valores_config->puerto_escucha_dispatch, valores_config->ip_kernel, "SERVIDOR CPU DISPATCH");
-	levantarServidor(logger, valores_config->puerto_escucha_interrupt,valores_config->ip_kernel, "SERVIDOR CPU INTERRUPT");
+	//levantarServidor(logger, valores_config->puerto_escucha_interrupt,valores_config->ip_kernel, "SERVIDOR CPU INTERRUPT");
+
+
 	servidorDeKernel(valores_config);
 
-	//levantarCliente(CONEXION_A_MEMORIA, logger, "SERVIDOR  MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "CPU SE CONECTO A MEMORIA");
+	levantarCliente(logger, "SERVIDOR  MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "CPU SE CONECTO A MEMORIA");
+	
 
 	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config->config);
 }
 
 void servidorDeKernel(struct config_cpu *valores_config){
-	//int socket_servidor_dispatch = iniciar_servidor(logger,"SERVIDOR CPU DISPATCH",valores_config->ip_kernel,valores_config->puerto_escucha_dispatch);
-    //int socket_servidor_interrupt = iniciar_servidor(logger,"SERVIDOR CPU INTERRUPT",valores_config->ip_kernel,valores_config->puerto_escucha_interrupt);
+	int socket_servidor_dispatch = iniciar_servidor(logger,"SERVIDOR CPU DISPATCH",valores_config->ip_kernel,valores_config->puerto_escucha_dispatch);
+	log_info(logger, "Servidor: %s listo para recibir al cliente", "SERVIDOR CPU DISPATCH");
+    int cliente_fd = esperar_cliente(logger, "SERVIDOR CPU DISPATCH", socket_servidor_dispatch);//espero a que se conecte kernel
 	
-	//dispatchProceso(socket_servidor_dispatch);
+	//int socket_servidor_interrupt = iniciar_servidor(logger,"SERVIDOR CPU INTERRUPT",valores_config->ip_kernel,valores_config->puerto_escucha_interrupt);
+	proceso_dispatch(socket_servidor_dispatch); 
 }
 
-void dispatchProceso(void* socket_server){
+void proceso_dispatch(void* socket_server){
 
     int socket_servidor_dispatch = (int) (intptr_t) socket_server;
     
@@ -33,22 +38,23 @@ void dispatchProceso(void* socket_server){
     log_info(logger, "Se conecto el Kernel por DISPATCH");
     
     while(1){
+
         mensaje_kernel_cpu op_code = recibir_cod(socket_kernel_dispatch);
 
-        //tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch);
+        tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch);
 
         switch(op_code){
             case EJECUTAR_PROCESO:
-			/*
-                t_cde* cde_recibido = buffer_read_cde(buffer);
-                destruir_buffer_nuestro(buffer);
+			
+                t_cde* cde_recibido = recibir_buffer_propio(buffer);
+                liberar_buffer(buffer);
 
                 pthread_mutex_lock(&mutex_cde_ejecutando);
-                pid_de_cde_ejecutando = cde_recibido->pid;
+                pid_ejecutar = cde_recibido->pid;
                 pthread_mutex_unlock(&mutex_cde_ejecutando);
                 
-                ejecutar_proceso(cde_recibido);
-			*/
+                solicitar_instruccion(cde_recibido);
+			
                 break;
             default:
                 //destruir_buffer_nuestro(buffer);
@@ -59,6 +65,7 @@ void dispatchProceso(void* socket_server){
         }
     }
 }
+
 /*
 
     EJECUTAR_PROCESO,
@@ -85,12 +92,19 @@ struct config_cpu *config_cpu()
 	return valores_config;
 }
 
+//Borrar? Usamos dispatchProceso
 void recibir_cde(){
 	mensaje_kernel_cpu codigo= recibir_cod(socket_kernel_dispatch);
 	tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch);
 	if(codigo == EJECUTAR_PROCESO){
 		ejecutar_proceso();
 	}
+}
+
+void solicitar_instruccion(){
+	//Pedimos a memoria instruccion
+	//ejecutamos proceso
+	//ejecutar_proceso();
 }
 
 void ejecutar_proceso(){

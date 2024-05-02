@@ -127,6 +127,12 @@ tipo_buffer *recibir_buffer_propio(int socket)
     return buffer;
 }
 
+void liberar_buffer(tipo_buffer* buffer){
+	free(buffer->stream);
+	free(buffer);
+	return;
+}
+
 void recibir_mensaje(int socket_cliente)
 {
 	tipo_buffer *buffer = recibir_buffer_propio(socket_cliente);

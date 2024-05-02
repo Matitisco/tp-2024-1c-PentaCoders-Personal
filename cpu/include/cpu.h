@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sockets.c>
+#include <pthread.h>
 
 #include "../../utils/include/sockets.h"
 #include "../../utils/include/utils.h"
@@ -20,6 +21,12 @@ int CONEXION_A_MEMORIA;
 int socket_memoria;
 int socket_kernel_dispatch;
 int socket_kernel_interrupt;
+
+//Variable Global
+uint32_t pid_ejecutar;
+
+//Semaforos
+pthread_mutex_t mutex_cde_ejecutando;
 
 struct config_cpu
 {
@@ -41,6 +48,7 @@ struct config_cpu *config_cpu();
 void ejecutarCicloInstruccion(int instruccion, uint32_t PC);
 void tipoInstruccion(int instruccion);
 void servidorDeKernel(struct config_cpu *valores_config);
-void dispatchProceso(void* socket_server);
+void proceso_dispatch(void* socket_server);
 void ejecutar_proceso();
+void solicitar_instruccion();
 #endif
