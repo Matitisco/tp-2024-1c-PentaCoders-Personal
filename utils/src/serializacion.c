@@ -1,8 +1,5 @@
 #include "../include/serializacion.h"
 
-
-
-
 /*----------------------------------- CODIGO -----------------------------------*/
 
 // ENVIAR CODIGO
@@ -71,8 +68,6 @@ void enviar_buffer(tipo_buffer *buffer, int socket)
 }
 // RECIBIR BUFFER
 
-
-
 // LEER BUFFER
 uint32_t leer_buffer_entero(tipo_buffer *buffer)
 {
@@ -84,7 +79,7 @@ uint32_t leer_buffer_entero(tipo_buffer *buffer)
     return entero;
 }
 
-t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer) //falta poner las de 4 parametros
+t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer) // falta poner las de 4 parametros
 {
     t_instruccion *instruccion = malloc(sizeof(t_instruccion));
     instruccion->parametros = list_create();
@@ -132,7 +127,6 @@ void paramBufferALista(t_instruccion *instruccion, int cantParam, tipo_buffer *b
 {
     char *parametro;
     size_t size;
-
 
     for (int i = 0; i < cantParam; i++)
     {

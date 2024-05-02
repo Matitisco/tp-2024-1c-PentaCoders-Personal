@@ -3,10 +3,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "utils.h"
-#include "../../utils/include/instrucciones.h"
 #include <stdint.h>
-
+#include "instrucciones.h"
+#include "utils.h"
 typedef struct
 {
     // uint32_t PC;
@@ -29,7 +28,5 @@ typedef struct
     t_list *lista_instrucciones;
 
 } t_cde;
-
-
 
 #endif
