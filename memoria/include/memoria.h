@@ -6,6 +6,7 @@
 #include "../include/conexiones.h"
 #include "../../utils/include/utils.h"
 #include <stdint.h>
+#include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
 #include <semaphore.h>
 #include <pthread.h>
@@ -38,7 +39,7 @@ t_args* crearArgumento(char *puerto, char *ip);
 void crearHilos(t_args *args_CPU, t_args *args_IO, t_args *args_KERNEL);
 struct config_memoria *config_memoria();
 void *recibirCPU(void* ptr);
-void *recibirKernel(void* ptr);
+void *recibirKernel(void *ptr);
 void *recibirIO(void* ptr);
 
 #endif

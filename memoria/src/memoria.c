@@ -1,5 +1,5 @@
 #include "../include/memoria.h"
-
+// CRAER HILOS COMO VARIABLES GLOBALES
 pthread_t hiloCpu;
 pthread_t hiloKernel;
 pthread_t hiloIO;
@@ -12,15 +12,15 @@ int main(int argc, char *argv[])
 
     // LEVANTAMOS EL SERVIDOR DE MEMORIA
     // levantarServidorMemoria(logger, valores_config->puerto_memoria, valores_config->ip_memoria);
+    // CREAMOS ARGUMENTOS DE HILOS
     args_CPU = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
     args_KERNEL = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
     args_IO = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
 
     crearHilos(args_CPU, args_IO, args_KERNEL);
-
-    pthread_join(hiloCpu, NULL);
+    // pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
-    pthread_join(hiloIO, NULL);
+    // pthread_join(hiloIO, NULL);
 
     destruirConfig(valores_config->config);
     destruirLog(logger);
@@ -33,36 +33,38 @@ t_args *crearArgumento(char *puerto, char *ip)
     a->puerto = malloc(sizeof(char *));
     a->ip = malloc(sizeof(char *));
     strcpy(a->puerto, puerto);
+
     strcpy(a->ip, ip);
+
     return a;
 }
 void crearHilos(t_args *args_CPU, t_args *args_IO, t_args *args_KERNEL)
 {
-    pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
-    pthread_create(&hiloKernel, NULL, recibirKernel, (void *)&args_KERNEL);
-    pthread_create(&hiloIO, NULL, recibirIO, (void *)&args_IO);
+    // pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
+    pthread_create(&hiloKernel, NULL, recibirKernel, (void *)args_KERNEL);
+    // pthread_create(&hiloIO, NULL, recibirIO, (void *)args_IO);
 }
 void *recibirIO(void *ptr)
 {
     return EXIT_SUCCESS;
 }
+
 void *recibirKernel(void *ptr)
 {
-    // La cpu le va a apedir a memoria: traducir direcciones fisicas a logicas con MMU
-    // PEDIR INSTRUCION
-    // Acceso a espacio de usuario
-    // Esta petición puede venir tanto de la CPU como de un Módulo de Interfaz de I/O, es importante
-    // tener en cuenta que las peticiones pueden ocupar más de una página.
-    t_args *argumento;
+    t_args *argumento = malloc(sizeof(t_args));
     argumento = (t_args *)ptr;
-    int server_fd = iniciar_servidor(argumento->logger, "Memoria", argumento->ip, argumento->puerto);
-    log_info(argumento->logger, "Servidor Memoria listo para recibir CPU");
-    int cliente_fd = esperar_cliente(argumento->logger, "Memoria", server_fd);
+
+    printf("%s\n %s\n", argumento->ip, argumento->puerto);
+
+    int server_fd = iniciar_servidor(logger, "Memoria", argumento->ip, argumento->puerto);
+    log_info(logger, "Servidor Memoria listo para recibir KERNEL");
+    int cliente_fd = esperar_cliente(logger, "Memoria", server_fd);
 
     t_list *lista;
     while (1)
     {
         int cod_op = recibir_operacion(cliente_fd);
+        printf("\n%d\n", cod_op);
         switch (cod_op)
         {
         case MENSAJE:
@@ -70,26 +72,31 @@ void *recibirKernel(void *ptr)
             break;
         case PAQUETE:
             lista = recibir_paquete(cliente_fd);
-            log_info(argumento->logger, "Me llegaron los siguientes valores:\n");
+            log_info(logger, "Me llegaron los siguientes valores:\n");
             list_iterate(lista, (void *)iterator);
             break;
         case SOLICITUD_INICIAR_PROCESO:
-            // tipo_buffer *buffer = recibir_buffer(sizeof(uint32_t), cliente_fd);
+            log_info(argumento->logger, "La Solicitud de Iniciar Proceso llego a Memoria");
+
+            //tipo_buffer *buffer = recibir_buffer_propio(sizeof(uint32_t), cliente_fd);
+
+            //t_cde *contexto_ejecucion = leer_buffer_cde(buffer); DESEREALIZAR FALTA IMPLEMENTAR
+
             // t_list *listInstrucciones = leerArchivoConInstrucciones(char *pathArch);
 
-            // agregar_Instrucciones_Al_CDE(listInstrucciones,buffer);
+            // agregar_Instrucciones_Al_CDE(listInstrucciones, buffer);
             //  agregamos insutrcciones al cde, identificamos al cde usando su id
             log_info(argumento->logger, "La Solicitud de Iniciar Proceso se Realizo con Exito");
 
         case SOLICITUD_FINALIZAR_PROCESO:
             // liberar_memoria_proceso(unproceso);
-            log_info(argumento->logger, "Se aprueba finalizar el proces");
+            log_info(logger, "Se aprueba finalizar el proceso");
         case -1:
-            log_error(argumento->logger, "El cliente se desconecto. Terminando servidor");
-            //return (void *)EXIT_FAILURE;
-            return EXIT_FAILURE; //version de la catedra, pero da un warning si no anda comentar el de arriba
+            log_error(logger, "El cliente se desconecto. Terminando servidor");
+            // return (void *)EXIT_FAILURE;
+            return EXIT_FAILURE; // version de la catedra, pero da un warning si no anda comentar el de arriba
         default:
-            log_warning(argumento->logger, "Operacion desconocida. No quieras meter la pata");
+            log_warning(logger, "Operacion desconocida. No quieras meter la pata");
             break;
         }
     }
@@ -98,7 +105,7 @@ void *recibirKernel(void *ptr)
 
 void *recibirCPU(void *ptr)
 {
-    t_args *argumento;
+    t_args *argumento; // CASTEAR
     argumento = (t_args *)ptr;
     int server_fd = iniciar_servidor(argumento->logger, "Memoria", argumento->ip, argumento->puerto);
     log_info(argumento->logger, "Servidor Memoria listo para recibir CPU");
@@ -134,8 +141,8 @@ void *recibirCPU(void *ptr)
         // case ACCESO_ESPACIO_USUARIO:
         case -1:
             log_error(argumento->logger, "El cliente se desconecto. Terminando servidor");
-            //return (void *)EXIT_FAILURE;
-            return EXIT_FAILURE; //version de la catedra, pero da un warning si no anda comentar el de arriba
+            // return (void *)EXIT_FAILURE;
+            return EXIT_FAILURE; // version de la catedra, pero da un warning si no anda comentar el de arriba
         default:
             log_warning(argumento->logger, "Operacion desconocida. No quieras meter la pata");
             break;
