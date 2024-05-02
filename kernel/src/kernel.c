@@ -64,7 +64,8 @@ colaEstado *constructorColaEstado(char *nombre)
 
 	return cola_estado_generica;
 }
-// INICIALIZAR 5 COLAS ESTADOS
+
+// INICIALIZAR COLAS DE ESTADOS
 void inicializarEstados()
 {
 	cola_new_global = constructorColaEstado("NEW");

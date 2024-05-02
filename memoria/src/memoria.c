@@ -12,11 +12,11 @@ int main(int argc, char *argv[])
 
     // LEVANTAMOS EL SERVIDOR DE MEMORIA
     // levantarServidorMemoria(logger, valores_config->puerto_memoria, valores_config->ip_memoria);
-    args_CPU = crearArgumento(valores_config->puerto_memoria,valores_config->ip_memoria);
-    args_KERNEL = crearArgumento(valores_config->puerto_memoria,valores_config->ip_memoria);
-    args_IO = crearArgumento(valores_config->puerto_memoria,valores_config->ip_memoria); 
+    args_CPU = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
+    args_KERNEL = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
+    args_IO = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
 
-    //crearHilos(args_CPU,args_IO,args_KERNEL);
+    crearHilos(args_CPU, args_IO, args_KERNEL);
 
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
@@ -25,46 +25,39 @@ int main(int argc, char *argv[])
     destruirConfig(valores_config->config);
     destruirLog(logger);
 }
-t_args crearArgumento(char *puerto, char *ip)
+t_args *crearArgumento(char *puerto, char *ip)
 {
-    t_args a;
-    a.logger = logger;
-    strcpy(a.puerto,puerto);
-    strcpy(a.ip,ip);
+    t_args *a;
+    a = malloc(sizeof(t_args));
+    a->logger = logger;
+    a->puerto = malloc(sizeof(char *));
+    a->ip = malloc(sizeof(char *));
+    strcpy(a->puerto, puerto);
+    strcpy(a->ip, ip);
+    return a;
 }
-
-
-
-
-
-/*
-void crearHilos()
-{   
-    pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
-    pthread_create(&hiloKernel, NULL, recibirKernel, (void *)args_KERNEL);
-    //pthread_create(&hiloIO, NULL, recibirIO, (void *)args_IO);
-}*/
-/*void recibirIO(t_log *logger, char *puerto, char *ip){
-
-
-}*/
-
-
-void recibirKernel(t_log *logger, char *puerto, char *ip)
+void crearHilos(t_args *args_CPU, t_args *args_IO, t_args *args_KERNEL)
 {
-    /*
-    La cpu le va a apedir a memoria: traducir direcciones fisicas a logicas con MMU
-    PEDIR INSTRUCION
-    Acceso a espacio de usuario
-Esta petición puede venir tanto de la CPU como de un Módulo de Interfaz de I/O, es importante
-tener en cuenta que las peticiones pueden ocupar más de una página.
-    */
-
-
-
-    int server_fd = iniciar_servidor(logger, "Memoria", ip, puerto);
-    log_info(logger, "Servidor Memoria listo para recibir CPU");
-    int cliente_fd = esperar_cliente(logger, "Memoria", server_fd);
+    pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
+    pthread_create(&hiloKernel, NULL, recibirKernel, (void *)&args_KERNEL);
+    pthread_create(&hiloIO, NULL, recibirIO, (void *)&args_IO);
+}
+void *recibirIO(void *ptr)
+{
+    return EXIT_SUCCESS;
+}
+void *recibirKernel(void *ptr)
+{
+    // La cpu le va a apedir a memoria: traducir direcciones fisicas a logicas con MMU
+    // PEDIR INSTRUCION
+    // Acceso a espacio de usuario
+    // Esta petición puede venir tanto de la CPU como de un Módulo de Interfaz de I/O, es importante
+    // tener en cuenta que las peticiones pueden ocupar más de una página.
+    t_args *argumento;
+    argumento = (t_args *)ptr;
+    int server_fd = iniciar_servidor(argumento->logger, "Memoria", argumento->ip, argumento->puerto);
+    log_info(argumento->logger, "Servidor Memoria listo para recibir CPU");
+    int cliente_fd = esperar_cliente(argumento->logger, "Memoria", server_fd);
 
     t_list *lista;
     while (1)
@@ -77,7 +70,7 @@ tener en cuenta que las peticiones pueden ocupar más de una página.
             break;
         case PAQUETE:
             lista = recibir_paquete(cliente_fd);
-            log_info(logger, "Me llegaron los siguientes valores:\n");
+            log_info(argumento->logger, "Me llegaron los siguientes valores:\n");
             list_iterate(lista, (void *)iterator);
             break;
         case SOLICITUD_INICIAR_PROCESO:
@@ -86,27 +79,30 @@ tener en cuenta que las peticiones pueden ocupar más de una página.
 
             // agregar_Instrucciones_Al_CDE(listInstrucciones,buffer);
             //  agregamos insutrcciones al cde, identificamos al cde usando su id
-            log_info(logger, "La Solicitud de Iniciar Proceso se Realizo con Exito");
+            log_info(argumento->logger, "La Solicitud de Iniciar Proceso se Realizo con Exito");
 
         case SOLICITUD_FINALIZAR_PROCESO:
             // liberar_memoria_proceso(unproceso);
-            log_info(logger,"Se aprueba finalizar el proces");
+            log_info(argumento->logger, "Se aprueba finalizar el proces");
         case -1:
-            log_error(logger, "El cliente se desconecto. Terminando servidor");
-            return EXIT_FAILURE;
+            log_error(argumento->logger, "El cliente se desconecto. Terminando servidor");
+            return (void *)EXIT_FAILURE;
+            // return EXIT_FAILURE; version de la catedra, pero da un warning si no anda comentar el de arriba
         default:
-            log_warning(logger, "Operacion desconocida. No quieras meter la pata");
+            log_warning(argumento->logger, "Operacion desconocida. No quieras meter la pata");
             break;
         }
     }
     return EXIT_SUCCESS;
 }
 
-void recibirCPU(t_log *logger, char *puerto, char *ip)
+void *recibirCPU(void *ptr)
 {
-    int server_fd = iniciar_servidor(logger, "Memoria", ip, puerto);
-    log_info(logger, "Servidor Memoria listo para recibir CPU");
-    int cliente_fd = esperar_cliente(logger, "Memoria", server_fd);
+    t_args *argumento;
+    argumento = (t_args *)ptr;
+    int server_fd = iniciar_servidor(argumento->logger, "Memoria", argumento->ip, argumento->puerto);
+    log_info(argumento->logger, "Servidor Memoria listo para recibir CPU");
+    int cliente_fd = esperar_cliente(argumento->logger, "Memoria", server_fd);
     t_list *lista;
     while (1)
     {
@@ -118,7 +114,7 @@ void recibirCPU(t_log *logger, char *puerto, char *ip)
             break;
         case PAQUETE:
             lista = recibir_paquete(cliente_fd);
-            log_info(logger, "Me llegaron los siguientes valores:\n");
+            log_info(argumento->logger, "Me llegaron los siguientes valores:\n");
             list_iterate(lista, (void *)iterator);
             break;
         case PEDIDO_INSTRUCCION:
@@ -137,10 +133,11 @@ void recibirCPU(t_log *logger, char *puerto, char *ip)
             printf("Se aprueba pedido instruccion");
         // case ACCESO_ESPACIO_USUARIO:
         case -1:
-            log_error(logger, "El cliente se desconecto. Terminando servidor");
-            return EXIT_FAILURE;
+            log_error(argumento->logger, "El cliente se desconecto. Terminando servidor");
+            return (void *)EXIT_FAILURE;
+            // return EXIT_FAILURE; version de la catedra, pero da un warning si no anda comentar el de arriba
         default:
-            log_warning(logger, "Operacion desconocida. No quieras meter la pata");
+            log_warning(argumento->logger, "Operacion desconocida. No quieras meter la pata");
             break;
         }
         return EXIT_SUCCESS;
@@ -165,7 +162,7 @@ t_list *leerArchivoConInstrucciones(char *pathArch)
     {
         perror("Error en abrir el archivo"); // me fijo si se pudo abrir el archivo
     }
-    char *linea; // este seria el buffer para ir leyendo el archivo
+    char *linea = malloc(sizeof(char *)); // este seria el buffer para ir leyendo el archivo
     while (fgets(linea, sizeof(linea), arch))
     { // voy leyendo el archivo
         strtok(linea, "\n");
@@ -219,13 +216,13 @@ t_list* parsearArchivo(char* pathArchivo, t_log* logger){
 }*/
 struct config_memoria *config_memoria()
 {
-	struct config_memoria *valores_config = malloc(sizeof(struct config_memoria));
+    struct config_memoria *valores_config = malloc(sizeof(struct config_memoria));
 
-	// creo el config
-	valores_config->config = iniciar_config("memoria.config");
+    // creo el config
+    valores_config->config = iniciar_config("memoria.config");
 
-	valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
-	valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
+    valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
+    valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
 
-	return valores_config;
+    return valores_config;
 }

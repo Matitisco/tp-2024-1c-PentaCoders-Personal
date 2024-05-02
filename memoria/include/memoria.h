@@ -16,12 +16,14 @@ typedef struct
 	t_log *logger;
 	char *puerto;
 	char *ip;
-} t_args;
+} t_args ;
 
 extern t_log *logger;
 int socket_cpu;
 pthread_t hiloCPU, hiloKernel, hiloIO;
-t_args args_CPU,args_KERNEL,args_IO;
+t_args *args_CPU;
+t_args *args_KERNEL;
+t_args *args_IO;
 struct config_memoria
 {
 	t_config *config;
@@ -32,6 +34,11 @@ struct config_memoria
 	// char* path_instrucciones;
 	// int retardo_respuesta;
 };
-t_args crearArgumento(char *puerto, char *ip);
+t_args* crearArgumento(char *puerto, char *ip);
+void crearHilos(t_args *args_CPU, t_args *args_IO, t_args *args_KERNEL);
 struct config_memoria *config_memoria();
+void *recibirCPU(void* ptr);
+void *recibirKernel(void* ptr);
+void *recibirIO(void* ptr);
+
 #endif
