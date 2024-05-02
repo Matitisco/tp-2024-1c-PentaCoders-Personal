@@ -3,11 +3,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <utils.h>
+//include <utils.h>
 #include <sockets.c>
-#include "../../utils/src/utils.h"
+#include "../../utils/include/utils.h"
 #include "../include/conexiones.h"
-#include  "utils/include/instrucciones.h"
+#include  "../../utils/include/instrucciones.h"
 
 char *PUERTO_MEMORIA;
 int CONEXION_A_MEMORIA;
