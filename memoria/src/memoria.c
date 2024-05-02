@@ -86,8 +86,8 @@ void *recibirKernel(void *ptr)
             log_info(argumento->logger, "Se aprueba finalizar el proces");
         case -1:
             log_error(argumento->logger, "El cliente se desconecto. Terminando servidor");
-            return (void *)EXIT_FAILURE;
-            // return EXIT_FAILURE; version de la catedra, pero da un warning si no anda comentar el de arriba
+            //return (void *)EXIT_FAILURE;
+            return EXIT_FAILURE; //version de la catedra, pero da un warning si no anda comentar el de arriba
         default:
             log_warning(argumento->logger, "Operacion desconocida. No quieras meter la pata");
             break;
@@ -134,8 +134,8 @@ void *recibirCPU(void *ptr)
         // case ACCESO_ESPACIO_USUARIO:
         case -1:
             log_error(argumento->logger, "El cliente se desconecto. Terminando servidor");
-            return (void *)EXIT_FAILURE;
-            // return EXIT_FAILURE; version de la catedra, pero da un warning si no anda comentar el de arriba
+            //return (void *)EXIT_FAILURE;
+            return EXIT_FAILURE; //version de la catedra, pero da un warning si no anda comentar el de arriba
         default:
             log_warning(argumento->logger, "Operacion desconocida. No quieras meter la pata");
             break;

@@ -131,7 +131,7 @@ t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer) // falta poner las d
 void paramBufferALista(t_instruccion *instruccion, int cantParam, tipo_buffer *buffer)
 {
     char *parametro;
-    size_t size;
+    size_t* size=malloc(sizeof(size_t));
 
     for (int i = 0; i < cantParam; i++)
     {

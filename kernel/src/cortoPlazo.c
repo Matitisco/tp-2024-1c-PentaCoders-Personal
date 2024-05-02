@@ -102,8 +102,10 @@ void simular_ejecucion_proceso(t_pcb *proceso)
         {
             break;
         }
-    }
+    } 
 }
+*/
+
 
 t_cde *obtener_cde(t_pcb *proceso)
 {
@@ -141,10 +143,10 @@ void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde)
 
     // agregar_tabla_segmentos_a_paquete(paquete, ce->tabla_segmentos);  //----IMPLEMENTAR----
     //  log_trace(logger, "agrego tabla de segmentos");
-}*/
+}
 
 // serializaciones
-/*
+
 void agregar_lista_instrucciones_a_paquete(t_paquete *paquete, t_list *instrucciones)
 {
 
@@ -198,6 +200,5 @@ t_paquete *crear_paquete_op_code(int codOP)
     // IMPLEMENTAR
     t_paquete *paqueteEjemplo = crear_paquete();
     return paqueteEjemplo;
-}*/
+}
 // AGREGADOS A COLAS DE ESTADOS CON SEMAFOROS
- 

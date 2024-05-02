@@ -11,7 +11,8 @@ int socket_cpu_interrupt;
 int  QUANTUM;
 extern t_log *logger;
 
-uint32_t PID_GLOBAL = 0;
+//t_log *logger;
+//uint32_t PID_GLOBAL;
 
 int main(int argc, char *argv[])
 {

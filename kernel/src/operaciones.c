@@ -1,7 +1,7 @@
 #include "../include/operaciones.h"
 
-//uint32_t PID_GLOBAL = 0;
-//int socket_memoria;
+uint32_t PID_GLOBAL = 0;
+extern int socket_memoria;
 
 // EJECUTAR SCRIPT
 void ejecutar_script()
@@ -9,7 +9,7 @@ void ejecutar_script()
     printf("Ejecutar Script\n");
 }
 // VER TEMA DEL PATH QUE NO ESTA DEL TODO CLARO
-void iniciar_proceso(char* PATH)
+void iniciar_proceso(char *PATH)
 {
     t_pcb *proceso = crear_proceso();                           // Creo nuestro nuevo proceso
     enviar_cod_enum(socket_memoria, SOLICITUD_INICIAR_PROCESO); // Le pido si puedo iniciar el proceso
@@ -124,7 +124,6 @@ t_pcb *buscarProceso(uint32_t pid)
     return pcb_buscada;
 }
 
-
 // FUNCION MOSTRAR MOTIVO
 /* char *mostrarMotivo(enum motivoFinalizar motivo)
 {
@@ -171,13 +170,12 @@ void liberar_archivos(t_pcb *proceso)
 {
     free(proceso->archivosAsignados);
 }
-/*void liberar_memoria(t_pcb *proceso)
+void liberar_memoria(t_pcb *proceso)
 {
     //PREGUNTAR QUE HACE ESTA FUNCION RAWRA
 }
-*/
-/*
-void enviar_cde(int conexion, t_cde *cde, int codOP) //----IMPLEMENTAR----
+
+/* void enviar_cde(int conexion, t_cde *cde, int codOP) //----IMPLEMENTAR----
 {
     t_paquete *paquete = crear_paquete_op_code(codOP);
 
@@ -186,10 +184,9 @@ void enviar_cde(int conexion, t_cde *cde, int codOP) //----IMPLEMENTAR----
     enviar_paquete(paquete, conexion);
 
     eliminar_paquete(paquete);
-}*/
-
-/*
-void enviar_cde(t_cde *cde)
+}
+ */
+/* void enviar_cde(t_cde *cde)
 {
     enviar_codigo(socket_cpu_dispatch, EJECUTAR_PROCESO); // Le pido si pueod iniciar el proceso
     tipo_buffer *buffer = crear_buffer();
@@ -202,6 +199,8 @@ void enviar_cde(t_cde *cde)
 
 
 
+
+ 
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
 
@@ -259,4 +258,4 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
     }
 
     return pcb_buscada;
-} 
+}

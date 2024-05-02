@@ -4,10 +4,8 @@
 #include <stdint.h>
 #include "kernel.h"
 #include "../include/cortoPlazo.h"
-#include "../../utils/include/serializacion.h"
 
 
-#include "../include/kernel.h"
 // #include "cortoPlazo.h"
 typedef enum motivoFinalizar{
     SUCCESS,
@@ -15,7 +13,7 @@ typedef enum motivoFinalizar{
     INVALID_WRITE
 };
 //extern uint32_t PID_GLOBAL;
-//Funciones del menu
+
 
 void ejecutar_script();
 void iniciar_proceso(char *PATH);
@@ -45,4 +43,7 @@ void liberar_archivos(t_pcb *proceso);
 
 
 #endif
+
+
+
 

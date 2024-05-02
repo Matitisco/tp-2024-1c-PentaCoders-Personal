@@ -88,4 +88,6 @@ op_code obtenerCodigo(char *opcion, t_log *logger)
         return LISTAR_ESTADOS;
     }
     return 0;
+
 } 
+

@@ -23,7 +23,8 @@
 // VARIABLES
 extern uint32_t PID_GLOBAL;
 extern t_log* logger;
-// ENUMSs
+
+// ENUMS
 typedef enum
 {
 	NEW,
@@ -93,13 +94,6 @@ void planificar_ejecucion_procesos();
 void inicializarEstados();
 colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
-// MENU
-void iniciar_consola_interactiva(t_log *logger);
-void mostrar_operaciones_realizables();
-op_code obtenerCodigo(char *opcion, t_log *logger);
-void ejecutar_operacion(char *codigo_operacion, t_log *logger);
-// OPERACIONES
-/*Funciones del menu*/
 
 void ejecutar_script();
 void iniciar_proceso(char *PATH);
@@ -125,19 +119,6 @@ void liberar_cde(t_pcb *proceso);
 void liberar_recursos(t_pcb *proceso);
 void liberar_archivos(t_pcb *proceso);
 // CORTO PLAZO
-bool proceso_completado();
-t_pcb *obtener_siguiente_ready();
-t_paquete *crear_paquete_op_code(int codOP);
-t_cde *obtener_cde(t_pcb *proceso);
-void enviar_cde(int conexion, t_cde *cde, int codOP);
-void simular_ejecucion_proceso(t_pcb *proceso);
-void ready_a_execute();
-void agregar_lista_instrucciones_a_paquete(t_paquete *paquete, t_list *instrucciones);
-void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion *instruccion);
-void agregar_tipo_instruccion_a_paquete(t_paquete *paquete, t_tipoDeInstruccion tipo);
-void agregar_entero_a_paquete(t_paquete *paquete, uint32_t x);
-void agregar_string_a_paquete(t_paquete *paquete, char *palabra);
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
-void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde);
+
 
 #endif
