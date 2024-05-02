@@ -1,4 +1,4 @@
-/* #include "../include/cortoPlazo.h"
+#include "../include/cortoPlazo.h"
 /*
 TRANSICIONES CORTO PLAZO
 
@@ -32,7 +32,7 @@ el siguiente proceso a ejecutar según indique el algoritmo. Durante este perío
 // PASAR A KERNEL. H PARA QUE LO UTILICE LARGO PLAZO
 
 // MUTEX -
-/*
+
 pthread_mutex_t *mutex_pcb_ejecutando;
 pthread_mutex_t *mutex_estado_ejecutando;
 
@@ -64,10 +64,10 @@ void ready_a_execute(colaEstado *cola_ready)
 
         log_info(logger, "Se agrego un proceso %d  a Execute desde Ready\n", pcb->cde->pid);
     }
-}*/
+}
 
 // OBTENER SIGUIENTE PROCESO
-/*
+
 t_pcb *obtener_siguiente_ready(colaEstado *cola_ready)
 {
     pthread_mutex_lock(cola_ready->mutex_estado); // mutex para estado ready y controlar la condicion de carrera
@@ -77,7 +77,7 @@ t_pcb *obtener_siguiente_ready(colaEstado *cola_ready)
     pthread_mutex_unlock(cola_ready->mutex_estado);
     return pcb_ready;
 }
-
+/*
 void simular_ejecucion_proceso(t_pcb *proceso)
 {
     // int CE;

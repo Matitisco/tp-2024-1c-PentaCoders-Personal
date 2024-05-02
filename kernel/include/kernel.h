@@ -8,14 +8,12 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-<<<<<<< HEAD
 //#include "cortoPlazo.h"
 //#include "menu.h"
 //#include "operaciones.h"
 
 
 
-=======
 #include "../../utils/include/utils.h"
 #include "../../utils/include/registros.h"
 #include "../../utils/include/conexiones.h"
@@ -23,9 +21,9 @@
 #include "../../utils/include/instrucciones.h"
 
 // VARIABLES
+extern uint32_t PID_GLOBAL;
 
-// ENUMS
->>>>>>> refs/remotes/origin/main
+// ENUMSs
 typedef enum
 {
 	NEW,
@@ -73,13 +71,10 @@ typedef struct
 	pthread_mutex_t *mutex_estado;
 
 } colaEstado;
-<<<<<<< HEAD
 
 extern int socket_memoria;
 extern int socket_cpu_dispatch;
 extern int socket_cpu_interrupt;
-=======
->>>>>>> refs/remotes/origin/main
 
 // DECLARACION VARIABLES GLOBALES
 
@@ -116,9 +111,9 @@ void listar_procesos_x_estado();
 /*Funciones de busuqeda del proceso*/
 
 uint32_t mostrarPID(t_pcb *proceso);
-t_pcb *buscarProceso(uint32_t pid);
+//t_pcb *buscarProceso(uint32_t pid);
 t_pcb *crear_proceso();
-t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
+//t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
 t_cde *iniciar_cde();
 
 // char *mostrarMotivo(enum motivoFinalizar motivo);

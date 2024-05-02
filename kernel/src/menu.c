@@ -1,6 +1,6 @@
-//#include "../include/menu.h"
+#include "../include/menu.h"
 
-/* void iniciar_consola_interactiva(t_log *logger)
+void iniciar_consola_interactiva(t_log *logger)
 {
     char *opcion;
     while (1)
@@ -88,4 +88,4 @@ op_code obtenerCodigo(char *opcion, t_log *logger)
         return LISTAR_ESTADOS;
     }
     return 0;
-} */
+} 

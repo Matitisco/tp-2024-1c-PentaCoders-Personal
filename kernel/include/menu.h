@@ -2,7 +2,6 @@
 #define MENU_H_
 
 #include "kernel.h"
-#include "utils_kernel.h"
 
 void iniciar_consola_interactiva(t_log *logger);
 void mostrar_operaciones_realizables();

@@ -1,7 +1,7 @@
-/* #include "../include/operaciones.h"
+#include "../include/operaciones.h"
 
-uint32_t PID_GLOBAL = 0;
-int socket_memoria;
+//uint32_t PID_GLOBAL = 0;
+//int socket_memoria;
 
 // EJECUTAR SCRIPT
 void ejecutar_script()
@@ -143,7 +143,7 @@ t_pcb *buscarProceso(uint32_t pid)
 } */
 
 // FUNCION DE LIBERACIONES
-/*
+
 void liberar_proceso(t_pcb *proceso)
 {
     liberar_cde(proceso);
@@ -170,7 +170,7 @@ void liberar_recursos(t_pcb *proceso)
 void liberar_archivos(t_pcb *proceso)
 {
     free(proceso->archivosAsignados);
-}*/
+}
 /*void liberar_memoria(t_pcb *proceso)
 {
     //PREGUNTAR QUE HACE ESTA FUNCION RAWRA
@@ -200,7 +200,7 @@ void enviar_cde(t_cde *cde)
 }*/
 
 
-/*
+
 
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
@@ -259,4 +259,4 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
     }
 
     return pcb_buscada;
-} */
+} 

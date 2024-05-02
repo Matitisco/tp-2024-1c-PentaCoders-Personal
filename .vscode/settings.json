@@ -2,6 +2,7 @@
     "files.associations": {
         "cpu.h": "c",
         "sockets.h": "c",
-        "memoria.h": "c"
+        "memoria.h": "c",
+        "kernel.h": "c"
     }
 }
