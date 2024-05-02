@@ -8,16 +8,15 @@ colaEstado *cola_exit_global;
 int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
+
 int  QUANTUM;
+
 extern t_log *logger;
 
-//t_log *logger;
-//uint32_t PID_GLOBAL;
+pthread_t hiloCPU;
 
 int main(int argc, char *argv[])
 {
-	int conexion_memoria_desde_kernel, conexion_cpu;
-
 	// INICIALIZACION DE ESTADOS
 	inicializarEstados();
 
@@ -27,14 +26,16 @@ int main(int argc, char *argv[])
 	config_kernel *valores_config = inicializar_config_kernel();
 
 	// KERNEL COMO SERVER DE I0
-	levantarServidor(logger, valores_config->puerto_escucha, valores_config->ip_memoria, "SERVIDOR KERNEL");
+	//levantarServidor(logger, valores_config->puerto_escucha, valores_config->ip_memoria, "SERVIDOR KERNEL");
 	// KERNEL COMO CLIENTE
-	conexion_memoria_desde_kernel = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "KERNEL SE CONECTO A MEMORIA");
-	conexion_cpu = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
-
+	// SOCKET MEMORIA SE DEBE QUEDAR ASI SINO NO SE ENVIA NADA DESDE KERNEL A MEMORIA
+	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "KERNEL SE CONECTO A MEMORIA");
+	//socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
+ 	//pthread_create(hiloCPU);
 	iniciar_consola_interactiva(logger);
-	terminar_programa(conexion_cpu, logger, valores_config->config);
-	liberarConexion(conexion_memoria_desde_kernel);
+
+	//terminar_programa(socket_cpu_dispatch, logger, valores_config->config);
+	liberarConexion(socket_memoria);
 }
 
 void gestionar_peticiones_memoria()
@@ -57,7 +58,6 @@ colaEstado *constructorColaEstado(char *nombre)
 	colaEstado *cola_estado_generica;
 	cola_estado_generica = malloc(sizeof(colaEstado));
 	cola_estado_generica->nombreEstado = nombre;
-	// strcpy(cola_estado_generica->nombreEstado, nombre);
 	cola_estado_generica->estado = queue_create();
 	cola_estado_generica->mutex_estado = malloc(sizeof(pthread_mutex_t));
 

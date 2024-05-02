@@ -15,9 +15,9 @@ void iniciar_consola_interactiva(t_log *logger)
 void mostrar_operaciones_realizables()
 {
     printf("1-Ejecutar Script de Operaciones\n");
-    printf("2-Iniciar Proceso\n");
-    printf("3-Finalizar Proceso\n");
-    printf("4-Iniciar Planificacion\n");
+    printf("2-Iniciar Proceso [PATH]\n");
+    printf("3-Finalizar Proceso [PID]\n");
+    printf("4-Iniciar Planificacion \n");
     printf("5-Detener Planificacion\n");
     printf("6-Listar Procesos por Estado\n");
 }
@@ -25,8 +25,6 @@ void mostrar_operaciones_realizables()
 void ejecutar_operacion(char *opcion, t_log *logger)
 {
     op_code cod_op = obtenerCodigo(opcion, logger);
-    // EL PATH DEBE ARREGLARSE PARA QUE SE PUEDA MANDAR CUALQUIERA
-    char *PATH = malloc(sizeof(FILE));
     switch (cod_op)
     {
     case EJECUTAR_SCRIPT:
@@ -34,6 +32,8 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         exit(1);
         break;
     case INICIAR_PROCESO:
+        char *PATH =NULL;
+        PATH= readline("Ingrese el nombre del archivo: "); 
         iniciar_proceso(PATH);
         // exit(1); // momentaneo es solo para que no quede en loop
         break;
@@ -88,6 +88,4 @@ op_code obtenerCodigo(char *opcion, t_log *logger)
         return LISTAR_ESTADOS;
     }
     return 0;
-
-} 
-
+}
