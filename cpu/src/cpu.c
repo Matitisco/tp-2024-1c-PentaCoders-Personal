@@ -1,27 +1,75 @@
 #include "../include/cpu.h"
-#include <string.h>
-#include "../../utils/include/instrucciones.h"
-
-//#include "../../kernel/include/kernel.h"
-#include "../../utils/include/registros.h"
-
-
 int main(int argc, char *argv[])
 {
 	logger = iniciar_logger("cpu.log", "CPU");
-
-	// CONFIG
 	struct config_cpu *valores_config = config_cpu();
+	// CONFIG
+	
 	// Falta que CPU inicie servidor como INTERRUPT y como DISPATCH
-	levantarServidor(logger, valores_config->puerto_escucha_dispatch, valores_config->ip_kernel, "SERVIDOR CPU DISPATCH");
+
+	//CPU como server de KERNEL
+	//levantarServidor(logger, valores_config->puerto_escucha_dispatch, valores_config->ip_kernel, "SERVIDOR CPU DISPATCH");
 	levantarServidor(logger, valores_config->puerto_escucha_interrupt,valores_config->ip_kernel, "SERVIDOR CPU INTERRUPT");
-	CONEXION_A_MEMORIA = levantarCliente(logger, "SERVIDOR  MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "CPU SE CONECTO A MEMORIA");
+	servidorDeKernel(valores_config);
+
+	//levantarCliente(CONEXION_A_MEMORIA, logger, "SERVIDOR  MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "CPU SE CONECTO A MEMORIA");
+
 	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config->config);
 }
 
+void servidorDeKernel(struct config_cpu *valores_config){
+	//int socket_servidor_dispatch = iniciar_servidor(logger,"SERVIDOR CPU DISPATCH",valores_config->ip_kernel,valores_config->puerto_escucha_dispatch);
+    //int socket_servidor_interrupt = iniciar_servidor(logger,"SERVIDOR CPU INTERRUPT",valores_config->ip_kernel,valores_config->puerto_escucha_interrupt);
+	
+	//dispatchProceso(socket_servidor_dispatch);
+}
 
+void dispatchProceso(void* socket_server){
 
+    int socket_servidor_dispatch = (int) (intptr_t) socket_server;
+    
+    log_info(logger, "Esperando Kernel DISPATCH....");
+    socket_kernel_dispatch = esperar_cliente(logger,"SERVIDOR CPU DISPATCH",socket_servidor_dispatch); //En la librería faltaba utils/conexiones.h, ya no hace falta agreagarlo porque se encuentra en instruccionescpu.h
+    log_info(logger, "Se conecto el Kernel por DISPATCH");
+    
+    while(1){
+        mensaje_kernel_cpu op_code = recibir_cod(socket_kernel_dispatch);
 
+        //tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch);
+
+        switch(op_code){
+            case EJECUTAR_PROCESO:
+			/*
+                t_cde* cde_recibido = buffer_read_cde(buffer);
+                destruir_buffer_nuestro(buffer);
+
+                pthread_mutex_lock(&mutex_cde_ejecutando);
+                pid_de_cde_ejecutando = cde_recibido->pid;
+                pthread_mutex_unlock(&mutex_cde_ejecutando);
+                
+                ejecutar_proceso(cde_recibido);
+			*/
+                break;
+            default:
+                //destruir_buffer_nuestro(buffer);
+                log_error(logger, "Codigo de operacion desconocido.");
+                log_error(logger, "Finalizando modulo.");
+                exit(1);
+                break;
+        }
+    }
+}
+/*
+
+    EJECUTAR_PROCESO,
+	INTERRUPT,
+	DESALOJO,
+	CDE
+*/
+/*
+	CONEXION_A_MEMORIA = levantarCliente(logger, "SERVIDOR  MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "CPU SE CONECTO A MEMORIA");
+	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config->config);
+*/
 
 struct config_cpu *config_cpu()
 {
@@ -37,20 +85,15 @@ struct config_cpu *config_cpu()
 	return valores_config;
 }
 
-
-
-
-
 void recibir_cde(){
 	mensaje_kernel_cpu codigo= recibir_cod(socket_kernel_dispatch);
 	tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch);
 	if(codigo == EJECUTAR_PROCESO){
-		ejecutarproceso();
+		ejecutar_proceso();
 	}
-
 }
-void ejecutarproceso(){
-	return 0;
+
+void ejecutar_proceso(){
 }
 
 /*
@@ -75,12 +118,12 @@ void pedirInstruccionAMemoria()
 
 
 // Contexto de ejecucion
-void ejecutarCicloInstruccion(int instruccion, uint32_t PC)
-{	tipoInstruccion(instruccion);
+void ejecutarCicloInstruccion (int instruccion, uint32_t PC)
+{	
+	tipoInstruccion(instruccion);
 	PC++;
 	// actualizarle pc a ¿memoria?
 }
-
 void tipoInstruccion(int instruccion)
 {
 	switch (instruccion)
