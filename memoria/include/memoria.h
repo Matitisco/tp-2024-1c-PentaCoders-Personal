@@ -18,7 +18,7 @@ typedef struct
 	char *ip;
 } t_args;
 
-t_log *logger;
+extern t_log *logger;
 int socket_cpu;
 pthread_t hiloCPU, hiloKernel, hiloIO;
 t_args args_CPU,args_KERNEL,args_IO;

@@ -3,11 +3,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <utils.h>
-#include <sockets.c>
-#include "../../utils/src/utils.h"
-#include "../include/conexiones.h"
-#include  "utils/include/instrucciones.h"
+#include "../../utils/include/sockets.h"
+#include "../../utils/include/utils.h"
+#include "../../utils/include/conexiones.h"
+#include "../../utils/include/instrucciones.h"
+#include "../../utils/include/serializacion.h"
+
 
 char *PUERTO_MEMORIA;
 int CONEXION_A_MEMORIA;
@@ -28,19 +29,8 @@ struct config_cpu
 	// int cantidad_entradas_tlb;
 };
 
-struct config_cpu *config_cpu()
-{
-	struct config_cpu *valores_config = malloc(sizeof(struct config_cpu));
+struct config_cpu *config_cpu();
 
-	// creo el config
-	valores_config->config = iniciar_config("cpu.config");
-	valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP_MEMORIA");
-	valores_config->ip_kernel = config_get_string_value(valores_config->config, "IP_KERNEL");
-	valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_MEMORIA");
-	valores_config->puerto_escucha_dispatch = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA_DISPATCH");
-
-	return valores_config;
-}
 
 //INSTRUCCIONES
 

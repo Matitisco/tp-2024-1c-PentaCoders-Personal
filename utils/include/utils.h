@@ -74,7 +74,7 @@ void eliminar_paquete(t_paquete *paquete);
 extern t_log *logger;
 
 
-void *recibir_buffer(int *, int);
+//void *recibir_buffer(int *, int);
 
 t_list *recibir_paquete(int);
 void recibir_mensaje(int);

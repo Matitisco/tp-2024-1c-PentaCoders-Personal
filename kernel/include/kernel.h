@@ -12,6 +12,13 @@
 #include <commons/collections/queue.h>
 #include <semaphore.h>
 #include <pthread.h>
+
+//#include "cortoPlazo.h"
+//#include "menu.h"
+//#include "operaciones.h"
+
+
+
 typedef enum
 {
 	NEW,
@@ -67,9 +74,10 @@ typedef struct
 	pthread_mutex_t *mutex_estado;
 	
 } colaEstado;
-int socket_memoria;
-int socket_cpu_dispatch;
-int socket_cpu_interrupt;
+
+extern int socket_memoria;
+extern int socket_cpu_dispatch;
+extern int socket_cpu_interrupt;
 
 // DECLARACION VARIABLES GLOBALES
 

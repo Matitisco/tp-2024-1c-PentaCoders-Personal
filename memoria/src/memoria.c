@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     args_KERNEL = crearArgumento(valores_config->puerto_memoria,valores_config->ip_memoria);
     args_IO = crearArgumento(valores_config->puerto_memoria,valores_config->ip_memoria); 
 
-    crearHilos(args_CPU,args_IO,args_KERNEL);
+    //crearHilos(args_CPU,args_IO,args_KERNEL);
 
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
@@ -32,13 +32,24 @@ t_args crearArgumento(char *puerto, char *ip)
     strcpy(a.puerto,puerto);
     strcpy(a.ip,ip);
 }
+
+
+
+
+
+/*
 void crearHilos()
-{
+{   
     pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
     pthread_create(&hiloKernel, NULL, recibirKernel, (void *)args_KERNEL);
-    pthread_create(&hiloIO, NULL, recibirIO, (void *)args_IO);
-}
-void recibirIO(t_log *logger, char *puerto, char *ip);
+    //pthread_create(&hiloIO, NULL, recibirIO, (void *)args_IO);
+}*/
+/*void recibirIO(t_log *logger, char *puerto, char *ip){
+
+
+}*/
+
+
 void recibirKernel(t_log *logger, char *puerto, char *ip)
 {
     /*
@@ -48,6 +59,8 @@ void recibirKernel(t_log *logger, char *puerto, char *ip)
 Esta petición puede venir tanto de la CPU como de un Módulo de Interfaz de I/O, es importante
 tener en cuenta que las peticiones pueden ocupar más de una página.
     */
+
+
 
     int server_fd = iniciar_servidor(logger, "Memoria", ip, puerto);
     log_info(logger, "Servidor Memoria listo para recibir CPU");
@@ -77,7 +90,7 @@ tener en cuenta que las peticiones pueden ocupar más de una página.
 
         case SOLICITUD_FINALIZAR_PROCESO:
             // liberar_memoria_proceso(unproceso);
-            log_info("Se aprueba finalizar el proces");
+            log_info(logger,"Se aprueba finalizar el proces");
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             return EXIT_FAILURE;
@@ -153,7 +166,7 @@ t_list *leerArchivoConInstrucciones(char *pathArch)
         perror("Error en abrir el archivo"); // me fijo si se pudo abrir el archivo
     }
     char *linea; // este seria el buffer para ir leyendo el archivo
-    while (fgets(linea, sizeo(linea), arch))
+    while (fgets(linea, sizeof(linea), arch))
     { // voy leyendo el archivo
         strtok(linea, "\n");
         t_instruccion *unaInstruccion = crearInstruccion(linea);

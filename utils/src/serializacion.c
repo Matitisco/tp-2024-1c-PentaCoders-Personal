@@ -1,6 +1,6 @@
 #include "../include/serializacion.h"
 
-
+t_log *logger;
 
 
 /*----------------------------------- CODIGO -----------------------------------*/

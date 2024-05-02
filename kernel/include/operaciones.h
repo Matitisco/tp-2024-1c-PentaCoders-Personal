@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "kernel.h"
 #include "../include/cortoPlazo.h"
+#include "../../utils/include/serializacion.h"
+
 /* typedef enum motivoFinalizar{
     SUCCESS,
     INVALID_RESOURCE,
@@ -36,5 +38,7 @@ void liberar_recursos(t_pcb *proceso);
 void liberar_archivos(t_pcb *proceso);
 
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
+
+
 
 #endif
