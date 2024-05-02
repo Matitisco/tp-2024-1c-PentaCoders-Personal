@@ -1,5 +1,5 @@
-#include "../include/operaciones.h"
-int QUANTUM = 0;
+/* #include "../include/operaciones.h"
+
 uint32_t PID_GLOBAL = 0;
 int socket_memoria;
 
@@ -9,7 +9,7 @@ void ejecutar_script()
     printf("Ejecutar Script\n");
 }
 // VER TEMA DEL PATH QUE NO ESTA DEL TODO CLARO
-void iniciar_proceso()
+void iniciar_proceso(char* PATH)
 {
     t_pcb *proceso = crear_proceso();                           // Creo nuestro nuevo proceso
     enviar_cod_enum(socket_memoria, SOLICITUD_INICIAR_PROCESO); // Le pido si puedo iniciar el proceso
@@ -143,6 +143,7 @@ t_pcb *buscarProceso(uint32_t pid)
 } */
 
 // FUNCION DE LIBERACIONES
+/*
 void liberar_proceso(t_pcb *proceso)
 {
     liberar_cde(proceso);
@@ -169,7 +170,7 @@ void liberar_recursos(t_pcb *proceso)
 void liberar_archivos(t_pcb *proceso)
 {
     free(proceso->archivosAsignados);
-}
+}*/
 /*void liberar_memoria(t_pcb *proceso)
 {
     //PREGUNTAR QUE HACE ESTA FUNCION RAWRA
@@ -199,7 +200,7 @@ void enviar_cde(t_cde *cde)
 }*/
 
 
-
+/*
 
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
@@ -258,4 +259,4 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
     }
 
     return pcb_buscada;
-}
+} */

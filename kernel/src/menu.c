@@ -1,6 +1,6 @@
-#include "../include/menu.h"
+//#include "../include/menu.h"
 
-void iniciar_consola_interactiva(t_log *logger)
+/* void iniciar_consola_interactiva(t_log *logger)
 {
     char *opcion;
     while (1)
@@ -22,11 +22,11 @@ void mostrar_operaciones_realizables()
     printf("6-Listar Procesos por Estado\n");
 }
 
-// 2 NEW => IP => 1 a ready =>
-
 void ejecutar_operacion(char *opcion, t_log *logger)
 {
     op_code cod_op = obtenerCodigo(opcion, logger);
+    // EL PATH DEBE ARREGLARSE PARA QUE SE PUEDA MANDAR CUALQUIERA
+    char *PATH = malloc(sizeof(FILE));
     switch (cod_op)
     {
     case EJECUTAR_SCRIPT:
@@ -34,13 +34,13 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         exit(1);
         break;
     case INICIAR_PROCESO:
-        iniciar_proceso();
+        iniciar_proceso(PATH);
         // exit(1); // momentaneo es solo para que no quede en loop
         break;
     case FINALIZAR_PROCESO:
         char *pid = readline("Ingrese el PID del Proceso a Finalizar: ");
         finalizar_proceso(atoi(pid));
-        //exit(1);
+        // exit(1);
         break;
     case INICIAR_PLANIFICACION:
         iniciar_planificacion();
@@ -87,4 +87,5 @@ op_code obtenerCodigo(char *opcion, t_log *logger)
     {
         return LISTAR_ESTADOS;
     }
-}
+    return 0;
+} */

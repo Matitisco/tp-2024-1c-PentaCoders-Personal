@@ -27,6 +27,6 @@ uint32_t recibir_cod(int socket_cliente);
 
 tipo_buffer *recibir_buffer_propio(int socket);
 
-//void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde);
+// void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde);
 
 #endif
