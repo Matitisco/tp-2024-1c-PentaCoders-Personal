@@ -12,13 +12,6 @@
 #include <pthread.h>
 #include "../../utils/include/serializacion.h"
 
-typedef struct
-{
-	t_log *logger;
-	char *puerto;
-	char *ip;
-} t_args ;
-
 extern t_log *logger;
 int socket_cpu;
 pthread_t hiloCPU, hiloKernel, hiloIO;

@@ -25,19 +25,6 @@ int main(int argc, char *argv[])
     destruirConfig(valores_config->config);
     destruirLog(logger);
 }
-t_args *crearArgumento(char *puerto, char *ip)
-{
-    t_args *a;
-    a = malloc(sizeof(t_args));
-    a->logger = logger;
-    a->puerto = malloc(sizeof(char *));
-    a->ip = malloc(sizeof(char *));
-    strcpy(a->puerto, puerto);
-
-    strcpy(a->ip, ip);
-
-    return a;
-}
 void crearHilos(t_args *args_CPU, t_args *args_IO, t_args *args_KERNEL)
 {
     // pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
@@ -53,7 +40,7 @@ void *recibirKernel(void *ptr)
 {
     t_args *argumento = malloc(sizeof(t_args));
     argumento = (t_args *)ptr;
-
+    // COMPROBACION
     printf("%s\n %s\n", argumento->ip, argumento->puerto);
 
     int server_fd = iniciar_servidor(logger, "Memoria", argumento->ip, argumento->puerto);
@@ -77,7 +64,6 @@ void *recibirKernel(void *ptr)
             break;
         case SOLICITUD_INICIAR_PROCESO:
             log_info(argumento->logger, "La Solicitud de Iniciar Proceso llego a Memoria");
-
             //tipo_buffer *buffer = recibir_buffer_propio(sizeof(uint32_t), cliente_fd);
 
             //t_cde *contexto_ejecucion = leer_buffer_cde(buffer); DESEREALIZAR FALTA IMPLEMENTAR
@@ -87,6 +73,7 @@ void *recibirKernel(void *ptr)
             // agregar_Instrucciones_Al_CDE(listInstrucciones, buffer);
             //  agregamos insutrcciones al cde, identificamos al cde usando su id
             log_info(argumento->logger, "La Solicitud de Iniciar Proceso se Realizo con Exito");
+            break;
 
         case SOLICITUD_FINALIZAR_PROCESO:
             // liberar_memoria_proceso(unproceso);
@@ -94,7 +81,7 @@ void *recibirKernel(void *ptr)
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             // return (void *)EXIT_FAILURE;
-            return EXIT_FAILURE; // version de la catedra, pero da un warning si no anda comentar el de arriba
+            return  EXIT_FAILURE; // version de la catedra, pero da un warning si no anda comentar el de arriba
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
             break;

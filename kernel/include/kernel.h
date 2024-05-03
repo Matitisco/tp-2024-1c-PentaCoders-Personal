@@ -9,11 +9,9 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-//#include "cortoPlazo.h"
-//#include "menu.h"
-//#include "operaciones.h"
-
-
+// #include "cortoPlazo.h"
+// #include "menu.h"
+// #include "operaciones.h"
 
 #include "../../utils/include/utils.h"
 #include "../../utils/include/registros.h"
@@ -23,7 +21,7 @@
 
 // VARIABLES
 extern uint32_t PID_GLOBAL;
-extern t_log* logger;
+extern t_log *logger;
 
 // ENUMS
 typedef enum
@@ -86,7 +84,8 @@ extern colaEstado *cola_bloqueado_global;
 extern colaEstado *cola_exit_global;
 
 // FUNCIONES
-
+void crearHilos(t_args *args_MEMORIA);
+void *enviarAMemoria(void *ptr);
 void iniciar_consola_interactiva(t_log *logger);
 void gestionar_peticiones_memoria();
 void gestionar_peticiones_interfaces();
@@ -95,30 +94,29 @@ void inicializarEstados();
 colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
-//void ejecutar_script();
-//void iniciar_proceso(char *PATH);
-//void finalizar_proceso(uint32_t PID);
-//void iniciar_planificacion();
-//void detener_planificacion();
-//void listar_procesos_x_estado();
+// void ejecutar_script();
+// void iniciar_proceso(char *PATH);
+// void finalizar_proceso(uint32_t PID);
+// void iniciar_planificacion();
+// void detener_planificacion();
+// void listar_procesos_x_estado();
 
 /*Funciones de busuqeda del proceso*/
 
-//uint32_t mostrarPID(t_pcb *proceso);
-//t_pcb *buscarProceso(uint32_t pid);
-//t_pcb *crear_proceso();
-//t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
-//t_cde *iniciar_cde();
+// uint32_t mostrarPID(t_pcb *proceso);
+// t_pcb *buscarProceso(uint32_t pid);
+// t_pcb *crear_proceso();
+// t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
+// t_cde *iniciar_cde();
 
 // char *mostrarMotivo(enum motivoFinalizar motivo);
 
 /*Funciones para liberar*/
 
-//void liberar_proceso(t_pcb *proceso);
-///void liberar_cde(t_pcb *proceso);
-//void liberar_recursos(t_pcb *proceso);
-//void liberar_archivos(t_pcb *proceso);
-// CORTO PLAZO
-
+// void liberar_proceso(t_pcb *proceso);
+/// void liberar_cde(t_pcb *proceso);
+// void liberar_recursos(t_pcb *proceso);
+// void liberar_archivos(t_pcb *proceso);
+//  CORTO PLAZO
 
 #endif

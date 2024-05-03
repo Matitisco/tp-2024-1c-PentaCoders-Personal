@@ -35,6 +35,13 @@ typedef enum
 	PEDIDO_PCB
 } op_code;
 
+typedef struct
+{
+	t_log *logger;
+	char *puerto;
+	char *ip;
+} t_args ;
+
 typedef enum {
     EJECUTAR_PROCESO,
 	INTERRUPT,
@@ -52,5 +59,5 @@ void terminar_programa(int, t_log *, t_config *);
 void destruirLog(t_log *logger);
 void destruirConfig(t_config *config);
 void liberarConexion(int conexion);
-
+t_args *crearArgumento(char *puerto, char *ip);
 #endif

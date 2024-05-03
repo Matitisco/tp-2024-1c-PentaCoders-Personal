@@ -9,11 +9,13 @@ int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
 
-int  QUANTUM;
-
+int QUANTUM;
+pthread_t hiloMEMORIA;
+t_args *args_MEMORIA;
 extern t_log *logger;
 
-pthread_t hiloCPU;
+// pthread_t hiloCPU;
+// pthread_t hiloMEMORIA;
 
 int main(int argc, char *argv[])
 {
@@ -26,16 +28,30 @@ int main(int argc, char *argv[])
 	config_kernel *valores_config = inicializar_config_kernel();
 
 	// KERNEL COMO SERVER DE I0
-	//levantarServidor(logger, valores_config->puerto_escucha, valores_config->ip_memoria, "SERVIDOR KERNEL");
+	// levantarServidor(logger, valores_config->puerto_escucha, valores_config->ip_memoria, "SERVIDOR KERNEL");
 	// KERNEL COMO CLIENTE
 	// SOCKET MEMORIA SE DEBE QUEDAR ASI SINO NO SE ENVIA NADA DESDE KERNEL A MEMORIA
-	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria, "KERNEL SE CONECTO A MEMORIA");
-	//socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
- 	//pthread_create(hiloCPU);
+	args_MEMORIA = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
+	crearHilos(args_MEMORIA);
+	// socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
+	// pthread_create(hiloCPU);
+	pthread_join(hiloMEMORIA, NULL);
 	iniciar_consola_interactiva(logger);
 
-	//terminar_programa(socket_cpu_dispatch, logger, valores_config->config);
+	// terminar_programa(socket_cpu_dispatch, logger, valores_config->config);
+
 	liberarConexion(socket_memoria);
+}
+void crearHilos(t_args *args_MEMORIA)
+{
+	pthread_create(&hiloMEMORIA, NULL, enviarAMemoria, (void *)args_MEMORIA);
+}
+
+void *enviarAMemoria(void *ptr)
+{
+	t_args *argumento = malloc(sizeof(t_args));
+	argumento = (t_args *)ptr;
+	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "KERNEL SE CONECTO A MEMORIA");
 }
 
 void gestionar_peticiones_memoria()

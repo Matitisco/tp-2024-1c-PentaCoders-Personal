@@ -54,3 +54,19 @@ void liberarConexion(int conexion)
 		liberar_conexion(conexion);
 	}
 }
+
+// CREAR ARGUMENTOS
+
+t_args *crearArgumento(char *puerto, char *ip)
+{
+    t_args *a;
+    a = malloc(sizeof(t_args));
+    a->logger = logger;
+    a->puerto = malloc(sizeof(char *));
+    a->ip = malloc(sizeof(char *));
+    strcpy(a->puerto, puerto);
+
+    strcpy(a->ip, ip);
+
+    return a;
+}
