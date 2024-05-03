@@ -16,14 +16,6 @@
 #include <commons/collections/list.h>
 #include <assert.h>
 #include "sockets.h"
-typedef struct
-{
-    uint32_t size;
-    uint32_t offset;
-    void *stream;
-
-} tipo_buffer;
-
 typedef enum
 {
 	MENSAJE, 
@@ -43,13 +35,6 @@ typedef enum
 	PEDIDO_PCB
 } op_code;
 
-
-typedef struct
-{
-	op_code codigo_operacion;
-	tipo_buffer *buffer;
-} t_paquete;
-
 typedef enum {
     EJECUTAR_PROCESO,
 	INTERRUPT,
@@ -57,43 +42,15 @@ typedef enum {
 	CDE,
 }mensaje_kernel_cpu;
 
-
-
-void enviar_mensaje(char *mensaje, int socket_cliente);
-t_paquete *crear_paquete(void);
-void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
-void enviar_paquete(t_paquete *paquete, int socket_cliente);
-
-void eliminar_paquete(t_paquete *paquete);
-
-// SERVIDOR
-
 extern t_log *logger;
 
-
-//void *recibir_buffer(int *, int);
-
-t_list *recibir_paquete(int);
-void recibir_mensaje(int);
-int recibir_operacion(int);
-
-// KERNEL UTILS
 void iterator(char *value);
-
-// I_O UTILS
 t_log *iniciar_logger(char *path_log, char *nombre_log);
 t_config *iniciar_config(char *config_path);
 void leer_consola(t_log *);
-void paquete(int);
 void terminar_programa(int, t_log *, t_config *);
-
 void destruirLog(t_log *logger);
-
 void destruirConfig(t_config *config);
-
 void liberarConexion(int conexion);
-
-
-t_paquete *crear_paquete(void);
 
 #endif

@@ -11,19 +11,18 @@ void ejecutar_script()
 // INICIAR PROCESO
 void iniciar_proceso(char *PATH)
 {
-
     printf("\nsocket memoria: %d\n", socket_memoria);
     t_pcb *proceso = crear_proceso(PATH);                       // Creo nuestro nuevo proceso
     enviar_cod_enum(socket_memoria, SOLICITUD_INICIAR_PROCESO); // Le pido si puedo iniciar el proceso
     // ENVIAMOS BUFFER A MEMORIA 
-    //tipo_buffer *buffer = crear_buffer();
-    //escribir_buffer_entero(buffer, proceso->cde->pid);
-    //escribir_buffer_string(buffer, proceso->cde->path);
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, proceso->cde->pid);
+    agregar_buffer_para_string(buffer, proceso->cde->path);
 
     enviar_buffer(buffer, socket_memoria);      //Enviado a memoria
     destruir_buffer(buffer);
     // OBTENEMOS OP_CODE DESDE MEMORIA
-    op_code codigo = recibir_cod(socket_memoria);
+    op_code codigo = recibir_operacion(socket_memoria);
     if (codigo == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global);
@@ -42,11 +41,11 @@ t_pcb *crear_proceso(char *PATH)
 
     proceso_nuevo->archivosAsignados = list_create();
     proceso_nuevo->recursosAsignados = list_create();
-    proceso_nuevo->cde = iniciar_cde();
+    proceso_nuevo->cde = iniciar_cde(PATH);
     return proceso_nuevo;
 }
 
-t_cde *iniciar_cde()
+t_cde *iniciar_cde(char* PATH)
 {
     t_cde *cde = malloc(sizeof(t_cde));
 
@@ -57,7 +56,6 @@ t_cde *iniciar_cde()
     strcpy(cde->path,PATH); //y asignarle con la funcion
     cde->registro = malloc(sizeof(t_registros));
     cde->registro = NULL;
-    cde->lista_instrucciones = malloc(sizeof(t_list));
     cde->lista_instrucciones = list_create();
     return cde;
 }
@@ -68,7 +66,7 @@ void finalizar_proceso(uint32_t PID)
     t_pcb *proceso = buscarProceso(PID); // buscamos en las colas
     log_info(logger, "Se finalizo el proceso %u \n", PID);
 
-    op_code otroCodigo = recibir_cod(socket_memoria);
+    op_code otroCodigo = recibir_operacion(socket_memoria);
     if (otroCodigo == FINALIZAR_PROCESO)
     {
         log_info(logger, "PID %u -Destruir pcb", proceso->cde->pid);

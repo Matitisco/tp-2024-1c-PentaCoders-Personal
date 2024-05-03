@@ -32,15 +32,13 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         exit(1);
         break;
     case INICIAR_PROCESO:
-        char *PATH =NULL;
+        char *PATH = NULL;
         PATH= readline("Ingrese el nombre del archivo: "); 
         iniciar_proceso(PATH);
-        // exit(1); // momentaneo es solo para que no quede en loop
         break;
     case FINALIZAR_PROCESO:
         char *pid = readline("Ingrese el PID del Proceso a Finalizar: ");
         finalizar_proceso(atoi(pid));
-        // exit(1);
         break;
     case INICIAR_PLANIFICACION:
         iniciar_planificacion();

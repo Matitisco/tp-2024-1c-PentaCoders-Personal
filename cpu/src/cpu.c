@@ -42,7 +42,7 @@ struct config_cpu *config_cpu()
 
 
 void recibir_cde(){
-	mensaje_kernel_cpu codigo= recibir_cod(socket_kernel_dispatch);
+	mensaje_kernel_cpu codigo= recibir_operacion(socket_kernel_dispatch);
 	tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch);
 	if(codigo == EJECUTAR_PROCESO){
 		ejecutarproceso();

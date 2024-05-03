@@ -28,7 +28,7 @@ uint32_t mostrarPID(t_pcb *proceso);
 t_pcb *buscarProceso(uint32_t pid);
 t_pcb *crear_proceso(char *PATH);
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
-t_cde *iniciar_cde();
+t_cde *iniciar_cde(char* PATH);
 
 // char *mostrarMotivo(enum motivoFinalizar motivo);
 
