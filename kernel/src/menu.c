@@ -19,7 +19,8 @@ void mostrar_operaciones_realizables()
     printf("3-Finalizar Proceso [PID]\n");
     printf("4-Iniciar Planificacion \n");
     printf("5-Detener Planificacion\n");
-    printf("6-Listar Procesos por Estado\n");
+    printf("6-Modificar Grado Multiporgramacion [VALOR]\n");
+    printf("7-Listar Procesos por Estado\n");
 }
 
 void ejecutar_operacion(char *opcion, t_log *logger)
@@ -28,12 +29,13 @@ void ejecutar_operacion(char *opcion, t_log *logger)
     switch (cod_op)
     {
     case EJECUTAR_SCRIPT:
-        ejecutar_script();
-        exit(1);
+        char *PATH = NULL;
+        PATH = readline("Ingrese el nombre del archivo con comandos: ");
+        ejecutar_script(PATH);
         break;
     case INICIAR_PROCESO:
         char *PATH = NULL;
-        PATH= readline("Ingrese el nombre del archivo: "); 
+        PATH = readline("Ingrese el nombre del archivo: ");
         iniciar_proceso(PATH);
         break;
     case FINALIZAR_PROCESO:
@@ -48,6 +50,9 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         detener_planificacion();
         exit(1);
         break;
+    case MULTIPROGRAMACION:
+        char *valor = readline("Ingrese el PID del Proceso a Finalizar: ");
+        grado_multiprogramacion(atoi(valor));
     case LISTAR_ESTADOS:
         listar_procesos_x_estado();
         exit(1);
@@ -82,6 +87,10 @@ op_code obtenerCodigo(char *opcion, t_log *logger)
         return DETENER_PLANIFICACION;
     }
     if (strcmp(opcion, "6") == 0)
+    {
+        return MULTIPROGRAMACION;
+    }
+    if (strcmp(opcion, "7") == 0)
     {
         return LISTAR_ESTADOS;
     }

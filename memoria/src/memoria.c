@@ -40,8 +40,6 @@ void *recibirKernel(void *ptr)
 {
     t_args *argumento = malloc(sizeof(t_args));
     argumento = (t_args *)ptr;
-    // COMPROBACION
-    printf("%s\n %s\n", argumento->ip, argumento->puerto);
 
     int server_fd = iniciar_servidor(logger, "Memoria", argumento->ip, argumento->puerto);
     log_info(logger, "Servidor Memoria listo para recibir KERNEL");
@@ -51,7 +49,6 @@ void *recibirKernel(void *ptr)
     while (1)
     {
         int cod_op = recibir_operacion(cliente_fd);
-        printf("\n%d\n", cod_op);
         switch (cod_op)
         {
         case MENSAJE:
@@ -63,10 +60,10 @@ void *recibirKernel(void *ptr)
             list_iterate(lista, (void *)iterator);
             break;
         case SOLICITUD_INICIAR_PROCESO:
-            log_info(argumento->logger, "La Solicitud de Iniciar Proceso llego a Memoria");
-            //tipo_buffer *buffer = recibir_buffer_propio(sizeof(uint32_t), cliente_fd);
+            log_info(argumento->logger, "Me llego la Solicitud de Iniciar Proceso");
+            // tipo_buffer *buffer = recibir_buffer_propio(sizeof(uint32_t), cliente_fd);
 
-            //t_cde *contexto_ejecucion = leer_buffer_cde(buffer); DESEREALIZAR FALTA IMPLEMENTAR
+            // t_cde *contexto_ejecucion = leer_buffer_cde(buffer); DESEREALIZAR FALTA IMPLEMENTAR
 
             // t_list *listInstrucciones = leerArchivoConInstrucciones(char *pathArch);
 
@@ -81,7 +78,7 @@ void *recibirKernel(void *ptr)
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             // return (void *)EXIT_FAILURE;
-            return  EXIT_FAILURE; // version de la catedra, pero da un warning si no anda comentar el de arriba
+            return EXIT_FAILURE; // version de la catedra, pero da un warning si no anda comentar el de arriba
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
             break;

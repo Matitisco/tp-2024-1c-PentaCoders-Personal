@@ -84,8 +84,9 @@ extern colaEstado *cola_bloqueado_global;
 extern colaEstado *cola_exit_global;
 
 // FUNCIONES
-void crearHilos(t_args *args_MEMORIA);
+void crearHilos(t_args *args_MEMORIA,t_args *args_IO);
 void *enviarAMemoria(void *ptr);
+void *levantarIO(void *ptr);
 void iniciar_consola_interactiva(t_log *logger);
 void gestionar_peticiones_memoria();
 void gestionar_peticiones_interfaces();

@@ -15,11 +15,12 @@ typedef enum motivoFinalizar{
 //extern uint32_t PID_GLOBAL;
 
 
-void ejecutar_script();
+void ejecutar_script(char* PATH);
 void iniciar_proceso(char *PATH);
 void finalizar_proceso(uint32_t PID);
 void iniciar_planificacion();
 void detener_planificacion();
+void grado_multiprogramacion(int valor);
 void listar_procesos_x_estado();
 
 //Funciones de busuqeda del proceso
