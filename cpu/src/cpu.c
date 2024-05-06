@@ -38,12 +38,12 @@ void proceso_dispatch(void* socket_server){
     log_info(logger, "Se conecto el Kernel por DISPATCH");
     
     while(1){
+        
+		mensaje_kernel_cpu op_code = recibir_cod(socket_kernel_dispatch); // Se recibe de Kernel la operación
 
-        mensaje_kernel_cpu op_code = recibir_cod(socket_kernel_dispatch);
-
-        tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch);
-
-        switch(op_code){
+        tipo_buffer* buffer = recibir_buffer_propio(socket_kernel_dispatch); // Se recibe de Kernel el PCB
+		
+        switch(op_code){ 
             case EJECUTAR_PROCESO:
 			
                 t_cde* cde_recibido = recibir_buffer_propio(buffer);
