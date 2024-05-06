@@ -53,6 +53,28 @@ typedef struct
 	char *puerto_cpu_dispatch;
 	char *puerto_cpu_interrupt;
 } config_kernel;
+// QUITAR ENUM_INTERFAZ UNA VEZ MERGEADO INTERFACES Y KERNEL
+typedef enum
+{
+	GENERICA,
+	STDIN,
+	STDOUT,
+	DIALFS,
+} enum_interfaz;
+
+typedef struct
+{
+	enum_interfaz tipo_interfaz;
+	int tiempo_unidad_trabajo;
+	char *ip_kernel;
+	int puerto_kernel;
+	char *ip_memoria;
+	int puerto_memoria;
+	char *path_base_dialfs;
+	int block_size;
+	int block_count;
+	int retraso_compactacion;
+} t_interfaz;
 
 typedef struct
 {

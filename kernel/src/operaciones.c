@@ -168,30 +168,22 @@ void liberar_archivos(t_pcb *proceso)
 }
 void liberar_memoria(t_pcb *proceso)
 {
-    // PREGUNTAR QUE HACE ESTA FUNCION RAWRA
 }
 
-/* void enviar_cde(int conexion, t_cde *cde, int codOP) //----IMPLEMENTAR----
+void renaudar_corto_plazo()
 {
-    t_paquete *paquete = crear_paquete_op_code(codOP);
-
-    agregar_cde_a_paquete(paquete, cde);
-
-    enviar_paquete(paquete, conexion);
-
-    eliminar_paquete(paquete);
 }
- */
-/* void enviar_cde(t_cde *cde)
+void renaudar_largo_plazo()
 {
-    enviar_codigo(socket_cpu_dispatch, EJECUTAR_PROCESO); // Le pido si pueod iniciar el proceso
-    tipo_buffer *buffer = crear_buffer();
-    escribir_buffer(buffer, cde->pid);
-    escribir_buffer(buffer, cde->pc);
-    enviar_buffer(buffer, socket_cpu_dispatch);
-    destruir_buffer(buffer);
-}*/
-
+}
+void modificar_grado_multiprogramacion(int valor)
+{
+}
+void mostrar_procesos(colaEstado *cola)
+{
+}
+void pausar_corto_plazo() {}
+void pausar_largo_plazo() {}
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
 
