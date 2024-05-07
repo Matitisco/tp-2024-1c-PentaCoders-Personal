@@ -38,53 +38,26 @@ void *recibirIO(void *ptr)
 
 void *recibirKernel(void *ptr)
 {
-    tipo_buffer* buffer;
+    tipo_buffer *buffer = malloc(sizeof(tipo_buffer));
     t_args *argumento = malloc(sizeof(t_args));
     argumento = (t_args *)ptr;
 
     int server_fd = iniciar_servidor(logger, "Memoria", argumento->ip, argumento->puerto);
     log_info(logger, "Servidor Memoria listo para recibir KERNEL");
     int cliente_fd = esperar_cliente(logger, "Memoria", server_fd);
-    t_list *lista = list_create();
     while (1)
     {
-        // recibimos paquete proveniente del kernel
-        // lista = recibir_paquete_cde(cliente_fd);
-        // obtenemos el codigo de operacion
-
         op_code cod_op = recibir_operacion(cliente_fd);
-        log_info(logger, "%d", cod_op);
         switch (cod_op)
         {
         case SOLICITUD_INICIAR_PROCESO:
-            log_info(logger, "Me llego la Solicitud de Iniciar Proceso");
-            //lista = recibir_paquete_cde(cliente_fd);
-
-            buffer = recibir_buffer(cliente_fd);
-
-            t_cde* cde = armarCde(buffer);
-            
-            char*asd= "holasd";
-
-            log_info(logger, "prueba: %s",asd);
-
-            log_info(logger, "PID: %d", cde->pid);
-            if (cde->path != NULL) {
-                printf("PATH: %s, llego.\n", cde->path);
-            } else {
-                printf("PATH: (NULO)\n");
-            }
-
-            iniciar_proceso();
+            iniciar_proceso(cliente_fd, buffer);
             break;
-
         case SOLICITUD_FINALIZAR_PROCESO:
-            log_info(logger, "Se aprueba finalizar el proceso");
             finalizar_proceso();
-        case -1:
-            log_error(logger, "El cliente se desconecto. Terminando servidor");
-            // return (void *)EXIT_FAILURE;
-            return EXIT_FAILURE; // version de la catedra, pero da un warning si no anda comentar el de arriba
+        case ERROR_CLIENTE_DESCONECTADO:
+            log_error(logger, "El KERNEL se desconecto. Terminando servidor");
+            return EXIT_FAILURE;
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
             break;
@@ -93,45 +66,43 @@ void *recibirKernel(void *ptr)
     return EXIT_SUCCESS;
 }
 
+t_cde *armarCde(tipo_buffer *buffer)
+{
+    t_cde *cde = malloc(sizeof(t_cde));
 
+    cde->pid = leer_buffer_enteroUint32(buffer);
 
-t_cde* armarCde(tipo_buffer* buffer){
-    t_cde* cde = malloc(sizeof(t_cde));
+    char *string = leer_buffer_string(buffer);
 
-    cde-> pid = leer_buffer_enteroUint32(buffer);
-
-    char* string = leer_buffer_string(buffer);
-    
-    //cde->path = malloc(strlen(string) + 2); 
-    //strcpy(cde->path, string );
+    // cde->path = malloc(strlen(string) + 2);
+    // strcpy(cde->path, string );
     cde->path = string;
 
     return cde;
 }
 
-
-
-
-
-void iniciar_proceso()
+void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
 {
-    // log_info(argumento->logger, "Me llego la Solicitud de Iniciar Proceso");
-    // lista = recibir_paquete(cliente_fd);
-
-    // t_cde *cde = leer_paquete_cte(lista);
-    //  tipo_buffer *buffer = recibir_buffer_propio(sizeof(uint32_t), cliente_fd);
-
-    // t_cde *contexto_ejecucion = leer_buffer_cde(buffer); DESEREALIZAR FALTA IMPLEMENTAR
-
-    // t_list *listInstrucciones = leerArchivoConInstrucciones(char *pathArch);
-
-    // agregar_Instrucciones_Al_CDE(listInstrucciones, buffer);
-    //  agregamos insutrcciones al cde, identificamos al cde usando su id
-    // log_info(argumento->logger, "La Solicitud de Iniciar Proceso se Realizo con Exito");
+    log_info(logger, "Me llego la Solicitud de Iniciar Proceso");
+    buffer = recibir_buffer(cliente_fd);
+    t_cde *cde = armarCde(buffer);
+    destruir_buffer(buffer);
+    // IMPLEMENTAR leerArchivoConINstrucciones
+    //cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
+    if (cde->path != NULL)
+    {
+        enviar_cod_enum(cliente_fd, INICIAR_PROCESO_CORRECTO);
+        log_info(logger, "Se inicio el proceso de PID: %d y PATH: %s", cde->pid, cde->path);
+    }
+    else
+    {
+        enviar_cod_enum(cliente_fd, ERROR_INICIAR_PROCESO);
+    }
 }
 
 void finalizar_proceso()
 {
+    log_info(logger, "Se aprueba finalizar el proceso");
 }
 void *recibirCPU(void *ptr)
 {

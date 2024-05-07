@@ -68,32 +68,31 @@ t_list *recibir_paquete_cde(int socket_cliente)
     t_list *valores = list_create();
 
     buffer = recibir_buffer(socket_cliente);
-    
 
-    //Recibir pid
+    // Recibir pid
     int pid = 0;
     pid = leer_buffer_enteroUint32(buffer);
     list_add(valores, pid);
 
-    //recibir tamanio del path
+    // recibir tamanio del path
 
     /* int tamanio = 0;
     tamanio = leer_buffer_enteroUint32(buffer);
     list_add(valores,tamanio); */
 
-    //recibir path
-    //char *path = malloc(tamanio_path);
-    char * path = leer_buffer_string(buffer); // recibe el tamanio adentro de la funcion.
+    // recibir path
+    // char *path = malloc(tamanio_path);
+    char *path = leer_buffer_string(buffer); // recibe el tamanio adentro de la funcion.
     list_add(valores, path);
 
     // recibir pid
     /* int pid = 0;
     memcpy(&pid, buffer + desplazamiento, sizeof(int));
     list_add(valores, pid); */
-/* 
-    // recibir tamanio del path
-    int tamanio_path = 0;
-    memcpy(&tamanio_path, buffer + desplazamiento, sizeof(int)); */
+    /*
+        // recibir tamanio del path
+        int tamanio_path = 0;
+        memcpy(&tamanio_path, buffer + desplazamiento, sizeof(int)); */
 
     /* // recibimos y copiamos el contenido del path
     char *path = malloc(tamanio_path);
@@ -103,9 +102,6 @@ t_list *recibir_paquete_cde(int socket_cliente)
     free(buffer);
     return valores;
 }
-
-
-
 
 // ENVIAR PAQUETE
 void enviar_paquete(t_paquete *paquete, int socket_cliente)
@@ -184,18 +180,21 @@ void paquete(int conexion)
 void enviar_cod_enum(int socket_servidor, uint32_t cod)
 {
     send(socket_servidor, &cod, sizeof(uint32_t), 0);
-    printf("Se envio el codigo al servidor %u", cod);
+    //printf("Se envio el codigo al servidor %u", cod);
 }
 // RECIBIR OPERACION PARECIDO A recibi_cod(int socket_cliente)
 op_code recibir_operacion(int socket_cliente)
 {
     op_code cod_op;
-    if (recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL) > 0)
-        return cod_op;
-    else
+    while (1)
     {
-        close(socket_cliente);
-        return -1;
+        if (recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL) > 0)
+            return cod_op;
+        else
+        {
+            close(socket_cliente);
+            return -1;
+        }
     }
 }
 /*----------------------------------- BUFFER -----------------------------------*/
@@ -288,13 +287,13 @@ tipo_buffer *recibir_buffer(int socket)
 // LEER BUFFER UINT_32
 uint32_t leer_buffer_enteroUint32(tipo_buffer *buffer)
 {
-    int entero32; //malloc(sizeof(uint32_t));
-    //void *stream = buffer->stream;
-    // Deserializamos los campos que tenemos en el buffer
+    int entero32; // malloc(sizeof(uint32_t));
+    // void *stream = buffer->stream;
+    //  Deserializamos los campos que tenemos en el buffer
     memcpy(&entero32, buffer->stream + buffer->offset, sizeof(uint32_t));
-    //stream += sizeof(uint32_t);
+    // stream += sizeof(uint32_t);
     buffer->offset += sizeof(uint32_t);
-    
+
     return entero32;
 }
 // LEER BUFFER UINT_8
@@ -302,10 +301,10 @@ uint8_t leer_buffer_enteroUint8(tipo_buffer *buffer)
 {
     int entero8;
 
-    //void *stream = buffer->stream;
-    // Deserializamos los campos que tenemos en el buffer
+    // void *stream = buffer->stream;
+    //  Deserializamos los campos que tenemos en el buffer
     memcpy(&entero8, buffer->stream + buffer->offset, sizeof(uint8_t));
-    //stream += sizeof(uint8_t);
+    // stream += sizeof(uint8_t);
     buffer->offset += sizeof(uint8_t);
 
     return entero8;
@@ -316,26 +315,20 @@ char *leer_buffer_string(tipo_buffer *buffer)
     char *cadena;
     uint32_t tamanio;
 
-    //void *stream = buffer->stream;
+    // void *stream = buffer->stream;
     /* // Deserializamos los campos que tenemos en el buffer
     memcpy(tamanio, stream, sizeof(uint32_t)); // Recibe tamanio
     stream += sizeof(uint32_t); */
 
     tamanio = leer_buffer_enteroUint32(buffer);
-    cadena = malloc((tamanio)+1); // Reserva lugar para el string con el tamanio recibido
-    memcpy(cadena, buffer->stream + buffer->offset, (tamanio));  // Recibe string
-    buffer->offset += tamanio;   
+    cadena = malloc((tamanio) + 1);                             // Reserva lugar para el string con el tamanio recibido
+    memcpy(cadena, buffer->stream + buffer->offset, (tamanio)); // Recibe string
+    buffer->offset += tamanio;
 
     *(cadena + tamanio) = '\0';
 
-
     return cadena;
 }
-
-
-
-
-
 
 // ESCRIBIR EN EL BUFFER UNA LISTA
 /*void escribir_buffer_para_listas(tipo_buffer *buffer, void *args)

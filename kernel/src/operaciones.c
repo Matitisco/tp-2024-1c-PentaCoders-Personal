@@ -12,32 +12,18 @@ void ejecutar_script(char *PATH)
 void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 {
     t_pcb *proceso = crear_proceso(PATH);
-    log_info(logger,"PATH %s",proceso->cde->path);
-    log_info(logger, "Se creo un proceso con PID: %u en NEW\n", proceso->cde->pid);
-    // ENVIAMOS PAQUETE A MEMORIA
-    //t_paquete *paquete = crear_paquete_cde();
-    tipo_buffer* buffer= crear_buffer();
 
-    op_code codigo = SOLICITUD_INICIAR_PROCESO;                      // SOLICITUD_INICIAR_PROCESO;
+    tipo_buffer *buffer = crear_buffer();
 
-    send(socket_memoria, &codigo, sizeof(uint32_t), 0);         // enviar codigo
+    op_code codigo = SOLICITUD_INICIAR_PROCESO; // SOLICITUD_INICIAR_PROCESO;
 
-    agregar_buffer_para_enterosUint32(buffer,proceso->cde->pid);
-    agregar_buffer_para_string(buffer,proceso->cde->path);
+    send(socket_memoria, &codigo, sizeof(uint32_t), 0); // enviar codigo
 
+    agregar_buffer_para_enterosUint32(buffer, proceso->cde->pid);
+    agregar_buffer_para_string(buffer, proceso->cde->path);
 
-    enviar_buffer(buffer,socket_memoria);
-    /* agregar_a_paquete(paquete, &operacion, sizeof(int));                // codigo operacion
-    agregar_a_paquete(paquete, &(proceso->cde->pid), sizeof(uint32_t)); // pid
-    int tamanio_path = strlen(PATH) + 1;
-    agregar_a_paquete(paquete, &tamanio_path, sizeof(int));           // tamanio path
-
-    agregar_a_paquete(paquete, proceso->cde->path, tamanio_path); // path
- */
-    // ENVIAMOS EL PAQUETE
-    //enviar_paquete(paquete, socket_memoria);
-    // ELIMINAMOS EL PAQUETE
-    //eliminar_paquete(paquete);
+    enviar_buffer(buffer, socket_memoria);
+    destruir_buffer(buffer);
 
     // OBTENEMOS OP_CODE DESDE MEMORIA
     op_code respuestaDeMemoria = recibir_operacion(socket_memoria);
