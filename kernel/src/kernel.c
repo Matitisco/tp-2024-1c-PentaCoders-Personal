@@ -19,21 +19,19 @@ extern t_log *logger;
 
 int main(int argc, char *argv[])
 {
-	// INICIALIZACION DE ESTADOS
 	inicializarEstados();
 
 	logger = iniciar_logger("kernel.log", "KERNEL");
 
-	// CONFIG
 	config_kernel *valores_config = inicializar_config_kernel();
 
 	args_MEMORIA = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
-	args_IO = crearArgumento(valores_config->puerto_escucha, valores_config->ip_memoria);
+	//args_IO = crearArgumento(valores_config->puerto_escucha, valores_config->ip_memoria);
 	crearHilos(args_MEMORIA, args_IO);
 	// socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
 	// pthread_create(hiloCPU);
 	pthread_join(hiloMEMORIA, NULL);
-	pthread_join(hiloIO, NULL);
+	// pthread_join(hiloIO, NULL);
 
 	iniciar_consola_interactiva(logger);
 
@@ -44,37 +42,37 @@ int main(int argc, char *argv[])
 void crearHilos(t_args *args_MEMORIA, t_args *args_IO)
 {
 	pthread_create(&hiloMEMORIA, NULL, enviarAMemoria, (void *)args_MEMORIA);
-	pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
+	// pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
 }
 void *levantarIO(void *ptr)
 {
-	t_args *argumento = malloc(sizeof(t_args));
-	argumento = (t_args *)ptr;
-	int server_fd = iniciar_servidor(logger, "Kernel", argumento->ip, argumento->puerto);
-	log_info(logger, "Servidor KERNEL listo para recibir Interfaces de IO");
-	t_list *lista_interfaces = list_create();
-	while (1)
-	{
-		// Debemos aplicar semaforos?? muy probable
-		// vamos a necesitar un hilo exclusivo para esperar al cliente?? es, decir que controle constantemente quien viene?
-		// vamos a necesitar semaforos si fuera asi, ya que debemos controlar quien llega y quien se va
-		int cliente_fd = esperar_cliente(logger, "Kernel", server_fd);
-		// SE SUPONE QUE LA INTERFAZ ENVIA UN MENSAJE CON SUS ATRIBUTOS (PAQUETE)
-		// SE RECIBE UN PAQUETE CON LOS VALORES DE LA INTERFAZ
-		t_list *valores_interfaz_conectada = recibir_paquete(cliente_fd); // extraigo el paquete y meto todo en una lista;
-		// ACORDARSE DE LUEGO BORRAR LA ESTRCUTURA QUE SE NECUENTRA EN KERNEL.H TENEMOS QUE SOLO USAR LA QUE ESTA EN ENTRADA Y SALIDA.H
-		char *nombre_IO = obtenerNombreInterfaz(valores_interfaz_conectada);
-		if (list_find(lista_interfaces, se_encuentra_conectada, nombre_IO))
+	/* 	t_args *argumento = malloc(sizeof(t_args));
+		argumento = (t_args *)ptr;
+		int server_fd = iniciar_servidor(logger, "Kernel", argumento->ip, argumento->puerto);
+		log_info(logger, "Servidor KERNEL listo para recibir Interfaces de IO");
+		t_list *lista_interfaces = list_create();
+		while (1)
 		{
-			list_add(lista_interfaces, nombreIO);
-		}
-		else
-		{
-			log_info(logger, "Esta Interfaz ya se encuentra conectada");
-		}
-		// log_info(logger, "Me llego una interfaz del tipo:%s, y de nombre:%s",parametros);
-		list_clean_and_destroy_elements(valores_interfaz_conectada);
-	}
+			// Debemos aplicar semaforos?? muy probable
+			// vamos a necesitar un hilo exclusivo para esperar al cliente?? es, decir que controle constantemente quien viene?
+			// vamos a necesitar semaforos si fuera asi, ya que debemos controlar quien llega y quien se va
+			int cliente_fd = esperar_cliente(logger, "Kernel", server_fd);
+			// SE SUPONE QUE LA INTERFAZ ENVIA UN MENSAJE CON SUS ATRIBUTOS (PAQUETE)
+			// SE RECIBE UN PAQUETE CON LOS VALORES DE LA INTERFAZ
+			t_list *valores_interfaz_conectada = recibir_paquete(cliente_fd); // extraigo el paquete y meto todo en una lista;
+			// ACORDARSE DE LUEGO BORRAR LA ESTRCUTURA QUE SE NECUENTRA EN KERNEL.H TENEMOS QUE SOLO USAR LA QUE ESTA EN ENTRADA Y SALIDA.H
+			char *nombre_IO = obtenerNombreInterfaz(valores_interfaz_conectada);
+			if (list_find(lista_interfaces, se_encuentra_conectada, nombre_IO))
+			{
+				list_add(lista_interfaces, nombreIO);
+			}
+			else
+			{
+				log_info(logger, "Esta Interfaz ya se encuentra conectada");
+			}
+			// log_info(logger, "Me llego una interfaz del tipo:%s, y de nombre:%s",parametros);
+			list_clean_and_destroy_elements(valores_interfaz_conectada);
+		} */
 }
 char *obtenerNombreInterfaz(t_list *lista)
 {
@@ -87,7 +85,7 @@ bool se_encuentra_conectada(void *lista, void *interfaz_nombre)
 	return lista != NULL && strcmp(lista_recorrer->head->data, elemento) == 0;
 }
 
-void *enviarAMemoria(void *ptr)
+ void *enviarAMemoria(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;

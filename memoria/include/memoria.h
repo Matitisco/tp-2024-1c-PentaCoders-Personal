@@ -34,5 +34,6 @@ struct config_memoria *config_memoria();
 void *recibirCPU(void* ptr);
 void *recibirKernel(void *ptr);
 void *recibirIO(void* ptr);
-
+void iniciar_proceso();
+void finalizar_proceso();
 #endif

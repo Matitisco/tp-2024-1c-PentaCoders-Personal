@@ -102,5 +102,5 @@ op_code obtenerCodigo(char *opcion, t_log *logger)
         log_info(logger, "Se eligio la opcion LISTAR PROCESOS POR ESTADO");
         return LISTAR_ESTADOS;
     }
-    return 0;
+    return -1;
 }

@@ -40,6 +40,15 @@ t_paquete *crear_paquete(void)
     paquete->buffer = crear_buffer();
     return paquete;
 }
+
+t_paquete *crear_paquete_cde(void)
+{
+    t_paquete *paquete = malloc(sizeof(t_paquete));
+    paquete->codigo_operacion = SOLICITUD_INICIAR_PROCESO;
+    paquete->buffer = crear_buffer();
+    return paquete;
+}
+
 // AGREGAR A PAQUETE
 void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio)
 {
@@ -50,6 +59,38 @@ void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio)
 
     paquete->buffer->size += tamanio + sizeof(int);
 }
+
+t_list *recibir_paquete_cde(int socket_cliente)
+{
+    int size = 0;
+    int desplazamiento = 0;
+    tipo_buffer *buffer;
+    t_list *valores = list_create();
+
+    buffer = recibir_buffer(socket_cliente);
+    // primer recibimos el cod op
+    op_code *cod_op = malloc(sizeof(int));
+    memcpy(&cod_op, buffer + desplazamiento, sizeof(int));
+    list_add(valores, cod_op);
+
+    // recibir pid
+    int pid = 0;
+    memcpy(&pid, buffer + desplazamiento, sizeof(int));
+    list_add(valores, pid);
+
+    // recibir tamanio del path
+    int tamanio_path = 0;
+    memcpy(&tamanio_path, buffer + desplazamiento, sizeof(int));
+
+    // recibimos y copiamos el contenido del path
+    char *path = malloc(tamanio_path);
+    memcpy(path, buffer + desplazamiento, tamanio_path);
+    list_add(valores, path);
+
+    free(buffer);
+    return valores;
+}
+
 // ENVIAR PAQUETE
 void enviar_paquete(t_paquete *paquete, int socket_cliente)
 {
@@ -130,9 +171,9 @@ void enviar_cod_enum(int socket_servidor, uint32_t cod)
     printf("Se envio el codigo al servidor %u", cod);
 }
 // RECIBIR OPERACION PARECIDO A recibi_cod(int socket_cliente)
-int recibir_operacion(int socket_cliente)
+op_code recibir_operacion(int socket_cliente)
 {
-    int cod_op;
+    op_code cod_op;
     if (recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL) > 0)
         return cod_op;
     else

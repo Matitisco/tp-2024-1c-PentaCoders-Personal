@@ -12,14 +12,19 @@ void ejecutar_script(char *PATH)
 void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 {
     t_pcb *proceso = crear_proceso(PATH);
-    enviar_cod_enum(socket_memoria, SOLICITUD_INICIAR_PROCESO);
-    // ENVIAMOS BUFFER A MEMORIA
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, proceso->cde->pid);
-    agregar_buffer_para_string(buffer, proceso->cde->path);
+    // ENVIAMOS PAQUETE A MEMORIA
+    t_paquete *paquete = crear_paquete_cde();
+    op_code operacion = SOLICITUD_INICIAR_PROCESO;                      // SOLICITUD_INICIAR_PROCESO;
+    agregar_a_paquete(paquete, &operacion, sizeof(int));                // codigo operacion
+    agregar_a_paquete(paquete, &(proceso->cde->pid), sizeof(uint32_t)); // pid
+    int tamanio_path = strlen(PATH) + 1;
+    agregar_a_paquete(paquete, &tamanio_path, sizeof(int));           // tamanio path
+    agregar_a_paquete(paquete, proceso->cde->path, strlen(PATH) - 1); // path
+    // ENVIAMOS EL PAQUETE
+    enviar_paquete(paquete, socket_memoria);
+    // ELIMINAMOS EL PAQUETE
+    eliminar_paquete(paquete);
 
-    enviar_buffer(buffer, socket_memoria); // Enviado a memoria
-    destruir_buffer(buffer);
     // OBTENEMOS OP_CODE DESDE MEMORIA
     op_code respuestaDeMemoria = recibir_operacion(socket_memoria);
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)

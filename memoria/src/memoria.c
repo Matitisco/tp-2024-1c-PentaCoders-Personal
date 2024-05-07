@@ -44,37 +44,25 @@ void *recibirKernel(void *ptr)
     int server_fd = iniciar_servidor(logger, "Memoria", argumento->ip, argumento->puerto);
     log_info(logger, "Servidor Memoria listo para recibir KERNEL");
     int cliente_fd = esperar_cliente(logger, "Memoria", server_fd);
-
-    t_list *lista;
+    t_list *lista = list_create();
     while (1)
     {
-        int cod_op = recibir_operacion(cliente_fd);
+        // recibimos paquete proveniente del kernel
+        // lista = recibir_paquete_cde(cliente_fd);
+        // obtenemos el codigo de operacion
+        op_code cod_op = recibir_operacion(cliente_fd);
+        log_info(logger, "%d", cod_op);
         switch (cod_op)
         {
-        case MENSAJE:
-            recibir_mensaje(cliente_fd);
-            break;
-        case PAQUETE:
-            lista = recibir_paquete(cliente_fd);
-            log_info(logger, "Me llegaron los siguientes valores:\n");
-            list_iterate(lista, (void *)iterator);
-            break;
         case SOLICITUD_INICIAR_PROCESO:
-            log_info(argumento->logger, "Me llego la Solicitud de Iniciar Proceso");
-            // tipo_buffer *buffer = recibir_buffer_propio(sizeof(uint32_t), cliente_fd);
-
-            // t_cde *contexto_ejecucion = leer_buffer_cde(buffer); DESEREALIZAR FALTA IMPLEMENTAR
-
-            // t_list *listInstrucciones = leerArchivoConInstrucciones(char *pathArch);
-
-            // agregar_Instrucciones_Al_CDE(listInstrucciones, buffer);
-            //  agregamos insutrcciones al cde, identificamos al cde usando su id
-            log_info(argumento->logger, "La Solicitud de Iniciar Proceso se Realizo con Exito");
+            log_info(logger, "Me llego la Solicitud de Iniciar Proceso");
+            
+            iniciar_proceso();
             break;
 
         case SOLICITUD_FINALIZAR_PROCESO:
-            // liberar_memoria_proceso(unproceso);
             log_info(logger, "Se aprueba finalizar el proceso");
+            finalizar_proceso();
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             // return (void *)EXIT_FAILURE;
@@ -86,7 +74,30 @@ void *recibirKernel(void *ptr)
     }
     return EXIT_SUCCESS;
 }
+/*
+t_cde * leer_paquete_cte(){
 
+}*/
+void iniciar_proceso()
+{
+    // log_info(argumento->logger, "Me llego la Solicitud de Iniciar Proceso");
+    // lista = recibir_paquete(cliente_fd);
+
+    // t_cde *cde = leer_paquete_cte(lista);
+    //  tipo_buffer *buffer = recibir_buffer_propio(sizeof(uint32_t), cliente_fd);
+
+    // t_cde *contexto_ejecucion = leer_buffer_cde(buffer); DESEREALIZAR FALTA IMPLEMENTAR
+
+    // t_list *listInstrucciones = leerArchivoConInstrucciones(char *pathArch);
+
+    // agregar_Instrucciones_Al_CDE(listInstrucciones, buffer);
+    //  agregamos insutrcciones al cde, identificamos al cde usando su id
+    // log_info(argumento->logger, "La Solicitud de Iniciar Proceso se Realizo con Exito");
+}
+
+void finalizar_proceso()
+{
+}
 void *recibirCPU(void *ptr)
 {
     t_args *argumento; // CASTEAR

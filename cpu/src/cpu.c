@@ -19,10 +19,6 @@ int main(int argc, char *argv[])
 	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config->config);
 }
 
-
-
-
-
 struct config_cpu *config_cpu()
 {
 	struct config_cpu *valores_config = malloc(sizeof(struct config_cpu));
