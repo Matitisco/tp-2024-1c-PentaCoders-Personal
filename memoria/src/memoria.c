@@ -38,6 +38,7 @@ void *recibirIO(void *ptr)
 
 void *recibirKernel(void *ptr)
 {
+    tipo_buffer* buffer;
     t_args *argumento = malloc(sizeof(t_args));
     argumento = (t_args *)ptr;
 
@@ -57,15 +58,22 @@ void *recibirKernel(void *ptr)
         {
         case SOLICITUD_INICIAR_PROCESO:
             log_info(logger, "Me llego la Solicitud de Iniciar Proceso");
-            lista = recibir_paquete_cde(cliente_fd);
-            t_cde *cde = malloc(sizeof(t_cde));
+            //lista = recibir_paquete_cde(cliente_fd);
 
-            cde->pid = list_get(lista,0);
-            cde->path = list_get(lista,1);
-      
+            buffer = recibir_buffer(cliente_fd);
+
+            t_cde* cde = armarCde(buffer);
+            
+            char*asd= "holasd";
+
+            log_info(logger, "prueba: %s",asd);
 
             log_info(logger, "PID: %d", cde->pid);
-            log_info(logger, "PATH: %s", cde->path);
+            if (cde->path != NULL) {
+                printf("PATH: %s, llego.\n", cde->path);
+            } else {
+                printf("PATH: (NULO)\n");
+            }
 
             iniciar_proceso();
             break;
@@ -84,6 +92,27 @@ void *recibirKernel(void *ptr)
     }
     return EXIT_SUCCESS;
 }
+
+
+
+t_cde* armarCde(tipo_buffer* buffer){
+    t_cde* cde = malloc(sizeof(t_cde));
+
+    cde-> pid = leer_buffer_enteroUint32(buffer);
+
+    char* string = leer_buffer_string(buffer);
+    
+    //cde->path = malloc(strlen(string) + 2); 
+    //strcpy(cde->path, string );
+    cde->path = string;
+
+    return cde;
+}
+
+
+
+
+
 void iniciar_proceso()
 {
     // log_info(argumento->logger, "Me llego la Solicitud de Iniciar Proceso");

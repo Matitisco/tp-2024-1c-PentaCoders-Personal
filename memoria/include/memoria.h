@@ -36,4 +36,7 @@ void *recibirKernel(void *ptr);
 void *recibirIO(void* ptr);
 void iniciar_proceso();
 void finalizar_proceso();
+
+t_cde* armarCde(tipo_buffer* buffer);
+
 #endif
