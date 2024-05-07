@@ -70,20 +70,36 @@ t_list *recibir_paquete_cde(int socket_cliente)
     buffer = recibir_buffer(socket_cliente);
     
 
-    // recibir pid
+    //Recibir pid
     int pid = 0;
-    memcpy(&pid, buffer + desplazamiento, sizeof(int));
+    pid = leer_buffer_enteroUint32(buffer);
     list_add(valores, pid);
 
+    //recibir tamanio del path
+
+    /* int tamanio = 0;
+    tamanio = leer_buffer_enteroUint32(buffer);
+    list_add(valores,tamanio); */
+
+    //recibir path
+    //char *path = malloc(tamanio_path);
+    char * path = leer_buffer_string(buffer); // recibe el tamanio adentro de la funcion.
+    list_add(valores, path);
+
+    // recibir pid
+    /* int pid = 0;
+    memcpy(&pid, buffer + desplazamiento, sizeof(int));
+    list_add(valores, pid); */
+/* 
     // recibir tamanio del path
     int tamanio_path = 0;
-    memcpy(&tamanio_path, buffer + desplazamiento, sizeof(int));
+    memcpy(&tamanio_path, buffer + desplazamiento, sizeof(int)); */
 
-    // recibimos y copiamos el contenido del path
+    /* // recibimos y copiamos el contenido del path
     char *path = malloc(tamanio_path);
     memcpy(path, buffer + desplazamiento, tamanio_path);
     list_add(valores, path);
-
+ */
     free(buffer);
     return valores;
 }
@@ -294,9 +310,10 @@ char *leer_buffer_string(tipo_buffer *buffer)
     uint32_t *tamanio = 0;
 
     void *stream = buffer->stream;
-    // Deserializamos los campos que tenemos en el buffer
+    /* // Deserializamos los campos que tenemos en el buffer
     memcpy(tamanio, stream, sizeof(uint32_t)); // Recibe tamanio
-    stream += sizeof(uint32_t);
+    stream += sizeof(uint32_t); */
+    tamanio = leer_buffer_enteroUint32(buffer);
     cadena = malloc(sizeof(tamanio)); // Reserva lugar para el string con el tamanio recibido
     memcpy(cadena, stream, tamanio);  // Recibe string
 

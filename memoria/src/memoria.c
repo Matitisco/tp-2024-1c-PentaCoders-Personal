@@ -59,9 +59,10 @@ void *recibirKernel(void *ptr)
             log_info(logger, "Me llego la Solicitud de Iniciar Proceso");
             lista = recibir_paquete_cde(cliente_fd);
             t_cde *cde = malloc(sizeof(t_cde));
-            int *aux_pid = (void *)list_get(lista, 0);
-            cde->pid = *aux_pid;
-            cde->path = list_get(lista, 1);
+
+            cde->pid = list_get(lista,0);
+            cde->path = list_get(lista,1);
+      
 
             log_info(logger, "PID: %d", cde->pid);
             log_info(logger, "PATH: %s", cde->path);
