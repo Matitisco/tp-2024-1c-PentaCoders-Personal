@@ -8,7 +8,7 @@
 #include "utils.h"
 typedef struct
 {
-    // uint32_t PC;
+    uint32_t PC;
     uint8_t AX;
     uint8_t BX;
     uint8_t CX;
@@ -23,10 +23,10 @@ typedef struct
 typedef struct
 {
     uint32_t pid;
-    uint32_t pc;
+    //uint32_t pc; //ACordemonos que de aca se va
     t_registros *registro;
     t_list *lista_instrucciones;
-
+ 
 } t_cde;
 
 #endif

@@ -1,190 +1,348 @@
 #include "../include/serializacion.h"
-
-
 t_log *logger;
 
+/*----------------------- MENSAJE ------------------*/
+// ENVIAR MENSAJE
+void enviar_mensaje(char *mensaje, int socket_cliente)
+{
+    t_paquete *paquete = malloc(sizeof(t_paquete));
 
+    paquete->codigo_operacion = MENSAJE;
+    paquete->buffer = malloc(sizeof(tipo_buffer));
+    paquete->buffer->size = strlen(mensaje) + 1;
+    paquete->buffer->stream = malloc(paquete->buffer->size);
+    memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
 
+    int bytes = paquete->buffer->size + 2 * sizeof(int);
+
+    void *a_enviar = serializar_paquete(paquete, bytes);
+
+    send(socket_cliente, a_enviar, bytes, 0);
+
+    free(a_enviar);
+    eliminar_paquete(paquete);
+}
+// RECIBIR MENSAJE
+void recibir_mensaje(int socket_cliente)
+{
+    tipo_buffer *buffer = recibir_buffer(socket_cliente);
+    log_info(logger, "Me llego el mensaje %s", buffer->stream);
+    free(buffer);
+}
+
+/*----------------------- PAQUETE ------------------*/
+
+// CREAR PAQUETE
+t_paquete *crear_paquete(void)
+{
+    t_paquete *paquete = malloc(sizeof(t_paquete));
+    paquete->codigo_operacion = PAQUETE;
+    paquete->buffer = crear_buffer();
+    return paquete;
+}
+
+t_paquete *crear_paquete_cde(void)
+{
+    t_paquete *paquete = malloc(sizeof(t_paquete));
+    paquete->codigo_operacion = SOLICITUD_INICIAR_PROCESO;
+    paquete->buffer = crear_buffer();
+    return paquete;
+}
+
+// AGREGAR A PAQUETE
+void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio)
+{
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
+
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
+
+    paquete->buffer->size += tamanio + sizeof(int);
+}
+
+t_list *recibir_paquete_cde(int socket_cliente)
+{
+    int size = 0;
+    int desplazamiento = 0;
+    tipo_buffer *buffer;
+    t_list *valores = list_create();
+
+    buffer = recibir_buffer(socket_cliente);
+
+    // Recibir pid
+    int pid = 0;
+    pid = leer_buffer_enteroUint32(buffer);
+    list_add(valores, pid);
+
+    // recibir tamanio del path
+
+    /* int tamanio = 0;
+    tamanio = leer_buffer_enteroUint32(buffer);
+    list_add(valores,tamanio); */
+
+    // recibir path
+    // char *path = malloc(tamanio_path);
+    char *path = leer_buffer_string(buffer); // recibe el tamanio adentro de la funcion.
+    list_add(valores, path);
+
+    // recibir pid
+    /* int pid = 0;
+    memcpy(&pid, buffer + desplazamiento, sizeof(int));
+    list_add(valores, pid); */
+    /*
+        // recibir tamanio del path
+        int tamanio_path = 0;
+        memcpy(&tamanio_path, buffer + desplazamiento, sizeof(int)); */
+
+    /* // recibimos y copiamos el contenido del path
+    char *path = malloc(tamanio_path);
+    memcpy(path, buffer + desplazamiento, tamanio_path);
+    list_add(valores, path);
+ */
+    free(buffer);
+    return valores;
+}
+
+// ENVIAR PAQUETE
+void enviar_paquete(t_paquete *paquete, int socket_cliente)
+{
+    int bytes = paquete->buffer->size + 2 * sizeof(int);
+    void *a_enviar = serializar_paquete(paquete, bytes);
+
+    send(socket_cliente, a_enviar, bytes, 0);
+
+    free(a_enviar);
+}
+// ELMININAR PAQUETE
+void eliminar_paquete(t_paquete *paquete)
+{
+    free(paquete->buffer->stream);
+    free(paquete->buffer);
+    free(paquete);
+}
+// RECIBIR PAQUETE
+t_list *recibir_paquete(int socket_cliente)
+{
+    int size = 0;
+    int desplazamiento = 0;
+    tipo_buffer *buffer;
+    t_list *valores = list_create();
+    int tamanio = 0;
+
+    buffer = recibir_buffer(socket_cliente);
+    while (desplazamiento <= size)
+    {
+        memcpy(&tamanio, buffer + desplazamiento, sizeof(int));
+        desplazamiento += sizeof(int);
+        char *valor = malloc(tamanio);
+        memcpy(valor, buffer + desplazamiento, tamanio);
+        desplazamiento += tamanio;
+        list_add(valores, valor);
+    }
+    free(buffer);
+    return valores;
+}
+// SERIALIZAR PAQUETE
+void *serializar_paquete(t_paquete *paquete, int bytes)
+{
+    void *magic = malloc(bytes);
+    int desplazamiento = 0;
+
+    memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
+    desplazamiento += sizeof(int);
+    memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
+    desplazamiento += sizeof(int);
+    memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
+    desplazamiento += paquete->buffer->size;
+
+    return magic;
+}
+
+// PAQUETE
+void paquete(int conexion)
+{
+    char *leido = NULL;
+    t_paquete *paquete = crear_paquete();
+
+    leido = readline(">");
+    while (strcmp(leido, "") != 0)
+    {
+        agregar_a_paquete(paquete, leido, strlen(leido) - 1);
+        free(leido);
+        leido = readline("> ");
+    }
+    free(leido);
+    enviar_paquete(paquete, conexion);
+    eliminar_paquete(paquete);
+}
 /*----------------------------------- CODIGO -----------------------------------*/
-
 // ENVIAR CODIGO
 void enviar_cod_enum(int socket_servidor, uint32_t cod)
 {
     send(socket_servidor, &cod, sizeof(uint32_t), 0);
+    // printf("Se envio el codigo al servidor %u", cod);
 }
-// RECIBIR CODIGO
-uint32_t recibir_cod(int socket_cliente)
+// RECIBIR OPERACION PARECIDO A recibi_cod(int socket_cliente)
+op_code recibir_operacion(int socket_cliente)
 {
-    uint32_t codigo;
-    recv(socket_cliente, &codigo, sizeof(uint32_t), MSG_WAITALL);
-    return codigo;
+    op_code cod_op;
+    while (1)
+    {
+        if (recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL) > 0)
+            return cod_op;
+        else
+        {
+            close(socket_cliente);
+            return -1;
+        }
+    }
 }
-
 /*----------------------------------- BUFFER -----------------------------------*/
-
 // CREAR BUFFER
 tipo_buffer *crear_buffer()
 {
-    tipo_buffer *unBuffer = malloc(sizeof(unBuffer));
-    if (unBuffer == NULL)
-    {
-        return NULL;
-    }
-    else
-    {
-        unBuffer->size = 0; // inicializo los valores para que no haya cosas rawras
-        unBuffer->offset = 0;
-        unBuffer->stream = NULL;
-        return unBuffer; // lo retorno
-    }
+    tipo_buffer *buffer = malloc(sizeof(tipo_buffer));
+    buffer->offset = 0;
+    buffer->size = 0;
+    buffer->stream = NULL;
+    return buffer;
 }
 // DESTRUIR BUFFER
-void destruir_buffer(tipo_buffer *unBuffer)
+void destruir_buffer(tipo_buffer *buffer)
 {
-    if (unBuffer != NULL)
-    {                           // esto es mas que nada para chequear
-        free(unBuffer->stream); // primero liberamos al puntero
-        free(unBuffer);         // lugeo loberamos al buffer
-    }
+    free(buffer->stream);
+    free(buffer);
 }
-// ESCRIBIR EN EL BUFFER
-void escribir_buffer(tipo_buffer *buffer, uint8_t entero)
+// AGREGAR EN EL BUFFER UN ENTERO UINT32
+void agregar_buffer_para_enterosUint32(tipo_buffer *buffer, uint32_t entero)
+{
+
+    buffer->stream = realloc(buffer->stream, buffer->size + sizeof(uint32_t));
+    buffer->size += sizeof(uint32_t);
+
+    // el offset ya esta en 0 al crearlo en crear_buffer
+    memcpy(buffer->stream + buffer->offset, &entero, sizeof(uint32_t));
+    buffer->offset += sizeof(uint32_t);
+}
+
+// AGREGAR EN EL BUFFER UN ENTERO UINT8
+void agregar_buffer_para_enterosUint8(tipo_buffer *buffer, uint8_t entero)
 {
     buffer->stream = realloc(buffer->stream, buffer->size + sizeof(uint8_t));
-    if (buffer->stream == NULL)
-    {
-        // Por si hay algun error
-        return;
-    }
-    memcpy((char *)buffer->stream + buffer->size, &entero, sizeof(uint8_t));
     buffer->size += sizeof(uint8_t);
+
+    // el offset ya esta en 0 al crearlo en crear_buffer
+    memcpy(buffer->stream + buffer->offset, &entero, sizeof(uint8_t));
+    buffer->offset += sizeof(uint8_t);
+}
+// AGREGAR EN EL BUFFER UN STRING
+void agregar_buffer_para_string(tipo_buffer *buffer, char *args)
+{
+    uint32_t tamanio = 0;
+
+    char *string = (char *)args;
+    while (string[tamanio] != NULL)
+    {
+        tamanio++; // sumo el tamanio
+    }
+    agregar_buffer_para_enterosUint32(buffer, tamanio);
+
+    buffer->stream = realloc(buffer->stream, buffer->size + tamanio); // Aumenta la memoria, suma el int tamanio con el tamanio del char*
+    memcpy(buffer->stream + buffer->size, string, tamanio);
+    buffer->size += tamanio; // tamanio total
 }
 // ENVIAR BUFFER
 void enviar_buffer(tipo_buffer *buffer, int socket)
 {
-    // Enviamos el tamanio del buffer
-    send(socket, &(buffer->size), sizeof(uint32_t), 0);
+    send(socket, &(buffer->size), sizeof(uint32_t), 0); // enviar size
 
     if (buffer->size != 0)
     {
         // Enviamos el stream del buffer
-        send(socket, buffer->stream, buffer->size, 0);
+        send(socket, buffer->stream, buffer->size, 0); // enviar buffer
+    }
+    else
+    {
+        printf("El buffer tiene size 0");
     }
 }
 // RECIBIR BUFFER
-
-// LEER BUFFER
-uint32_t leer_buffer_entero(tipo_buffer *buffer)
+tipo_buffer *recibir_buffer(int socket)
 {
-    uint32_t entero;
 
-    memcpy(&entero, buffer->stream + buffer->offset, sizeof(uint32_t));
+    tipo_buffer *buffer = crear_buffer();
+
+    // Recibo el tamanio del buffer y reservo espacio en memoria
+    recv(socket, &(buffer->size), sizeof(uint32_t), MSG_WAITALL);
+
+    if (buffer->size != 0)
+    {
+        buffer->stream = malloc(buffer->size);
+
+        // Recibo stream del buffer
+        recv(socket, buffer->stream, buffer->size, MSG_WAITALL);
+    }
+    return buffer;
+}
+// LEER BUFFER UINT_32
+uint32_t leer_buffer_enteroUint32(tipo_buffer *buffer)
+{
+    int entero32; // malloc(sizeof(uint32_t));
+    // void *stream = buffer->stream;
+    //  Deserializamos los campos que tenemos en el buffer
+    memcpy(&entero32, buffer->stream + buffer->offset, sizeof(uint32_t));
+    // stream += sizeof(uint32_t);
     buffer->offset += sizeof(uint32_t);
 
-    return entero;
+    return entero32;
 }
-
-t_instruccion *leer_buffer_instruccion(tipo_buffer *buffer) // falta poner las de 4 parametros
+// LEER BUFFER UINT_8
+uint8_t leer_buffer_enteroUint8(tipo_buffer *buffer)
 {
-    t_instruccion *instruccion = malloc(sizeof(t_instruccion));
-    instruccion->parametros = list_create();
-    uint8_t codigo;
+    int entero8;
 
-    instruccion->codigo = codigo = leer_buffer_entero(buffer);
+    // void *stream = buffer->stream;
+    //  Deserializamos los campos que tenemos en el buffer
+    memcpy(&entero8, buffer->stream + buffer->offset, sizeof(uint8_t));
+    // stream += sizeof(uint8_t);
+    buffer->offset += sizeof(uint8_t);
 
-    switch (codigo)
-    {
-    case SET:
-    case MOV_IN:
-    case MOV_OUT:
-    case SUM:
-    case SUB:
-    case JNZ:
-    case RESIZE:
-    case COPY_STRING:
-    case SIGNAL:
-    case IO_GEN_SLEEP:
-        paramBufferALista(instruccion, 2, buffer);
-        break;
-    case IO_STDIN_READ:
-    case IO_STDOUT_WRITE:
-    case IO_FS_CREATE:
-    case IO_FS_DELETE:
-    case IO_FS_WRITE:
-    case IO_FS_TRUNCATE:
-        paramBufferALista(instruccion, 3, buffer);
-        break;
-    case IO_FS_READ:
-        paramBufferALista(instruccion, 5, buffer);
-        break;
-    case EXIT:
-        paramBufferALista(instruccion, 0, buffer);
-        break;
-    default:
-        log_info(logger, "No se reconoce la instrucción");
-        break;
-    }
-
-    return instruccion;
+    return entero8;
 }
-
-void paramBufferALista(t_instruccion *instruccion, int cantParam, tipo_buffer *buffer)
+// LEER BUFFER
+char *leer_buffer_string(tipo_buffer *buffer)
 {
-    char *parametro;
-    size_t* size=malloc(sizeof(size_t));
+    char *cadena;
+    uint32_t tamanio;
 
-    for (int i = 0; i < cantParam; i++)
-    {
-        parametro = leer_buffer_string(buffer, &size);
-        list_add(instruccion->parametros, parametro);
-    }
-}
-char *leer_buffer_string(tipo_buffer *buffer, uint32_t *tam)
-{
-    (*tam) = leer_buffer_entero(buffer);
-    char *cadena = malloc((*tam) + 1);
+    // void *stream = buffer->stream;
+    /* // Deserializamos los campos que tenemos en el buffer
+    memcpy(tamanio, stream, sizeof(uint32_t)); // Recibe tamanio
+    stream += sizeof(uint32_t); */
 
-    memcpy(cadena, buffer->stream + buffer->offset, (*tam));
-    buffer->offset += (*tam);
+    tamanio = leer_buffer_enteroUint32(buffer);
+    cadena = malloc((tamanio) + 1);                             // Reserva lugar para el string con el tamanio recibido
+    memcpy(cadena, buffer->stream + buffer->offset, (tamanio)); // Recibe string
+    buffer->offset += tamanio;
 
-    *(cadena + (*tam)) = '\0';
+    *(cadena + tamanio) = '\0';
 
     return cadena;
 }
 
-/*
-t_registros *leer_buffer_registros(tipo_buffer *buffer)
+// ESCRIBIR EN EL BUFFER UNA LISTA
+/*void escribir_buffer_para_listas(tipo_buffer *buffer, void *args)
 {
-    t_registros *reg = malloc(sizeof(t_registros));
+    uint32_t tamanio_lista = 0;
+    uint32_t posicion = 0;
 
-    reg->AX = leer_buffer_entero(buffer);
-    reg->BX = leer_buffer_entero(buffer);
-    reg->CX = leer_buffer_entero(buffer);
-    reg->DX = leer_buffer_entero(buffer);
-    reg->EAX = leer_buffer_entero(buffer);
-    reg->EBX = leer_buffer_entero(buffer);
-    reg->ECX = leer_buffer_entero(buffer);
-    reg->EDX = leer_buffer_entero(buffer);
-    reg->SI = leer_buffer_entero(buffer);
-    reg->DI = leer_buffer_entero(buffer);
+    t_list *lista = *((t_list *)args);
+    tamanio_lista = list_size(lista);
 
-    return reg;
-}
-
-
-void *leer_buffer_pagina(tipo_buffer *buffer, uint32_t tamPagina) // PARA MEMORIA
-{
-    void *paginaLeida = malloc(tamPagina);
-
-    memcpy(paginaLeida, buffer->stream + buffer->offset, tamPagina);
-    buffer->offset += tamPagina;
-
-    for (int i = 0; i < (tamPagina / 4); i++)
+    while (tamanio_lista > posicion)
     {
-        uint32_t k;
-        memcpy(&k, paginaLeida + i * 4, sizeof(uint32_t));
-    }
+        list_get(lista, posicion);
+        posicion++;
 
-    return paginaLeida;
-}
-*/
+    }
+}*/

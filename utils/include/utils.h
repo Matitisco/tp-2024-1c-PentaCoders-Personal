@@ -16,87 +16,54 @@
 #include <commons/collections/list.h>
 #include <assert.h>
 #include "sockets.h"
-
-// CLIENTE
-
-typedef struct
-{
-    uint32_t size;
-    uint32_t offset;
-    void *stream;
-
-} tipo_buffer;
-
 typedef enum
 {
-	MENSAJE, 
+	MENSAJE,
 	PAQUETE,
 	SOLICITUD_INICIAR_PROCESO,
 	INICIAR_PROCESO_CORRECTO,
-	INICIAR_PROCESO_ERROR,
+	ERROR_INICIAR_PROCESO,
 	SOLICITUD_FINALIZAR_PROCESO,
 	FINALIZAR_PROCESO,
 	EJECUTAR_SCRIPT,
-    INICIAR_PROCESO,
-    INICIAR_PLANIFICACION,
-    DETENER_PLANIFICACION,
-    LISTAR_ESTADOS,
+	INICIAR_PROCESO,
+	INICIAR_PLANIFICACION,
+	DETENER_PLANIFICACION,
+	PLANIFICACION_PAUSADA,
+	PLANIFICACION_EN_FUNCIONAMIENTO,
+	MULTIPROGRAMACION,
+	LISTAR_ESTADOS,
 	ERROR_FINALIZAR_PROCESO,
 	PEDIDO_INSTRUCCION,
-	PEDIDO_PCB
+	PEDIDO_PCB,
+	ERROR_CLIENTE_DESCONECTADO = -1,
+	SOLICITUD_INTERFAZ_GENERICA
 } op_code;
-
 
 typedef struct
 {
-	op_code codigo_operacion;
-	tipo_buffer *buffer;
-} t_paquete;
+	t_log *logger;
+	char *puerto;
+	char *ip;
+} t_args;
 
-typedef enum {
-    EJECUTAR_PROCESO,
+typedef enum
+{
+	EJECUTAR_PROCESO,
 	INTERRUPT,
 	DESALOJO,
-	CDE
-}mensaje_kernel_cpu;
-
-
-
-void enviar_mensaje(char *mensaje, int socket_cliente);
-t_paquete *crear_paquete(void);
-void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
-void enviar_paquete(t_paquete *paquete, int socket_cliente);
-
-void eliminar_paquete(t_paquete *paquete);
-
-// SERVIDOR
+	CDE,
+} mensaje_kernel_cpu;
 
 extern t_log *logger;
 
-
-//void *recibir_buffer(int *, int);
-
-t_list *recibir_paquete(int);
-void recibir_mensaje(int);
-int recibir_operacion(int);
-
-// KERNEL UTILS
 void iterator(char *value);
-
-// I_O UTILS
 t_log *iniciar_logger(char *path_log, char *nombre_log);
 t_config *iniciar_config(char *config_path);
 void leer_consola(t_log *);
-void paquete(int);
 void terminar_programa(int, t_log *, t_config *);
-
 void destruirLog(t_log *logger);
-
 void destruirConfig(t_config *config);
-
 void liberarConexion(int conexion);
-
-
-t_paquete *crear_paquete(void);
-
+t_args *crearArgumento(char *puerto, char *ip);
 #endif
