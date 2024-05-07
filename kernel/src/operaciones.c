@@ -12,6 +12,8 @@ void ejecutar_script(char *PATH)
 void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 {
     t_pcb *proceso = crear_proceso(PATH);
+    log_info(logger,"PATH %s",proceso->cde->path);
+    log_info(logger, "Se creo un proceso con PID: %u en NEW\n", proceso->cde->pid);
     // ENVIAMOS PAQUETE A MEMORIA
     t_paquete *paquete = crear_paquete_cde();
     op_code operacion = SOLICITUD_INICIAR_PROCESO;                      // SOLICITUD_INICIAR_PROCESO;

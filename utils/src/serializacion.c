@@ -68,10 +68,7 @@ t_list *recibir_paquete_cde(int socket_cliente)
     t_list *valores = list_create();
 
     buffer = recibir_buffer(socket_cliente);
-    // primer recibimos el cod op
-    op_code *cod_op = malloc(sizeof(int));
-    memcpy(&cod_op, buffer + desplazamiento, sizeof(int));
-    list_add(valores, cod_op);
+    
 
     // recibir pid
     int pid = 0;

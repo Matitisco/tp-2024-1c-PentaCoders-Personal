@@ -50,13 +50,22 @@ void *recibirKernel(void *ptr)
         // recibimos paquete proveniente del kernel
         // lista = recibir_paquete_cde(cliente_fd);
         // obtenemos el codigo de operacion
+
         op_code cod_op = recibir_operacion(cliente_fd);
         log_info(logger, "%d", cod_op);
         switch (cod_op)
         {
         case SOLICITUD_INICIAR_PROCESO:
             log_info(logger, "Me llego la Solicitud de Iniciar Proceso");
-            
+            lista = recibir_paquete_cde(cliente_fd);
+            t_cde *cde = malloc(sizeof(t_cde));
+            int *aux_pid = (void *)list_get(lista, 0);
+            cde->pid = *aux_pid;
+            cde->path = list_get(lista, 1);
+
+            log_info(logger, "PID: %d", cde->pid);
+            log_info(logger, "PATH: %s", cde->path);
+
             iniciar_proceso();
             break;
 
@@ -74,10 +83,6 @@ void *recibirKernel(void *ptr)
     }
     return EXIT_SUCCESS;
 }
-/*
-t_cde * leer_paquete_cte(){
-
-}*/
 void iniciar_proceso()
 {
     // log_info(argumento->logger, "Me llego la Solicitud de Iniciar Proceso");
