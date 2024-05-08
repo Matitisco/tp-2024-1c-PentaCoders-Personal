@@ -10,13 +10,15 @@ t_cde *obtener_cde(t_pcb *proceso);
 void enviar_cde(int conexion, t_cde *cde, int codOP);
 void simular_ejecucion_proceso(t_pcb *proceso);
 void ready_a_execute();
+
 void agregar_lista_instrucciones_a_paquete(t_paquete *paquete, t_list *instrucciones);
 void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion *instruccion);
 void agregar_tipo_instruccion_a_paquete(t_paquete *paquete, t_tipoDeInstruccion tipo);
 void agregar_entero_a_paquete(t_paquete *paquete, uint32_t x);
 void agregar_string_a_paquete(t_paquete *paquete, char *palabra);
-void agregar_a_estado(t_pcb *pcb,colaEstado *cola_estado);
+
 void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde);
+
 
 
 #endif

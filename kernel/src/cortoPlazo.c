@@ -31,20 +31,11 @@ el siguiente proceso a ejecutar según indique el algoritmo. Durante este perío
 
 // PASAR A KERNEL. H PARA QUE LO UTILICE LARGO PLAZO
 
-// MUTEX -
-
 pthread_mutex_t *mutex_pcb_ejecutando;
 pthread_mutex_t *mutex_estado_ejecutando;
 
 // pthread_mutex_init(mutex, NULL) INICIALIZAR EN EL MAIN -ACORDARSE
 sem_t *semaforo_ready;
-
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso a la cola New
-{
-    pthread_mutex_lock(cola_estado->mutex_estado);
-    queue_push(cola_estado->estado, pcb);
-    pthread_mutex_unlock(cola_estado->mutex_estado);
-}
 
 // PASAR PROCESO DE READY A EXECUTE
 void ready_a_execute(colaEstado *cola_ready)
@@ -58,7 +49,7 @@ void ready_a_execute(colaEstado *cola_ready)
 
         t_pcb *pcb = obtener_siguiente_ready(cola_ready);
         // else (VRR)
-        agregar_a_estado(pcb, cola_ready);
+        agregar_a_estado(pcb, cola_ready,procesos_en_ready);
 
         // simular_ejecucion_proceso(pcb, "asd"); ----IMPLEMENTAR----
 

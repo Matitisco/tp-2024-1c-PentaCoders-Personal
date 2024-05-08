@@ -4,7 +4,7 @@
 #include "kernel.h"
 #include "../include/operaciones.h"
 
-void iniciar_consola_interactiva(t_log *logger);
+void iniciar_consola_interactiva();
 void mostrar_operaciones_realizables();
 op_code obtenerCodigo(char *opcion, t_log *logger);
 void ejecutar_operacion(char *codigo_operacion, t_log *logger);

@@ -18,10 +18,17 @@
 #include "../../utils/include/conexiones.h"
 #include "../../utils/include/serializacion.h"
 #include "../../utils/include/instrucciones.h"
+// #include "largoPlazo.h"
 
 // VARIABLES
 extern uint32_t PID_GLOBAL;
 extern t_log *logger;
+extern sem_t* GRADO_MULTIPROGRAMACION;
+extern sem_t* procesos_en_new;
+extern sem_t* procesos_en_ready;
+extern sem_t* procesos_en_exec;
+extern sem_t* procesos_en_block;
+extern sem_t* procesos_en_exit;
 
 // ENUMS
 typedef enum
@@ -52,7 +59,13 @@ typedef struct
 	char *ip_cpu;
 	char *puerto_cpu_dispatch;
 	char *puerto_cpu_interrupt;
+	char *algoritmo_planificacion;
+	int quantum;
+	t_list *listaRecursos;
+	t_list *instanciasRecursos;
+	int grado_multiprogramacion;
 } config_kernel;
+
 // QUITAR ENUM_INTERFAZ UNA VEZ MERGEADO INTERFACES Y KERNEL
 typedef enum
 {
@@ -85,6 +98,8 @@ typedef struct
 	t_list *recursosAsignados;
 	int prioridad;
 } t_pcb;
+
+
 typedef struct
 {
 	char *nombreEstado;
@@ -106,10 +121,9 @@ extern colaEstado *cola_bloqueado_global;
 extern colaEstado *cola_exit_global;
 
 // FUNCIONES
-void crearHilos(t_args *args_MEMORIA,t_args *args_IO);
-void *enviarAMemoria(void *ptr);
-void *levantarIO(void *ptr);
-void iniciar_consola_interactiva(t_log *logger);
+void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT);
+void *conexionAMemoria(void *ptr);
+void iniciar_consola_interactiva();
 void gestionar_peticiones_memoria();
 void gestionar_peticiones_interfaces();
 void planificar_ejecucion_procesos();
@@ -117,29 +131,19 @@ void inicializarEstados();
 colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
-// void ejecutar_script();
-// void iniciar_proceso(char *PATH);
-// void finalizar_proceso(uint32_t PID);
-// void iniciar_planificacion();
-// void detener_planificacion();
-// void listar_procesos_x_estado();
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado,  sem_t* contador_estado);
+void sacar_procesos_cola(t_pcb *pcb, colaEstado *cola_estado, sem_t* contador_estado);
 
-/*Funciones de busuqeda del proceso*/
+void iniciar_semaforos();
 
-// uint32_t mostrarPID(t_pcb *proceso);
-// t_pcb *buscarProceso(uint32_t pid);
-// t_pcb *crear_proceso();
-// t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
-// t_cde *iniciar_cde();
+// FUNCIONES DE LEVANTAR MODULOS
+/*void *levantar_CPU_Dispatch(void *ptr);
+void *levantar_CPU_Interrupt(void *ptr);
+void *levantarIO(void *ptr);*/
+void iniciar_hilos(config_kernel *valores_config);
 
-// char *mostrarMotivo(enum motivoFinalizar motivo);
+// planificadores
 
-/*Funciones para liberar*/
-
-// void liberar_proceso(t_pcb *proceso);
-/// void liberar_cde(t_pcb *proceso);
-// void liberar_recursos(t_pcb *proceso);
-// void liberar_archivos(t_pcb *proceso);
-//  CORTO PLAZO
+void *largo_plazo();
 
 #endif

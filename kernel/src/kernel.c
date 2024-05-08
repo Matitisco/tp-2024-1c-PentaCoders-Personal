@@ -9,13 +9,30 @@ int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
 
+// Contadores Semaforos
+sem_t *GRADO_MULTIPROGRAMACION;
+sem_t *procesos_en_new;
+sem_t *procesos_en_ready;
+sem_t *procesos_en_exec;
+sem_t *procesos_en_block;
+sem_t *procesos_en_exit;
+
 int QUANTUM;
 pthread_t hiloMEMORIA;
 pthread_t hiloIO;
+pthread_t hiloLargoPlazo;
+pthread_t hiloCPUINT;
+pthread_t hiloCPUDS;
+pthread_t hiloConsola;
+
 t_args *args_MEMORIA;
 t_args *args_IO;
 t_args *args_KERNEL;
+t_args *args_CPU_DS;
+t_args *args_CPU_INT;
 extern t_log *logger;
+
+config_kernel *valores_config;
 
 int main(int argc, char *argv[])
 {
@@ -23,26 +40,39 @@ int main(int argc, char *argv[])
 
 	logger = iniciar_logger("kernel.log", "KERNEL");
 
-	config_kernel *valores_config = inicializar_config_kernel();
+	valores_config = inicializar_config_kernel();
+	log_info(logger, "GRADO MULTI %d \n", valores_config->grado_multiprogramacion);
 
-	args_MEMORIA = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
-	//args_IO = crearArgumento(valores_config->puerto_escucha, valores_config->ip_memoria);
-	crearHilos(args_MEMORIA, args_IO);
-	// socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch, "KERNEL SE CONECTO A CPU");
-	// pthread_create(hiloCPU);
+	iniciar_semaforos();
+
+	iniciar_hilos(valores_config);
+	// iniciar_consola_interactiva(logger);
+
 	pthread_join(hiloMEMORIA, NULL);
-	// pthread_join(hiloIO, NULL);
-
-	iniciar_consola_interactiva(logger);
-
-	// terminar_programa(socket_cpu_dispatch, logger, valores_config->config);
-
-	liberarConexion(socket_memoria);
+	pthread_join(hiloLargoPlazo, NULL);
+	// pthread_join(hiloCPUDS, NULL);
+	// pthread_join(hiloCPUINT, NULL);
+	pthread_join(hiloIO, NULL);
+	// pthread_join(hiloConsola, NULL);
+	//  LIBERAR COSAS
+	liberar_conexion(socket_memoria);
 }
-void crearHilos(t_args *args_MEMORIA, t_args *args_IO)
+void iniciar_hilos(config_kernel *valores_config)
 {
-	pthread_create(&hiloMEMORIA, NULL, enviarAMemoria, (void *)args_MEMORIA);
+	args_MEMORIA = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
+	args_IO = crearArgumento(valores_config->puerto_escucha, valores_config->ip_memoria);
+	args_CPU_DS = crearArgumento(valores_config->puerto_cpu_dispatch, valores_config->ip_cpu);
+	args_CPU_INT = crearArgumento(valores_config->puerto_cpu_interrupt, valores_config->ip_cpu);
+	crearHilos(args_MEMORIA, args_IO, args_CPU_DS, args_CPU_INT);
+}
+void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT)
+{
+	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
+	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	// pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
+	// pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
+	// pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT);
+	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 }
 void *levantarIO(void *ptr)
 {
@@ -73,9 +103,11 @@ void *levantarIO(void *ptr)
 			// log_info(logger, "Me llego una interfaz del tipo:%s, y de nombre:%s",parametros);
 			list_clean_and_destroy_elements(valores_interfaz_conectada);
 		} */
+	return NULL;
 }
 char *obtenerNombreInterfaz(t_list *lista)
 {
+	return "A";
 }
 bool se_encuentra_conectada(void *lista, void *interfaz_nombre)
 {
@@ -85,23 +117,13 @@ bool se_encuentra_conectada(void *lista, void *interfaz_nombre)
 	return lista != NULL && strcmp(lista_recorrer->head->data, elemento) == 0;
 }
 
- void *enviarAMemoria(void *ptr)
+void *conexionAMemoria(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
 	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "KERNEL SE CONECTO A MEMORIA");
+	free(argumento);
 }
-
-void gestionar_peticiones_memoria()
-{
-	printf("Gestionar Peticion Memoria");
-}
-
-void gestionar_peticiones_interfaces()
-{
-	printf("Gestionar Peticion Interfaces");
-}
-
 void planificar_ejecucion_procesos()
 {
 	printf("Planificar Ejecucion procesos");
@@ -119,7 +141,6 @@ colaEstado *constructorColaEstado(char *nombre)
 
 	return cola_estado_generica;
 }
-
 // INICIALIZAR COLAS DE ESTADOS
 void inicializarEstados()
 {
@@ -128,6 +149,28 @@ void inicializarEstados()
 	cola_exec_global = constructorColaEstado("EXEC");
 	cola_bloqueado_global = constructorColaEstado("BLOCK");
 	cola_exit_global = constructorColaEstado("EXIT");
+}
+
+void iniciar_semaforos()
+{
+	GRADO_MULTIPROGRAMACION = malloc(sizeof(sem_t));
+	procesos_en_new = malloc(sizeof(sem_t));
+	procesos_en_ready = malloc(sizeof(sem_t));
+	procesos_en_exec = malloc(sizeof(sem_t));
+	procesos_en_block = malloc(sizeof(sem_t));
+	procesos_en_exit = malloc(sizeof(sem_t));
+
+	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
+
+	/* for (int i = 0; i < valores_config->grado_multiprogramacion; i++)
+	{
+		sem_post(GRADO_MULTIPROGRAMACION);
+	}  */
+	sem_init(procesos_en_new, 0, 0);
+	sem_init(procesos_en_ready, 0, 0);
+	sem_init(procesos_en_exec, 0, 0);
+	sem_init(procesos_en_block, 0, 0);
+	sem_init(procesos_en_exit, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -142,6 +185,51 @@ config_kernel *inicializar_config_kernel()
 	configuracion->puerto_escucha = config_get_string_value(configuracion->config, "PUERTO_ESCUCHA");
 	configuracion->puerto_cpu_dispatch = config_get_string_value(configuracion->config, "PUERTO_CPU_DISPATCH");
 	configuracion->puerto_cpu_interrupt = config_get_string_value(configuracion->config, "PUERTO_CPU_INTERRUPT");
+	configuracion->algoritmo_planificacion = config_get_string_value(configuracion->config, "ALGORITMO_PLANIFICACION");
+	configuracion->quantum = config_get_int_value(configuracion->config, "QUANTUM");
+	configuracion->grado_multiprogramacion = config_get_int_value(configuracion->config, "GRADO_MULTIPROGRAMACION");
 
+	// configuracion->listaRecursos = list_create();
+	// configuracion->listaRecursos = string_get_string_as_array((config_get_string_value(configuracion->listaRecursos, "RECURSOS")));
+	// configuracion->instanciasRecursos = list_create();
+
+	/*
+RECURSOS=[RA,RB,RC]
+INSTANCIAS_RECURSOS=[1,2,1]
+	*/
 	return configuracion;
 }
+
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado, sem_t *contador_estado) // Añade un proceso a la cola New
+{
+	// wait(mutex)
+	sem_post(contador_estado);
+	// signal(mutex)
+	pthread_mutex_lock(cola_estado->mutex_estado);
+
+	queue_push(cola_estado->estado, pcb); // region cirtica
+	pthread_mutex_unlock(cola_estado->mutex_estado);
+}
+
+void sacar_procesos_cola(t_pcb *pcb, colaEstado *cola_estado, sem_t *contador_estado)
+{
+	// wait(mutex)
+	sem_wait(contador_estado);
+	// signal(mutex)
+	pthread_mutex_lock(cola_estado->mutex_estado);
+	
+	pcb = queue_pop(cola_estado->estado);
+	pthread_mutex_unlock(cola_estado->mutex_estado);
+}
+/*void *levantar_CPU_Interrupt(void *ptr)
+{
+	return NULL;
+}
+void *levantar_CPU_Dispatch(void *ptr)
+{
+	t_args *datosConexion = malloc(sizeof(t_args));
+	datosConexion = (t_args *)ptr;
+	int socket_cpu = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU");
+
+	free(datosConexion);
+}*/

@@ -1,6 +1,6 @@
 #include "../include/menu.h"
 
-void iniciar_consola_interactiva(t_log *logger)
+void iniciar_consola_interactiva()
 {
     char *opcion;
     while (1)
@@ -54,13 +54,13 @@ void ejecutar_operacion(char *opcion, t_log *logger)
     case MULTIPROGRAMACION:
         char *valor = readline("Ingrese el PID del Proceso a Finalizar: ");
         grado_multiprogramacion(atoi(valor));
+        break;
     case LISTAR_ESTADOS:
         listar_procesos_x_estado();
-        exit(1);
+        break;
     default:
         printf("No es una opcion valida, ingrese otra vez");
         iniciar_consola_interactiva(logger);
-        exit(1);
         break;
     }
 }

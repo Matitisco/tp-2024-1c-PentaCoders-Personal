@@ -29,7 +29,7 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
     op_code respuestaDeMemoria = recibir_operacion(socket_memoria);
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
-        agregar_a_estado(proceso, cola_new_global);
+        agregar_a_estado(proceso, cola_new_global, procesos_en_new);                      // hace post
         log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso)); // se muestra el logger
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
@@ -49,7 +49,7 @@ void finalizar_proceso(uint32_t PID)
     {
         log_info(logger, "PID %u -Destruir pcb", proceso->cde->pid);
 
-        agregar_a_estado(proceso, cola_exit_global); // moverlo a la cola de exit
+        agregar_a_estado(proceso, cola_exit_global, procesos_en_exit); // moverlo a la cola de exit
         liberar_proceso(proceso);
     }
     else if (otroCodigo == ERROR_FINALIZAR_PROCESO)
@@ -183,10 +183,34 @@ void renaudar_largo_plazo()
 }
 void modificar_grado_multiprogramacion(int valor)
 {
+    for (int i = 0; i < valor; i++)
+    {
+        sem_post(&GRADO_MULTIPROGRAMACION);
+    }
+    log_info(logger, "Se modifico el grado de multiprogramacion a %d", valor);
 }
+
 void mostrar_procesos(colaEstado *cola)
 {
+    log_info(logger, "Hay en total %d procesos en la cola %s", queue_size(cola->estado), cola->nombreEstado);
+
+    t_queue *cola_aux = queue_create();
+
+    while (!queue_is_empty(cola->estado))
+    {
+        t_pcb *pcb = queue_pop(cola->estado);
+        log_info(logger, "Proceso PID: %d", pcb->cde->pid);
+
+        queue_push(cola_aux, pcb);
+    }
+
+    // Restaurar la cola original
+    while (!queue_is_empty(cola_aux))
+    {
+        queue_push(cola->estado, queue_pop(cola_aux));
+    }
 }
+
 void pausar_corto_plazo() {}
 void pausar_largo_plazo() {}
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)

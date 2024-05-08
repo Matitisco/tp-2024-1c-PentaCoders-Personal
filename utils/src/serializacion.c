@@ -330,6 +330,17 @@ char *leer_buffer_string(tipo_buffer *buffer)
     return cadena;
 }
 
+
+t_list *leer_buffer_instrucciones(tipo_buffer *buffer){
+    t_list *lista_instrucciones;
+    uint32_t tamanio;
+    tamanio = leer_buffer_enteroUint32(buffer);
+
+    return lista_instrucciones;
+}
+
+
+
 // ESCRIBIR EN EL BUFFER UNA LISTA
 /*void escribir_buffer_para_listas(tipo_buffer *buffer, void *args)
 {

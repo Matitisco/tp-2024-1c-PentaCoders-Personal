@@ -50,7 +50,7 @@ typedef enum {
     EJECUTAR_PROCESO,
 	INTERRUPT,
 	DESALOJO,
-	CDE,
+	CDE
 }mensaje_kernel_cpu;
 
 extern t_log *logger;

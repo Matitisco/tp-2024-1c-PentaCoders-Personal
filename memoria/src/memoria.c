@@ -88,7 +88,7 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     t_cde *cde = armarCde(buffer);
     destruir_buffer(buffer);
     // IMPLEMENTAR leerArchivoConINstrucciones
-    //cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
+    // cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
     if (cde->path != NULL)
     {
         enviar_cod_enum(cliente_fd, INICIAR_PROCESO_CORRECTO);

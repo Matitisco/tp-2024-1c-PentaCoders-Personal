@@ -5,12 +5,12 @@
 #include "kernel.h"
 #include "../include/cortoPlazo.h"
 
-typedef enum motivoFinalizar
+/* typedef enum motivoFinalizar
 {
     SUCCESS,
     INVALID_RESOURCE,
     INVALID_WRITE
-};
+}; */
 // extern uint32_t PID_GLOBAL;
 
 void ejecutar_script(char *PATH);
