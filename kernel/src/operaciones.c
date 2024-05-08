@@ -1,63 +1,41 @@
 #include "../include/operaciones.h"
 
 uint32_t PID_GLOBAL = 0;
-//int socket_memoria;
+op_code estado_planificacion;
+// int socket_memoria;
 
 // EJECUTAR SCRIPT
-void ejecutar_script()
+void ejecutar_script(char *PATH)
 {
-    printf("Ejecutar Script\n");
 }
 // INICIAR PROCESO
-void iniciar_proceso(char *PATH)
+void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 {
-    printf("\nsocket memoria: %d\n", socket_memoria);
-    t_pcb *proceso = crear_proceso(PATH);                       // Creo nuestro nuevo proceso
-    enviar_cod_enum(socket_memoria, SOLICITUD_INICIAR_PROCESO); // Le pido si puedo iniciar el proceso
-    // ENVIAMOS BUFFER A MEMORIA 
+    t_pcb *proceso = crear_proceso(PATH);
+
     tipo_buffer *buffer = crear_buffer();
+
+    op_code codigo = SOLICITUD_INICIAR_PROCESO; // SOLICITUD_INICIAR_PROCESO;
+
+    send(socket_memoria, &codigo, sizeof(uint32_t), 0); // enviar codigo
+
     agregar_buffer_para_enterosUint32(buffer, proceso->cde->pid);
     agregar_buffer_para_string(buffer, proceso->cde->path);
 
-    enviar_buffer(buffer, socket_memoria);      //Enviado a memoria
+    enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
+
     // OBTENEMOS OP_CODE DESDE MEMORIA
-    op_code codigo = recibir_operacion(socket_memoria);
-    if (codigo == INICIAR_PROCESO_CORRECTO)
+    op_code respuestaDeMemoria = recibir_operacion(socket_memoria);
+    if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
-        agregar_a_estado(proceso, cola_new_global);
-        // Aca ella agrega semaforos pero creo que nosotros al tener la cola sincronizada nos lo evitamos
+        agregar_a_estado(proceso, cola_new_global, procesos_en_new);                      // hace post
         log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso)); // se muestra el logger
     }
-    else if (codigo == INICIAR_PROCESO_ERROR)
+    else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
     {
         log_info(logger, "No se pudo crear el proceso %u", proceso->cde->pid); // se muestra que no se pudo
     }
-}
-t_pcb *crear_proceso(char *PATH)
-{
-    t_pcb *proceso_nuevo = malloc(sizeof(t_pcb)); // reservamos memoria para el proceso           // por ahora en 0;
-    proceso_nuevo->estado = NEW;
-
-    proceso_nuevo->archivosAsignados = list_create();
-    proceso_nuevo->recursosAsignados = list_create();
-    proceso_nuevo->cde = iniciar_cde(PATH);
-    return proceso_nuevo;
-}
-
-t_cde *iniciar_cde(char* PATH)
-{
-    t_cde *cde = malloc(sizeof(t_cde));
-
-    cde->pid = PID_GLOBAL;
-    PID_GLOBAL++;
-    cde->pc = 0; // LA CPU lo va a ir cambiando
-    cde->path=malloc(strlen(PATH) + 1); //reservar memoria para el path
-    strcpy(cde->path,PATH); //y asignarle con la funcion
-    cde->registro = malloc(sizeof(t_registros));
-    cde->registro = NULL;
-    cde->lista_instrucciones = list_create();
-    return cde;
 }
 // DETENER PROCESO
 void finalizar_proceso(uint32_t PID)
@@ -71,7 +49,7 @@ void finalizar_proceso(uint32_t PID)
     {
         log_info(logger, "PID %u -Destruir pcb", proceso->cde->pid);
 
-        agregar_a_estado(proceso, cola_exit_global); // moverlo a la cola de exit
+        agregar_a_estado(proceso, cola_exit_global, procesos_en_exit); // moverlo a la cola de exit
         liberar_proceso(proceso);
     }
     else if (otroCodigo == ERROR_FINALIZAR_PROCESO)
@@ -85,20 +63,40 @@ void iniciar_planificacion()
 {
     // tenemos un proceso en new y lo tenemos que pasar a ready
     // habilita a los hilos de los planificadores a que dejen de estar en pausa
-
+    if (estado_planificacion == PLANIFICACION_PAUSADA)
+    {
+        renaudar_corto_plazo();
+        renaudar_largo_plazo();
+        estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
+    }
+    else if (estado_planificacion == PLANIFICACION_EN_FUNCIONAMIENTO)
+    {
+        log_info(logger, "La planificacion ya se encuentra iniciada");
+    }
     printf("Iniciar Planificacion");
 }
 // DETENER PLANIFICACION
 void detener_planificacion()
 {
-    printf("Detener Planificacion");
+    pausar_corto_plazo();
+    pausar_largo_plazo();
+    estado_planificacion = PLANIFICACION_PAUSADA;
+}
+// MODIFICAR GRADO DE MULTIPROGRAMACION
+void grado_multiprogramacion(int valor)
+{
+    modificar_grado_multiprogramacion(valor);
 }
 // LISTAR PROCESOS POR ESTADO
 void listar_procesos_x_estado()
 {
-    printf("Listar Procesos Por Estado");
+    mostrar_procesos(cola_new_global);
+    mostrar_procesos(cola_ready_global);
+    mostrar_procesos(cola_exec_global);
+    mostrar_procesos(cola_bloqueado_global);
+    mostrar_procesos(cola_exit_global);
 }
-
+/*----------------------------------FUNCIONES AUXILIARES--------------------------------------*/
 uint32_t mostrarPID(t_pcb *proceso)
 {
     return proceso->cde->pid;
@@ -175,30 +173,46 @@ void liberar_archivos(t_pcb *proceso)
 }
 void liberar_memoria(t_pcb *proceso)
 {
-    // PREGUNTAR QUE HACE ESTA FUNCION RAWRA
 }
 
-/* void enviar_cde(int conexion, t_cde *cde, int codOP) //----IMPLEMENTAR----
+void renaudar_corto_plazo()
 {
-    t_paquete *paquete = crear_paquete_op_code(codOP);
-
-    agregar_cde_a_paquete(paquete, cde);
-
-    enviar_paquete(paquete, conexion);
-
-    eliminar_paquete(paquete);
 }
- */
-/* void enviar_cde(t_cde *cde)
+void renaudar_largo_plazo()
 {
-    enviar_codigo(socket_cpu_dispatch, EJECUTAR_PROCESO); // Le pido si pueod iniciar el proceso
-    tipo_buffer *buffer = crear_buffer();
-    escribir_buffer(buffer, cde->pid);
-    escribir_buffer(buffer, cde->pc);
-    enviar_buffer(buffer, socket_cpu_dispatch);
-    destruir_buffer(buffer);
-}*/
+}
+void modificar_grado_multiprogramacion(int valor)
+{
+    for (int i = 0; i < valor; i++)
+    {
+        sem_post(&GRADO_MULTIPROGRAMACION);
+    }
+    log_info(logger, "Se modifico el grado de multiprogramacion a %d", valor);
+}
 
+void mostrar_procesos(colaEstado *cola)
+{
+    log_info(logger, "Hay en total %d procesos en la cola %s", queue_size(cola->estado), cola->nombreEstado);
+
+    t_queue *cola_aux = queue_create();
+
+    while (!queue_is_empty(cola->estado))
+    {
+        t_pcb *pcb = queue_pop(cola->estado);
+        log_info(logger, "Proceso PID: %d", pcb->cde->pid);
+
+        queue_push(cola_aux, pcb);
+    }
+
+    // Restaurar la cola original
+    while (!queue_is_empty(cola_aux))
+    {
+        queue_push(cola->estado, queue_pop(cola_aux));
+    }
+}
+
+void pausar_corto_plazo() {}
+void pausar_largo_plazo() {}
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
 
@@ -258,155 +272,28 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
     return pcb_buscada;
 }
 
-/*
+t_pcb *crear_proceso(char *PATH)
+{
+    t_pcb *proceso_nuevo = malloc(sizeof(t_pcb)); // reservamos memoria para el proces
+    proceso_nuevo->estado = NEW;
 
-
-void iniciar_proceso(char* linea) {
-    //char argumento = (char) args;
-
-
-    char* PATH = NULL;
-    char* SIZE = NULL;
-    char* PRIORIDAD = NULL;
-
-    int i = 0;
-
-    // Verificar si hay argumentos disponibles
-    if (linea[i]) {
-        PATH = linea + i;
-
-        // Avanzar hasta el final del primer argumento
-        while (linea[i] && !isspace(linea[i]))
-            i++;
-
-        if (linea[i]) //GENERA SEG FAULT
-            linea[i++] = '\0'; // Terminar el primer argumento si hay más en la línea
-
-        // Ahora, verificar si hay un segundo argumento
-        while (linea[i] && isspace(linea[i]))
-            i++;
-
-        if (linea[i]) {
-            SIZE = linea + i;
-
-            // Avanzar hasta el final del segundo argumento
-            while (linea[i] && !isspace(linea[i]))
-                i++;
-
-            //if (linea[i]) GENERA SEG FAULT
-             //   linea[i] = '\0';  Terminar el segundo argumento si hay más en la línea
-
-
-
-            if (linea[i]){
-                PRIORIDAD = linea + i;
-                 // Avanzar hasta el final del tercer argumento
-                while (linea[i] && !isspace(linea[i]))
-                    i++;
-
-                //if (linea[i]) GENERA SEG FAULT
-                   // linea[i] = '\0'; // Terminar el tercer argumento si hay más en la línea
-            }
-
-        }
-
-
-
-    }
-
-
-
-    printf("Iniciando proceso... \n"); // %s %d %d \n", PATH, SIZE, PRIORIDAD);
-
-
-
-    Proceso* pcb = iniciarPcb(PATH, SIZE, PRIORIDAD);
-    ingresarNew(pcb);
-    //printf("Argumento: %s\n", argumento);
-
-    //printf("Se agrega el proceso: %i \n",pcb->pid);
+    proceso_nuevo->archivosAsignados = list_create();
+    proceso_nuevo->recursosAsignados = list_create();
+    proceso_nuevo->cde = iniciar_cde(PATH);
+    return proceso_nuevo;
 }
 
+t_cde *iniciar_cde(char *PATH)
+{
+    t_cde *cde = malloc(sizeof(t_cde));
 
-Proceso* iniciarPcb(char* path, char* size, char* prioridad){ //t_proceso* proceso estaria bueno para definir la data que venga de lo que se lea en consola
-
-
-    Proceso* pcb = malloc(sizeof(Proceso));
-
-    int sizeValor = atoi(size);
-    //printf("%d", sizeValor);
-    int prioridadValor = atoi(prioridad);
-    //printf("%d", prioridadValor);
-
-    pcb->instrucciones = list_create();
-
-    leerInstrucciones(path, pcb->instrucciones);
-
-    nro_procesos++;
-    pcb->pid=nro_procesos;
-    pcb->prioridad = prioridadValor;
-    pcb->program_counter=0;
-    pcb->tamanio=sizeValor;
-
-    pcb->estado_actual= ESTADO_NEW;
-
-    //pcb->registros = NULL;
-    //pcb->archivos_abiertos = NULL;
-
-    printf("Se creo el proceso %i con %i \n", pcb->pid, pcb->program_counter);
-
-    return pcb;
+    cde->pid = PID_GLOBAL;
+    PID_GLOBAL++;
+    cde->pc = 0;                          // LA CPU lo va a ir cambiando
+    cde->path = malloc(strlen(PATH) + 1); // reservar memoria para el path
+    strcpy(cde->path, PATH);              // y asignarle con la funcion
+    cde->registro = malloc(sizeof(t_registros));
+    cde->registro = NULL;
+    cde->lista_instrucciones = list_create();
+    return cde;
 }
-
-
-void leerInstrucciones(char* path, t_list* listaInstrucciones) {
-    printf("\n%s\n",path);
-
-    FILE* archivo;
-    archivo = fopen(path, "r");
-
-    if (archivo == NULL) {
-        perror("Error al abrir el archivo");
-        exit(EXIT_FAILURE);
-    }
-
-    char buffer[100];
-
-    while (fgets(buffer, sizeof(buffer), archivo) != NULL) {
-        char* tipo_str = strtok(buffer, " ");
-        t_tipo_instruccion tipo = -1;
-
-
-        if (strcmp(tipo_str, "SET") == 0) {
-            tipo = INSTRUCCION_SET;
-        } else if (strcmp(tipo_str, "SUM") == 0) {
-            tipo = INSTRUCCION_SUM;
-        } else if (strcmp(tipo_str, "SUB") == 0) {
-            tipo = INSTRUCCION_SUB;
-        } else if (strcmp(tipo_str, "EXIT") == 0) {
-            tipo = INSTRUCCION_EXIT;
-        }  else {
-            perror("Tipo de instrucción desconocida");
-            exit(EXIT_FAILURE);
-        }
-
-
-        char* arg1 = strtok(NULL, " ");
-        char* arg2 = strtok(NULL, " \n");
-
-
-        t_instruccion* nuevaInstruccion = agregarInstruccionALista(listaInstrucciones, tipo, arg1, arg2);
-        printf("Instruccion: %s %s %s\n", tipo_str, arg1, arg2);
-
-        list_add(listaInstrucciones, nuevaInstruccion);
-    }
-
-    fclose(archivo);
-}
-
-
-
-
-
-
-*/

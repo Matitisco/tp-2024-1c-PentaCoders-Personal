@@ -35,13 +35,13 @@ void paquete(int conexion);
 
 
 void enviar_cod_enum(int socket_servidor, uint32_t cod);
-int recibir_operacion(int socket_cliente);
+op_code recibir_operacion(int socket_cliente);
 
 tipo_buffer *crear_buffer();
 
 void agregar_buffer_para_enterosUint32(tipo_buffer *buffer, uint32_t entero);
 void agregar_buffer_para_enterosUint8(tipo_buffer *buffer, uint8_t entero);
-void agregar_buffer_para_string(tipo_buffer *buffer, void *args);
+void agregar_buffer_para_string(tipo_buffer *buffer, char *args);
 
 void enviar_buffer(tipo_buffer *buffer, int socket);
 tipo_buffer *recibir_buffer(int socket);
@@ -51,5 +51,9 @@ uint8_t leer_buffer_enteroUint8(tipo_buffer *buffer);
 char *leer_buffer_string(tipo_buffer *buffer);
 
 void destruir_buffer(tipo_buffer *buffer);
+
+t_list *recibir_paquete_cde(int socket_cliente);
+
+t_paquete *crear_paquete_cde(void);
 
 #endif
