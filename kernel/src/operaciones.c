@@ -1,5 +1,13 @@
 #include "../include/operaciones.h"
 
+/* sem_t *GRADO_MULTIPROGRAMACION;
+sem_t *procesos_en_new;
+sem_t *procesos_en_ready;
+sem_t *procesos_en_exec;
+sem_t *procesos_en_block;
+sem_t *procesos_en_exit;
+ */
+
 uint32_t PID_GLOBAL = 0;
 op_code estado_planificacion;
 // int socket_memoria;
@@ -30,6 +38,13 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global, procesos_en_new);                      // hace post
+
+        int *v1 = malloc(sizeof(int));
+        sem_getvalue(procesos_en_new, v1);
+
+        log_info(logger, "MENU Valor del semaforo contador: %d", *v1);
+        
+
         log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso)); // se muestra el logger
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)

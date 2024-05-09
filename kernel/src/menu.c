@@ -1,5 +1,7 @@
 #include "../include/menu.h"
 
+
+
 void iniciar_consola_interactiva()
 {
     char *opcion;
@@ -9,6 +11,8 @@ void iniciar_consola_interactiva()
         opcion = readline("Ingrese un valor para realizar una de las siguientes acciones: ");
         ejecutar_operacion(opcion, logger);
         free(opcion);
+        
+        sem_post(binario_menu_lp);  //Habilita largo plazo
     }
 }
 

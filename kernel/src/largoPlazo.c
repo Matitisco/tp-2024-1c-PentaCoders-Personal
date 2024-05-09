@@ -27,59 +27,37 @@ cuyas operaciones corresponderán al archivo de pseudocódigo pasado
 por parámetro, todos los procesos iniciarán sin espacio reservado en memoria,
 por lo que solamente tendrán una tabla de páginas vacía.
 
-
 En caso de que el grado de multiprogramación lo permita, los procesos creados
 podrán pasar de la cola de NEW a la cola de READY, caso contrario, se quedarán
 a la espera de que finalicen procesos que se encuentran en ejecución.
 
 */
-
-/* colaEstado *cola_new_global; // Declarar cada vez que lo usas
-colaEstado *cola_ready_global;
-colaEstado *cola_exec_global;
-colaEstado *cola_bloqueado_global;
-colaEstado *cola_exit_global;  */
-
 void *largo_plazo()
 {
+    log_info(logger, "--------------Planificador de Largo Plazo Iniciado-------------- \n");
     while (1)
     {
+        sem_wait(binario_menu_lp); // Se bloquea esperando al menu
+        
+        sem_wait(GRADO_MULTIPROGRAMACION);
+    
+        t_pcb * proceso = malloc(sizeof(t_pcb));
+        
+        proceso = transicion_new_a_ready(); // lo saca de new y lo mete a ready
 
-        log_info(logger, " \n Planificador de largo plazo iniciado \n");
-        int *v1, *v2;
-        v1 = malloc(sizeof(int));
-        v2 = malloc(sizeof(int));
-        sem_getvalue(procesos_en_new, v1);
-        log_info(logger, " \n numero de procesos en new: %d \n", *v1);
-
-        sem_wait(procesos_en_new); // Si hay procesos en NEW, avanza
-
-        log_info(logger, " \n Paso Primer wait \n");
-
-        sem_getvalue(GRADO_MULTIPROGRAMACION, v2);
-        log_info(logger, " \n numero de G.MULTIPROGRAMACION en new: %d \n", *v2);
-
-        sem_wait(GRADO_MULTIPROGRAMACION); // Si el grado de multiporgrmacion lo permite. Ponerlo global para que lo conozca todo el kernel
-        // poner un signal   en exit
-        log_info(logger, " \n Paso Segundo wait \n");
-
-        t_pcb *proceso = malloc(sizeof(t_pcb));
-        proceso->cde = malloc(sizeof(t_cde));
-        transicion_new_a_ready(proceso); // lo saca de new y lo mete a ready
 
         log_info(logger, "PID: %d - Estado anterior: NEW - Estado actual: READY \n", proceso->cde->pid); // Log pedido de cambio de estado
 
         sem_post(procesos_en_ready);
     }
 }
-
-void transicion_new_a_ready(t_pcb *proceso)
+t_pcb* transicion_new_a_ready()
 {
-    log_info(logger, " \n LLEGO A TRANSICION NEW->READY \n");
+    t_pcb * proceso = malloc(sizeof(t_pcb));
+    proceso->cde = malloc(sizeof(t_cde));
+    proceso = sacar_procesos_cola(cola_new_global, procesos_en_new);
 
-    sacar_procesos_cola(proceso, cola_new_global, procesos_en_new);  // saco el proceso de la cola de new
-    agregar_a_estado(proceso, cola_ready_global, procesos_en_ready); // lo agrego a la cola de ready
 
-    log_info(logger, " \n SALIO DE TRANSICION NEW->READY \n");
-
+    agregar_a_estado(proceso, cola_ready_global, procesos_en_ready);
+    return proceso;
 }

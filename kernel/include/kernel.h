@@ -29,6 +29,8 @@ extern sem_t* procesos_en_ready;
 extern sem_t* procesos_en_exec;
 extern sem_t* procesos_en_block;
 extern sem_t* procesos_en_exit;
+extern sem_t* sem_agregar_a_estado;
+extern sem_t *binario_menu_lp;
 
 // ENUMS
 typedef enum
@@ -132,7 +134,7 @@ colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado,  sem_t* contador_estado);
-void sacar_procesos_cola(t_pcb *pcb, colaEstado *cola_estado, sem_t* contador_estado);
+t_pcb* sacar_procesos_cola(colaEstado *cola_estado, sem_t* contador_estado);
 
 void iniciar_semaforos();
 

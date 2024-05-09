@@ -17,6 +17,10 @@ sem_t *procesos_en_exec;
 sem_t *procesos_en_block;
 sem_t *procesos_en_exit;
 
+// Semaforos de binarios
+sem_t *binario_menu_lp;
+sem_t *sem_agregar_a_estado;
+
 int QUANTUM;
 pthread_t hiloMEMORIA;
 pthread_t hiloIO;
@@ -32,6 +36,7 @@ t_args *args_CPU_DS;
 t_args *args_CPU_INT;
 extern t_log *logger;
 
+
 config_kernel *valores_config;
 
 int main(int argc, char *argv[])
@@ -41,7 +46,6 @@ int main(int argc, char *argv[])
 	logger = iniciar_logger("kernel.log", "KERNEL");
 
 	valores_config = inicializar_config_kernel();
-	log_info(logger, "GRADO MULTI %d \n", valores_config->grado_multiprogramacion);
 
 	iniciar_semaforos();
 
@@ -57,6 +61,7 @@ int main(int argc, char *argv[])
 	//  LIBERAR COSAS
 	liberar_conexion(socket_memoria);
 }
+
 void iniciar_hilos(config_kernel *valores_config)
 {
 	args_MEMORIA = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
@@ -124,10 +129,6 @@ void *conexionAMemoria(void *ptr)
 	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "KERNEL SE CONECTO A MEMORIA");
 	free(argumento);
 }
-void planificar_ejecucion_procesos()
-{
-	printf("Planificar Ejecucion procesos");
-}
 
 colaEstado *constructorColaEstado(char *nombre)
 {
@@ -141,7 +142,7 @@ colaEstado *constructorColaEstado(char *nombre)
 
 	return cola_estado_generica;
 }
-// INICIALIZAR COLAS DE ESTADOS
+
 void inicializarEstados()
 {
 	cola_new_global = constructorColaEstado("NEW");
@@ -159,18 +160,17 @@ void iniciar_semaforos()
 	procesos_en_exec = malloc(sizeof(sem_t));
 	procesos_en_block = malloc(sizeof(sem_t));
 	procesos_en_exit = malloc(sizeof(sem_t));
+	binario_menu_lp= malloc(sizeof(sem_t));
+	sem_agregar_a_estado =  malloc(sizeof(sem_t));;
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
-
-	/* for (int i = 0; i < valores_config->grado_multiprogramacion; i++)
-	{
-		sem_post(GRADO_MULTIPROGRAMACION);
-	}  */
 	sem_init(procesos_en_new, 0, 0);
 	sem_init(procesos_en_ready, 0, 0);
 	sem_init(procesos_en_exec, 0, 0);
 	sem_init(procesos_en_block, 0, 0);
 	sem_init(procesos_en_exit, 0, 0);
+	sem_init(binario_menu_lp,0,0);	
+	sem_init(sem_agregar_a_estado, 0,0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -188,38 +188,41 @@ config_kernel *inicializar_config_kernel()
 	configuracion->algoritmo_planificacion = config_get_string_value(configuracion->config, "ALGORITMO_PLANIFICACION");
 	configuracion->quantum = config_get_int_value(configuracion->config, "QUANTUM");
 	configuracion->grado_multiprogramacion = config_get_int_value(configuracion->config, "GRADO_MULTIPROGRAMACION");
-
 	// configuracion->listaRecursos = list_create();
 	// configuracion->listaRecursos = string_get_string_as_array((config_get_string_value(configuracion->listaRecursos, "RECURSOS")));
 	// configuracion->instanciasRecursos = list_create();
-
-	/*
-RECURSOS=[RA,RB,RC]
-INSTANCIAS_RECURSOS=[1,2,1]
-	*/
+	//RECURSOS=[RA,RB,RC]
+	//INSTANCIAS_RECURSOS=[1,2,1]
 	return configuracion;
 }
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado, sem_t *contador_estado) // Añade un proceso a la cola New
-{
-	// wait(mutex)
-	sem_post(contador_estado);
-	// signal(mutex)
-	pthread_mutex_lock(cola_estado->mutex_estado);
+// pcb 0x7fffe8001300  y cde 0x7fffe80012d0
 
-	queue_push(cola_estado->estado, pcb); // region cirtica
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado, sem_t *contador_estado) // Añade un proceso a la cola New //MONITOR DE QUEUE_PUSH
+{
+	//sem_wait();
+	//sem_wait(contador_estado);
+	pthread_mutex_lock(cola_estado->mutex_estado);
+	queue_push(cola_estado->estado, pcb); // region critica
 	pthread_mutex_unlock(cola_estado->mutex_estado);
+	sem_post(contador_estado);//contador_estado =1
 }
 
-void sacar_procesos_cola(t_pcb *pcb, colaEstado *cola_estado, sem_t *contador_estado)
+// void funcion_referencia(int &x);
+// void intercambiar(int &a, int &b);
+
+t_pcb* sacar_procesos_cola(colaEstado *cola_estado, sem_t *contador_estado)	//MONITOR DE QUEUE_POP
 {
-	// wait(mutex)
-	sem_wait(contador_estado);
-	// signal(mutex)
+	t_pcb* pcb= malloc(sizeof(pcb));
+	sem_wait(contador_estado); //
+	//sem_wait (sem_agregar_a_estado); // 
 	pthread_mutex_lock(cola_estado->mutex_estado);
-	
 	pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
+	//sem_post(sem_agregar_a_estado);
+	//sem_post(contador_estado);
+	//sem_post();
+	return pcb;
 }
 /*void *levantar_CPU_Interrupt(void *ptr)
 {
