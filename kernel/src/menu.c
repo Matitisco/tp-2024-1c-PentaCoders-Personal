@@ -29,14 +29,13 @@ void ejecutar_operacion(char *opcion, t_log *logger)
     switch (cod_op)
     {
     case EJECUTAR_SCRIPT:
-        char *PATH = NULL;
-        PATH = readline("Ingrese el nombre del archivo con comandos: ");
-        ejecutar_script(PATH);
+        char *PATH_SCRIPT = readline("Ingrese el nombre del archivo con comandos: ");
+        ejecutar_script(PATH_SCRIPT);
+        
         break;
     case INICIAR_PROCESO:
-        char *PATH = NULL;
-        PATH = readline("Ingrese el nombre del archivo: ");
-        iniciar_proceso(PATH);
+        char *PATH_INSTRUCCIONES = readline("Ingrese el nombre del archivo: ");
+        iniciar_proceso(PATH_INSTRUCCIONES);
         break;
     case FINALIZAR_PROCESO:
         char *pid = readline("Ingrese el PID del Proceso a Finalizar: ");
