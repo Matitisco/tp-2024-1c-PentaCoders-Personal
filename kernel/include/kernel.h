@@ -18,19 +18,6 @@
 #include "../../utils/include/conexiones.h"
 #include "../../utils/include/serializacion.h"
 #include "../../utils/include/instrucciones.h"
-// #include "largoPlazo.h"
-
-// VARIABLES
-extern uint32_t PID_GLOBAL;
-extern t_log *logger;
-extern sem_t* GRADO_MULTIPROGRAMACION;
-extern sem_t* procesos_en_new;
-extern sem_t* procesos_en_ready;
-extern sem_t* procesos_en_exec;
-extern sem_t* procesos_en_block;
-extern sem_t* procesos_en_exit;
-extern sem_t* sem_agregar_a_estado;
-extern sem_t *binario_menu_lp;
 
 // ENUMS
 typedef enum
@@ -110,6 +97,29 @@ typedef struct
 
 } colaEstado;
 
+
+
+
+// VARIABLES
+extern uint32_t PID_GLOBAL;
+extern t_log *logger;
+extern sem_t* GRADO_MULTIPROGRAMACION;
+extern sem_t* procesos_en_new;
+extern sem_t* procesos_en_ready;
+extern sem_t* procesos_en_exec;
+extern sem_t* procesos_en_block;
+extern sem_t* procesos_en_exit;
+extern sem_t* sem_agregar_a_estado;
+
+//Binarios
+extern sem_t *binario_menu_lp;
+extern sem_t *exec_libre;
+
+
+
+
+extern config_kernel *valores_config;
+
 extern int socket_memoria;
 extern int socket_cpu_dispatch;
 extern int socket_cpu_interrupt;
@@ -147,5 +157,6 @@ void iniciar_hilos(config_kernel *valores_config);
 // planificadores
 
 void *largo_plazo();
+void *corto_plazo();
 
 #endif

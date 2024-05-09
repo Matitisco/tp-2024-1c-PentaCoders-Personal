@@ -180,7 +180,7 @@ void paquete(int conexion)
 void enviar_cod_enum(int socket_servidor, uint32_t cod)
 {
     send(socket_servidor, &cod, sizeof(uint32_t), 0);
-    //printf("Se envio el codigo al servidor %u", cod);
+    // printf("Se envio el codigo al servidor %u", cod);
 }
 // RECIBIR OPERACION PARECIDO A recibi_cod(int socket_cliente)
 op_code recibir_operacion(int socket_cliente)
@@ -250,6 +250,19 @@ void agregar_buffer_para_string(tipo_buffer *buffer, char *args)
     buffer->stream = realloc(buffer->stream, buffer->size + tamanio); // Aumenta la memoria, suma el int tamanio con el tamanio del char*
     memcpy(buffer->stream + buffer->size, string, tamanio);
     buffer->size += tamanio; // tamanio total
+}
+void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros registros)
+{
+    agregar_buffer_para_enterosUint8(buffer, registros.AX);
+    agregar_buffer_para_enterosUint8(buffer, registros.BX);
+    agregar_buffer_para_enterosUint8(buffer, registros.CX);
+    agregar_buffer_para_enterosUint8(buffer, registros.DX);
+    agregar_buffer_para_enterosUint32(buffer, registros.EAX);
+    agregar_buffer_para_enterosUint32(buffer, registros.EBX);
+    agregar_buffer_para_enterosUint32(buffer, registros.ECX);
+    agregar_buffer_para_enterosUint32(buffer, registros.EDX);
+    agregar_buffer_para_enterosUint32(buffer, registros.SI);
+    agregar_buffer_para_enterosUint32(buffer, registros.DI);
 }
 // ENVIAR BUFFER
 void enviar_buffer(tipo_buffer *buffer, int socket)
@@ -330,16 +343,42 @@ char *leer_buffer_string(tipo_buffer *buffer)
     return cadena;
 }
 
-
-t_list *leer_buffer_instrucciones(tipo_buffer *buffer){
+t_list *leer_buffer_instrucciones(tipo_buffer *buffer)
+{
     t_list *lista_instrucciones;
     uint32_t tamanio;
     tamanio = leer_buffer_enteroUint32(buffer);
 
     return lista_instrucciones;
 }
+// t_registros *registro;
+t_registros* leer_buffer_registros(tipo_buffer *buffer)
+{
+    t_registros *registros = malloc(sizeof(t_registros));
+
+    registros->AX = leer_buffer_enteroUint8(buffer);
+    registros->BX = leer_buffer_enteroUint8(buffer);
+    registros->CX = leer_buffer_enteroUint8(buffer);
+    registros->DX = leer_buffer_enteroUint8(buffer);
+    registros->EAX = leer_buffer_enteroUint32(buffer);
+    registros->EBX = leer_buffer_enteroUint32(buffer);
+    registros->ECX = leer_buffer_enteroUint32(buffer);
+    registros->EDX = leer_buffer_enteroUint32(buffer);
+    registros->SI = leer_buffer_enteroUint32(buffer);
+    registros->DI = leer_buffer_enteroUint32(buffer);
+
+    return registros;
+}
 
 
+t_cde *leer_cde(tipo_buffer *buffer)
+{
+	t_cde *cde = malloc(sizeof(t_cde));
+	cde->pid = leer_buffer_enteroUint32(buffer);
+	cde->pc = leer_buffer_enteroUint32(buffer);
+	cde->registro = leer_buffer_registros(buffer);
+	return cde;
+}
 
 // ESCRIBIR EN EL BUFFER UNA LISTA
 /*void escribir_buffer_para_listas(tipo_buffer *buffer, void *args)

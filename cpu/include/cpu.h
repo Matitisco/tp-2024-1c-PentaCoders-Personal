@@ -28,39 +28,26 @@ uint32_t pid_ejecutar;
 //Semaforos
 pthread_mutex_t mutex_cde_ejecutando;
 
-typedef struct config_cpu
+typedef struct 
 {
 	t_config *config;
-	char *ip_memoria;
+	char *ip;
 	char *puerto_memoria;
 	char *puerto_escucha_dispatch;
 	char *puerto_escucha_interrupt;
-	// char* algoritmo_tlb;
-	// int cantidad_entradas_tlb;
-};
-
-config_cpu *config_cpu()
-{
-	config_cpu *valores_config = malloc(sizeof(struct config_cpu));
-
-	// creo el config
-	valores_config->config = iniciar_config("cpu.config");
-	valores_config->ip_memoria = config_get_string_value(valores_config_cpu->config, "IP_MEMORIA");
-	valores_config->puerto_memoria = config_get_string_value(valores_config_cpu->config, "PUERTO_MEMORIA");
-	valores_config->puerto_escucha_dispatch = config_get_string_value(valores_config_cpu->config, "PUERTO_ESCUCHA_DISPATCH");
-	valores_config->puerto_escucha_interrupt = config_get_string_value(valores_config_cpu->config, "PUERTO_ESCUCHA_INTERRUPT");
-
-	return valores_config;
-}
+	char* algoritmo_tlb;
+	int cantidad_entradas_tlb;
+}config_cpu;
 
 //INSTRUCCIONES
 
 void ejecutarCicloInstruccion(int instruccion, uint32_t PC);
 void tipoInstruccion(int instruccion);
-void servidorDeKernel(struct config_cpu *valores_config);
-void proceso_dispatch(void* socket_server);
+void servidorDeKernel(config_cpu *valores_config_cpu);
+void proceso_dispatch(int socket_servidor_dispatch);
+t_cde *leer_payload_PCB(tipo_buffer *buffer);
 void ejecutar_proceso();
 void solicitar_instruccion();
-
+config_cpu *configurar_cpu();
 
 #endif

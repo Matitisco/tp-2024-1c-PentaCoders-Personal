@@ -42,6 +42,7 @@ tipo_buffer *crear_buffer();
 void agregar_buffer_para_enterosUint32(tipo_buffer *buffer, uint32_t entero);
 void agregar_buffer_para_enterosUint8(tipo_buffer *buffer, uint8_t entero);
 void agregar_buffer_para_string(tipo_buffer *buffer, char *args);
+void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros registros);
 
 void enviar_buffer(tipo_buffer *buffer, int socket);
 tipo_buffer *recibir_buffer(int socket);
@@ -49,8 +50,11 @@ tipo_buffer *recibir_buffer(int socket);
 uint32_t leer_buffer_enteroUint32(tipo_buffer *buffer);
 uint8_t leer_buffer_enteroUint8(tipo_buffer *buffer);
 char *leer_buffer_string(tipo_buffer *buffer);
+t_registros* leer_buffer_registros(tipo_buffer *buffer);
 
 void destruir_buffer(tipo_buffer *buffer);
+/* ---------CDE ------*/
+t_cde *leer_cde(tipo_buffer *buffer);
 
 t_list *recibir_paquete_cde(int socket_cliente);
 

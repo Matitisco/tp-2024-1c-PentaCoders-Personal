@@ -36,6 +36,10 @@ typedef enum
 	ERROR_FINALIZAR_PROCESO,
 	PEDIDO_INSTRUCCION,
 	PEDIDO_PCB,
+	EJECUTAR_PROCESO,	//CPU
+	INTERRUPT,
+	DESALOJO,
+	CDE,
 	ERROR_CLIENTE_DESCONECTADO = -1
 } op_code;
 
@@ -45,13 +49,6 @@ typedef struct
 	char *puerto;
 	char *ip;
 } t_args ;
-
-typedef enum {
-    EJECUTAR_PROCESO,
-	INTERRUPT,
-	DESALOJO,
-	CDE
-}mensaje_kernel_cpu;
 
 extern t_log *logger;
 

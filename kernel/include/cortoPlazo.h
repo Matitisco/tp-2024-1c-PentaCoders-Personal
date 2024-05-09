@@ -3,11 +3,17 @@
 #include <unistd.h>
 #include "../include/kernel.h"
 
+/*extern colaEstado *cola_new_global;
+extern colaEstado *cola_ready_global;
+colaEstado *cola_exec_global;
+colaEstado *cola_bloqueado_global;
+colaEstado *cola_exit_global;*/
+
 bool proceso_completado();
 t_pcb *obtener_siguiente_ready();
 t_paquete* crear_paquete_op_code(int codOP);
 t_cde *obtener_cde(t_pcb *proceso);
-void enviar_cde(int conexion, t_cde *cde, int codOP);
+void enviar_cde(int conexion, t_cde *cde);
 void simular_ejecucion_proceso(t_pcb *proceso);
 void ready_a_execute();
 
@@ -19,6 +25,8 @@ void agregar_string_a_paquete(t_paquete *paquete, char *palabra);
 
 void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde);
 
-
+void planificar_por_fifo();
+void planificar_por_rr();
+void planificar_por_vrr();
 
 #endif

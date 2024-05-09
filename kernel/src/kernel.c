@@ -16,6 +16,7 @@ sem_t *procesos_en_ready;
 sem_t *procesos_en_exec;
 sem_t *procesos_en_block;
 sem_t *procesos_en_exit;
+sem_t *exec_libre;
 
 // Semaforos de binarios
 sem_t *binario_menu_lp;
@@ -25,6 +26,7 @@ int QUANTUM;
 pthread_t hiloMEMORIA;
 pthread_t hiloIO;
 pthread_t hiloLargoPlazo;
+pthread_t hiloCortoPlazo;
 pthread_t hiloCPUINT;
 pthread_t hiloCPUDS;
 pthread_t hiloConsola;
@@ -35,7 +37,6 @@ t_args *args_KERNEL;
 t_args *args_CPU_DS;
 t_args *args_CPU_INT;
 extern t_log *logger;
-
 
 config_kernel *valores_config;
 
@@ -50,14 +51,14 @@ int main(int argc, char *argv[])
 	iniciar_semaforos();
 
 	iniciar_hilos(valores_config);
-	// iniciar_consola_interactiva(logger);
 
 	pthread_join(hiloMEMORIA, NULL);
 	pthread_join(hiloLargoPlazo, NULL);
-	// pthread_join(hiloCPUDS, NULL);
-	// pthread_join(hiloCPUINT, NULL);
-	pthread_join(hiloIO, NULL);
-	// pthread_join(hiloConsola, NULL);
+	pthread_join(hiloCortoPlazo, NULL);
+/* 	pthread_join(hiloCPUDS, NULL);
+	pthread_join(hiloCPUINT, NULL);*/
+	//pthread_join(hiloIO, NULL); 
+	pthread_join(hiloConsola, NULL);
 	//  LIBERAR COSAS
 	liberar_conexion(socket_memoria);
 }
@@ -73,11 +74,12 @@ void iniciar_hilos(config_kernel *valores_config)
 void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT)
 {
 	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
-	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	// pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
-	// pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
-	// pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT);
+/* 	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
+	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT); */
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
+	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
+	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 }
 void *levantarIO(void *ptr)
 {
@@ -160,8 +162,8 @@ void iniciar_semaforos()
 	procesos_en_exec = malloc(sizeof(sem_t));
 	procesos_en_block = malloc(sizeof(sem_t));
 	procesos_en_exit = malloc(sizeof(sem_t));
-	binario_menu_lp= malloc(sizeof(sem_t));
-	sem_agregar_a_estado =  malloc(sizeof(sem_t));;
+	binario_menu_lp = malloc(sizeof(sem_t));
+	sem_agregar_a_estado = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(procesos_en_new, 0, 0);
@@ -169,8 +171,8 @@ void iniciar_semaforos()
 	sem_init(procesos_en_exec, 0, 0);
 	sem_init(procesos_en_block, 0, 0);
 	sem_init(procesos_en_exit, 0, 0);
-	sem_init(binario_menu_lp,0,0);	
-	sem_init(sem_agregar_a_estado, 0,0);
+	sem_init(binario_menu_lp, 0, 0);
+	sem_init(sem_agregar_a_estado, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -191,40 +193,30 @@ config_kernel *inicializar_config_kernel()
 	// configuracion->listaRecursos = list_create();
 	// configuracion->listaRecursos = string_get_string_as_array((config_get_string_value(configuracion->listaRecursos, "RECURSOS")));
 	// configuracion->instanciasRecursos = list_create();
-	//RECURSOS=[RA,RB,RC]
-	//INSTANCIAS_RECURSOS=[1,2,1]
+	// RECURSOS=[RA,RB,RC]
+	// INSTANCIAS_RECURSOS=[1,2,1]
 	return configuracion;
 }
 
-// pcb 0x7fffe8001300  y cde 0x7fffe80012d0
-
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado, sem_t *contador_estado) // Añade un proceso a la cola New //MONITOR DE QUEUE_PUSH
 {
-	//sem_wait();
-	//sem_wait(contador_estado);
 	pthread_mutex_lock(cola_estado->mutex_estado);
-	queue_push(cola_estado->estado, pcb); // region critica
+	queue_push(cola_estado->estado, pcb);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
-	sem_post(contador_estado);//contador_estado =1
+	sem_post(contador_estado);
 }
 
-// void funcion_referencia(int &x);
-// void intercambiar(int &a, int &b);
-
-t_pcb* sacar_procesos_cola(colaEstado *cola_estado, sem_t *contador_estado)	//MONITOR DE QUEUE_POP
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado, sem_t *contador_estado)
 {
-	t_pcb* pcb= malloc(sizeof(pcb));
-	sem_wait(contador_estado); //
-	//sem_wait (sem_agregar_a_estado); // 
+	t_pcb *pcb = malloc(sizeof(pcb));
+	sem_wait(contador_estado);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
-	//sem_post(sem_agregar_a_estado);
-	//sem_post(contador_estado);
-	//sem_post();
 	return pcb;
 }
-/*void *levantar_CPU_Interrupt(void *ptr)
+
+void *levantar_CPU_Interrupt(void *ptr)
 {
 	return NULL;
 }
@@ -235,4 +227,4 @@ void *levantar_CPU_Dispatch(void *ptr)
 	int socket_cpu = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU");
 
 	free(datosConexion);
-}*/
+}
