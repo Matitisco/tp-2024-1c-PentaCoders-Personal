@@ -22,6 +22,10 @@ int main(int argc, char *argv[])
 	// terminar_programa(conexion_memoria_desde_IO, logger, valores_config->config);
 	// liberarConexion(conexion_kernel);
 	/* creo de abse 4 instancias de los tipos de interfaces que existen, y luego dependiendo el tipo que se vaya a crear, luego borro los otros*/
+	free(nombre_interfaz);
+	free(path_configuracion);
+	log_destroy(logger);
+	config_destroy(valores_config);
 }
 
 // FUNCIONES
@@ -30,6 +34,7 @@ void levantar_interfaz(char *nombre, char *PATH)
 	// primero leo el path y obtengo el tipo de interfaz luego creo segun el tipo de interfaz
 	// aca solo inicializo el archivo de config
 	config_io *config_interfaz = inicializar_config_IO(PATH);
+	estoy_libre = 1;
 	switch (asignarInterfaz(config_interfaz->tipo_interfaz))
 	{
 	// aca creo segun el tipo de interfaz con su config
@@ -122,12 +127,12 @@ enum_interfaz asignarInterfaz(char *nombre_Interfaz)
 	{
 		return DIALFS;
 	}
-	return 0; // no encontro la interfaz
+	return -1; // no encontro la interfaz
 }
 
 config_io *inicializar_config_IO(char *PATH)
 {
-	config_io *valores_config = malloc(sizeof(config_io));
+	valores_config = malloc(sizeof(config_io));
 
 	// creo el config
 	valores_config->config = iniciar_config(PATH);
@@ -169,12 +174,95 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io)
 	char *ip = interfaz_io->ip_kernel;
 	int puerto = interfaz_io->puerto_kernel;
 	// 1-conectar con kernel
-	conexion_kernel = levantarCliente(logger, "KERNEL", ip, puerto, "Hola, soy una interfaz generica");
+	conexion_kernel = levantarCliente(logger, "KERNEL", ip, puerto, "Hola, soy una interfaz GENERICA");
 	// 2-esperar que kernel envie un mensaje
-	// 3-atender el mensaje que envia kernel
-	// 4-responder al kernel que termine
-	// 5-vuelvo al paso 2
+	while (1)
+	{
+		// 3-atender el mensaje que envia kernel
+		op_code consulta_kernel = recibir_operacion(conexion_kernel);
+		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
+		{
+			if (estoy_libre) // DE MOMENTO IMPLEMENTO CON INTS, ES MEDIO FEO,TALVEZ PODEMOS IMPLEMENTAR SEMAFOROS
+			{
+				enviar_cod_enum(conexion_kernel, ESTOY_LIBRE);
+				estoy_libre = 0;
+				realizar_operacion_gen();
+				// 4-responder al kernel que termine
+				enviar_cod_enum(conexion_kernel, CONCLUI_OPERACION);
+			}
+			else
+			{
+				// si no estoy libre ... IMPLEMENTAR
+				enviar_cod_enum(conexion_kernel, NO_ESTOY_LIBRE);
+			}
+		}
+		else
+		{
+			log_info(logger, "No comprendo la instruccion que me envias");
+		}
+		// 5-vuelvo al paso 2
+	}
 }
-void arrancar_interfaz_stdin(t_interfaz *interfaz_io) {}
+void realizar_operacion_gen()
+{
+	tipo_buffer *buffer_sol_operacion = crear_buffer();
+	buffer_sol_operacion = recibir_buffer(socket_kernel);
+	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
+	int unidades_tiempo = leer_buffer_enteroUint32(buffer_sol_operacion);
+	if (sol_operacion == IO_GEN_SLEEP)
+	{
+		sleep(unidades_tiempo);
+	}
+	else
+	{
+		log_info(logger, "Hubo un error al traer la operacion IO_GEN_SLEEP");
+	}
+	estoy_libre = 1;
+	destruir_buffer(buffer_sol_operacion);
+}
+
+void arrancar_interfaz_stdin(t_interfaz *interfaz_io)
+{
+	int unidad_tiempo = interfaz_io->tiempo_unidad_trabajo;
+	char *ip = interfaz_io->ip_kernel;
+	int puerto = interfaz_io->puerto_kernel;
+	// 1-conectar con kernel
+	conexion_kernel = levantarCliente(logger, "KERNEL", ip, puerto, "Hola, soy una interfaz STDIN");
+	// 2-esperar que kernel envie un mensaje
+	while (1)
+	{
+		// 3-atender el mensaje que envia kernel
+		op_code consulta_kernel = recibir_operacion(conexion_kernel);
+		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
+		{
+			if (estoy_libre) // DE MOMENTO IMPLEMENTO CON INTS, ES MEDIO FEO,TALVEZ PODEMOS IMPLEMENTAR SEMAFOROS
+			{
+				enviar_cod_enum(conexion_kernel, ESTOY_LIBRE);
+				estoy_libre = 0;
+				realizar_operacion_stdin();
+				// 4-responder al kernel que termine
+				enviar_cod_enum(conexion_kernel, CONCLUI_OPERACION);
+			}
+			else
+			{
+				// si no estoy libre ... IMPLEMENTAR
+				enviar_cod_enum(conexion_kernel, NO_ESTOY_LIBRE);
+			}
+		}
+		else
+		{
+			log_info(logger, "No comprendo la instruccion que me envias");
+		}
+		// 5-vuelvo al paso 2
+	}
+}
+void realizar_operacion_stdin()
+{
+	tipo_buffer *buffer_sol_operacion = crear_buffer();
+	buffer_sol_operacion = recibir_buffer(socket_kernel);
+	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
+	
+	void* valor_ingresado;
+}
 void arrancar_interfaz_stdout(t_interfaz *interfaz_io) {}
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) {}

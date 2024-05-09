@@ -11,6 +11,8 @@ extern t_log *logger;
 int conexion_kernel, conexion_memoria_desde_IO;
 int socket_memoria;
 int socket_kernel;
+int estoy_libre;
+config_io *valores_config;
 /*
 
 	PRUEBA CON DIALFS QUE ANDA TODO BIEN Y SE LEEN LOS ARCHIVOS
