@@ -6,6 +6,9 @@ int main(int argc, char *argv[])
 {
 	logger = iniciar_logger("cpu.log", "CPU");
 	valores_config_cpu = configurar_cpu(); // CONFIG
+	diccionario_instrucciones = dictionary_create();
+	iniciar_dic_instrucciones();
+	iniciar_registros();
 
 	// CPU es servidor de Kernel (conexion INTERRUPT y DISPATCH) y cliente de Memoria
 
@@ -19,7 +22,20 @@ int main(int argc, char *argv[])
 
 	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
 }
-
+void iniciar_registros()
+{
+	registros = malloc(sizeof(t_registros));
+	registros->AX = 0;
+	registros->BX = 0;
+	registros->CX = 0;
+	registros->DX = 0;
+	registros->EAX = 0;
+	registros->EBX = 0;
+	registros->ECX = 0;
+	registros->EDX = 0;
+	registros->DI = 0;
+	registros->SI = 0;
+}
 void servidorDeKernel(config_cpu *valores_config_cpu)
 {
 	int socket_servidor_dispatch = iniciar_servidor(logger, "SERVIDOR CPU DISPATCH", valores_config_cpu->ip, valores_config_cpu->puerto_escucha_dispatch);
@@ -53,12 +69,8 @@ void proceso_dispatch(int socket_servidor_dispatch)
 			pid_ejecutar = cde_recibido->pid;
 			pthread_mutex_unlock(&mutex_cde_ejecutando);
 
-			/* while(1){
-				//instruccion = solicitar_instruccion(cde_recibido);
-				solicitar_instruccion(cde_recibido);
-				//ejecutar();
-			} */
-			// Liberar memoria de cde_recibido al terminar
+		
+			solicitar_instruccion(cde_recibido);
 			break;
 		case INTERRUPT:
 
@@ -93,7 +105,7 @@ void proceso_dispatch(int socket_servidor_dispatch)
 */
 
 // Borrar? Usamos dispatchProceso
-
+/*
 void solicitar_instruccion()
 {
 	// Pedimos a memoria instruccion
@@ -106,61 +118,84 @@ void solicitar_instruccion()
 
 	// ejecutar_ciclo(instruccion);
 }
-
+*/
 void ejecutar_ciclo()
 {
 }
-
 /*
-void pedirInstruccionAMemoria()
+void recibir_cde()
 {
-	t_cde *cde;
+	mensaje_kernel_cpu codigo = recibir_operacion(socket_kernel_dispatch);
+	tipo_buffer *buffer = recibir_buffer(socket_kernel_dispatch);
+	if (codigo == EJECUTAR_PROCESO)
+	{
+		ejecutar_proceso();
+	}
+}
+*/
+
+void solicitar_instruccion(t_cde *cde)
+{
 	enviar_codigo(socket_memoria, PEDIDO_INSTRUCCION); // Pido la instruccion
 	tipo_buffer *buffer = crear_buffer();
-	envio_buffer(buffer, socket_memoria);
-	destroy_buffer((buffer));
-	// actualizo el buffer escribiendo
-	escribo_buffer(envio_buffer, cde->pid);
-	escribo_buffer(envio_buffer, cde->pc);
-	envio_buffer(buffer, socket_memoria);
+	agregar_buffer_para_enterosUint32(buffer, cde->pid);
+	agregar_buffer_para_enterosUint32(buffer, cde->pc);
+	enviar_buffer(buffer, socket_memoria);
 	cde->pc++; // actualizo el contexto de ejercicion
-	destroy_buffer(buffer);
-	tipo_buffer *otro_buffer= recibir_buffer_propio(socket_memoria);
+	destruir_buffer(buffer);
+	
 	//t_instrucion *instruccion_a_ejecutar = leer_buffer(otro_buffer); Falta implementar al funcion leer_buffer
 	//destruir_buffer(buffer);
+	// ejecutar_proceso();
+}
+/*
+void recibir_instruccion_memoria()
+{
+	tipo_buffer *uffer= recibir_buffer(socket_memoria);
+	 =leer_buffer_enteroUint32(buffer);
+	=leer_buffer_enteroUint32(buffer);
+
 
 }*/
-/*
-typedef struct {
-	uint32_t size; // Tamaño del payload
-	uint32_t offset; // Desplazamiento dentro del payload
-	void* stream; // Payload
-} t_buffer;
 
-typedef struct {
-	uint8_t codigo_operacion;
-	t_buffer* buffer;
-} t_paquete;
+char *fetch()
+{
+	t_cde *cde = malloc(sizeof(t_cde));
+	enviar_cod_enum(socket_memoria, PEDIDO_INSTRUCCION); // Pido la instruccion
+	tipo_buffer *buffer = crear_buffer();
+	// actualizo el buffer escribiendo
+	agregar_buffer_para_enterosUint32(buffer, cde->pid);		  // consigo el procoeso asoc
+	agregar_buffer_para_enterosUint32(buffer, cde->registro->PC); // con esto la memoria busca la prox ins a ejecutar
+	enviar_buffer(buffer, socket_memoria);
 
-ssize_t send(int socket, const void *buffer, size_t length <-ESO (Tamaño buffer), int flags);
+	destruir_buffer(buffer);
+	tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo SET AX 1
+	char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion); // obtenemos la linea instruccion
 
-ssize_t recv(int socket, void *buffer, size_t length <-ESO (Tamaño buffer), int flags);
-void *memcpy(void *dest, const void *src, size_t n);
+	cde->registro->PC; // actualizo el contexto de ejercicion
+	return linea_de_instruccion;
+}
+char *decode(char *linea_de_instrucion)
+{
+	char **instruccion = string_split(linea_de_instrucion, " ");
+	char *operacion = instruccion[0];
+	return operacion; //["SET","AX","1"]
+}
+// Contexto de ejecucion
+void execute(char **instruccion)
+{
+	dictionary_get(diccionario_instrucciones, instruccion);
+	// "SET"
+	// dictionary_put(diccionario_instrucciones, "SET", exec_set);
+	// Buscar en el diccionar esa instruccion
+	// devolver esa instruccion con el execute
+	// listo
+}
+
+void ejecutar_proceso(t_cde*cde_recibido){
 
 
-socket es global y ya está definido antes
-
-t_paquete* paquete = malloc(sizeof(t_paquete));
-paquete->buffer = malloc(sizeof(t_buffer));
-
-// Primero recibimos el codigo de operacion
-recv(unSocket, &(paquete->codigo_operacion), sizeof(uint8_t), 0);
-
-// Después ya podemos recibir el buffer. Primero su tamaño seguido del contenido
-recv(unSocket, &(paquete->buffer->size), sizeof(uint32_t), 0);
-paquete->buffer->stream = malloc(paquete->buffer->size);
-recv(unSocket, paquete->buffer->stream, paquete->buffer->size, 0);
-*/
+	}
 
 config_cpu *configurar_cpu()
 {

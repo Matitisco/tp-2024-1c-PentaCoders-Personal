@@ -46,8 +46,16 @@ void tipoInstruccion(int instruccion);
 void servidorDeKernel(config_cpu *valores_config_cpu);
 void proceso_dispatch(int socket_servidor_dispatch);
 t_cde *leer_payload_PCB(tipo_buffer *buffer);
-void ejecutar_proceso();
+void ejecutar_proceso(t_cde*cde);
 void solicitar_instruccion();
+void iniciar_registros();
 config_cpu *configurar_cpu();
+void pedir_instruccion_a_memoria();
+
+
+char *fetch();
+char *decode(char *linea_de_instrucion);
+void execute(char **instruccion);
+
 
 #endif
