@@ -38,11 +38,12 @@ sem_t *procesos_en_ready;
 sem_t *procesos_en_exec; */
 /* sem_t *exec_libre; */
 
-
 // CORTO PLAZO
 void *corto_plazo()
 {
-    //op_code estado_planificacion = INICIAR_PLANIFICACION;
+    // op_code estado_planificacion = INICIAR_PLANIFICACION;
+    log_info(logger, "--------------Planificador de Corto Plazo Iniciado-------------- \n");
+
     if (strcmp(valores_config->algoritmo_planificacion, "FIFO") == 0)
     {
         planificar_por_fifo();
@@ -82,7 +83,7 @@ void planificar_por_fifo()
         // ENVIA A CPU
         enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
 
-        enviar_cde(socket_cpu_dispatch, proceso->cde); 
+        enviar_cde(socket_cpu_dispatch, proceso->cde);
 
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por FIFO\n", proceso->cde->pid);
     }
@@ -100,12 +101,6 @@ void enviar_cde(int conexion, t_cde *cde)
 // ROUND ROBIN
 void planificar_por_rr()
 {
-
-
-
-
-
-    
 }
 // VIRTUAL ROUND ROBIN
 void planificar_por_vrr() {}

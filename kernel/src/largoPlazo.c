@@ -38,25 +38,23 @@ void *largo_plazo()
     while (1)
     {
         sem_wait(binario_menu_lp); // Se bloquea esperando al menu
-        
-        sem_wait(GRADO_MULTIPROGRAMACION);
-    
-        t_pcb * proceso = malloc(sizeof(t_pcb));
-        
-        proceso = transicion_new_a_ready(); // lo saca de new y lo mete a ready
 
+        sem_wait(GRADO_MULTIPROGRAMACION);
+
+        t_pcb *proceso = malloc(sizeof(t_pcb));
+
+        proceso = transicion_new_a_ready(); // lo saca de new y lo mete a ready
 
         log_info(logger, "PID: %d - Estado anterior: NEW - Estado actual: READY \n", proceso->cde->pid); // Log pedido de cambio de estado
 
         sem_post(procesos_en_ready);
     }
 }
-t_pcb* transicion_new_a_ready()
+t_pcb *transicion_new_a_ready()
 {
-    t_pcb * proceso = malloc(sizeof(t_pcb));
+    t_pcb *proceso = malloc(sizeof(t_pcb));
     proceso->cde = malloc(sizeof(t_cde));
     proceso = sacar_procesos_cola(cola_new_global, procesos_en_new);
-
 
     agregar_a_estado(proceso, cola_ready_global, procesos_en_ready);
     return proceso;

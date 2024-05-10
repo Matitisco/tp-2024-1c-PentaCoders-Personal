@@ -1,7 +1,5 @@
 #include "../include/menu.h"
 
-
-
 void iniciar_consola_interactiva()
 {
     char *opcion;
@@ -11,19 +9,19 @@ void iniciar_consola_interactiva()
         opcion = readline("Ingrese un valor para realizar una de las siguientes acciones: ");
         ejecutar_operacion(opcion, logger);
         free(opcion);
-        
-        sem_post(binario_menu_lp);  //Habilita largo plazo
+
+        sem_post(binario_menu_lp); // Habilita largo plazo
     }
 }
 
 void mostrar_operaciones_realizables()
 {
-    printf("1-Ejecutar Script de Operaciones\n");
-    printf("2-Iniciar Proceso [PATH]\n");
-    printf("3-Finalizar Proceso [PID]\n");
-    printf("4-Iniciar Planificacion \n");
+    printf("1-Ejecutar Script\n");
+    printf("2-Iniciar Proceso\n");
+    printf("3-Finalizar Proceso\n");
+    printf("4-Iniciar Planificacion\n");
     printf("5-Detener Planificacion\n");
-    printf("6-Modificar Grado Multiporgramacion [VALOR]\n");
+    printf("6-Modificar Grado Multiprogramacion\n");
     printf("7-Listar Procesos por Estado\n");
 }
 
@@ -63,7 +61,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         listar_procesos_x_estado();
         break;
     default:
-        printf("No es una opcion valida, ingrese otra vez");
+        printf("No es una opcion valida, ingrese otra vez\n");
         iniciar_consola_interactiva(logger);
         break;
     }

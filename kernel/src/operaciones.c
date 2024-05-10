@@ -15,6 +15,14 @@ op_code estado_planificacion;
 // EJECUTAR SCRIPT
 void ejecutar_script(char *PATH)
 {
+    // voy a leer el archivo
+    /*
+    MOV AX BX
+    MOV CX DX
+    SUM AX DX
+    SUB BX CX
+    */
+   
 }
 // INICIAR PROCESO
 void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
@@ -37,13 +45,12 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
     op_code respuestaDeMemoria = recibir_operacion(socket_memoria);
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
-        agregar_a_estado(proceso, cola_new_global, procesos_en_new);                      // hace post
+        agregar_a_estado(proceso, cola_new_global, procesos_en_new); // hace post
 
         int *v1 = malloc(sizeof(int));
         sem_getvalue(procesos_en_new, v1);
 
         log_info(logger, "MENU Valor del semaforo contador: %d", *v1);
-        
 
         log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso)); // se muestra el logger
     }

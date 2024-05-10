@@ -159,4 +159,9 @@ void iniciar_hilos(config_kernel *valores_config);
 void *largo_plazo();
 void *corto_plazo();
 
+// funciones de io
+
+bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre);
+const char *obtener_interfaz(enum_interfaz interfaz);
+
 #endif

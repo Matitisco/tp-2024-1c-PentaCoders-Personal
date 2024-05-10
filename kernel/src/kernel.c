@@ -55,9 +55,9 @@ int main(int argc, char *argv[])
 	pthread_join(hiloMEMORIA, NULL);
 	pthread_join(hiloLargoPlazo, NULL);
 	pthread_join(hiloCortoPlazo, NULL);
-/* 	pthread_join(hiloCPUDS, NULL);
-	pthread_join(hiloCPUINT, NULL);*/
-	//pthread_join(hiloIO, NULL); 
+	/* 	pthread_join(hiloCPUDS, NULL);
+		pthread_join(hiloCPUINT, NULL);*/
+	// pthread_join(hiloIO, NULL);
 	pthread_join(hiloConsola, NULL);
 	//  LIBERAR COSAS
 	liberar_conexion(socket_memoria);
@@ -75,53 +75,64 @@ void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_ar
 {
 	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
 	// pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
-/* 	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
-	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT); */
-	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
-	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
+	/* 	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
+		pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT); */
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
+	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
+	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 }
-void *levantarIO(void *ptr)
+/* void *levantarIO(void *ptr)
 {
-	/* 	t_args *argumento = malloc(sizeof(t_args));
-		argumento = (t_args *)ptr;
-		int server_fd = iniciar_servidor(logger, "Kernel", argumento->ip, argumento->puerto);
-		log_info(logger, "Servidor KERNEL listo para recibir Interfaces de IO");
-		t_list *lista_interfaces = list_create();
-		while (1)
+	t_args *argumento = malloc(sizeof(t_args));
+	argumento = (t_args *)ptr;
+	tipo_buffer *buffer_io;
+	int server_fd = iniciar_servidor(logger, "Kernel", argumento->ip, argumento->puerto);
+	log_info(logger, "Servidor KERNEL listo para recibir Interfaces de IO");
+	t_list *lista_interfaces = list_create();
+	while (1)
+	{
+		// Debemos aplicar semaforos?? muy probable
+		int cliente_fd = esperar_cliente(logger, "Kernel", server_fd);
+		buffer_io = recibir_buffer(cliente_fd);
+		// ACORDARSE DE LUEGO BORRAR LA ESTRCUTURA QUE SE NECUENTRA EN KERNEL.H TENEMOS QUE SOLO USAR LA QUE ESTA EN ENTRADA Y SALIDA.H
+		char *nombre_IO = leer_buffer_string(buffer_io);
+		enum_interfaz cod_io = leer_buffer_enteroUint32(buffer_io);
+		char *tipo_io = obtener_interfaz(cod_io);
+		if (list_find(lista_interfaces, se_encuentra_conectada))
 		{
-			// Debemos aplicar semaforos?? muy probable
-			// vamos a necesitar un hilo exclusivo para esperar al cliente?? es, decir que controle constantemente quien viene?
-			// vamos a necesitar semaforos si fuera asi, ya que debemos controlar quien llega y quien se va
-			int cliente_fd = esperar_cliente(logger, "Kernel", server_fd);
-			// SE SUPONE QUE LA INTERFAZ ENVIA UN MENSAJE CON SUS ATRIBUTOS (PAQUETE)
-			// SE RECIBE UN PAQUETE CON LOS VALORES DE LA INTERFAZ
-			t_list *valores_interfaz_conectada = recibir_paquete(cliente_fd); // extraigo el paquete y meto todo en una lista;
-			// ACORDARSE DE LUEGO BORRAR LA ESTRCUTURA QUE SE NECUENTRA EN KERNEL.H TENEMOS QUE SOLO USAR LA QUE ESTA EN ENTRADA Y SALIDA.H
-			char *nombre_IO = obtenerNombreInterfaz(valores_interfaz_conectada);
-			if (list_find(lista_interfaces, se_encuentra_conectada, nombre_IO))
-			{
-				list_add(lista_interfaces, nombreIO);
-			}
-			else
-			{
-				log_info(logger, "Esta Interfaz ya se encuentra conectada");
-			}
-			// log_info(logger, "Me llego una interfaz del tipo:%s, y de nombre:%s",parametros);
-			list_clean_and_destroy_elements(valores_interfaz_conectada);
-		} */
+			list_add(lista_interfaces, nombre_IO);
+		}
+		else
+		{
+			log_info(logger, "Esta Interfaz ya se encuentra conectada");
+		}
+		log_info(logger, "Me llego una interfaz del tipo:%s, y de nombre:%s", tipo_io, nombre_IO);
+	}
 	return NULL;
-}
-char *obtenerNombreInterfaz(t_list *lista)
+} */
+const char *obtener_interfaz(enum_interfaz interfaz)
 {
-	return "A";
+	if (interfaz == GENERICA)
+	{
+		return "GENERICA";
+	}
+	else if (interfaz == STDIN)
+	{
+		return "STDIN";
+	}
+	else if (interfaz == STDOUT)
+	{
+		return "STDOUT";
+	}
+	else if (interfaz == DIALFS)
+	{
+		return "DIALFS";
+	}
+	return "NO SE ENTIENDE LA INTERFAZ ENVIADA";
 }
-bool se_encuentra_conectada(void *lista, void *interfaz_nombre)
+bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre)
 {
-	t_list *lista_recorrer = (t_list *)lista;
-	char *elemento = (char *)interfaz_nombre;
-
-	return lista != NULL && strcmp(lista_recorrer->head->data, elemento) == 0;
+	return strcmp(elem_lista, interfaz_nombre) == 0;
 }
 
 void *conexionAMemoria(void *ptr)
