@@ -239,3 +239,30 @@ void *levantar_CPU_Dispatch(void *ptr)
 
 	free(datosConexion);
 }
+void recibirPedidoDeIOGENSLEEP(){
+	
+op_code mensaje =recibir_operacion( socket_cpu_dispatch);
+	if(mensaje == SOLICITUD_INTERFAZ_GENERICA){
+	tipo_buffer *buffer = recibir_buffer(socket_cpu_dispatch);
+	  int socket_kernel; // declaracion momentania
+    enviar_cod_enum(socket_kernel, SOLICITUD_INTERFAZ_GENERICA);
+     char * nombre_interfaz =leer_buffer_para_string(buffer);
+	 uint32_t unidades_trabajo = leer_buffer_para_enterosUint32(buffer);
+	 tipo_buffer*bufferInterfaz = crear_buffer();
+	enviar_cod_enum(socket_interfaz, SOLICITUD_INTERFAZ_GENERICA);
+    agregar_buffer_para_string(buffer, nombre_interfaz);
+    agregar_buffer_para_enterosUint32(buffer, unidades_trabajo);
+    enviar_buffer(buffer, socket_kernel); // falta definir quien es cliente_kernel
+
+}
+
+}
+/*
+
+
+ IO_GEN_SLEEP (Interfaz, Unidades de trabajo): Esta instrucción solicita al Kernel que se envíe
+a una interfaz de I/O a que realice un sleep por una cantidad de unidades de trabajo.
+
+
+
+*/

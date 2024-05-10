@@ -123,6 +123,7 @@ extern config_kernel *valores_config;
 extern int socket_memoria;
 extern int socket_cpu_dispatch;
 extern int socket_cpu_interrupt;
+extern int socket_interfaz;
 
 // DECLARACION VARIABLES GLOBALES
 
