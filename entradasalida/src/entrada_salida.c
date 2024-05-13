@@ -1,7 +1,7 @@
 #include "../include/entrada_salida.h"
 
 t_interfaz *interfaz_io;
-
+config_io *valores_config;
 int main(int argc, char *argv[])
 {
 
@@ -261,8 +261,8 @@ void realizar_operacion_stdin()
 	tipo_buffer *buffer_sol_operacion = crear_buffer();
 	buffer_sol_operacion = recibir_buffer(socket_kernel);
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
-	
-	void* valor_ingresado;
+
+	void *valor_ingresado;
 }
 void arrancar_interfaz_stdout(t_interfaz *interfaz_io) {}
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) {}

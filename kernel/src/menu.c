@@ -58,7 +58,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         grado_multiprogramacion(atoi(valor));
         break;
     case LISTAR_ESTADOS:
-        listar_procesos_x_estado();
+        proceso_estado();
         break;
     default:
         printf("No es una opcion valida, ingrese otra vez\n");

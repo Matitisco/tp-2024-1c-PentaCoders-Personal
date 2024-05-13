@@ -19,7 +19,7 @@ void finalizar_proceso(uint32_t PID);
 void iniciar_planificacion();
 void detener_planificacion();
 void grado_multiprogramacion(int valor);
-void listar_procesos_x_estado();
+void proceso_estado();
 void renaudar_corto_plazo();
 void renaudar_largo_plazo();
 void pausar_corto_plazo();

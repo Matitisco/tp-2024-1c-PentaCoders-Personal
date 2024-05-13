@@ -17,12 +17,56 @@ void ejecutar_script(char *PATH)
 {
     // voy a leer el archivo
     /*
-    MOV AX BX
-    MOV CX DX
-    SUM AX DX
-    SUB BX CX
+    INICIAR_PROCESO PROCESO1
+    INICIAR_PROCESO PROCESO2
+    INICIAR_PROCESO PROCESO3
+    DETENER_PROCESO 0
     */
-   
+    FILE *script;
+    char *linea_script = malloc(sizeof(char));
+    script = fopen(PATH, "r");
+    if (script == NULL)
+    {
+        log_info(logger, "No se pudo leer el script con PATH: %s", PATH);
+        iniciar_consola_interactiva();
+    }
+    char **instruccion_script = malloc(sizeof(char));
+    char *linea;
+    while (!feof(script))
+    {
+        fgets(linea_script, sizeof(char), script);
+        strcpy(linea, linea_script);
+        instruccion_script = string_split(linea, " ");
+
+        if (strcmp(instruccion_script[0], "INICIAR_PROCESO") == 0)
+        {
+            iniciar_proceso(instruccion_script[1]);
+        }
+        if (strcmp(instruccion_script[0], "FINALIZAR_PROCESO") == 0)
+        {
+            finalizar_proceso(atoi(instruccion_script[1]));
+        }
+        if (strcmp(instruccion_script[0], "DETENER_PLANIFICACION") == 0)
+        {
+            detener_planificacion();
+        }
+        if (strcmp(instruccion_script[0], "INICIAR_PLANIFICACION") == 0)
+        {
+            iniciar_planificacion();
+        }
+        if (strcmp(instruccion_script[0], "MULTIPROGRAMACION") == 0)
+        {
+            grado_multiprogramacion(atoi(instruccion_script[1]));
+        }
+        if (strcmp(instruccion_script[0], "PROCESO_ESTADO") == 0)
+        {
+            proceso_estado();
+        }
+        free(instruccion_script);
+    }
+    free(linea_script);
+    free(linea);
+    fclose(script);
 }
 // INICIAR PROCESO
 void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
@@ -110,7 +154,7 @@ void grado_multiprogramacion(int valor)
     modificar_grado_multiprogramacion(valor);
 }
 // LISTAR PROCESOS POR ESTADO
-void listar_procesos_x_estado()
+void proceso_estado()
 {
     mostrar_procesos(cola_new_global);
     mostrar_procesos(cola_ready_global);
@@ -311,7 +355,7 @@ t_cde *iniciar_cde(char *PATH)
 
     cde->pid = PID_GLOBAL;
     PID_GLOBAL++;
-    cde->registro->PC = 0;                          // LA CPU lo va a ir cambiando
+    cde->registro->PC = 0;                // LA CPU lo va a ir cambiando
     cde->path = malloc(strlen(PATH) + 1); // reservar memoria para el path
     strcpy(cde->path, PATH);              // y asignarle con la funcion
     cde->registro = malloc(sizeof(t_registros));

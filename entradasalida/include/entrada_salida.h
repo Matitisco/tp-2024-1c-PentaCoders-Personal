@@ -12,7 +12,7 @@ int conexion_kernel, conexion_memoria_desde_IO;
 int socket_memoria;
 int socket_kernel;
 int estoy_libre;
-config_io *valores_config;
+
 /*
 
 	PRUEBA CON DIALFS QUE ANDA TODO BIEN Y SE LEEN LOS ARCHIVOS
@@ -77,4 +77,6 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io);
 void arrancar_interfaz_stdin(t_interfaz *interfaz_io);
 void arrancar_interfaz_stdout(t_interfaz *interfaz_io);
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io);
+void realizar_operacion_gen();
+void realizar_operacion_stdin();
 #endif
