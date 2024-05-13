@@ -1,5 +1,6 @@
 #include "../include/cicloinstruccion.h"
 
+t_registros *registros;
 // SET
 void exec_set(char *registro, uint32_t valor) //
 {

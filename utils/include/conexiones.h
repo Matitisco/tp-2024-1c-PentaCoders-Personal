@@ -3,8 +3,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "utils.h"
-#include "../include/sockets.h"
+#include "sockets.h"
 #include "serializacion.h"
 
 void levantarServidor(t_log *logger, char *puerto, char *ip, char *nombreServidor);

@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <commons/collections/list.h>
 #include <assert.h>
+
 #include "sockets.h"
 typedef enum
 {

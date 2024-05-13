@@ -1,6 +1,7 @@
-#ifndef CICLO_INSTRUCCION_H_
-#define CICLO_INSTRUCCION_H_
-#include "../include/cpu.h"
+#ifndef CICLOINSTRUCCION_H_
+#define CICLOINSTRUCCION_H_
+
+#include "cpu.h"
 
 // char *registro_a_char(t_registros *registro);
 uint32_t obtener_valor_origen(char *origen);
@@ -23,4 +24,5 @@ void exec_io_fs_truncate();
 void exec_io_fs_write();
 void exec_io_fs_read();
 void exec_exit();
+
 #endif

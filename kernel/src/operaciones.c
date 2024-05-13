@@ -311,7 +311,7 @@ t_cde *iniciar_cde(char *PATH)
 
     cde->pid = PID_GLOBAL;
     PID_GLOBAL++;
-    cde->pc = 0;                          // LA CPU lo va a ir cambiando
+    cde->registro->PC = 0;                          // LA CPU lo va a ir cambiando
     cde->path = malloc(strlen(PATH) + 1); // reservar memoria para el path
     strcpy(cde->path, PATH);              // y asignarle con la funcion
     cde->registro = malloc(sizeof(t_registros));

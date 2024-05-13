@@ -2,11 +2,14 @@
 
 config_cpu *valores_config_cpu;
 
+int CONEXION_A_MEMORIA;
+int socket_memoria;
+
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
 pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
-//Semaforos
-//mutex_cde_ejecutando;
+// Semaforos
+// mutex_cde_ejecutando;
 t_args *args_memoria;
 t_args *kernel_ds;
 t_args *kernel_int;
@@ -21,24 +24,23 @@ int main(int argc, char *argv[])
 
 	iniciar_hilos_CPU(valores_config_cpu);
 	iniciar_semaforos_CPU();
-
 	pthread_join(hilo_CPU_CLIENTE, NULL);
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
 	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
 
 	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
 }
-void iniciar_hilos_CPU(config_cpu* valores_config_cpu)
+void iniciar_hilos_CPU(config_cpu *valores_config_cpu)
 {
 	args_memoria = crearArgumento(valores_config_cpu->puerto_memoria, valores_config_cpu->ip);
 	kernel_ds = crearArgumento(valores_config_cpu->puerto_escucha_dispatch, valores_config_cpu->ip);
 	kernel_int = crearArgumento(valores_config_cpu->puerto_escucha_interrupt, valores_config_cpu->ip);
 	crearHilos_CPU(args_memoria, kernel_ds, kernel_int);
 }
-void iniciar_semaforos_CPU(){
-	mutex_cde_ejecutando = malloc(sizeof(sem_t));
+void iniciar_semaforos_CPU()
+{
+	mutex_cde_ejecutando = malloc(sizeof(pthread_mutex_t));
 	sem_init(mutex_cde_ejecutando, 0, 0);
-
 }
 void crearHilos_CPU(t_args *args_memoria, t_args *kernel_int, t_args *kernel_dis)
 {
@@ -60,10 +62,12 @@ void iniciar_registros()
 	registros->DI = 0;
 	registros->SI = 0;
 }
+
 void levantar_Kernel_Dispatch(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
+	int server_fd = iniciar_servidor(argumento->logger,"CPU Dispatch",argumento->ip,argumento->puerto);
 	log_info(logger, "Esperando KERNEL DISPATCH....");
 	int socket_kernel_dispatch = esperar_cliente(logger, "SERVIDOR CPU DISPATCH", argumento->puerto);
 	log_info(logger, "Se conecto el Kernel por DISPATCH");
@@ -80,10 +84,10 @@ void levantar_Kernel_Dispatch(void *ptr)
 			destruir_buffer(buffer);
 
 			pthread_mutex_lock(&mutex_cde_ejecutando);
-			//pid_ejecutar = cde_recibido->pid;
+			// pid_ejecutar = cde_recibido->pid;
 			pthread_mutex_unlock(&mutex_cde_ejecutando);
 
-			//solicitar_instruccion(cde_recibido);
+			// solicitar_instruccion(cde_recibido);
 			break;
 
 		case CDE:

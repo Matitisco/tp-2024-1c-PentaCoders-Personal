@@ -15,18 +15,16 @@
 #include "../../utils/include/registros.h"
 #include "../../kernel/include/kernel.h"
 
-char *PUERTO_MEMORIA;
-int CONEXION_A_MEMORIA;
-// t_log *logger;
-int socket_memoria;
-int socket_kernel_dispatch;
-int socket_kernel_interrupt;
+// char *PUERTO_MEMORIA;
+//  t_log *logger;
+//  int socket_kernel_dispatch;
+//  int socket_kernel_interrupt;
 extern t_registros *registros;
 // Variable Global
 // extern uint32_t pid_ejecutar;
 
 // Semaforos
-pthread_mutex_t *mutex_cde_ejecutando;
+// pthread_mutex_t *mutex_cde_ejecutando;
 
 typedef struct
 {

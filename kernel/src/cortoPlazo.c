@@ -92,7 +92,7 @@ void planificar_por_fifo()
 void enviar_cde(int conexion, t_cde *cde)
 {
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, cde->pc);  // sacar path y sacar lista_instrucciones de CDE
+    agregar_buffer_para_enterosUint32(buffer, cde->registro->PC);  // sacar path y sacar lista_instrucciones de CDE
     agregar_buffer_para_enterosUint32(buffer, cde->pid); // agrego al pid el buffer
     agregar_buffer_para_registros(buffer, *(cde->registro));
     enviar_buffer(buffer, socket_cpu_dispatch);

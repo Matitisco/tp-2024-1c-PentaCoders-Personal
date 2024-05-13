@@ -366,7 +366,6 @@ t_registros* leer_buffer_registros(tipo_buffer *buffer)
     registros->EDX = leer_buffer_enteroUint32(buffer);
     registros->SI = leer_buffer_enteroUint32(buffer);
     registros->DI = leer_buffer_enteroUint32(buffer);
-
     return registros;
 }
 
@@ -375,7 +374,7 @@ t_cde *leer_cde(tipo_buffer *buffer)
 {
 	t_cde *cde = malloc(sizeof(t_cde));
 	cde->pid = leer_buffer_enteroUint32(buffer);
-	cde->pc = leer_buffer_enteroUint32(buffer);
+	cde->registro->PC = leer_buffer_enteroUint32(buffer);
 	cde->registro = leer_buffer_registros(buffer);
 	return cde;
 }

@@ -36,16 +36,10 @@ void iterator(char *value)
     log_info(logger, "%s", value);
 }
 
-/* void iterador_interfaz(t_interfaz *interfaz)
-{
-    log_info(logger, "%s", interfaz->tipo_interfaz);
-    // SEGUIR AGREGANDO A LA IMPLEMENTAICON LOS OTROS PARAMETROS QUE SE RECIBEN DE LA INTERFAZ :D
-} */
-
 // LEVANTAR CLIENTE
 int levantarCliente(t_log *logger, char *nombreDelServidor, char *ip, char *puerto, char *mensaje)
 {
     int unaConexion = crear_conexion(logger, nombreDelServidor, ip, puerto);
-    //enviar_mensaje(mensaje, unaConexion);
+    //// enviar_mensaje(mensaje, unaConexion);
     return unaConexion;
 }

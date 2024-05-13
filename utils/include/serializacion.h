@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <commons/collections/list.h>
+
 #include "instrucciones.h"
 #include "registros.h"
-#include <commons/collections/list.h>
 #include "utils.h"
 
 typedef struct

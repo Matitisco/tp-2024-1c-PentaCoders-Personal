@@ -8,6 +8,7 @@ colaEstado *cola_exit_global;
 int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
+int socket_interfaz;
 
 // Contadores Semaforos
 sem_t *GRADO_MULTIPROGRAMACION;
@@ -246,8 +247,8 @@ op_code mensaje =recibir_operacion( socket_cpu_dispatch);
 	tipo_buffer *buffer = recibir_buffer(socket_cpu_dispatch);
 	  int socket_kernel; // declaracion momentania
     enviar_cod_enum(socket_kernel, SOLICITUD_INTERFAZ_GENERICA);
-     char * nombre_interfaz =leer_buffer_para_string(buffer);
-	 uint32_t unidades_trabajo = leer_buffer_para_enterosUint32(buffer);
+     char * nombre_interfaz =leer_buffer_string(buffer);
+	 uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer);
 	 tipo_buffer*bufferInterfaz = crear_buffer();
 	enviar_cod_enum(socket_interfaz, SOLICITUD_INTERFAZ_GENERICA);
     agregar_buffer_para_string(buffer, nombre_interfaz);
