@@ -1,35 +1,5 @@
-#include "../include/diccionario.h"
+#include "../include/cicloinstruccion.h"
 
-
-void iniciar_dic_instrucciones()
-{
-    dictionary_put(diccionario_instrucciones, "SET", exec_set);
-    dictionary_put(diccionario_instrucciones, "MOV_IN", exec_mov_in);
-    dictionary_put(diccionario_instrucciones, "MOV_OUT", exec_mov_out);
-    dictionary_put(diccionario_instrucciones, "SUM", exec_sum);
-    dictionary_put(diccionario_instrucciones, "SUB", exec_sub);
-    dictionary_put(diccionario_instrucciones, "JNZ", exec_jnz);
-    dictionary_put(diccionario_instrucciones, "RESIZE", exec_resize);
-    dictionary_put(diccionario_instrucciones, "COPY_STRING", exec_copy_string);
-    dictionary_put(diccionario_instrucciones, "WAIT", exec_wait);
-    dictionary_put(diccionario_instrucciones, "SIGNAL", exec_signal);
-    dictionary_put(diccionario_instrucciones, "IO_GEN_SLEEP", exec_io_gen_sleep);
-    dictionary_put(diccionario_instrucciones, "IO_STDIN_READ", exec_io_stdin_read);
-    dictionary_put(diccionario_instrucciones, "IO_STDOUT_WRITE", exec_io_stdout_write);
-    dictionary_put(diccionario_instrucciones, "IO_FS_CREATE", exec_io_fs_create);
-    dictionary_put(diccionario_instrucciones, "IO_FS_DELETE", exec_io_fs_delete);
-    dictionary_put(diccionario_instrucciones, "IO_FS_TRUNCATE", exec_io_fs_truncate);
-    dictionary_put(diccionario_instrucciones, "IO_FS_WRITE", exec_io_fs_write);
-    dictionary_put(diccionario_instrucciones, "IO_FS_READ", exec_io_fs_read);
-    dictionary_put(diccionario_instrucciones, "EXIT", exec_exit);
-}
-/*
-la memoria envia a cpu la instruccion
-cuando PC = 0 -> SET AX 1 y tmb envia el PC
-char* instruccion = "SET"
-dictionary_get(diccionario_instrucciones,instruccion);
-cpu entonces va a buscar set en el diccionario y envia AX y 1
-*/
 // SET
 void exec_set(char *registro, uint32_t valor) //
 {
@@ -246,7 +216,6 @@ Contexto de Ejecución actualizado al Kernel para su finalización.*/
     agregar_buffer_para_enterosUint32(buffer, cde->registro->PC);
     enviar_buffer(buffer, socket_kernel);
 }
-
 // OBTENER VALORES
 uint32_t obtener_valor_origen(char *origen)
 {

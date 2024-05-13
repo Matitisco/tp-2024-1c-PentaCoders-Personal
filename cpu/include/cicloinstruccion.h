@@ -1,8 +1,7 @@
-#ifndef DICCIONARIO_H_
-#define DICCIONARIO_H_
+#ifndef CICLO_INSTRUCCION_H_
+#define CICLO_INSTRUCCION_H_
 #include "../include/cpu.h"
 
-void iniciar_dic_instrucciones();
 // char *registro_a_char(t_registros *registro);
 uint32_t obtener_valor_origen(char *origen);
 void exec_set(char *registro, uint32_t valor);
