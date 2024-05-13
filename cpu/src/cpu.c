@@ -119,6 +119,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 		{
 		case INTERRUPT:
 			break;
+		case DETENER_PROCESO_FIN_DE_QUANTUM:
 		default:
 			// destruir_buffer_nuestro(buffer);
 			log_error(logger, "Codigo de operacion desconocido.");

@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	logger = iniciar_logger("kernel.log", "KERNEL");
 
 	valores_config = inicializar_config_kernel();
-
+	QUANTUM= valores_config->quantum;
 	iniciar_semaforos();
 
 	iniciar_hilos(valores_config);

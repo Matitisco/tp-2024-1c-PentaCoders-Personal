@@ -48,6 +48,7 @@ void *largo_plazo()
         log_info(logger, "PID: %d - Estado anterior: NEW - Estado actual: READY \n", proceso->cde->pid); // Log pedido de cambio de estado
 
         sem_post(procesos_en_ready);
+        
     }
 }
 t_pcb *transicion_new_a_ready()

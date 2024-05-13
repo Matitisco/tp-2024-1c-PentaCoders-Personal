@@ -6,6 +6,7 @@
 #include <string.h>
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
+#include <commons/temporal.h>
 #include <semaphore.h>
 #include <pthread.h>
 
@@ -18,6 +19,8 @@
 #include "../../utils/include/conexiones.h"
 #include "../../utils/include/serializacion.h"
 #include "../../utils/include/instrucciones.h"
+
+extern int QUANTUM;
 
 // ENUMS
 typedef enum

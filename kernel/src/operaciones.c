@@ -30,8 +30,8 @@ void ejecutar_script(char *PATH)
         log_info(logger, "No se pudo leer el script con PATH: %s", PATH);
         iniciar_consola_interactiva();
     }
-    char **instruccion_script = malloc(sizeof(char));
-    char *linea;
+    char **instruccion_script= malloc(sizeof(char));
+    char *linea[200];
     while (!feof(script))
     {
         fgets(linea_script, sizeof(char), script);
