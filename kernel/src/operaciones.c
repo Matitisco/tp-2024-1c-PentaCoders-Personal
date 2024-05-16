@@ -30,7 +30,7 @@ void ejecutar_script(char *PATH)
         log_info(logger, "No se pudo leer el script con PATH: %s", PATH);
         iniciar_consola_interactiva();
     }
-    char **instruccion_script= malloc(sizeof(char));
+    char **instruccion_script = malloc(sizeof(char));
     char *linea[200];
     while (!feof(script))
     {
@@ -106,23 +106,46 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 // DETENER PROCESO
 void finalizar_proceso(uint32_t PID)
 {
-
-    t_pcb *proceso = buscarProceso(PID); // buscamos en las colas
-    log_info(logger, "Se finalizo el proceso %u \n", PID);
-
-    op_code otroCodigo = recibir_operacion(socket_memoria);
-    if (otroCodigo == FINALIZAR_PROCESO)
+    // puede ser por pedido de cpu, un error, o consola
+    // buscamos al proceso y nos fijamos que no este en cpu
+    // si esta en cpu entonces mandamos a cpu interrupt una interrucpcion
+    // pidiendo que desaloje la proceso de la cpu
+    if (buscarPCBEnColaPorPid(PID ,cola_exec_global->estado, cola_exec_global->nombreEstado) == NULL)
     {
-        log_info(logger, "PID %u -Destruir pcb", proceso->cde->pid);
-
-        agregar_a_estado(proceso, cola_exit_global, procesos_en_exit); // moverlo a la cola de exit
-        liberar_proceso(proceso);
+        enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
+        tipo_buffer *buffer = crear_buffer();
+        agregar_buffer_para_enterosUint32(buffer, PID);
+        enviar_buffer(buffer, socket_memoria);
+        destruir_buffer(buffer);
     }
-    else if (otroCodigo == ERROR_FINALIZAR_PROCESO)
+    else
     {
-        // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
-        // log_info(logger, "Finalizar el proceso %u - Motivo: %s\n", PID, mostrarMotivo(motivoFinalizar));
+        // pero si el proceso esta ejecutandose en la cpu
+        enviar_cod_enum(socket_cpu_interrupt, SOLICITUD_EXIT);
+        
     }
+    
+        
+   
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, PID);
+    enviar_buffer(buffer, socket_memoria);
+    /*     t_pcb *proceso = buscarProceso(PID); // buscamos en las colas
+        log_info(logger, "Se finalizo el proceso %u \n", PID);
+
+        op_code otroCodigo = recibir_operacion(socket_memoria);
+        if (otroCodigo == FINALIZAR_PROCESO)
+        {
+            log_info(logger, "PID %u -Destruir pcb", proceso->cde->pid);
+
+            agregar_a_estado(proceso, cola_exit_global, procesos_en_exit); // moverlo a la cola de exit
+            liberar_proceso(proceso);
+        }
+        else if (otroCodigo == ERROR_FINALIZAR_PROCESO)
+        {
+            // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
+            // log_info(logger, "Finalizar el proceso %u - Motivo: %s\n", PID, mostrarMotivo(motivoFinalizar));
+        } */
 }
 // INICIAR PLANIFICACION
 void iniciar_planificacion()

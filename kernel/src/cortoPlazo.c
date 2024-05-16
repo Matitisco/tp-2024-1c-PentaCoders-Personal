@@ -169,7 +169,7 @@ void planificar_por_rr()
 void replanificar_por_rr(t_pcb *proceso)
 {
 
-    enviar_cod_enum(socket_cpu_interrupt, DETENER_PROCESO_FIN_DE_QUANTUM);
+    enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO);
     enviar_cde(socket_cpu_dispatch, proceso->cde); // Envio que se pare el proceso a la conexion de interrupt
     pthread_mutex_lock(mutex_cola_ready);
     proceso = sacar_procesos_cola(cola_ready_global, procesos_en_exec); // lo saco de running

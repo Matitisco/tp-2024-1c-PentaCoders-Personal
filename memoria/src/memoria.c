@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 }
 void crearHilos(t_args *args_CPU, t_args *args_IO, t_args *args_KERNEL)
 {
-    // pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
+    pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
     pthread_create(&hiloKernel, NULL, recibirKernel, (void *)args_KERNEL);
     // pthread_create(&hiloIO, NULL, recibirIO, (void *)args_IO);
 }
@@ -54,16 +54,21 @@ void *recibirKernel(void *ptr)
             iniciar_proceso(cliente_fd, buffer);
             break;
         case SOLICITUD_FINALIZAR_PROCESO:
-            finalizar_proceso();
+            buffer = recibir_buffer(cliente_fd);
+            uint32_t pid_a_eliminar = leer_buffer_enteroUint32(buffer);
+            eliminar_proceso(pid_a_eliminar);
+            break;
         case ERROR_CLIENTE_DESCONECTADO:
             log_error(logger, "El KERNEL se desconecto. Terminando servidor");
             return EXIT_FAILURE;
+            break;
+
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
+            return EXIT_FAILURE;
             break;
         }
     }
-    return EXIT_SUCCESS;
 }
 
 t_cde *armarCde(tipo_buffer *buffer)
@@ -98,11 +103,6 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     {
         enviar_cod_enum(cliente_fd, ERROR_INICIAR_PROCESO);
     }
-}
-
-void finalizar_proceso()
-{
-    log_info(logger, "Se aprueba finalizar el proceso");
 }
 void *recibirCPU(void *ptr)
 {
@@ -152,6 +152,10 @@ void *recibirCPU(void *ptr)
     }
 }
 
+void eliminar_proceso(uint32_t pid_a_eliminar)
+{
+    // lo elimina
+}
 t_instruccion *crearInstruccion(char *linea)
 {
     t_instruccion *instruccion = malloc(sizeof(instruccion));

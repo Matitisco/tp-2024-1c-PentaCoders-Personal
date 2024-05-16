@@ -67,38 +67,39 @@ void levantar_Kernel_Dispatch(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
-	int server_fd = iniciar_servidor(argumento->logger,"CPU Dispatch",argumento->ip,argumento->puerto);
+	int server_fd = iniciar_servidor(argumento->logger, "CPU Dispatch", argumento->ip, argumento->puerto);
 	log_info(logger, "Esperando KERNEL DISPATCH....");
 	int socket_kernel_dispatch = esperar_cliente(logger, "SERVIDOR CPU DISPATCH", argumento->puerto);
 	log_info(logger, "Se conecto el Kernel por DISPATCH");
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_dispatch);
-		tipo_buffer *buffer = recibir_buffer(socket_kernel_dispatch);
-
+		tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 		switch (codigo)
 		{
 		case EJECUTAR_PROCESO:
 
-			t_cde *cde_recibido = leer_cde(buffer); // Deserealiza y Arma el CDE
-			destruir_buffer(buffer);
+			t_cde *cde_recibido = leer_cde(buffer_cde);	   // Deserealiza y Arma el CDE
+			char *linea_instruccion = fetch(cde_recibido); // MOV AX BX
+														   // Incrementamos el Program Counter
+			cde_recibido->registro->PC++;
+			char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
+			execute(array_instruccion, cde_recibido);
+			check_interrupt();
+			destruir_buffer(buffer_cde);
 
-			pthread_mutex_lock(&mutex_cde_ejecutando);
-			// pid_ejecutar = cde_recibido->pid;
-			pthread_mutex_unlock(&mutex_cde_ejecutando);
+			// pthread_mutex_lock(&mutex_cde_ejecutando);
 
-			// solicitar_instruccion(cde_recibido);
+			// pthread_mutex_unlock(&mutex_cde_ejecutando);
+
+			// sem_post(GRADO_MULTIPROGRAMACION); // aumenta en uno el grado de multipgramacion
+			// sem_post(exec_libre);
 			break;
-
-		case CDE:
-
-			break;
-
+		case ERROR_CLIENTE_DESCONECTADO:
+			log_error(logger, "El KERNEL se desconecto. Terminando servidor");
+			return EXIT_FAILURE;
 		default:
-			// destruir_buffer_nuestro(buffer);
-			log_error(logger, "Codigo de operacion desconocido.");
-			log_error(logger, "Finalizando modulo.");
-			exit(1);
+			log_warning(logger, "Operacion desconocida. No quieras meter la pata");
 			break;
 		}
 	}
@@ -115,11 +116,39 @@ void levantar_Kernel_Interrupt(void *ptr)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_interrupt);
 		tipo_buffer *buffer = recibir_buffer(socket_kernel_interrupt);
+
+		t_cde *cde_recibido = leer_cde(buffer);
+		// envia la conexion
 		switch (codigo)
 		{
-		case INTERRUPT:
+		case PROCESO_INTERRUMPIDO:
+			// replanificar
+			int proceso_a_interrumpir = leer_buffer_enteroUint32(buffer);
+			destruir_buffer(buffer);
+			if (proceso_a_interumpir == proceso_en_ejecucion())
+			{
+				// se interrumpe el proceso por planificacion
+			}
+			else
+			{
+			}
+
 			break;
-		case DETENER_PROCESO_FIN_DE_QUANTUM:
+		case SOLICITUD_EXIT: // el kernel nos pide que paremos el proceso para poder eliminarlo
+			// el kernel ejecuta la opcion de eliminar proceso
+			int proceso_a_eliminar = leer_buffer_enteroUint32(buffer); // id del proceso
+			if (proceso_a_eliminar == proceso_en_ejecucion())
+			{
+			}
+			else
+			{
+				log_info(logger, "La interrupcion que llego no es para el proceso que esta en ejecucion");
+			}
+
+		case ERROR_CLIENTE_DESCONECTADO:
+			log_error(logger, "El KERNEL se desconecto. Terminando servidor");
+			return EXIT_FAILURE;
+
 		default:
 			// destruir_buffer_nuestro(buffer);
 			log_error(logger, "Codigo de operacion desconocido.");
@@ -136,32 +165,32 @@ void *conexionAMemoria(void *ptr)
 	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "CPU SE CONECTO A MEMORIA");
 	free(argumento);
 }
-char *fetch()
+char *fetch(t_cde *contexto)
 {
-	t_cde *cde = malloc(sizeof(t_cde));
-	enviar_cod_enum(socket_memoria, PEDIDO_INSTRUCCION); // Pido la instruccion
+	enviar_cod_enum(socket_memoria, PEDIDO_INSTRUCCION); // Pido la instruccion MOV AX BX
 	tipo_buffer *buffer = crear_buffer();
 	// actualizo el buffer escribiendo
-	agregar_buffer_para_enterosUint32(buffer, cde->pid);		  // consigo el procoeso asoc
-	agregar_buffer_para_enterosUint32(buffer, cde->registro->PC); // con esto la memoria busca la prox ins a ejecutar
+	agregar_buffer_para_enterosUint32(buffer, contexto->pid);		   // consigo el procoeso asoc
+	agregar_buffer_para_enterosUint32(buffer, contexto->registro->PC); // con esto la memoria busca la prox ins a ejecutar
 	enviar_buffer(buffer, socket_memoria);
 
 	destruir_buffer(buffer);
-	tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo SET AX 1
+	tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo MOV AX BX
 	char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion); // obtenemos la linea instruccion
 
-	cde->registro->PC++; // actualizo el contexto de ejercicion
 	return linea_de_instruccion;
 }
 char **decode(char *linea_de_instrucion)
 {
-	char **instruccion = string_split(linea_de_instrucion, " ");
-	return instruccion; //["SET","AX","1"]
+	// AGARRA MOV AX BX
+	// falta implementar la parte de si se encesita traduccion de dir logica a fisica
+	char **instruccion = string_split(linea_de_instrucion, " "); // DEVUELVE ARRAY ["MOV","AX","BX"]
+	return instruccion;											 //["MOV","AX","BX"]
 }
 // Contexto de ejecucion
 void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 {
-	t_tipoDeInstruccion cod_instruccion = obtener_instruccion(instruccion[0]);
+	t_tipoDeInstruccion cod_instruccion = obtener_instruccion(instruccion[0]); // instrucicon parametro1 parametro2 parametro3
 	switch (cod_instruccion)
 	{
 	case SET: // SET AX 1
@@ -218,6 +247,14 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 	default:
 		log_info(logger, "No encontre la instruccion");
 		break;
+	}
+}
+void check_interrupt()
+{
+	op_code *codigo = recibir_operacion(socket_kernel_interrupt);
+	if (codigo == PROCESO_INTERRUMPIDO)
+	{
+		interrupcion = 1; // Hacer una var interrupcion que este en 1 ??
 	}
 }
 void actualizar_cde(t_cde *contexto, char **instruccion)
