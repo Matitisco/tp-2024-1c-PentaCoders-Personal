@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	logger = iniciar_logger("kernel.log", "KERNEL");
 
 	valores_config = inicializar_config_kernel();
-	QUANTUM= valores_config->quantum;
+	QUANTUM = valores_config->quantum;
 	iniciar_semaforos();
 
 	iniciar_hilos(valores_config);
@@ -75,14 +75,14 @@ void iniciar_hilos(config_kernel *valores_config)
 void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT)
 {
 	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
-	// pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
-	/* 	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
-		pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT); */
+	pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
+	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
+	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT);
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 }
-/* void *levantarIO(void *ptr)
+void *levantarIO(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
@@ -93,7 +93,7 @@ void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_ar
 	while (1)
 	{
 		// Debemos aplicar semaforos?? muy probable
-		int cliente_fd = esperar_cliente(logger, "Kernel", server_fd);
+		int cliente_fd = esperar_cliente(logger, "Kernel","Interfaz IO", server_fd);
 		buffer_io = recibir_buffer(cliente_fd);
 		// ACORDARSE DE LUEGO BORRAR LA ESTRCUTURA QUE SE NECUENTRA EN KERNEL.H TENEMOS QUE SOLO USAR LA QUE ESTA EN ENTRADA Y SALIDA.H
 		char *nombre_IO = leer_buffer_string(buffer_io);
@@ -110,7 +110,7 @@ void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_ar
 		log_info(logger, "Me llego una interfaz del tipo:%s, y de nombre:%s", tipo_io, nombre_IO);
 	}
 	return NULL;
-} */
+}
 const char *obtener_interfaz(enum_interfaz interfaz)
 {
 	if (interfaz == GENERICA)
@@ -240,23 +240,23 @@ void *levantar_CPU_Dispatch(void *ptr)
 
 	free(datosConexion);
 }
-void recibirPedidoDeIOGENSLEEP(){
-	
-op_code mensaje =recibir_operacion( socket_cpu_dispatch);
-	if(mensaje == SOLICITUD_INTERFAZ_GENERICA){
-	tipo_buffer *buffer = recibir_buffer(socket_cpu_dispatch);
-	  int socket_kernel; // declaracion momentania
-    enviar_cod_enum(socket_kernel, SOLICITUD_INTERFAZ_GENERICA);
-     char * nombre_interfaz =leer_buffer_string(buffer);
-	 uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer);
-	 tipo_buffer*bufferInterfaz = crear_buffer();
-	enviar_cod_enum(socket_interfaz, SOLICITUD_INTERFAZ_GENERICA);
-    agregar_buffer_para_string(buffer, nombre_interfaz);
-    agregar_buffer_para_enterosUint32(buffer, unidades_trabajo);
-    enviar_buffer(buffer, socket_kernel); // falta definir quien es cliente_kernel
+void recibirPedidoDeIOGENSLEEP()
+{
 
-}
-
+	op_code mensaje = recibir_operacion(socket_cpu_dispatch);
+	if (mensaje == SOLICITUD_INTERFAZ_GENERICA)
+	{
+		tipo_buffer *buffer = recibir_buffer(socket_cpu_dispatch);
+		int socket_kernel; // declaracion momentania
+		enviar_cod_enum(socket_kernel, SOLICITUD_INTERFAZ_GENERICA);
+		char *nombre_interfaz = leer_buffer_string(buffer);
+		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer);
+		tipo_buffer *bufferInterfaz = crear_buffer();
+		enviar_cod_enum(socket_interfaz, SOLICITUD_INTERFAZ_GENERICA);
+		agregar_buffer_para_string(buffer, nombre_interfaz);
+		agregar_buffer_para_enterosUint32(buffer, unidades_trabajo);
+		enviar_buffer(buffer, socket_kernel); // falta definir quien es cliente_kernel
+	}
 }
 /*
 

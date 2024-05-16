@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sockets.c>
+//#include <sockets.c>
 #include <pthread.h>
 
-#include "../../utils/include/sockets.h"
+//#include "../../utils/include/sockets.h"
 #include "../../utils/include/utils.h"
 #include "../../utils/include/conexiones.h"
 #include "../../utils/include/instrucciones.h"

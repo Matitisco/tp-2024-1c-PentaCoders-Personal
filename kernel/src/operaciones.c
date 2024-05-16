@@ -110,7 +110,7 @@ void finalizar_proceso(uint32_t PID)
     // buscamos al proceso y nos fijamos que no este en cpu
     // si esta en cpu entonces mandamos a cpu interrupt una interrucpcion
     // pidiendo que desaloje la proceso de la cpu
-    if (buscarPCBEnColaPorPid(PID ,cola_exec_global->estado, cola_exec_global->nombreEstado) == NULL)
+    if (buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado) == NULL)
     {
         enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
         tipo_buffer *buffer = crear_buffer();
@@ -122,11 +122,8 @@ void finalizar_proceso(uint32_t PID)
     {
         // pero si el proceso esta ejecutandose en la cpu
         enviar_cod_enum(socket_cpu_interrupt, SOLICITUD_EXIT);
-        
     }
-    
-        
-   
+
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, PID);
     enviar_buffer(buffer, socket_memoria);
@@ -378,11 +375,11 @@ t_cde *iniciar_cde(char *PATH)
 
     cde->pid = PID_GLOBAL;
     PID_GLOBAL++;
-    cde->registro->PC = 0;                // LA CPU lo va a ir cambiando
     cde->path = malloc(strlen(PATH) + 1); // reservar memoria para el path
     strcpy(cde->path, PATH);              // y asignarle con la funcion
     cde->registro = malloc(sizeof(t_registros));
-    cde->registro = NULL;
+    //cde->registro = NULL;
+    cde->registro->PC = 0;                // LA CPU lo va a ir cambiando
     cde->lista_instrucciones = list_create();
     return cde;
 }

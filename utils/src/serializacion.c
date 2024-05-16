@@ -352,7 +352,7 @@ t_list *leer_buffer_instrucciones(tipo_buffer *buffer)
     return lista_instrucciones;
 }
 // t_registros *registro;
-t_registros* leer_buffer_registros(tipo_buffer *buffer)
+t_registros *leer_buffer_registros(tipo_buffer *buffer)
 {
     t_registros *registros = malloc(sizeof(t_registros));
 
@@ -369,14 +369,13 @@ t_registros* leer_buffer_registros(tipo_buffer *buffer)
     return registros;
 }
 
-
 t_cde *leer_cde(tipo_buffer *buffer)
 {
-	t_cde *cde = malloc(sizeof(t_cde));
-	cde->pid = leer_buffer_enteroUint32(buffer);
-	cde->registro->PC = leer_buffer_enteroUint32(buffer);
-	cde->registro = leer_buffer_registros(buffer);
-	return cde;
+    t_cde *cde = malloc(sizeof(t_cde));
+    cde->pid = leer_buffer_enteroUint32(buffer);
+    cde->registro->PC = leer_buffer_enteroUint32(buffer);
+    cde->registro = leer_buffer_registros(buffer);
+    return cde;
 }
 
 // ESCRIBIR EN EL BUFFER UNA LISTA

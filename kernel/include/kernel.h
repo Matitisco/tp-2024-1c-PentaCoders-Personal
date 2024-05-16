@@ -152,9 +152,9 @@ t_pcb* sacar_procesos_cola(colaEstado *cola_estado, sem_t* contador_estado);
 void iniciar_semaforos();
 
 // FUNCIONES DE LEVANTAR MODULOS
-/*void *levantar_CPU_Dispatch(void *ptr);
+void *levantar_CPU_Dispatch(void *ptr);
 void *levantar_CPU_Interrupt(void *ptr);
-void *levantarIO(void *ptr);*/
+void *levantarIO(void *ptr);
 void iniciar_hilos(config_kernel *valores_config);
 
 // planificadores

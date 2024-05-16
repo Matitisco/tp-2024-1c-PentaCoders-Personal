@@ -3,12 +3,13 @@
 pthread_t hiloCpu;
 pthread_t hiloKernel;
 pthread_t hiloIO;
-
+struct config_memoria *valores_config;
+int server_fd;
 int main(int argc, char *argv[])
 {
 
     logger = iniciar_logger("memoria.log", "MEMORIA");
-    struct config_memoria *valores_config = config_memoria();
+    valores_config = config_memoria();
 
     // LEVANTAMOS EL SERVIDOR DE MEMORIA
     // levantarServidorMemoria(logger, valores_config->puerto_memoria, valores_config->ip_memoria);
@@ -27,9 +28,12 @@ int main(int argc, char *argv[])
 }
 void crearHilos(t_args *args_CPU, t_args *args_IO, t_args *args_KERNEL)
 {
+    server_fd = iniciar_servidor(logger, "Memoria", valores_config->ip_memoria, valores_config->puerto_memoria);
+    log_info(logger, "Servidor Memoria listo para recibir KERNEL, CPU Y IO");
+
     pthread_create(&hiloCpu, NULL, recibirCPU, (void *)args_CPU);
     pthread_create(&hiloKernel, NULL, recibirKernel, (void *)args_KERNEL);
-    // pthread_create(&hiloIO, NULL, recibirIO, (void *)args_IO);
+    pthread_create(&hiloIO, NULL, recibirIO, (void *)args_IO);
 }
 void *recibirIO(void *ptr)
 {
@@ -42,11 +46,10 @@ void *recibirKernel(void *ptr)
     t_args *argumento = malloc(sizeof(t_args));
     argumento = (t_args *)ptr;
 
-    int server_fd = iniciar_servidor(logger, "Memoria", argumento->ip, argumento->puerto);
-    log_info(logger, "Servidor Memoria listo para recibir KERNEL");
-    int cliente_fd = esperar_cliente(logger, "Memoria", server_fd);
+    int cliente_fd = esperar_cliente(logger, "Memoria", "Kernel", server_fd);
     while (1)
     {
+        // puede ser que haya un porblema de sincro, talvez agregar un sem?
         op_code cod_op = recibir_operacion(cliente_fd);
         switch (cod_op)
         {
@@ -93,7 +96,7 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     t_cde *cde = armarCde(buffer);
     destruir_buffer(buffer);
     // IMPLEMENTAR leerArchivoConINstrucciones
-    // cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
+    cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
     if (cde->path != NULL)
     {
         enviar_cod_enum(cliente_fd, INICIAR_PROCESO_CORRECTO);
@@ -108,23 +111,12 @@ void *recibirCPU(void *ptr)
 {
     t_args *argumento; // CASTEAR
     argumento = (t_args *)ptr;
-    int server_fd = iniciar_servidor(argumento->logger, "Memoria", argumento->ip, argumento->puerto);
-    log_info(argumento->logger, "Servidor Memoria listo para recibir CPU");
-    int cliente_fd = esperar_cliente(argumento->logger, "Memoria", server_fd);
-    t_list *lista;
+    int cliente_fd = esperar_cliente(logger, "Memoria", "CPU", server_fd);
     while (1)
     {
-        int cod_op = recibir_operacion(cliente_fd);
+        op_code cod_op = recibir_operacion(cliente_fd);
         switch (cod_op)
         {
-        case MENSAJE:
-            recibir_mensaje(cliente_fd);
-            break;
-        case PAQUETE:
-            lista = recibir_paquete(cliente_fd);
-            log_info(argumento->logger, "Me llegaron los siguientes valores:\n");
-            list_iterate(lista, (void *)iterator);
-            break;
         case PEDIDO_INSTRUCCION:
             /*             tipo_buffer *buffer = recibir_buffer(socket_cpu);
 
@@ -168,25 +160,29 @@ t_instruccion *crearInstruccion(char *linea)
 t_list *leerArchivoConInstrucciones(char *pathArch)
 {
     t_list *listInstrucciones = list_create(); // creo el puntero a la lista
-    FILE *arch = fopen(pathArch, "r");
+    char path_1[] = "/home/utnso/tp-2024-1c-PentaCoders/memoria/pruebas/";
+    strcat(path_1, pathArch);
+    log_info(logger, "El path del archivo es : %s", path_1);
+    FILE *arch = fopen(path_1, "r");
 
     if (arch == NULL)
     {
         perror("Error en abrir el archivo"); // me fijo si se pudo abrir el archivo
     }
-    char *linea = malloc(sizeof(char *)); // este seria el buffer para ir leyendo el archivo
-    while (fgets(linea, sizeof(linea), arch))
+    int largo=50;
+    char linea[50]; // este seria el buffer para ir leyendo el archivo
+    while (fgets(linea, largo, arch))
     { // voy leyendo el archivo
         strtok(linea, "\n");
         t_instruccion *unaInstruccion = crearInstruccion(linea);
+        log_info(logger, "LInea %s", linea);
         list_add(listInstrucciones, unaInstruccion); // agrego unaInstruccion a la lista
     }
     fclose(arch);
     return listInstrucciones;
 }
 
-/*
-t_list* parsearArchivo(char* pathArchivo, t_log* logger){
+/* t_list* parsearArchivo(char* pathArchivo, t_log* logger){
     t_list* listaInstrucciones = list_create();
 
     FILE* archivoInstrucciones = fopen(pathArchivo, "r");

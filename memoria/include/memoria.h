@@ -36,7 +36,7 @@ void *recibirKernel(void *ptr);
 void *recibirIO(void* ptr);
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
 void finalizar_proceso();
-
+t_list *leerArchivoConInstrucciones(char *pathArch);
 t_cde* armarCde(tipo_buffer* buffer);
 
 #endif
