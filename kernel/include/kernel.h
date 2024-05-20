@@ -23,15 +23,6 @@
 extern int QUANTUM;
 
 // ENUMS
-typedef enum
-{
-	NEW,
-	READY,
-	EXEC,
-	BLOCKED,
-	FINISHED
-
-} t_estados;
 
 typedef enum
 {
@@ -83,17 +74,6 @@ typedef struct
 
 typedef struct
 {
-	t_cde *cde;		  // contexto de ejecucion
-	t_estados estado; // estado del proceso
-	// int prioridad no va por ahora
-	t_list *archivosAsignados;
-	t_list *recursosAsignados;
-	int prioridad;
-} t_pcb;
-
-
-typedef struct
-{
 	char *nombreEstado;
 	t_queue *estado;
 	pthread_mutex_t *mutex_estado;
@@ -113,6 +93,7 @@ extern sem_t* procesos_en_exec;
 extern sem_t* procesos_en_block;
 extern sem_t* procesos_en_exit;
 extern sem_t* sem_agregar_a_estado;
+extern sem_t *sem_kernel;
 
 //Binarios
 extern sem_t *binario_menu_lp;

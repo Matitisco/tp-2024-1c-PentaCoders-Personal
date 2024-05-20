@@ -24,7 +24,7 @@ typedef struct
 {
     uint32_t pid;
 
-    t_registros *registro;
+    t_registros *registros;
     t_list *lista_instrucciones;
     char* path;
 

@@ -81,7 +81,7 @@ void levantar_Kernel_Dispatch(void *ptr)
 			t_cde *cde_recibido = leer_cde(buffer_cde);	   // Deserealiza y Arma el CDE
 			char *linea_instruccion = fetch(cde_recibido); // MOV AX BX
 														   // Incrementamos el Program Counter
-			cde_recibido->registro->PC++;
+			cde_recibido->registros->PC++;
 			char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
 			execute(array_instruccion, cde_recibido);
 			check_interrupt();
@@ -171,7 +171,7 @@ char *fetch(t_cde *contexto)
 	tipo_buffer *buffer = crear_buffer();
 	// actualizo el buffer escribiendo
 	agregar_buffer_para_enterosUint32(buffer, contexto->pid);		   // consigo el procoeso asoc
-	agregar_buffer_para_enterosUint32(buffer, contexto->registro->PC); // con esto la memoria busca la prox ins a ejecutar
+	agregar_buffer_para_enterosUint32(buffer, contexto->registros->PC); // con esto la memoria busca la prox ins a ejecutar
 	enviar_buffer(buffer, socket_memoria);
 
 	destruir_buffer(buffer);

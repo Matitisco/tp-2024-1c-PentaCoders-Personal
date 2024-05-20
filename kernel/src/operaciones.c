@@ -7,7 +7,6 @@ sem_t *procesos_en_exec;
 sem_t *procesos_en_block;
 sem_t *procesos_en_exit;
  */
-
 uint32_t PID_GLOBAL = 0;
 op_code estado_planificacion = PLANIFICACION_PAUSADA;
 // int socket_memoria;
@@ -15,58 +14,49 @@ op_code estado_planificacion = PLANIFICACION_PAUSADA;
 // EJECUTAR SCRIPT
 void ejecutar_script(char *PATH)
 {
-    // voy a leer el archivo
-    /*
-    INICIAR_PROCESO PROCESO1
-    INICIAR_PROCESO PROCESO2
-    INICIAR_PROCESO PROCESO3
-    DETENER_PROCESO 0
-    */
-    FILE *script;
-    char *linea_script = malloc(sizeof(char));
-    script = fopen(PATH, "r");
-    if (script == NULL)
+    char *linea_script = string_new();
+    char **lineas_script = string_array_new();
+    char linea[1024];
+    FILE *archivo_script = fopen(PATH, "r");
+
+    if (archivo_script == NULL)
     {
         log_info(logger, "No se pudo leer el script con PATH: %s", PATH);
         iniciar_consola_interactiva();
     }
-    char **instruccion_script = malloc(sizeof(char));
-    char *linea[200];
-    while (!feof(script))
+    while (fgets(linea, sizeof(linea), archivo_script) != NULL)
     {
-        fgets(linea_script, sizeof(char), script);
-        strcpy(linea, linea_script);
-        instruccion_script = string_split(linea, " ");
-
-        if (strcmp(instruccion_script[0], "INICIAR_PROCESO") == 0)
+        lineas_script = string_split(linea, " ");
+        log_info(logger, "Linea leida: %s", linea);
+        strtok(linea, "\n");
+        if (strcmp(lineas_script[0], "INICIAR_PROCESO") == 0)
         {
-            iniciar_proceso(instruccion_script[1]);
+            iniciar_proceso(lineas_script[1]);
         }
-        if (strcmp(instruccion_script[0], "FINALIZAR_PROCESO") == 0)
+        if (strcmp(lineas_script[0], "FINALIZAR_PROCESO") == 0)
         {
-            finalizar_proceso(atoi(instruccion_script[1]));
+            finalizar_proceso(atoi(lineas_script[1]));
         }
-        if (strcmp(instruccion_script[0], "DETENER_PLANIFICACION") == 0)
+        if (strcmp(lineas_script[0], "DETENER_PLANIFICACION") == 0)
         {
             detener_planificacion();
         }
-        if (strcmp(instruccion_script[0], "INICIAR_PLANIFICACION") == 0)
+        if (strcmp(lineas_script[0], "INICIAR_PLANIFICACION") == 0)
         {
             iniciar_planificacion();
         }
-        if (strcmp(instruccion_script[0], "MULTIPROGRAMACION") == 0)
+        if (strcmp(lineas_script[0], "MULTIPROGRAMACION") == 0)
         {
-            grado_multiprogramacion(atoi(instruccion_script[1]));
+            grado_multiprogramacion(atoi(lineas_script[1]));
         }
-        if (strcmp(instruccion_script[0], "PROCESO_ESTADO") == 0)
+        if (strcmp(lineas_script[0], "PROCESO_ESTADO") == 0)
         {
             proceso_estado();
         }
-        free(instruccion_script);
     }
+    free(lineas_script);
     free(linea_script);
-    free(linea);
-    fclose(script);
+    fclose(archivo_script);
 }
 // INICIAR PROCESO
 void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
@@ -75,12 +65,12 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 
     agregar_a_estado(proceso, cola_new_global, procesos_en_new); // hace post
 
-    /* tipo_buffer *buffer = crear_buffer();
+    tipo_buffer *buffer = crear_buffer();
 
     op_code codigo = SOLICITUD_INICIAR_PROCESO; // SOLICITUD_INICIAR_PROCESO;
 
     send(socket_memoria, &codigo, sizeof(uint32_t), 0); // enviar codigo
-
+    sem_post(sem_kernel);
     agregar_buffer_para_enterosUint32(buffer, proceso->cde->pid);
     agregar_buffer_para_string(buffer, proceso->cde->path);
 
@@ -103,7 +93,7 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
     {
         log_info(logger, "No se pudo crear el proceso %u", proceso->cde->pid); // se muestra que no se pudo
-    } */
+    }
 }
 // DETENER PROCESO
 void finalizar_proceso(uint32_t PID)
@@ -149,32 +139,31 @@ void finalizar_proceso(uint32_t PID)
 // INICIAR PLANIFICACION
 void iniciar_planificacion()
 {
-    habilitar_largo_plazo=1;
+    habilitar_largo_plazo = 1;
     sem_post(b_reanudar_largo_plazo);
     // tenemos un proceso en new y lo tenemos que pasar a ready
     // habilita a los hilos de los planificadores a que dejen de estar en pausa
-   /*  if (estado_planificacion == PLANIFICACION_PAUSADA)
-    {
-        renaudar_corto_plazo();
-        renaudar_largo_plazo();
-        estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
-    }
-    else if (estado_planificacion == PLANIFICACION_EN_FUNCIONAMIENTO)
-    {
-        log_info(logger, "La planificacion ya se encuentra iniciada");
-    }
-    printf("Iniciar Planificacion"); */
+    /*  if (estado_planificacion == PLANIFICACION_PAUSADA)
+     {
+         renaudar_corto_plazo();
+         renaudar_largo_plazo();
+         estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
+     }
+     else if (estado_planificacion == PLANIFICACION_EN_FUNCIONAMIENTO)
+     {
+         log_info(logger, "La planificacion ya se encuentra iniciada");
+     }
+     printf("Iniciar Planificacion"); */
 }
 // DETENER PLANIFICACION
 void detener_planificacion()
 {
-    habilitar_largo_plazo=0;
-    //sem_wait(b_reanudar_largo_plazo);
+    habilitar_largo_plazo = 0;
+    // sem_wait(b_reanudar_largo_plazo);
     /* pausar_corto_plazo();
     pausar_largo_plazo();
     estado_planificacion = PLANIFICACION_PAUSADA; */
 }
-
 
 // MODIFICAR GRADO DE MULTIPROGRAMACION
 void grado_multiprogramacion(int valor)
@@ -248,7 +237,7 @@ void liberar_proceso(t_pcb *proceso)
 void liberar_cde(t_pcb *proceso)
 {
     free(proceso->cde->lista_instrucciones);
-    free(proceso->cde->registro);
+    free(proceso->cde->registros);
     free(proceso->cde);
     // free(proceso->cde->pc);
     // free(proceso->cde->pid);
@@ -307,10 +296,6 @@ void mostrar_procesos(colaEstado *cola)
 
 void pausar_corto_plazo() {}
 void pausar_largo_plazo() {}
-
-
-
-
 
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
@@ -390,9 +375,9 @@ t_cde *iniciar_cde(char *PATH)
     PID_GLOBAL++;
     cde->path = malloc(strlen(PATH) + 1); // reservar memoria para el path
     strcpy(cde->path, PATH);              // y asignarle con la funcion
-    cde->registro = malloc(sizeof(t_registros));
+    cde->registros = malloc(sizeof(t_registros));
     // cde->registro = NULL;
-    cde->registro->PC = 0; // LA CPU lo va a ir cambiando
+    cde->registros->PC = 0; // LA CPU lo va a ir cambiando
     cde->lista_instrucciones = list_create();
     return cde;
 }

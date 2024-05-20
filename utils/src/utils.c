@@ -1,4 +1,5 @@
 #include "../include/utils.h"
+sem_t *sem_kernel;
 /*----------------------- GENERAL ------------------*/
 // INICIAR LOGGER
 t_log *iniciar_logger(char *path_log, char *nombre_log)
@@ -59,14 +60,14 @@ void liberarConexion(int conexion)
 
 t_args *crearArgumento(char *puerto, char *ip)
 {
-    t_args *a;
-    a = malloc(sizeof(t_args));
-    a->logger = logger;
-    a->puerto = malloc(sizeof(char *));
-    a->ip = malloc(sizeof(char *));
-    strcpy(a->puerto, puerto);
+	t_args *a;
+	a = malloc(sizeof(t_args));
+	a->logger = logger;
+	a->puerto = malloc(sizeof(char *));
+	a->ip = malloc(sizeof(char *));
+	strcpy(a->puerto, puerto);
 
-    strcpy(a->ip, ip);
+	strcpy(a->ip, ip);
 
-    return a;
+	return a;
 }

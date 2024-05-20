@@ -60,6 +60,7 @@ void *corto_plazo()
         quantum = temporal_create();
         planificar_por_vrr();
     }
+    return (void*)1;
 }
 
 void iniciar_sem_cp()
@@ -128,9 +129,9 @@ int hayInstruccionBloqueante()
 void enviar_cde(int conexion, t_cde *cde)
 {
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, cde->registro->PC); // sacar path y sacar lista_instrucciones de CDE
+    agregar_buffer_para_enterosUint32(buffer, cde->registros->PC); // sacar path y sacar lista_instrucciones de CDE
     agregar_buffer_para_enterosUint32(buffer, cde->pid);          // agrego al pid el buffer
-    agregar_buffer_para_registros(buffer, *(cde->registro));
+    agregar_buffer_para_registros(buffer, *(cde->registros));
     enviar_buffer(buffer, socket_cpu_dispatch);
 }
 

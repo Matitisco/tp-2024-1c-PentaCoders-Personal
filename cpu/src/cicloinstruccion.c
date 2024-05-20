@@ -123,56 +123,56 @@ void exec_jnz(char *registro, uint32_t numeroInstruccion)
     {
         if (registros->AX != 0)
         {
-            cde->registro->PC = numeroInstruccion;
+            cde->registros->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "BX") == 0)
     {
         if (registros->BX != 0)
         {
-            cde->registro->PC = numeroInstruccion;
+            cde->registros->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "CX") == 0)
     {
         if (registros->CX != 0)
         {
-            cde->registro->PC = numeroInstruccion;
+            cde->registros->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "DX") == 0)
     {
         if (registros->DX != 0)
         {
-            cde->registro->PC = numeroInstruccion;
+            cde->registros->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "EAX") == 0)
     {
         if (registros->EAX != 0)
         {
-            cde->registro->PC = numeroInstruccion;
+            cde->registros->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "EBX") == 0)
     {
         if (registros->EBX != 0)
         {
-            cde->registro->PC = numeroInstruccion;
+            cde->registros->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "ECX") == 0)
     {
         if (registros->ECX != 0)
         {
-            cde->registro->PC = numeroInstruccion;
+            cde->registros->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "EDX") == 0)
     {
         if (registros->EDX != 0)
         {
-            cde->registro->PC = numeroInstruccion;
+            cde->registros->PC = numeroInstruccion;
         }
     }
 }
@@ -214,7 +214,7 @@ Contexto de Ejecución actualizado al Kernel para su finalización.*/
     t_cde *cde = malloc(sizeof(t_cde));
     // suponemos que el cde es global
     agregar_buffer_para_enterosUint32(buffer, cde->pid);
-    agregar_buffer_para_enterosUint32(buffer, cde->registro->PC);
+    agregar_buffer_para_enterosUint32(buffer, cde->registros->PC);
     enviar_buffer(buffer, socket_kernel);
 }
 // OBTENER VALORES

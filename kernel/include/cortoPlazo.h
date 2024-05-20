@@ -27,6 +27,7 @@ void agregar_cde_a_paquete(t_paquete *paquete, t_cde *cde);
 
 void planificar_por_fifo();
 void cambiar_procesoActual_readyARunning();
+int hayInstruccionBloqueante();
 void planificar_por_rr();
 void replanificar_por_rr(t_pcb *proceso);
 void planificar_por_vrr();

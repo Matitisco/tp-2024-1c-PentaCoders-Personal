@@ -5,18 +5,18 @@ pthread_t hiloKernel;
 pthread_t hiloIO;
 struct config_memoria *valores_config;
 int server_fd;
+// sem_t *sem_kernel;
 int main(int argc, char *argv[])
 {
 
     logger = iniciar_logger("memoria.log", "MEMORIA");
     valores_config = config_memoria();
-
+    iniciar_sem_globales();
     crearHilos();
 
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
-
     destruirConfig(valores_config->config);
     destruirLog(logger);
 }
@@ -29,8 +29,14 @@ void crearHilos()
     pthread_create(&hiloKernel, NULL, recibirKernel, NULL);
     pthread_create(&hiloIO, NULL, recibirIO, NULL);
 }
+void iniciar_sem_globales()
+{
+    sem_kernel = malloc(sizeof(sem_t));
+    sem_init(sem_kernel, 0, 0);
+}
 void *recibirIO()
 {
+    // va a recibir interfaces que le van a pedir acceso al espacio del usuario (stdin,stdout y dialfs) :D
     return EXIT_SUCCESS;
 }
 
@@ -41,6 +47,7 @@ void *recibirKernel()
     while (1)
     {
         // puede ser que haya un porblema de sincro, talvez agregar un sem?
+        sem_wait(sem_kernel); // espero a que el kernel me envie un mensaje
         op_code cod_op = recibir_operacion(cliente_fd);
         switch (cod_op)
         {
@@ -92,15 +99,16 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 {
     t_list *list_instrucciones = list_create(); // creo el puntero a la lista
     char *ruta_completa = string_new();
-    char *ruta_acceso = "/home/utnso/tp-2024-1c-PentaCoders/memoria/pruebas/";
-    string_append(&ruta_completa, ruta_acceso);
+    // char *ruta_acceso = "/home/utnso/tp-2024-1c-PentaCoders/memoria/pruebas/";
+    // string_append(&ruta_completa, ruta_acceso);
     string_append(&ruta_completa, nombre_archivo);
     log_info(logger, "El path del archivo es : %s", ruta_completa);
     FILE *archivo = fopen(ruta_completa, "r");
 
     if (archivo == NULL)
     {
-        log_warning(logger, "No se pudo abrir el archivo: %s", ruta_acceso);
+        log_warning(logger, "No se pudo abrir el archivo");
+        // log_warning(logger, "No se pudo abrir el archivo: %s", ruta_acceso);
         return NULL;
     }
     char linea_instruccion[1024]; // este seria el buffer para ir leyendo el archivo
@@ -123,19 +131,21 @@ void *recibirCPU()
         switch (cod_op)
         {
         case PEDIDO_INSTRUCCION:
-            /*             tipo_buffer *buffer = recibir_buffer(socket_cpu);
+            tipo_buffer *buffer = recibir_buffer(socket_cpu);
 
-                        int pid = leer_buffer(buffer);
-                        int pc = leer_buffer(buffer);
-                        destruir_buffer(buffer);
-                        t_pcb*proceso= buscarPCBEnColaPorPid(pid);
+            int PID = leer_buffer_enteroUint32(buffer);
+            int PC = leer_buffer_enteroUint32(buffer);
+            destruir_buffer(buffer);
+            t_pcb *proceso = buscar_proceso_por_pid(PID);
 
-                        t_list *listaInstrucciones = list_get(proceso->cde->instrucciones);
-                        buffer = crear_buffer();
-                        escribir_buffer(buffer, instruccion);
-                        enviar_buffer(buffer, socket_cpu);
-                        destruir_buffer(); */
-            printf("Se aprueba pedido instruccion");
+            t_list *lista_instrucciones = proceso->cde->lista_instrucciones;
+            char *instruccion = list_get(lista_instrucciones, PC);
+            tipo_buffer *buffer_instruccion = crear_buffer();
+            agregar_buffer_para_string(buffer_instruccion, instruccion);
+            enviar_buffer(buffer_instruccion, socket_cpu);
+            destruir_buffer(buffer_instruccion);
+            log_info(logger, "Se va a enviar la instruccion: %s", instruccion);
+            log_info(logger, "Se aprueba Pedido Instruccion");
         // case ACCESO_ESPACIO_USUARIO:
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
@@ -147,6 +157,11 @@ void *recibirCPU()
         }
         return EXIT_SUCCESS;
     }
+}
+t_pcb *buscar_proceso_por_pid(int pid)
+{
+    t_pcb *pcb_buscado = NULL;
+    return pcb_buscado;
 }
 void finalizar_proceso(int cliente_fd, tipo_buffer *buffer)
 {

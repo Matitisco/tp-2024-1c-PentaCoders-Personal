@@ -80,7 +80,7 @@ void iniciar_hilos(config_kernel *valores_config)
 }
 void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT)
 {
-	//pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
+	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
 	pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
 	//pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
 	//pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT);
