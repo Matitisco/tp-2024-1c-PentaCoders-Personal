@@ -8,7 +8,7 @@
 #include "sockets.h"
 #include "serializacion.h"
 
-void levantarServidor(t_log *logger, char *puerto, char *ip, char *nombreServidor);
+void levantarServidor(t_log *logger, char *puerto, char *ip, char *nombreServidor, char* nombreCliente);
 int levantarCliente(t_log *logger, char *nombreDelServidor, char *ip, char *puerto, char *mensaje);
 void iterator(char *value);
 //void iterador_interfaz(t_interfaz *interfaz);

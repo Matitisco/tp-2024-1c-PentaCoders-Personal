@@ -162,7 +162,7 @@ void *conexionAMemoria(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
-	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "CPU SE CONECTO A MEMORIA");
+	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "\nCPU SE CONECTO A MEMORIA");
 	free(argumento);
 }
 char *fetch(t_cde *contexto)

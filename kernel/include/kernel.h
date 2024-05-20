@@ -116,7 +116,11 @@ extern sem_t* sem_agregar_a_estado;
 
 //Binarios
 extern sem_t *binario_menu_lp;
+
 extern sem_t *exec_libre;
+extern sem_t *b_reanudar_largo_plazo;
+extern int habilitar_largo_plazo;
+
 
 
 

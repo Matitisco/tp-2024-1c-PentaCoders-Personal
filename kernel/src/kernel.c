@@ -21,7 +21,13 @@ sem_t *exec_libre;
 
 // Semaforos de binarios
 sem_t *binario_menu_lp;
+
+
 sem_t *sem_agregar_a_estado;
+
+sem_t *b_reanudar_largo_plazo;
+int habilitar_largo_plazo;
+
 
 int QUANTUM;
 pthread_t hiloMEMORIA;
@@ -74,12 +80,12 @@ void iniciar_hilos(config_kernel *valores_config)
 }
 void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT)
 {
-	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
+	//pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
 	pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
-	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
-	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT);
+	//pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
+	//pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT);
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
-	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
+	//pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 }
 void *levantarIO(void *ptr)
@@ -175,6 +181,8 @@ void iniciar_semaforos()
 	procesos_en_block = malloc(sizeof(sem_t));
 	procesos_en_exit = malloc(sizeof(sem_t));
 	binario_menu_lp = malloc(sizeof(sem_t));
+	
+	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
@@ -184,6 +192,8 @@ void iniciar_semaforos()
 	sem_init(procesos_en_block, 0, 0);
 	sem_init(procesos_en_exit, 0, 0);
 	sem_init(binario_menu_lp, 0, 0);
+
+	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(sem_agregar_a_estado, 0, 0);
 }
 
