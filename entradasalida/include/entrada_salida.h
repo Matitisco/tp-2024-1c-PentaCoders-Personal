@@ -72,7 +72,7 @@ t_interfaz *crear_interfaz_generica(config_io *config);
 t_interfaz *crear_interfaz_stdin(config_io *config);
 t_interfaz *crear_interfaz_stdout(config_io *config);
 t_interfaz *crear_interfaz_dialfs(config_io *config);
-enum_interfaz asignarInterfaz(char *nombre_Interfaz);
+enum_interfaz asignar_interfaz(char *nombre_Interfaz);
 void arrancar_interfaz_generica(t_interfaz *interfaz_io);
 void arrancar_interfaz_stdin(t_interfaz *interfaz_io);
 void arrancar_interfaz_stdout(t_interfaz *interfaz_io);

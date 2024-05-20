@@ -15,7 +15,7 @@ void iniciar_consola_interactiva()
         ejecutar_operacion(opcion, logger);
         free(opcion);
 
-        //sem_post(binario_menu_lp); // Habilita largo plazo
+        sem_post(binario_menu_lp); // Habilita largo plazo
         
         if(habilitar_largo_plazo){
             sem_post(b_reanudar_largo_plazo);

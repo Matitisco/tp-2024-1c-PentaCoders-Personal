@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 
     logger = iniciar_logger("memoria.log", "MEMORIA");
     valores_config = config_memoria();
-    iniciar_sem_globales();
+    // iniciar_sem_globales();
     crearHilos();
 
     pthread_join(hiloCpu, NULL);
@@ -29,11 +29,6 @@ void crearHilos()
     pthread_create(&hiloKernel, NULL, recibirKernel, NULL);
     pthread_create(&hiloIO, NULL, recibirIO, NULL);
 }
-void iniciar_sem_globales()
-{
-    sem_kernel = malloc(sizeof(sem_t));
-    sem_init(sem_kernel, 0, 0);
-}
 void *recibirIO()
 {
     // va a recibir interfaces que le van a pedir acceso al espacio del usuario (stdin,stdout y dialfs) :D
@@ -42,12 +37,11 @@ void *recibirIO()
 
 void *recibirKernel()
 {
-    tipo_buffer *buffer = malloc(sizeof(tipo_buffer));
+    tipo_buffer *buffer = crear_buffer();
     int cliente_fd = esperar_cliente(logger, "Memoria", "Kernel", server_fd);
     while (1)
     {
-        // puede ser que haya un porblema de sincro, talvez agregar un sem?
-        sem_wait(sem_kernel); // espero a que el kernel me envie un mensaje
+        // sem_wait(sem_kernel); // espero a que el kernel me envie un mensaje
         op_code cod_op = recibir_operacion(cliente_fd);
         switch (cod_op)
         {
@@ -61,11 +55,9 @@ void *recibirKernel()
             log_error(logger, "El KERNEL se desconecto. Terminando servidor");
             return (void *)EXIT_FAILURE;
             break;
-
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
-            return (void *)EXIT_FAILURE;
-            ;
+            // return (void *)EXIT_FAILURE;
             break;
         }
     }
@@ -99,16 +91,15 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 {
     t_list *list_instrucciones = list_create(); // creo el puntero a la lista
     char *ruta_completa = string_new();
-    // char *ruta_acceso = "/home/utnso/tp-2024-1c-PentaCoders/memoria/pruebas/";
-    // string_append(&ruta_completa, ruta_acceso);
+    char *ruta_acceso = "/home/utnso/tp-2024-1c-PentaCoders/memoria/pruebas/";
+    string_append(&ruta_completa, ruta_acceso);
     string_append(&ruta_completa, nombre_archivo);
     log_info(logger, "El path del archivo es : %s", ruta_completa);
     FILE *archivo = fopen(ruta_completa, "r");
-
     if (archivo == NULL)
     {
-        log_warning(logger, "No se pudo abrir el archivo");
-        // log_warning(logger, "No se pudo abrir el archivo: %s", ruta_acceso);
+        // log_warning(logger, "No se pudo abrir el archivo");
+        log_warning(logger, "No se pudo abrir el archivo: %s", ruta_acceso);
         return NULL;
     }
     char linea_instruccion[1024]; // este seria el buffer para ir leyendo el archivo

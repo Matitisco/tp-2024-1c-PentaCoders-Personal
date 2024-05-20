@@ -73,18 +73,19 @@ void levantar_Kernel_Dispatch(void *ptr)
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_dispatch);
-		tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 		switch (codigo)
 		{
 		case EJECUTAR_PROCESO:
-
-			t_cde *cde_recibido = leer_cde(buffer_cde);	   // Deserealiza y Arma el CDE
-			char *linea_instruccion = fetch(cde_recibido); // MOV AX BX
-														   // Incrementamos el Program Counter
-			cde_recibido->registros->PC++;
+			log_info(logger, "EJECUTAR PROCESO");
+			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
+			t_cde *cde_recibido = leer_cde(buffer_cde); // Deserealiza y Arma el CDE
+			log_info(logger, "Me llego el proceso a ejecutar con PID: %d y PATH: %s", cde_recibido->pid, cde_recibido->path);
+			char *linea_instruccion = fetch(cde_recibido);		  // MOV AX BX
+			cde_recibido->registros->PC++;						  // Incrementamos el Program Counter
 			char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
 			execute(array_instruccion, cde_recibido);
 			check_interrupt();
+			// while(interrupcion);
 			destruir_buffer(buffer_cde);
 
 			// pthread_mutex_lock(&mutex_cde_ejecutando);
@@ -170,10 +171,9 @@ char *fetch(t_cde *contexto)
 	enviar_cod_enum(socket_memoria, PEDIDO_INSTRUCCION); // Pido la instruccion MOV AX BX
 	tipo_buffer *buffer = crear_buffer();
 	// actualizo el buffer escribiendo
-	agregar_buffer_para_enterosUint32(buffer, contexto->pid);		   // consigo el procoeso asoc
+	agregar_buffer_para_enterosUint32(buffer, contexto->pid);			// consigo el procoeso asoc
 	agregar_buffer_para_enterosUint32(buffer, contexto->registros->PC); // con esto la memoria busca la prox ins a ejecutar
 	enviar_buffer(buffer, socket_memoria);
-
 	destruir_buffer(buffer);
 	tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo MOV AX BX
 	char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion); // obtenemos la linea instruccion
@@ -253,10 +253,15 @@ void check_interrupt()
 {
 	/* 	op_code *codigo = recibir_operacion(socket_kernel_interrupt);
 		int interrupcion;
+		switch(codigo){
+			
+		}
 		if (codigo == PROCESO_INTERRUMPIDO)
 		{
 			interrupcion = 1; // Hacer una var interrupcion que este en 1 ??
-		} */
+		} 
+		
+	*/
 }
 void actualizar_cde(t_cde *contexto, char **instruccion)
 {

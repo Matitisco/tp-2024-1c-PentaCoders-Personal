@@ -48,7 +48,10 @@ typedef enum
 	ESTOY_LIBRE,
 	CONSULTAR_DISPONIBILDAD,
 	PROCESO_INTERRUMPIDO,
-	SOLICITUD_EXIT // cortoPlazo
+	SOLICITUD_EXIT, // cortoPlazo
+	SOLICITUD_INTERFAZ_STDIN,
+	SOLICITUD_INTERFAZ_STDOUT,
+	SOLICITUD_INTERFAZ_DIALFS
 } op_code;
 
 typedef struct
@@ -75,13 +78,14 @@ typedef struct
 	t_list *recursosAsignados;
 	int prioridad;
 } t_pcb;
-
+extern sem_t *sem_kernel;
+extern sem_t *sem_kernel_io_generica;
 extern t_log *logger;
 void iterator(char *value);
 t_log *iniciar_logger(char *path_log, char *nombre_log);
 t_config *iniciar_config(char *config_path);
 void leer_consola(t_log *);
-//void iniciar_sem_globales();
+void iniciar_sem_globales();
 void terminar_programa(int, t_log *, t_config *);
 void destruirLog(t_log *logger);
 void destruirConfig(t_config *config);

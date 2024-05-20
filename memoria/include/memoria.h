@@ -33,7 +33,7 @@ struct config_memoria *config_memoria();
 void *recibirCPU();
 void *recibirKernel();
 void *recibirIO();
-void iniciar_sem_globales();
+//void iniciar_sem_globales();
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
 void finalizar_proceso(int cliente_fd, tipo_buffer *buffer);
 void eliminar_proceso(int pid_a_eliminar);

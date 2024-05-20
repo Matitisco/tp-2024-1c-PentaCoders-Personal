@@ -94,7 +94,7 @@ extern sem_t* procesos_en_block;
 extern sem_t* procesos_en_exit;
 extern sem_t* sem_agregar_a_estado;
 extern sem_t *sem_kernel;
-
+extern sem_t *sem_kernel_io_generica;
 //Binarios
 extern sem_t *binario_menu_lp;
 
@@ -111,7 +111,7 @@ extern config_kernel *valores_config;
 extern int socket_memoria;
 extern int socket_cpu_dispatch;
 extern int socket_cpu_interrupt;
-
+extern int socket_io;
 // DECLARACION VARIABLES GLOBALES
 
 extern colaEstado *cola_new_global;
@@ -151,5 +151,6 @@ void *corto_plazo();
 
 bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre);
 const char *obtener_interfaz(enum_interfaz interfaz);
+void recibir_orden_interfaces_de_cpu(char **interfaces);
 
 #endif

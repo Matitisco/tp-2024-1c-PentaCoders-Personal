@@ -10,7 +10,7 @@ sem_t *procesos_en_exit;
 uint32_t PID_GLOBAL = 0;
 op_code estado_planificacion = PLANIFICACION_PAUSADA;
 // int socket_memoria;
-
+//sem_t * sem_kernel;
 // EJECUTAR SCRIPT
 void ejecutar_script(char *PATH)
 {
@@ -63,14 +63,14 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 {
     t_pcb *proceso = crear_proceso(PATH);
 
-    agregar_a_estado(proceso, cola_new_global, procesos_en_new); // hace post
+    //agregar_a_estado(proceso, cola_new_global, procesos_en_new); // hace post
 
     tipo_buffer *buffer = crear_buffer();
 
     op_code codigo = SOLICITUD_INICIAR_PROCESO; // SOLICITUD_INICIAR_PROCESO;
-
-    send(socket_memoria, &codigo, sizeof(uint32_t), 0); // enviar codigo
-    sem_post(sem_kernel);
+    enviar_cod_enum(socket_memoria,codigo);
+    //send(socket_memoria, &codigo, sizeof(uint32_t), 0); // enviar codigo
+    //sem_post(sem_kernel);
     agregar_buffer_para_enterosUint32(buffer, proceso->cde->pid);
     agregar_buffer_para_string(buffer, proceso->cde->path);
 
@@ -82,12 +82,6 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global, procesos_en_new); // hace post
-
-        int *v1 = malloc(sizeof(int));
-        sem_getvalue(procesos_en_new, v1);
-
-        log_info(logger, "MENU Valor del semaforo contador: %d", *v1);
-
         log_info(logger, "Se creo un proceso con PID: %u en NEW\n", mostrarPID(proceso)); // se muestra el logger
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)

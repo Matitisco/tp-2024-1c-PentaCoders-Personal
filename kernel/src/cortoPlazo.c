@@ -44,7 +44,7 @@ sem_t *procesos_en_exec; */
 void *corto_plazo()
 {
     // op_code estado_planificacion = INICIAR_PLANIFICACION;
-    log_info(logger, "--------------Planificador de Corto Plazo Iniciado-------------- \n");
+    // log_info(logger, "--------------Planificador de Corto Plazo Iniciado-------------- \n");
     iniciar_sem_cp();
     if (strcmp(valores_config->algoritmo_planificacion, "FIFO") == 0)
     {
@@ -60,7 +60,7 @@ void *corto_plazo()
         quantum = temporal_create();
         planificar_por_vrr();
     }
-    return (void*)1;
+    return (void *)1;
 }
 
 void iniciar_sem_cp()
@@ -130,7 +130,7 @@ void enviar_cde(int conexion, t_cde *cde)
 {
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, cde->registros->PC); // sacar path y sacar lista_instrucciones de CDE
-    agregar_buffer_para_enterosUint32(buffer, cde->pid);          // agrego al pid el buffer
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);           // agrego al pid el buffer
     agregar_buffer_para_registros(buffer, *(cde->registros));
     enviar_buffer(buffer, socket_cpu_dispatch);
 }
@@ -149,6 +149,7 @@ void planificar_por_rr()
     pthread_mutex_lock(mutex_cola_exec);
     agregar_a_estado(proceso, cola_exec_global, procesos_en_exec);
     pthread_mutex_unlock(mutex_cola_exec);
+
     enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
     enviar_cde(socket_cpu_dispatch, proceso->cde);
     log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);

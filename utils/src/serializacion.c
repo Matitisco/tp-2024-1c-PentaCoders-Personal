@@ -180,7 +180,7 @@ void paquete(int conexion)
 void enviar_cod_enum(int socket_servidor, uint32_t cod)
 {
     send(socket_servidor, &cod, sizeof(uint32_t), 0);
-    // printf("Se envio el codigo al servidor %u", cod);
+    log_info(logger, "Se envio el codigo %d al servidor %d", cod, socket_servidor);
 }
 // RECIBIR OPERACION PARECIDO A recibi_cod(int socket_cliente)
 op_code recibir_operacion(int socket_cliente)
@@ -373,8 +373,8 @@ t_cde *leer_cde(tipo_buffer *buffer)
 {
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
-    cde->registro->PC = leer_buffer_enteroUint32(buffer);
-    cde->registro = leer_buffer_registros(buffer);
+    cde->registros->PC = leer_buffer_enteroUint32(buffer);
+    cde->registros = leer_buffer_registros(buffer);
     return cde;
 }
 

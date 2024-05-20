@@ -1,6 +1,17 @@
 #include "../include/utils.h"
 sem_t *sem_kernel;
+sem_t *sem_kernel_io_generica;
+
 /*----------------------- GENERAL ------------------*/
+
+void iniciar_sem_globales()
+{
+	sem_kernel = malloc(sizeof(sem_t));
+	sem_init(sem_kernel, 0, 0);
+	sem_kernel_io_generica = malloc(sizeof(sem_t));
+	sem_init(sem_kernel_io_generica, 0, 0);
+}
+
 // INICIAR LOGGER
 t_log *iniciar_logger(char *path_log, char *nombre_log)
 {

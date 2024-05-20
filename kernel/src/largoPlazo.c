@@ -41,7 +41,7 @@ void *largo_plazo()
         sem_wait(b_reanudar_largo_plazo);
         
 
-        //sem_wait(binario_menu_lp); // Se bloquea esperando al menu
+        sem_wait(binario_menu_lp); // Se bloquea esperando al menu
 
         sem_wait(GRADO_MULTIPROGRAMACION);
 
@@ -53,7 +53,6 @@ void *largo_plazo()
 
         sem_post(procesos_en_ready);
 
-        
         
     }
 }
