@@ -1,11 +1,11 @@
 #include "../include/conexiones.h"
 
 // LEVANTAR SERVIDOR
-void levantarServidor(t_log *logger, char *puerto, char *ip, char *nombreServidor)
+void levantarServidor(t_log *logger, char *puerto, char *ip, char *nombreServidor, char* nombreCliente)
 {
     int server_fd = iniciar_servidor(logger, nombreServidor, ip, puerto);
     log_info(logger, "Servidor: %s listo para recibir al cliente", nombreServidor);
-    int cliente_fd = esperar_cliente(logger, nombreServidor, server_fd);
+    int cliente_fd = esperar_cliente(logger, nombreServidor, nombreCliente ,server_fd);
 
     t_list *lista;
     while (1)

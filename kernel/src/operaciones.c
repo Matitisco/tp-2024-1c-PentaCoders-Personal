@@ -9,7 +9,7 @@ sem_t *procesos_en_exit;
  */
 
 uint32_t PID_GLOBAL = 0;
-op_code estado_planificacion;
+op_code estado_planificacion = PLANIFICACION_PAUSADA;
 // int socket_memoria;
 
 // EJECUTAR SCRIPT
@@ -73,7 +73,9 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 {
     t_pcb *proceso = crear_proceso(PATH);
 
-    tipo_buffer *buffer = crear_buffer();
+    agregar_a_estado(proceso, cola_new_global, procesos_en_new); // hace post
+
+    /* tipo_buffer *buffer = crear_buffer();
 
     op_code codigo = SOLICITUD_INICIAR_PROCESO; // SOLICITUD_INICIAR_PROCESO;
 
@@ -101,7 +103,7 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
     {
         log_info(logger, "No se pudo crear el proceso %u", proceso->cde->pid); // se muestra que no se pudo
-    }
+    } */
 }
 // DETENER PROCESO
 void finalizar_proceso(uint32_t PID)
@@ -147,9 +149,11 @@ void finalizar_proceso(uint32_t PID)
 // INICIAR PLANIFICACION
 void iniciar_planificacion()
 {
+    habilitar_largo_plazo=1;
+    sem_post(b_reanudar_largo_plazo);
     // tenemos un proceso en new y lo tenemos que pasar a ready
     // habilita a los hilos de los planificadores a que dejen de estar en pausa
-    if (estado_planificacion == PLANIFICACION_PAUSADA)
+   /*  if (estado_planificacion == PLANIFICACION_PAUSADA)
     {
         renaudar_corto_plazo();
         renaudar_largo_plazo();
@@ -159,15 +163,19 @@ void iniciar_planificacion()
     {
         log_info(logger, "La planificacion ya se encuentra iniciada");
     }
-    printf("Iniciar Planificacion");
+    printf("Iniciar Planificacion"); */
 }
 // DETENER PLANIFICACION
 void detener_planificacion()
 {
-    pausar_corto_plazo();
+    habilitar_largo_plazo=0;
+    //sem_wait(b_reanudar_largo_plazo);
+    /* pausar_corto_plazo();
     pausar_largo_plazo();
-    estado_planificacion = PLANIFICACION_PAUSADA;
+    estado_planificacion = PLANIFICACION_PAUSADA; */
 }
+
+
 // MODIFICAR GRADO DE MULTIPROGRAMACION
 void grado_multiprogramacion(int valor)
 {
@@ -299,6 +307,11 @@ void mostrar_procesos(colaEstado *cola)
 
 void pausar_corto_plazo() {}
 void pausar_largo_plazo() {}
+
+
+
+
+
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
 

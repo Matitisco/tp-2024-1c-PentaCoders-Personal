@@ -1,21 +1,31 @@
 #include "../include/menu.h"
 
+
+
 void iniciar_consola_interactiva()
 {
+    habilitar_largo_plazo=0;
     char *opcion;
     while (1)
     {
+        
+        sleep(1);
         mostrar_operaciones_realizables();
         opcion = readline("Ingrese un valor para realizar una de las siguientes acciones: ");
         ejecutar_operacion(opcion, logger);
         free(opcion);
 
-        sem_post(binario_menu_lp); // Habilita largo plazo
+        //sem_post(binario_menu_lp); // Habilita largo plazo
+        
+        if(habilitar_largo_plazo){
+            sem_post(b_reanudar_largo_plazo);
+        }
     }
 }
 
 void mostrar_operaciones_realizables()
 {
+    printf("\n\n");
     printf("1-Ejecutar Script\n");
     printf("2-Iniciar Proceso\n");
     printf("3-Finalizar Proceso\n");
@@ -23,6 +33,7 @@ void mostrar_operaciones_realizables()
     printf("5-Detener Planificacion\n");
     printf("6-Modificar Grado Multiprogramacion\n");
     printf("7-Listar Procesos por Estado\n");
+    printf("\n\n");
 }
 
 void ejecutar_operacion(char *opcion, t_log *logger)
@@ -47,11 +58,11 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         break;
     case INICIAR_PLANIFICACION:
         iniciar_planificacion();
-        exit(1);
+        //exit(1);
         break;
     case DETENER_PLANIFICACION:
         detener_planificacion();
-        exit(1);
+        //exit(1);
         break;
     case MULTIPROGRAMACION:
         char *valor = readline("Ingrese el PID del Proceso a Finalizar: ");

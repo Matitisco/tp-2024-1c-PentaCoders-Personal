@@ -34,10 +34,14 @@ a la espera de que finalicen procesos que se encuentran en ejecución.
 */
 void *largo_plazo()
 {
-    log_info(logger, "--------------Planificador de Largo Plazo Iniciado-------------- \n");
+    //log_info(logger, "--------------Planificador de Largo Plazo Iniciado-------------- \n");
     while (1)
     {
-        sem_wait(binario_menu_lp); // Se bloquea esperando al menu
+
+        sem_wait(b_reanudar_largo_plazo);
+        
+
+        //sem_wait(binario_menu_lp); // Se bloquea esperando al menu
 
         sem_wait(GRADO_MULTIPROGRAMACION);
 
@@ -48,6 +52,8 @@ void *largo_plazo()
         log_info(logger, "PID: %d - Estado anterior: NEW - Estado actual: READY \n", proceso->cde->pid); // Log pedido de cambio de estado
 
         sem_post(procesos_en_ready);
+
+        
         
     }
 }
