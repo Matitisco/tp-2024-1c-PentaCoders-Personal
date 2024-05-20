@@ -15,9 +15,6 @@
 extern t_log *logger;
 int socket_cpu;
 pthread_t hiloCPU, hiloKernel, hiloIO;
-t_args *args_CPU;
-t_args *args_KERNEL;
-t_args *args_IO;
 struct config_memoria
 {
 	t_config *config;
@@ -29,14 +26,16 @@ struct config_memoria
 	// int retardo_respuesta;
 };
 t_args* crearArgumento(char *puerto, char *ip);
-void crearHilos(t_args *args_CPU, t_args *args_IO, t_args *args_KERNEL);
+void crearHilos();
 struct config_memoria *config_memoria();
-void *recibirCPU(void* ptr);
-void *recibirKernel(void *ptr);
-void *recibirIO(void* ptr);
+void *recibirCPU();
+void *recibirKernel();
+void *recibirIO();
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
-void finalizar_proceso();
-t_list *leerArchivoConInstrucciones(char *pathArch);
+void finalizar_proceso(int cliente_fd, tipo_buffer *buffer);
+void eliminar_proceso(int pid_a_eliminar);
+t_list *leerArchivoConInstrucciones(char *nombre_archivo);
+t_instruccion *crearInstruccion(char *linea);
 t_cde* armarCde(tipo_buffer* buffer);
 
 #endif

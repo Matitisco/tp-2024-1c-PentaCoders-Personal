@@ -69,7 +69,7 @@ void levantar_Kernel_Dispatch(void *ptr)
 	argumento = (t_args *)ptr;
 	int server_fd = iniciar_servidor(argumento->logger, "CPU Dispatch", argumento->ip, argumento->puerto);
 	log_info(logger, "Esperando KERNEL DISPATCH....");
-	int socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH","Kernel", server_fd);
+	int socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_dispatch);
@@ -108,9 +108,9 @@ void levantar_Kernel_Interrupt(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
-		int server_fd = iniciar_servidor(argumento->logger, "CPU Interrupt", argumento->ip, argumento->puerto);
+	int server_fd = iniciar_servidor(argumento->logger, "CPU Interrupt", argumento->ip, argumento->puerto);
 	log_info(logger, "Esperando KERNEL INTERRUPT....");
-	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT","Kernel", server_fd);
+	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
 	log_info(logger, "Se conecto el Kernel por Interrupt");
 	while (1)
 	{
@@ -123,27 +123,27 @@ void levantar_Kernel_Interrupt(void *ptr)
 		{
 		case PROCESO_INTERRUMPIDO:
 			// replanificar
-/* 			int proceso_a_interrumpir = leer_buffer_enteroUint32(buffer);
-			destruir_buffer(buffer);
-			if (proceso_a_interumpir == proceso_en_ejecucion())
-			{
-				// se interrumpe el proceso por planificacion
-			}
-			else
-			{
-			} */
+			/* 			int proceso_a_interrumpir = leer_buffer_enteroUint32(buffer);
+						destruir_buffer(buffer);
+						if (proceso_a_interumpir == proceso_en_ejecucion())
+						{
+							// se interrumpe el proceso por planificacion
+						}
+						else
+						{
+						} */
 
 			break;
 		case SOLICITUD_EXIT: // el kernel nos pide que paremos el proceso para poder eliminarlo
-			// el kernel ejecuta la opcion de eliminar proceso
-/* 			int proceso_a_eliminar = leer_buffer_enteroUint32(buffer); // id del proceso
-			if (proceso_a_eliminar == proceso_en_ejecucion())
-			{
-			}
-			else
-			{
-				log_info(logger, "La interrupcion que llego no es para el proceso que esta en ejecucion");
-			} */
+							 // el kernel ejecuta la opcion de eliminar proceso
+							 /* 			int proceso_a_eliminar = leer_buffer_enteroUint32(buffer); // id del proceso
+										 if (proceso_a_eliminar == proceso_en_ejecucion())
+										 {
+										 }
+										 else
+										 {
+											 log_info(logger, "La interrupcion que llego no es para el proceso que esta en ejecucion");
+										 } */
 
 		case ERROR_CLIENTE_DESCONECTADO:
 			log_error(logger, "El KERNEL se desconecto. Terminando servidor");
@@ -251,12 +251,12 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 }
 void check_interrupt()
 {
-/* 	op_code *codigo = recibir_operacion(socket_kernel_interrupt);
-	int interrupcion;
-	if (codigo == PROCESO_INTERRUMPIDO)
-	{
-		interrupcion = 1; // Hacer una var interrupcion que este en 1 ??
-	} */
+	/* 	op_code *codigo = recibir_operacion(socket_kernel_interrupt);
+		int interrupcion;
+		if (codigo == PROCESO_INTERRUMPIDO)
+		{
+			interrupcion = 1; // Hacer una var interrupcion que este en 1 ??
+		} */
 }
 void actualizar_cde(t_cde *contexto, char **instruccion)
 {
