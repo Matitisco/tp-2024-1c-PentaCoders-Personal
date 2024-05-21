@@ -63,8 +63,6 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
 {
     t_pcb *proceso = crear_proceso(PATH);
 
-    //agregar_a_estado(proceso, cola_new_global, procesos_en_new); // hace post
-
     tipo_buffer *buffer = crear_buffer();
 
     op_code codigo = SOLICITUD_INICIAR_PROCESO; // SOLICITUD_INICIAR_PROCESO;
@@ -87,6 +85,8 @@ void iniciar_proceso(char *PATH) // CONSULTAR FUNCION
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
     {
         log_info(logger, "No se pudo crear el proceso %u", proceso->cde->pid); // se muestra que no se pudo
+        // restamos en 1 el pid global de procesos
+        PID_GLOBAL--;
     }
 }
 // DETENER PROCESO

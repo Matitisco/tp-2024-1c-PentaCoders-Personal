@@ -35,7 +35,7 @@ void iniciar_hilos_CPU(config_cpu *valores_config_cpu)
 	args_memoria = crearArgumento(valores_config_cpu->puerto_memoria, valores_config_cpu->ip);
 	kernel_ds = crearArgumento(valores_config_cpu->puerto_escucha_dispatch, valores_config_cpu->ip);
 	kernel_int = crearArgumento(valores_config_cpu->puerto_escucha_interrupt, valores_config_cpu->ip);
-	crearHilos_CPU(args_memoria, kernel_ds, kernel_int);
+	crearHilos_CPU(args_memoria, kernel_int, kernel_ds);
 }
 void iniciar_semaforos_CPU()
 {
@@ -78,11 +78,14 @@ void levantar_Kernel_Dispatch(void *ptr)
 		case EJECUTAR_PROCESO:
 			log_info(logger, "EJECUTAR PROCESO");
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
-			t_cde *cde_recibido = leer_cde(buffer_cde); // Deserealiza y Arma el CDE
-			log_info(logger, "Me llego el proceso a ejecutar con PID: %d y PATH: %s", cde_recibido->pid, cde_recibido->path);
+			t_cde *cde_recibido = leer_cde(buffer_cde); // Deserealiza y Arma el CD
+			log_info(logger, "Me llego el proceso a ejecutar con PID: %d", cde_recibido->pid);
+			
 			char *linea_instruccion = fetch(cde_recibido);		  // MOV AX BX
+
 			cde_recibido->registros->PC++;						  // Incrementamos el Program Counter
 			char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
+			
 			execute(array_instruccion, cde_recibido);
 			check_interrupt();
 			// while(interrupcion);
@@ -96,7 +99,7 @@ void levantar_Kernel_Dispatch(void *ptr)
 			// sem_post(exec_libre);
 			break;
 		case ERROR_CLIENTE_DESCONECTADO:
-			log_error(logger, "El KERNEL se desconecto. Terminando servidor");
+			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
 			return EXIT_FAILURE;
 		default:
 			log_warning(logger, "Operacion desconocida. No quieras meter la pata");
@@ -147,7 +150,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 										 } */
 
 		case ERROR_CLIENTE_DESCONECTADO:
-			log_error(logger, "El KERNEL se desconecto. Terminando servidor");
+			log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
 			return EXIT_FAILURE;
 
 		default:
@@ -175,10 +178,21 @@ char *fetch(t_cde *contexto)
 	agregar_buffer_para_enterosUint32(buffer, contexto->registros->PC); // con esto la memoria busca la prox ins a ejecutar
 	enviar_buffer(buffer, socket_memoria);
 	destruir_buffer(buffer);
-	tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo MOV AX BX
-	char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion); // obtenemos la linea instruccion
 
-	return linea_de_instruccion;
+	op_code operacion_desde_memoria = recibir_operacion(socket_memoria);
+	if (operacion_desde_memoria == ENVIAR_INSTRUCCION_CORRECTO)
+	{
+		tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo MOV AX BX
+		char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion); // obtenemos la linea instruccion
+		destruir_buffer(bufferProximaInstruccion);
+		log_info(logger,"Me llego la linea de instruccion %s", linea_de_instruccion);
+		return linea_de_instruccion;
+	}
+	else
+	{
+		log_error(logger, "No entiendo la operacion enviada por la memoria");
+		return NULL;
+	}
 }
 char **decode(char *linea_de_instrucion)
 {
@@ -254,13 +268,13 @@ void check_interrupt()
 	/* 	op_code *codigo = recibir_operacion(socket_kernel_interrupt);
 		int interrupcion;
 		switch(codigo){
-			
+
 		}
 		if (codigo == PROCESO_INTERRUMPIDO)
 		{
 			interrupcion = 1; // Hacer una var interrupcion que este en 1 ??
-		} 
-		
+		}
+
 	*/
 }
 void actualizar_cde(t_cde *contexto, char **instruccion)

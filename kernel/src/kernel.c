@@ -61,10 +61,10 @@ int main(int argc, char *argv[])
 	pthread_join(hiloMEMORIA, NULL);
 	pthread_join(hiloLargoPlazo, NULL);
 	pthread_join(hiloCortoPlazo, NULL);
-	// pthread_join(hiloCPUDS, NULL);
-	// pthread_join(hiloCPUINT, NULL);
-	// pthread_join(hiloIO, NULL);
-	// pthread_join(hiloConsola, NULL);
+	pthread_join(hiloCPUDS, NULL);
+	pthread_join(hiloCPUINT, NULL);
+	pthread_join(hiloIO, NULL);
+	pthread_join(hiloConsola, NULL);
 	// LIBERAR COSAS
 	liberar_conexion(socket_memoria);
 }
@@ -197,6 +197,7 @@ void iniciar_semaforos()
 
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
+	exec_libre = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(procesos_en_new, 0, 0);
@@ -205,6 +206,8 @@ void iniciar_semaforos()
 	sem_init(procesos_en_block, 0, 0);
 	sem_init(procesos_en_exit, 0, 0);
 	sem_init(binario_menu_lp, 0, 0);
+
+	sem_init(exec_libre, 0,1);
 
 	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(sem_agregar_a_estado, 0, 0);
@@ -255,14 +258,14 @@ void *levantar_CPU_Interrupt(void *ptr)
 {
 	t_args *datosConexion = malloc(sizeof(t_args));
 	datosConexion = (t_args *)ptr;
-	socket_cpu_interrupt = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU");
+	socket_cpu_interrupt = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU INTERRUPT");
 	free(datosConexion);
 }
 void *levantar_CPU_Dispatch(void *ptr)
 {
 	t_args *datosConexion = malloc(sizeof(t_args));
 	datosConexion = (t_args *)ptr;
-	socket_cpu_dispatch = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU");
+	socket_cpu_dispatch = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU DISPATCH");
 	free(datosConexion);
 }
 void recibir_orden_interfaces_de_cpu(char **interfaces)

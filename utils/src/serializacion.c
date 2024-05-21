@@ -180,7 +180,7 @@ void paquete(int conexion)
 void enviar_cod_enum(int socket_servidor, uint32_t cod)
 {
     send(socket_servidor, &cod, sizeof(uint32_t), 0);
-    log_info(logger, "Se envio el codigo %d al servidor %d", cod, socket_servidor);
+    //log_info(logger, "Se envio el codigo %d al servidor %d", cod, socket_servidor);
 }
 // RECIBIR OPERACION PARECIDO A recibi_cod(int socket_cliente)
 op_code recibir_operacion(int socket_cliente)
@@ -197,6 +197,22 @@ op_code recibir_operacion(int socket_cliente)
         }
     }
 }
+
+
+/* op_code recibir_operacion2(int socket_cliente)
+{
+    op_code cod_op;
+    while (1)
+    {
+        if (recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL) > 0)
+            return cod_op;
+        else
+        {
+            close(socket_cliente);
+            return -1;
+        }
+    }
+} */
 /*----------------------------------- BUFFER -----------------------------------*/
 // CREAR BUFFER
 tipo_buffer *crear_buffer()
@@ -263,6 +279,7 @@ void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros registros)
     agregar_buffer_para_enterosUint32(buffer, registros.EDX);
     agregar_buffer_para_enterosUint32(buffer, registros.SI);
     agregar_buffer_para_enterosUint32(buffer, registros.DI);
+    agregar_buffer_para_enterosUint32(buffer, registros.PC);
 }
 // ENVIAR BUFFER
 void enviar_buffer(tipo_buffer *buffer, int socket)
@@ -282,16 +299,12 @@ void enviar_buffer(tipo_buffer *buffer, int socket)
 // RECIBIR BUFFER
 tipo_buffer *recibir_buffer(int socket)
 {
-
     tipo_buffer *buffer = crear_buffer();
-
     // Recibo el tamanio del buffer y reservo espacio en memoria
     recv(socket, &(buffer->size), sizeof(uint32_t), MSG_WAITALL);
-
     if (buffer->size != 0)
     {
         buffer->stream = malloc(buffer->size);
-
         // Recibo stream del buffer
         recv(socket, buffer->stream, buffer->size, MSG_WAITALL);
     }
@@ -366,6 +379,7 @@ t_registros *leer_buffer_registros(tipo_buffer *buffer)
     registros->EDX = leer_buffer_enteroUint32(buffer);
     registros->SI = leer_buffer_enteroUint32(buffer);
     registros->DI = leer_buffer_enteroUint32(buffer);
+    registros->PC = leer_buffer_enteroUint32(buffer);
     return registros;
 }
 
@@ -373,7 +387,8 @@ t_cde *leer_cde(tipo_buffer *buffer)
 {
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
-    cde->registros->PC = leer_buffer_enteroUint32(buffer);
+    //cde->registros = malloc(sizeof(t_registros));
+    //cde->registros->PC = leer_buffer_enteroUint32(buffer);
     cde->registros = leer_buffer_registros(buffer);
     return cde;
 }

@@ -83,14 +83,15 @@ void planificar_por_fifo()
     {
         cambiar_procesoActual_readyARunning();
 
-        if (hayInstruccionBloqueante()) // si es true
+        
+
+/*         if (hayInstruccionBloqueante()) // si es true
         {
             // log_info(logger, "Se quito el proceso %d  de Execute \n", proceso->cde->pid);
             cambiar_procesoActual_readyARunning();
-        }
+        } */
     }
 }
-
 void cambiar_procesoActual_readyARunning()
 {
     t_pcb *proceso = malloc(sizeof(t_pcb));
@@ -125,16 +126,13 @@ int hayInstruccionBloqueante()
         return 0;
     }
 }
-
 void enviar_cde(int conexion, t_cde *cde)
 {
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, cde->registros->PC); // sacar path y sacar lista_instrucciones de CDE
     agregar_buffer_para_enterosUint32(buffer, cde->pid);           // agrego al pid el buffer
     agregar_buffer_para_registros(buffer, *(cde->registros));
     enviar_buffer(buffer, socket_cpu_dispatch);
 }
-
 // ROUND ROBIN
 void planificar_por_rr()
 {

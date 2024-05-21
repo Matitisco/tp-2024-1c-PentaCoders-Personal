@@ -61,4 +61,7 @@ t_list *recibir_paquete_cde(int socket_cliente);
 
 t_paquete *crear_paquete_cde(void);
 
+
+/* op_code recibir_operacion2(int socket_cliente); */
+
 #endif
