@@ -41,6 +41,8 @@ t_pcb *buscar_proceso_por_pid(int pid);
 void pedido_instruccion_cpu_dispatch(int cliente_fd);
 t_list *leerArchivoConInstrucciones(char *nombre_archivo);
 t_instruccion *crearInstruccion(char *linea);
+_Bool estaElContextoConCiertoPID(t_cde *contexto);
+char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde* armarCde(tipo_buffer* buffer);
 
 #endif

@@ -20,7 +20,6 @@
 #include "sockets.h"
 typedef enum
 {
-	ERROR_CLIENTE_DESCONECTADO = -1,
 	MENSAJE,
 	PAQUETE,
 	SOLICITUD_INICIAR_PROCESO,

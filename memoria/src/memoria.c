@@ -5,9 +5,10 @@ pthread_t hiloKernel;
 pthread_t hiloIO;
 struct config_memoria *valores_config;
 int server_fd;
+int PID_buscado;
 // sem_t *sem_kernel;
 
-t_list *lista_procesos;
+t_list *lista_contextos;
 
 int main(int argc, char *argv[])
 {
@@ -15,7 +16,7 @@ int main(int argc, char *argv[])
     logger = iniciar_logger("memoria.log", "MEMORIA");
     valores_config = config_memoria();
 
-    lista_procesos = list_create();
+    lista_contextos = list_create();
     // iniciar_sem_globales();
     crearHilos();
 
@@ -56,7 +57,7 @@ void *recibirKernel()
         case SOLICITUD_FINALIZAR_PROCESO:
             finalizar_proceso(cliente_fd, buffer);
             break;
-        case ERROR_CLIENTE_DESCONECTADO:
+        case -1:
             log_error(logger, " El KERNEL se desconecto. Terminando servidor");
             return (void *)EXIT_FAILURE;
             break;
@@ -80,7 +81,7 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     }
     else
     {
-        list_add(lista_procesos,cde);
+        list_add(lista_contextos, cde); // agrego el cde del proceso creado
         enviar_cod_enum(cliente_fd, INICIAR_PROCESO_CORRECTO);
         log_info(logger, "Se inicio el proceso de PID: %d y PATH: %s", cde->pid, cde->path);
     }
@@ -105,18 +106,13 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
         log_info(logger, "No se pudo obtener la raiz");
         return NULL;
     }
-    // char *ruta_acceso = "tp-2024-1c-PentaCoders/memoria/pruebas/";
-    // string_append(&ruta_completa, ruta_acceso);
     string_append(&ruta_completa, ruta_acceso);
     string_append(&ruta_completa, "/pruebas/");
     string_append(&ruta_completa, nombre_archivo);
-    log_info(logger, "El path del archivo es : %s", ruta_completa);
     FILE *archivo = fopen(ruta_completa, "r");
     if (archivo == NULL)
     {
-        // log_warning(logger, "No se pudo abrir el archivo");
         log_warning(logger, "No se pudo abrir el archivo: %s", ruta_completa);
-
         return NULL;
     }
     char linea_instruccion[1024]; // este seria el buffer para ir leyendo el archivo
@@ -124,8 +120,8 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
     { // voy leyendo el archivo
         strtok(linea_instruccion, "\n");
         list_add(list_instrucciones, linea_instruccion); // agrego una instruccion a la lista
-        log_info(logger, "Se agrego la instruccion: %s", linea_instruccion);
     }
+
     fclose(archivo);
     free(ruta_completa);
     return list_instrucciones;
@@ -142,7 +138,7 @@ void *recibirCPU()
             pedido_instruccion_cpu_dispatch(cliente_fd);
             break;
             // case ACCESO_ESPACIO_USUARIO:
-        case ERROR_CLIENTE_DESCONECTADO:
+        case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             exit(EXIT_FAILURE);
             return (void *)EXIT_FAILURE;
@@ -163,33 +159,123 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd)
     uint32_t PC = leer_buffer_enteroUint32(buffer);
     destruir_buffer(buffer);
 
+    PID_buscado = PID;
+
     t_cde *cde_proceso = malloc(sizeof(t_cde));
-    //proceso->cde = malloc(sizeof())
-    cde_proceso = list_get(lista_procesos, PID);
 
-    //t_list *lista_instrucciones = cde_proceso->lista_instrucciones;
+    cde_proceso = list_find(lista_contextos, estaElContextoConCiertoPID);
 
-    char *instruccion = list_get(cde_proceso->lista_instrucciones, PC);
-
+    t_instruccion *instruccion = malloc(sizeof(t_instruccion));
+    instruccion = list_get(cde_proceso->lista_instrucciones, PC);
+    // int cantParametros = obtener_cant_parametros(instruccion->codigo); // IMPLEMENTAR ESTO
     tipo_buffer *buffer_instruccion = crear_buffer();
 
-    agregar_buffer_para_string(buffer_instruccion, instruccion);
+    agregar_buffer_para_string(buffer_instruccion, obtener_char_instruccion(instruccion->codigo));
     enviar_buffer(buffer_instruccion, socket_cpu);
     destruir_buffer(buffer_instruccion);
 
-    log_info(logger, "Se va a enviar la instruccion: %s", instruccion);
+    log_info(logger, "Se va a enviar la instruccion: %d", instruccion->codigo);
     log_info(logger, "Se aprueba Pedido Instruccion");
-    enviar_cod_enum(cliente_fd,ENVIAR_INSTRUCCION_CORRECTO);
+    enviar_cod_enum(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
 }
+
+char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code)
+{
+    if (instruccion_code == SET)
+    {
+        return "SET";
+    }
+    if (instruccion_code == MOV_IN)
+    {
+        return "MOV_IN";
+    }
+    if (instruccion_code == MOV_OUT)
+    {
+        return "MOV_OUT";
+    }
+    if (instruccion_code == SUM)
+    {
+        return "SUM";
+    }
+    if (instruccion_code == SUB)
+    {
+        return "SUB";
+    }
+    if (instruccion_code == JNZ)
+    {
+        return "JNZ";
+    }
+    if (instruccion_code == RESIZE)
+    {
+        return "RESIZE";
+    }
+    if (instruccion_code == COPY_STRING)
+    {
+        return "COPY_STRING";
+    }
+    if (instruccion_code == WAIT)
+    {
+        return "WAIT";
+    }
+    if (instruccion_code == SIGNAL)
+    {
+        return "SIGNAL";
+    }
+    if (instruccion_code == IO_GEN_SLEEP)
+    {
+        return "IO_GEN_SLEEP";
+    }
+    if (instruccion_code == IO_STDIN_READ)
+    {
+        return "IO_STDIN_READ";
+    }
+    if (instruccion_code == IO_STDOUT_WRITE)
+    {
+        return "IO_STDOUT_WRITE";
+    }
+    if (instruccion_code == IO_FS_CREATE)
+    {
+        return "IO_FS_CREATE";
+    }
+    if (instruccion_code == IO_FS_DELETE)
+    {
+        return "IO_FS_DELETE";
+    }
+    if (instruccion_code == IO_FS_TRUNCATE)
+    {
+        return "IO_FS_TRUNCATE";
+    }
+    if (instruccion_code == IO_FS_WRITE)
+    {
+        return "IO_FS_WRITE";
+    }
+    if (instruccion_code == IO_FS_READ)
+    {
+        return "IO_FS_READ";
+    }
+    if (instruccion_code == EXIT)
+    {
+        return "EXIT";
+    }
+    return -1;
+}
+
+_Bool estaElContextoConCiertoPID(t_cde *contexto)
+{
+    return contexto->pid == PID_buscado;
+}
+
 void finalizar_proceso(int cliente_fd, tipo_buffer *buffer) // HACER
 {
     buffer = recibir_buffer(cliente_fd);
     uint32_t pid_a_eliminar = leer_buffer_enteroUint32(buffer);
     eliminar_proceso(pid_a_eliminar);
 }
+
 void eliminar_proceso(int pid_a_eliminar) // HACER
 {
 }
+
 struct config_memoria *config_memoria()
 {
     struct config_memoria *valores_config = malloc(sizeof(struct config_memoria));

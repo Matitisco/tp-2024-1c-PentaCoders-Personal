@@ -4,6 +4,8 @@ config_cpu *valores_config_cpu;
 
 int CONEXION_A_MEMORIA;
 int socket_memoria;
+int socket_memoria;
+int socket_memoria;
 
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
@@ -24,7 +26,8 @@ int main(int argc, char *argv[])
 
 	iniciar_hilos_CPU(valores_config_cpu);
 	iniciar_semaforos_CPU();
-	pthread_join(hilo_CPU_CLIENTE, NULL);
+
+	// pthread_join(hilo_CPU_CLIENTE, NULL);
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
 	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
 
@@ -78,14 +81,14 @@ void levantar_Kernel_Dispatch(void *ptr)
 		case EJECUTAR_PROCESO:
 			log_info(logger, "EJECUTAR PROCESO");
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
-			t_cde *cde_recibido = leer_cde(buffer_cde); // Deserealiza y Arma el CD
+			t_cde *cde_recibido = leer_cde(buffer_cde);
 			log_info(logger, "Me llego el proceso a ejecutar con PID: %d", cde_recibido->pid);
-			
-			char *linea_instruccion = fetch(cde_recibido);		  // MOV AX BX
+
+			char *linea_instruccion = fetch(cde_recibido); // MOV AX BX
 
 			cde_recibido->registros->PC++;						  // Incrementamos el Program Counter
 			char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
-			
+
 			execute(array_instruccion, cde_recibido);
 			check_interrupt();
 			// while(interrupcion);
@@ -98,7 +101,7 @@ void levantar_Kernel_Dispatch(void *ptr)
 			// sem_post(GRADO_MULTIPROGRAMACION); // aumenta en uno el grado de multipgramacion
 			// sem_post(exec_libre);
 			break;
-		case ERROR_CLIENTE_DESCONECTADO:
+		case -1:
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
 			return EXIT_FAILURE;
 		default:
@@ -149,7 +152,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 											 log_info(logger, "La interrupcion que llego no es para el proceso que esta en ejecucion");
 										 } */
 
-		case ERROR_CLIENTE_DESCONECTADO:
+		case -1:
 			log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
 			return EXIT_FAILURE;
 
@@ -162,6 +165,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 		}
 	}
 }
+
 void *conexionAMemoria(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
@@ -180,12 +184,14 @@ char *fetch(t_cde *contexto)
 	destruir_buffer(buffer);
 
 	op_code operacion_desde_memoria = recibir_operacion(socket_memoria);
+	log_info(logger, "OPERACION RECIBIDA: %d", operacion_desde_memoria);
 	if (operacion_desde_memoria == ENVIAR_INSTRUCCION_CORRECTO)
 	{
 		tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo MOV AX BX
 		char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion); // obtenemos la linea instruccion
+		log_info(logger, "%s", linea_de_instruccion);
 		destruir_buffer(bufferProximaInstruccion);
-		log_info(logger,"Me llego la linea de instruccion %s", linea_de_instruccion);
+		log_info(logger, "Me llego la linea de instruccion %s", linea_de_instruccion);
 		return linea_de_instruccion;
 	}
 	else

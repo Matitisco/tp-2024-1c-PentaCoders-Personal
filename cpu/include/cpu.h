@@ -15,6 +15,42 @@
 #include "../../utils/include/registros.h"
 #include "../../kernel/include/kernel.h"
 
+typedef enum
+{
+	MENSAJE,
+	PAQUETE,
+	SOLICITUD_INICIAR_PROCESO,
+	INICIAR_PROCESO_CORRECTO,
+	ERROR_INICIAR_PROCESO,
+	SOLICITUD_FINALIZAR_PROCESO,
+	FINALIZAR_PROCESO,
+	EJECUTAR_SCRIPT,
+	INICIAR_PROCESO,
+	INICIAR_PLANIFICACION,
+	DETENER_PLANIFICACION,
+	PLANIFICACION_PAUSADA,
+	PLANIFICACION_EN_FUNCIONAMIENTO,
+	MULTIPROGRAMACION,
+	LISTAR_ESTADOS,
+	ERROR_FINALIZAR_PROCESO,
+	PEDIDO_INSTRUCCION,
+	PEDIDO_PCB,
+	EJECUTAR_PROCESO, // CPU
+	INTERRUPT,
+	DESALOJO,
+	SOLICITUD_INTERFAZ_GENERICA,
+	NO_ESTOY_LIBRE,
+	CONCLUI_OPERACION,
+	ESTOY_LIBRE,
+	CONSULTAR_DISPONIBILDAD,
+	PROCESO_INTERRUMPIDO,
+	SOLICITUD_EXIT, // cortoPlazo
+	SOLICITUD_INTERFAZ_STDIN,
+	SOLICITUD_INTERFAZ_STDOUT,
+	SOLICITUD_INTERFAZ_DIALFS,
+	ENVIAR_INSTRUCCION_CORRECTO
+} op_code;
+
 // char *PUERTO_MEMORIA;
 //  t_log *logger;
 //  int socket_kernel_dispatch;
@@ -56,7 +92,7 @@ void crearHilos_CPU(t_args *args_memoria, t_args *kernel_int, t_args *kernel_dis
 void iniciar_hilos_CPU(config_cpu *valores_config_cpu);
 
 // CICLO DE INSTRUCCION
-char *fetch();
+char *fetch(t_cde *contexto);
 char **decode(char *linea_de_instrucion);
 void execute(char **instruccion, t_cde *contextoProceso);
 t_tipoDeInstruccion obtener_instruccion(char *instruccion);
