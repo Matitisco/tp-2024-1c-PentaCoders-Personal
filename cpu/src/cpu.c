@@ -2,10 +2,16 @@
 
 config_cpu *valores_config_cpu;
 
+/*Variables globales*/
+
+/*Variables de interrupcion*/
+int findequantum = 0;
+int findeio = 0;
+
 int CONEXION_A_MEMORIA;
 int socket_memoria;
-int socket_memoria;
-int socket_memoria;
+int socket_kernel_dispatch;
+int socket_kernel_interrupt;
 
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
@@ -45,6 +51,7 @@ void iniciar_semaforos_CPU()
 	mutex_cde_ejecutando = malloc(sizeof(pthread_mutex_t));
 	sem_init(mutex_cde_ejecutando, 0, 0);
 }
+
 void crearHilos_CPU(t_args *args_memoria, t_args *kernel_int, t_args *kernel_dis)
 {
 	pthread_create(&hilo_CPU_CLIENTE, NULL, conexionAMemoria, (void *)args_memoria);
@@ -90,7 +97,7 @@ void levantar_Kernel_Dispatch(void *ptr)
 			char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
 
 			execute(array_instruccion, cde_recibido);
-			check_interrupt();
+			check_interrupt(cde_recibido->pid);
 			// while(interrupcion);
 			destruir_buffer(buffer_cde);
 
@@ -170,9 +177,10 @@ void *conexionAMemoria(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
-	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "\nCPU SE CONECTO A MEMORIA");
+	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "CPU SE CONECTO A MEMORIA");
 	free(argumento);
 }
+
 char *fetch(t_cde *contexto)
 {
 	enviar_cod_enum(socket_memoria, PEDIDO_INSTRUCCION); // Pido la instruccion MOV AX BX
@@ -184,14 +192,13 @@ char *fetch(t_cde *contexto)
 	destruir_buffer(buffer);
 
 	op_code operacion_desde_memoria = recibir_operacion(socket_memoria);
-	log_info(logger, "OPERACION RECIBIDA: %d", operacion_desde_memoria);
+
 	if (operacion_desde_memoria == ENVIAR_INSTRUCCION_CORRECTO)
 	{
 		tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo MOV AX BX
 		char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion); // obtenemos la linea instruccion
-		log_info(logger, "%s", linea_de_instruccion);
-		destruir_buffer(bufferProximaInstruccion);
 		log_info(logger, "Me llego la linea de instruccion %s", linea_de_instruccion);
+		destruir_buffer(bufferProximaInstruccion);
 		return linea_de_instruccion;
 	}
 	else
@@ -200,6 +207,7 @@ char *fetch(t_cde *contexto)
 		return NULL;
 	}
 }
+
 char **decode(char *linea_de_instrucion)
 {
 	// AGARRA MOV AX BX
@@ -269,20 +277,50 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		break;
 	}
 }
-void check_interrupt()
+
+void check_interrupt(uint32_t pid_en_cpu)
 {
-	/* 	op_code *codigo = recibir_operacion(socket_kernel_interrupt);
-		int interrupcion;
-		switch(codigo){
-
-		}
-		if (codigo == PROCESO_INTERRUMPIDO)
+	op_code codigo = recibir_operacion(socket_kernel_interrupt);
+	// int interrupcion;
+	if (codigo == PROCESO_INTERRUMPIDO) // por fin de quantum
+	{
+		t_cde *cde = buscar_cde(pid_en_cpu);
+		tipo_buffer *buffer = crear_buffer();
+		agregar_cde_buffer(buffer, cde);
+		enviar_buffer(buffer, socket_kernel_dispatch);
+		// MOTIVOS
+		if (findequantum == 1)
 		{
-			interrupcion = 1; // Hacer una var interrupcion que este en 1 ??
+			enviar_cod_enum(socket_kernel_dispatch, FINDEQUANTUM);
+		}
+		else if (findeio == 1)
+		{
+			enviar_cod_enum(socket_kernel_dispatch, FINDEIO);
 		}
 
-	*/
+		// tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt);
+		// int pid_interrumpido = leer_buffer_enteroUint32(buffer_kernel);
+		// if (pid_interrumpido == pid_en_cpu)
+		//{
+
+		// conseguimos el cde del proceso que esta en la cpu para luego devolverlo acutalizado al kernel
+		//}
+		// interrupcion = 1; // Hacer una var interrupcion que este en 1 ??
+	}
+	else
+	{
+		t_cde *cde = buscar_cde(pid_en_cpu);
+		tipo_buffer *buffer = crear_buffer();
+		agregar_cde_buffer(buffer, cde);
+		enviar_buffer(buffer, socket_kernel_dispatch);
+	}
 }
+/*En este momento, se deberá chequear si el Kernel nos envió una interrupción al PID que se está
+ejecutando, en caso afirmativo, se devuelve el Contexto de Ejecución actualizado al Kernel con
+motivo de la interrupción. Caso contrario, se descarta la interrupción.
+Cabe aclarar que en todos los casos el Contexto de Ejecución debe ser devuelto a través de la
+conexión de dispatch, quedando la conexión de interrupt dedicada solamente a recibir mensajes de
+interrupción.*/
 void actualizar_cde(t_cde *contexto, char **instruccion)
 {
 }
@@ -380,4 +418,9 @@ config_cpu *configurar_cpu()
 	valores_config_cpu->cantidad_entradas_tlb = config_get_int_value(valores_config_cpu->config, "CANTIDAD_ENTRADAS_TLB");
 
 	return valores_config_cpu;
+}
+t_cde *buscar_cde(uint32_t pid)
+{
+
+	return NULL;
 }

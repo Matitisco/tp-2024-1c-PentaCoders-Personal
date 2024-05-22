@@ -26,7 +26,7 @@ void enviar_mensaje(char *mensaje, int socket_cliente)
 void recibir_mensaje(int socket_cliente)
 {
     tipo_buffer *buffer = recibir_buffer(socket_cliente);
-    log_info(logger, "Me llego el mensaje %s", buffer->stream);
+    // log_info(logger, "Me llego el mensaje %s", buffer->stream);
     free(buffer);
 }
 
@@ -62,17 +62,17 @@ void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio)
 
 t_list *recibir_paquete_cde(int socket_cliente)
 {
-    int size = 0;
-    int desplazamiento = 0;
+    // int size = 0;
+    // int desplazamiento = 0;
     tipo_buffer *buffer;
     t_list *valores = list_create();
 
     buffer = recibir_buffer(socket_cliente);
 
     // Recibir pid
-    int pid = 0;
+    uint32_t pid = 0;
     pid = leer_buffer_enteroUint32(buffer);
-    list_add(valores, pid);
+    list_add(valores, (uint32_t *)pid);
 
     // recibir tamanio del path
 
@@ -180,7 +180,7 @@ void paquete(int conexion)
 void enviar_cod_enum(int socket_servidor, uint32_t cod)
 {
     send(socket_servidor, &cod, sizeof(uint32_t), 0);
-    //log_info(logger, "Se envio el codigo %d al servidor %d", cod, socket_servidor);
+    // log_info(logger, "Se envio el codigo %d al servidor %d", cod, socket_servidor);
 }
 // RECIBIR OPERACION PARECIDO A recibi_cod(int socket_cliente)
 op_code recibir_operacion(int socket_cliente)
@@ -197,7 +197,6 @@ op_code recibir_operacion(int socket_cliente)
         }
     }
 }
-
 
 /* op_code recibir_operacion2(int socket_cliente)
 {
@@ -267,19 +266,19 @@ void agregar_buffer_para_string(tipo_buffer *buffer, char *args)
     memcpy(buffer->stream + buffer->size, string, tamanio);
     buffer->size += tamanio; // tamanio total
 }
-void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros registros)
+void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros *registros)
 {
-    agregar_buffer_para_enterosUint8(buffer, registros.AX);
-    agregar_buffer_para_enterosUint8(buffer, registros.BX);
-    agregar_buffer_para_enterosUint8(buffer, registros.CX);
-    agregar_buffer_para_enterosUint8(buffer, registros.DX);
-    agregar_buffer_para_enterosUint32(buffer, registros.EAX);
-    agregar_buffer_para_enterosUint32(buffer, registros.EBX);
-    agregar_buffer_para_enterosUint32(buffer, registros.ECX);
-    agregar_buffer_para_enterosUint32(buffer, registros.EDX);
-    agregar_buffer_para_enterosUint32(buffer, registros.SI);
-    agregar_buffer_para_enterosUint32(buffer, registros.DI);
-    agregar_buffer_para_enterosUint32(buffer, registros.PC);
+    agregar_buffer_para_enterosUint8(buffer, registros->AX);
+    agregar_buffer_para_enterosUint8(buffer, registros->BX);
+    agregar_buffer_para_enterosUint8(buffer, registros->CX);
+    agregar_buffer_para_enterosUint8(buffer, registros->DX);
+    agregar_buffer_para_enterosUint32(buffer, registros->EAX);
+    agregar_buffer_para_enterosUint32(buffer, registros->EBX);
+    agregar_buffer_para_enterosUint32(buffer, registros->ECX);
+    agregar_buffer_para_enterosUint32(buffer, registros->EDX);
+    agregar_buffer_para_enterosUint32(buffer, registros->SI);
+    agregar_buffer_para_enterosUint32(buffer, registros->DI);
+    agregar_buffer_para_enterosUint32(buffer, registros->PC);
 }
 // ENVIAR BUFFER
 void enviar_buffer(tipo_buffer *buffer, int socket)
@@ -387,10 +386,17 @@ t_cde *leer_cde(tipo_buffer *buffer)
 {
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
-    //cde->registros = malloc(sizeof(t_registros));
-    //cde->registros->PC = leer_buffer_enteroUint32(buffer);
+    // cde->registros = malloc(sizeof(t_registros));
+    // cde->registros->PC = leer_buffer_enteroUint32(buffer);
     cde->registros = leer_buffer_registros(buffer);
     return cde;
+}
+void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
+{
+    // t_list *lista_instrucciones;
+    // agregar_buffer_para_enterosUint32(buffer,cde->pid);
+    // agregar_buffer_para_string(buffer, cde->path);
+    // agregar_buffer_para_registros(buffer,cde->registros);
 }
 
 // ESCRIBIR EN EL BUFFER UNA LISTA

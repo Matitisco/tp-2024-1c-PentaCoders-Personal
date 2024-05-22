@@ -43,7 +43,7 @@ tipo_buffer *crear_buffer();
 void agregar_buffer_para_enterosUint32(tipo_buffer *buffer, uint32_t entero);
 void agregar_buffer_para_enterosUint8(tipo_buffer *buffer, uint8_t entero);
 void agregar_buffer_para_string(tipo_buffer *buffer, char *args);
-void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros registros);
+void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros *registros);
 
 void enviar_buffer(tipo_buffer *buffer, int socket);
 tipo_buffer *recibir_buffer(int socket);

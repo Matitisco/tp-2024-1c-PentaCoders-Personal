@@ -150,7 +150,7 @@ void *corto_plazo();
 // funciones de io
 
 bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre);
-const char *obtener_interfaz(enum_interfaz interfaz);
+char *obtener_interfaz(enum_interfaz interfaz);
 void recibir_orden_interfaces_de_cpu(char **interfaces);
 
 #endif

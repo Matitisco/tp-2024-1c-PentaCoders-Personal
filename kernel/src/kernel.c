@@ -130,7 +130,7 @@ void *levantarIO(void *ptr)
 	}
 	return NULL;
 }
-const char *obtener_interfaz(enum_interfaz interfaz)
+char *obtener_interfaz(enum_interfaz interfaz)
 {
 	if (interfaz == GENERICA)
 	{
