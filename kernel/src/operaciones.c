@@ -25,10 +25,12 @@ void ejecutar_script(char *PATH)
         iniciar_consola_interactiva();
     }
     while (fgets(linea, sizeof(linea), archivo_script) != NULL)
-    {
+    {   log_info(logger, "Linea leida: %s", linea);
+        strtok(linea, "\n");
+        log_info(logger, "Linea ahora: %s", linea);
         lineas_script = string_split(linea, " ");
         log_info(logger, "Linea leida: %s", linea);
-        strtok(linea, "\n");
+        
         if (strcmp(lineas_script[0], "INICIAR_PROCESO") == 0)
         {
             iniciar_proceso(lineas_script[1]);

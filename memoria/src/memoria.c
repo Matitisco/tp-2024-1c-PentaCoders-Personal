@@ -77,6 +77,8 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     log_info(logger, "SOLICITUD INICIAR PROCESO");
     buffer = recibir_buffer(cliente_fd);
     t_cde *cde = armarCde(buffer);
+    log_info(logger, "La ruta del archivo recibida es:>%s<",cde->path);
+
     destruir_buffer(buffer);
     cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
     if (cde->path == NULL || cde->lista_instrucciones == NULL)
@@ -112,13 +114,14 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
         log_info(logger, "No se pudo obtener la raiz");
         return NULL;
     }
+    //printf("La ruta local es:%s \n",ruta_acceso);
     string_append(&ruta_completa, ruta_acceso);
     string_append(&ruta_completa, "/pruebas/");
     string_append(&ruta_completa, nombre_archivo);
     FILE *archivo = fopen(ruta_completa, "r");
     if (archivo == NULL)
     {
-        log_warning(logger, "No se pudo abrir el archivo: %s", ruta_completa);
+        log_warning(logger, "No se pudo abrir el archivo: >%s<", ruta_completa);
         return NULL;
     }
     char linea_instruccion[1024]; // este seria el buffer para ir leyendo el archivo
