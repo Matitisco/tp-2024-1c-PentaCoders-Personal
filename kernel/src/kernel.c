@@ -266,7 +266,11 @@ void *levantar_CPU_Dispatch(void *ptr)
 	t_args *datosConexion = malloc(sizeof(t_args));
 	datosConexion = (t_args *)ptr;
 	socket_cpu_dispatch = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU DISPATCH");
+	
+	
+
 	free(datosConexion);
+	
 }
 void recibir_orden_interfaces_de_cpu(char **interfaces)
 {

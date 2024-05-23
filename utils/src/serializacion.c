@@ -278,7 +278,6 @@ void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros *registros)
     agregar_buffer_para_enterosUint32(buffer, registros->EDX);
     agregar_buffer_para_enterosUint32(buffer, registros->SI);
     agregar_buffer_para_enterosUint32(buffer, registros->DI);
-    agregar_buffer_para_enterosUint32(buffer, registros->PC);
 }
 // ENVIAR BUFFER
 void enviar_buffer(tipo_buffer *buffer, int socket)
@@ -378,7 +377,6 @@ t_registros *leer_buffer_registros(tipo_buffer *buffer)
     registros->EDX = leer_buffer_enteroUint32(buffer);
     registros->SI = leer_buffer_enteroUint32(buffer);
     registros->DI = leer_buffer_enteroUint32(buffer);
-    registros->PC = leer_buffer_enteroUint32(buffer);
     return registros;
 }
 
@@ -386,8 +384,8 @@ t_cde *leer_cde(tipo_buffer *buffer)
 {
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
-    // cde->registros = malloc(sizeof(t_registros));
-    // cde->registros->PC = leer_buffer_enteroUint32(buffer);
+    cde->registros = malloc(sizeof(t_registros));
+    cde->PC = leer_buffer_enteroUint32(buffer);
     cde->registros = leer_buffer_registros(buffer);
     return cde;
 }
@@ -397,7 +395,9 @@ void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
     // agregar_buffer_para_enterosUint32(buffer,cde->pid);
     // agregar_buffer_para_string(buffer, cde->path);
     // agregar_buffer_para_registros(buffer,cde->registros);
+    //agregar_buffer_para_enterosUint32(buffer,cde->PC);
 }
+    
 
 // ESCRIBIR EN EL BUFFER UNA LISTA
 /*void escribir_buffer_para_listas(tipo_buffer *buffer, void *args)

@@ -37,7 +37,7 @@ typedef struct
 	char *algoritmo_tlb;
 	int cantidad_entradas_tlb;
 } config_cpu;
-
+extern int salida_exit;
 // INSTRUCCIONES
 
 void ejecutarCicloInstruccion(int instruccion, uint32_t PC);
@@ -62,7 +62,7 @@ char *fetch(t_cde *contexto);
 char **decode(char *linea_de_instrucion);
 void execute(char **instruccion, t_cde *contextoProceso);
 t_tipoDeInstruccion obtener_instruccion(char *instruccion);
-void actualizar_cde(t_cde *contexto, char **instruccion);
+void actualizar_cde(t_cde *contexto);
 
 // CONEXIONES Y SERVIDORES
 void *conexionAMemoria(void *ptr);

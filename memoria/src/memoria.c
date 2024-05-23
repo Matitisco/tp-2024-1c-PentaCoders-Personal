@@ -77,7 +77,7 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     log_info(logger, "SOLICITUD INICIAR PROCESO");
     buffer = recibir_buffer(cliente_fd);
     t_cde *cde = armarCde(buffer);
-    log_info(logger, "La ruta del archivo recibida es:>%s<",cde->path);
+    log_info(logger, "La ruta del archivo recibida es:>%s<", cde->path);
 
     destruir_buffer(buffer);
     cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
@@ -87,7 +87,7 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     }
     else
     {
-        list_add(lista_contextos, cde); // agrego el cde del proceso creado
+        list_add(lista_contextos, cde);
         list_add(lista_instrucciones, cde->lista_instrucciones);
         enviar_cod_enum(cliente_fd, INICIAR_PROCESO_CORRECTO);
         log_info(logger, "Se inicio el proceso de PID: %d y PATH: %s", cde->pid, cde->path);
@@ -105,7 +105,34 @@ t_cde *armarCde(tipo_buffer *buffer)
 
 t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 {
-    t_list *list_instrucciones = list_create(); // creo el puntero a la lista
+    t_list *list_instrucciones = list_create();
+    char *ruta_completa = string_new();
+
+    ruta_completa = obtener_ruta(nombre_archivo);
+
+    FILE *archivo = fopen(ruta_completa, "r");
+
+    if (archivo == NULL)
+    {
+        log_warning(logger, "No se pudo abrir el archivo: >%s<", ruta_completa);
+        return NULL;
+    }
+    char linea_instruccion[1024];
+    while (fgets(linea_instruccion, sizeof(linea_instruccion), archivo) != NULL)
+    {
+        char *token = strdup(strtok(linea_instruccion, "\n"));
+        char *token_copia = token;
+
+        log_info(logger, "%s", token);
+        list_add(list_instrucciones, token);
+    }
+    fclose(archivo);
+    free(ruta_completa);
+    return list_instrucciones;
+}
+
+char *obtener_ruta(char *nombre_archivo)
+{
     char *ruta_completa = string_new();
     char *ruta_acceso[1024];
 
@@ -114,26 +141,12 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
         log_info(logger, "No se pudo obtener la raiz");
         return NULL;
     }
-    //printf("La ruta local es:%s \n",ruta_acceso);
+
     string_append(&ruta_completa, ruta_acceso);
     string_append(&ruta_completa, "/pruebas/");
     string_append(&ruta_completa, nombre_archivo);
-    FILE *archivo = fopen(ruta_completa, "r");
-    if (archivo == NULL)
-    {
-        log_warning(logger, "No se pudo abrir el archivo: >%s<", ruta_completa);
-        return NULL;
-    }
-    char linea_instruccion[1024]; // este seria el buffer para ir leyendo el archivo
-    while (fgets(linea_instruccion, sizeof(linea_instruccion), archivo) != NULL)
-    { // voy leyendo el archivo
-        strtok(linea_instruccion, "\n");
-        list_add(list_instrucciones, linea_instruccion); // agrego una instruccion a la lista MOV AX BX
-    }
 
-    fclose(archivo);
-    free(ruta_completa);
-    return list_instrucciones;
+    return ruta_completa;
 }
 
 void *recibirCPU()
@@ -175,9 +188,11 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
     tipo_buffer *buffer_instruccion = crear_buffer();
     char *instruccion = string_new();
     instruccion = list_get(contexto->lista_instrucciones, PC);
+
     enviar_cod_enum(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
 
+    free(instruccion);
     enviar_buffer(buffer_instruccion, cliente_fd);
     destruir_buffer(buffer_instruccion);
     destruir_buffer(buffer);
@@ -194,9 +209,10 @@ t_cde *obtener_contexto_en_ejecucion(int PID, t_list *contextos)
     cde_proceso->lista_instrucciones = list_get(lista_instrucciones, cde_proceso->pid);
 
     log_info(logger, "SE OBTUVO EL PROCESO PID: %d CON PATH: %s Y CON: %d INSTRUCCIONES", cde_proceso->pid, cde_proceso->path, list_size(cde_proceso->lista_instrucciones));
-    log_info(logger, "INSTRUCCIONES: %s %d", cde_proceso->lista_instrucciones->head->data, cde_proceso->lista_instrucciones->head->data);
+    log_info(logger, "INSTRUCCION: %s", cde_proceso->lista_instrucciones->head->data);
     return cde_proceso;
 }
+
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code)
 {
     if (instruccion_code == SET)
@@ -283,15 +299,40 @@ _Bool estaElContextoConCiertoPID(t_cde *contexto)
     return contexto->pid == PID_buscado;
 }
 
-void finalizar_proceso(int cliente_fd, tipo_buffer *buffer) // HACER
+void finalizar_proceso(int kernel, tipo_buffer *buffer)
 {
-    buffer = recibir_buffer(cliente_fd);
-    uint32_t pid_a_eliminar = leer_buffer_enteroUint32(buffer);
-    eliminar_proceso(pid_a_eliminar);
+    buffer = recibir_buffer(kernel);
+    uint32_t pid = leer_buffer_enteroUint32(buffer);
+    obtener_y_eliminar_cde(pid);
+    enviar_cod_enum(kernel,FINALIZAR_PROCESO);
 }
 
-void eliminar_proceso(int pid_a_eliminar) // HACER
+void obtener_y_eliminar_cde(int pid)
 {
+    t_cde *cde = obtener_contexto_en_ejecucion(pid, lista_contextos);
+    eliminar_cde(cde);
+}
+
+void eliminar_cde(t_cde *cde)
+{
+    list_clean_and_destroy_elements(cde->lista_instrucciones);
+    free(cde->path);
+    liberar_registros(cde->registros);
+    // el pid y el pc no se liberan manualmente
+}
+
+void liberar_registros(t_registros *registros)
+{
+    free(registros->AX);
+    free(registros->BX);
+    free(registros->CX);
+    free(registros->DI);
+    free(registros->DX);
+    free(registros->EAX);
+    free(registros->EBX);
+    free(registros->ECX);
+    free(registros->EDX);
+    free(registros->SI);
 }
 
 config_memoria *configuracion_memoria()
@@ -306,31 +347,4 @@ config_memoria *configuracion_memoria()
     valores_config->tam_pagina = config_get_int_value(valores_config->config, "TAM_PAGINA");
     valores_config->retardo_respuesta = config_get_int_value(valores_config->config, "RETARDO_RESPUESTA");
     return valores_config;
-}
-int cantidad_de_parametros_instruccion(t_instruccion *instruccion)
-{
-    if (instruccion->codigo == SET)
-    {
-        return 2;
-    }
-    else if (instruccion->codigo == SUM)
-    {
-        return 2;
-    }
-    else if (instruccion->codigo == SUB)
-    {
-        return 2;
-    }
-    else if (instruccion->codigo == JNZ)
-    {
-        return 2;
-    }
-    else if (instruccion->codigo == IO_GEN_SLEEP)
-    {
-        return 2;
-    }
-    else if (instruccion->codigo == EXIT)
-    {
-        return 0;
-    }
 }

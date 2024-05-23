@@ -12,7 +12,7 @@ int CONEXION_A_MEMORIA;
 int socket_memoria;
 int socket_kernel_dispatch;
 int socket_kernel_interrupt;
-
+int salida_exit;
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
 pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
@@ -89,24 +89,30 @@ void levantar_Kernel_Dispatch(void *ptr)
 			log_info(logger, "EJECUTAR PROCESO");
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 			t_cde *cde_recibido = leer_cde(buffer_cde);
+
 			log_info(logger, "Me llego el proceso a ejecutar con PID: %d", cde_recibido->pid);
+			salida_exit = 1;
 
-			char *linea_instruccion = fetch(cde_recibido); // MOV AX BX
+			while (salida_exit)
+			{
+				char *linea_instruccion = fetch(cde_recibido); // MOV AX BX
 
-			cde_recibido->registros->PC++;						  // Incrementamos el Program Counter
-			char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
+				cde_recibido->PC++;						  // Incrementamos el Program Counter
+				char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
 
-			execute(array_instruccion, cde_recibido);
-			check_interrupt(cde_recibido->pid);
-			// while(interrupcion);
+				execute(array_instruccion, cde_recibido);
+				// check_interrupt(cde_recibido->pid);
+				//  while(interrupcion);
+
+				// pthread_mutex_lock(&mutex_cde_ejecutando);
+
+				// pthread_mutex_unlock(&mutex_cde_ejecutando);
+
+				// sem_post(GRADO_MULTIPROGRAMACION); // aumenta en uno el grado de multipgramacion
+				// sem_post(exec_libre);
+			}
 			destruir_buffer(buffer_cde);
 
-			// pthread_mutex_lock(&mutex_cde_ejecutando);
-
-			// pthread_mutex_unlock(&mutex_cde_ejecutando);
-
-			// sem_post(GRADO_MULTIPROGRAMACION); // aumenta en uno el grado de multipgramacion
-			// sem_post(exec_libre);
 			break;
 		case -1:
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
@@ -187,7 +193,8 @@ char *fetch(t_cde *contexto)
 	tipo_buffer *buffer = crear_buffer();
 	// actualizo el buffer escribiendo
 	agregar_buffer_para_enterosUint32(buffer, contexto->pid);			// consigo el procoeso asoc
-	agregar_buffer_para_enterosUint32(buffer, contexto->registros->PC); // con esto la memoria busca la prox ins a ejecutar
+	log_info(logger,"%d",contexto->PC);
+	agregar_buffer_para_enterosUint32(buffer, contexto->PC); // con esto la memoria busca la prox ins a ejecutar
 	enviar_buffer(buffer, socket_memoria);
 	destruir_buffer(buffer);
 
@@ -223,55 +230,73 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 	{
 	case SET: // SET AX 1
 		exec_set(instruccion[1], atoi((instruccion[2])));
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case MOV_IN:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case MOV_OUT:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case SUM: // SUM AX BX
 		exec_sum(instruccion[1], instruccion[2]);
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+	    break;
 	case SUB: // SUB AX BX
 		exec_sub(instruccion[1], instruccion[2]);
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		break;
 	case JNZ: // JNZ AX 4
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
 		exec_jnz(instruccion[1], atoi((instruccion[2])));
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		break;
 	case RESIZE:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case COPY_STRING:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case WAIT:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case SIGNAL:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case IO_GEN_SLEEP:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
 		exec_io_gen_sleep(instruccion[1], atoi((instruccion[2])));
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		break;
 	case IO_STDIN_READ:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case IO_STDOUT_WRITE:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case IO_FS_CREATE:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case IO_FS_DELETE:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case IO_FS_TRUNCATE:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case IO_FS_WRITE:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case IO_FS_READ:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
+		break;
 	case EXIT:
-		actualizar_cde(contextoProceso, instruccion);
+		actualizar_cde(contextoProceso);
 		exec_exit();
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
+		break;
 	default:
 		log_info(logger, "No encontre la instruccion");
 		break;
@@ -321,9 +346,11 @@ motivo de la interrupción. Caso contrario, se descarta la interrupción.
 Cabe aclarar que en todos los casos el Contexto de Ejecución debe ser devuelto a través de la
 conexión de dispatch, quedando la conexión de interrupt dedicada solamente a recibir mensajes de
 interrupción.*/
-void actualizar_cde(t_cde *contexto, char **instruccion)
+void actualizar_cde(t_cde *contexto)
 {
+	contexto->registros = registros;
 }
+
 t_tipoDeInstruccion obtener_instruccion(char *instruccion)
 {
 	if (strcmp("SET", instruccion) == 0)

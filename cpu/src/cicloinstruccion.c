@@ -123,56 +123,56 @@ void exec_jnz(char *registro, uint32_t numeroInstruccion)
     {
         if (registros->AX != 0)
         {
-            cde->registros->PC = numeroInstruccion;
+            cde->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "BX") == 0)
     {
         if (registros->BX != 0)
         {
-            cde->registros->PC = numeroInstruccion;
+            cde->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "CX") == 0)
     {
         if (registros->CX != 0)
         {
-            cde->registros->PC = numeroInstruccion;
+            cde->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "DX") == 0)
     {
         if (registros->DX != 0)
         {
-            cde->registros->PC = numeroInstruccion;
+            cde->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "EAX") == 0)
     {
         if (registros->EAX != 0)
         {
-            cde->registros->PC = numeroInstruccion;
+            cde->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "EBX") == 0)
     {
         if (registros->EBX != 0)
         {
-            cde->registros->PC = numeroInstruccion;
+            cde->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "ECX") == 0)
     {
         if (registros->ECX != 0)
         {
-            cde->registros->PC = numeroInstruccion;
+            cde->PC = numeroInstruccion;
         }
     }
     if (strcmp(registro, "EDX") == 0)
     {
         if (registros->EDX != 0)
         {
-            cde->registros->PC = numeroInstruccion;
+            cde->PC = numeroInstruccion;
         }
     }
 }
@@ -208,13 +208,14 @@ void exec_exit()
     /*EXIT: Esta instrucción representa la syscall de finalización del proceso. Se deberá devolver el
 Contexto de Ejecución actualizado al Kernel para su finalización.*/
     int socket_kernel;
+    salida_exit = 0;
     enviar_cod_enum(socket_kernel, FINALIZAR_PROCESO);
     // cuando enviamos el finalizar_proceso, el kernel debe enviar el proceso a exit
     tipo_buffer *buffer = crear_buffer();
     t_cde *cde = malloc(sizeof(t_cde));
     // suponemos que el cde es global
     agregar_buffer_para_enterosUint32(buffer, cde->pid);
-    agregar_buffer_para_enterosUint32(buffer, cde->registros->PC);
+    agregar_buffer_para_enterosUint32(buffer, cde->PC);
     enviar_buffer(buffer, socket_kernel);
 }
 // OBTENER VALORES

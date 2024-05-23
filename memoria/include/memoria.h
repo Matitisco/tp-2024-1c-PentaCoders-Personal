@@ -37,6 +37,7 @@ void *recibirIO();
 // void iniciar_sem_globales();
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
 void finalizar_proceso(int cliente_fd, tipo_buffer *buffer);
+char *obtener_ruta(char *nombre_archivo);
 void eliminar_proceso(int pid_a_eliminar);
 t_pcb *buscar_proceso_por_pid(int pid);
 void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos);
@@ -46,7 +47,15 @@ t_instruccion *crearInstruccion(char *linea);
 _Bool estaElContextoConCiertoPID(t_cde *contexto);
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde *armarCde(tipo_buffer *buffer);
-int cantidad_de_parametros_instruccion(t_instruccion *instruccion);
+
+
+
+void obtener_y_eliminar_cde(int pid);
+void eliminar_cde(t_cde *cde);
+void liberar_registros(t_registros *registros);
+void finalizar_proceso(int kernel, tipo_buffer *buffer);
+
+
 
 
 #endif
