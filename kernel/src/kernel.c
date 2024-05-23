@@ -130,6 +130,7 @@ void *levantarIO(void *ptr)
 	}
 	return NULL;
 }
+
 char *obtener_interfaz(enum_interfaz interfaz)
 {
 	if (interfaz == GENERICA)
@@ -150,6 +151,7 @@ char *obtener_interfaz(enum_interfaz interfaz)
 	}
 	return "NO SE ENTIENDE LA INTERFAZ ENVIADA";
 }
+
 bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre)
 {
 	return strcmp(elem_lista, interfaz_nombre) == 0;
@@ -206,9 +208,7 @@ void iniciar_semaforos()
 	sem_init(procesos_en_block, 0, 0);
 	sem_init(procesos_en_exit, 0, 0);
 	sem_init(binario_menu_lp, 0, 0);
-
-	sem_init(exec_libre, 0,1);
-
+	sem_init(exec_libre, 0, 1);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(sem_agregar_a_estado, 0, 0);
 }
@@ -261,17 +261,62 @@ void *levantar_CPU_Interrupt(void *ptr)
 	socket_cpu_interrupt = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU INTERRUPT");
 	free(datosConexion);
 }
+
 void *levantar_CPU_Dispatch(void *ptr)
 {
 	t_args *datosConexion = malloc(sizeof(t_args));
 	datosConexion = (t_args *)ptr;
 	socket_cpu_dispatch = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU DISPATCH");
-	
-	
-
 	free(datosConexion);
-	
+
+	while (1)
+	{
+		op_code operacion = recibir_operacion(socket_cpu_dispatch);
+		tipo_buffer *buffer_desde_cpu = recibir_buffer(socket_cpu_dispatch);
+
+		switch (operacion)
+		{
+		case FINALIZAR_PROCESO:
+			t_cde *cde_proceso_finalizado = leer_cde(buffer_desde_cpu);
+			t_pcb *proceso_interrumpido = sacar_procesos_cola(cola_exec_global, exec_libre);
+			proceso_interrumpido->cde = cde_proceso_finalizado;
+			agregar_a_estado(proceso_interrumpido, cola_exit_global, procesos_en_exit);
+			break;
+		case INTERRUPCION:
+			atender_interrupciones();
+			break;
+		}
+	}
 }
+void atender_interrupciones()
+{
+	tipo_buffer * buffer_desde_cpu = crear_buffer();
+	op_code motivo_interrupcion = leer_buffer_enteroUint32(buffer_desde_cpu);
+
+	switch (motivo_interrupcion)
+	{
+	case FIN_DE_QUANTUM:
+		t_cde *cde_proceso_interrumpido = leer_cde(buffer_desde_cpu);
+		t_pcb *proceso_interrumpido = sacar_procesos_cola(cola_exec_global, exec_libre);
+		proceso_interrumpido->cde = cde_proceso_interrumpido;
+		agregar_a_estado(proceso_interrumpido, cola_ready_global, procesos_en_ready);
+		free(proceso_interrumpido);
+		break;
+	case BLOQUEADO_POR_IO:
+		cde_proceso_interrumpido = leer_cde(buffer_desde_cpu);
+		proceso_interrumpido = sacar_procesos_cola(cola_exec_global, exec_libre);
+		proceso_interrumpido->cde = cde_proceso_interrumpido;
+		agregar_a_estado(proceso_interrumpido, cola_bloqueado_global, procesos_en_block);
+		free(proceso_interrumpido);
+		break;
+	case FINALIZAR_PROCESO:
+
+	default:
+		log_error(logger, "Motivo de interrupcion incorrecto");
+		break;
+	}
+}
+
 void recibir_orden_interfaces_de_cpu(char **interfaces)
 {
 	op_code mensaje = recibir_operacion(socket_cpu_dispatch);

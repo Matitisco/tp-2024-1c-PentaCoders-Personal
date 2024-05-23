@@ -203,7 +203,7 @@ void exec_io_fs_truncate() {}
 void exec_io_fs_write() {}
 void exec_io_fs_read() {}
 // EXIT
-void exec_exit()
+void exec_exit(t_cde *cde)
 {
     /*EXIT: Esta instrucción representa la syscall de finalización del proceso. Se deberá devolver el
 Contexto de Ejecución actualizado al Kernel para su finalización.*/
@@ -212,10 +212,9 @@ Contexto de Ejecución actualizado al Kernel para su finalización.*/
     enviar_cod_enum(socket_kernel, FINALIZAR_PROCESO);
     // cuando enviamos el finalizar_proceso, el kernel debe enviar el proceso a exit
     tipo_buffer *buffer = crear_buffer();
-    t_cde *cde = malloc(sizeof(t_cde));
-    // suponemos que el cde es global
-    agregar_buffer_para_enterosUint32(buffer, cde->pid);
-    agregar_buffer_para_enterosUint32(buffer, cde->PC);
+   
+    agregar_cde_buffer(buffer, cde);
+
     enviar_buffer(buffer, socket_kernel);
 }
 // OBTENER VALORES

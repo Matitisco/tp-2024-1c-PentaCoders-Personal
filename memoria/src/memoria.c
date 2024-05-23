@@ -315,7 +315,7 @@ void obtener_y_eliminar_cde(int pid)
 
 void eliminar_cde(t_cde *cde)
 {
-    list_clean_and_destroy_elements(cde->lista_instrucciones);
+    list_clean(cde->lista_instrucciones);
     free(cde->path);
     liberar_registros(cde->registros);
     // el pid y el pc no se liberan manualmente

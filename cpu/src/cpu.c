@@ -4,9 +4,9 @@ config_cpu *valores_config_cpu;
 
 /*Variables globales*/
 
-/*Variables de interrupcion*/
-int findequantum = 0;
-int findeio = 0;
+int interrupcion_rr;
+int interrrupcion_fifo;
+int interrupcion_entrada_salida;
 
 int CONEXION_A_MEMORIA;
 int socket_memoria;
@@ -23,12 +23,18 @@ t_args *kernel_ds;
 t_args *kernel_int;
 pthread_mutex_t *mutex_cde_ejecutando;
 
+t_cde *cde_recibido;
+
 int main(int argc, char *argv[])
 {
 	logger = iniciar_logger("cpu.log", "CPU");
 	valores_config_cpu = configurar_cpu(); // CONFIG
 
 	iniciar_registros();
+
+	interrupcion_rr = 0;
+	interrrupcion_fifo = 0;
+	interrupcion_entrada_salida = 0;
 
 	iniciar_hilos_CPU(valores_config_cpu);
 	iniciar_semaforos_CPU();
@@ -58,6 +64,7 @@ void crearHilos_CPU(t_args *args_memoria, t_args *kernel_int, t_args *kernel_dis
 	pthread_create(&hilo_CPU_SERVIDOR_DISPATCH, NULL, levantar_Kernel_Dispatch, (void *)kernel_dis);
 	pthread_create(&hilo_CPU_SERVIDOR_INTERRUPT, NULL, levantar_Kernel_Interrupt, (void *)kernel_int);
 }
+
 void iniciar_registros()
 {
 	registros = malloc(sizeof(t_registros));
@@ -88,31 +95,30 @@ void levantar_Kernel_Dispatch(void *ptr)
 		case EJECUTAR_PROCESO:
 			log_info(logger, "EJECUTAR PROCESO");
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
-			t_cde *cde_recibido = leer_cde(buffer_cde);
+
+			cde_recibido = leer_cde(buffer_cde); // variable global
 
 			log_info(logger, "Me llego el proceso a ejecutar con PID: %d", cde_recibido->pid);
 			salida_exit = 1;
 
 			while (salida_exit)
 			{
-				char *linea_instruccion = fetch(cde_recibido); // MOV AX BX
-
-				cde_recibido->PC++;						  // Incrementamos el Program Counter
-				char **array_instruccion = decode(linea_instruccion); //["MOV","AX","BX"]
+				char *linea_instruccion = fetch(cde_recibido);
+				cde_recibido->PC++;
+				char **array_instruccion = decode(linea_instruccion);
 
 				execute(array_instruccion, cde_recibido);
-				// check_interrupt(cde_recibido->pid);
+				check_interrupt();
 				//  while(interrupcion);
 
 				// pthread_mutex_lock(&mutex_cde_ejecutando);
 
 				// pthread_mutex_unlock(&mutex_cde_ejecutando);
-
-				// sem_post(GRADO_MULTIPROGRAMACION); // aumenta en uno el grado de multipgramacion
-				// sem_post(exec_libre);
 			}
 			destruir_buffer(buffer_cde);
 
+			// sem_post(GRADO_MULTIPROGRAMACION); // son de otro modulo, lo tiene que hacer kernel dispatch
+			// sem_post(exec_libre);
 			break;
 		case -1:
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
@@ -135,13 +141,16 @@ void levantar_Kernel_Interrupt(void *ptr)
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_interrupt);
-		tipo_buffer *buffer = recibir_buffer(socket_kernel_interrupt);
+		// tipo_buffer *buffer = recibir_buffer(socket_kernel_interrupt);
 
-		t_cde *cde_recibido = leer_cde(buffer);
-		// envia la conexion
+		// t_cde *cde_recibido = leer_cde(buffer);
+		//  envia la conexion
 		switch (codigo)
 		{
 		case PROCESO_INTERRUMPIDO:
+			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
+			interrupcion_rr = leer_buffer_enteroUint32(buffer_cde);
+
 			// replanificar
 			/* 			int proceso_a_interrumpir = leer_buffer_enteroUint32(buffer);
 						destruir_buffer(buffer);
@@ -154,21 +163,18 @@ void levantar_Kernel_Interrupt(void *ptr)
 						} */
 
 			break;
-		case SOLICITUD_EXIT: // el kernel nos pide que paremos el proceso para poder eliminarlo
-							 // el kernel ejecuta la opcion de eliminar proceso
-							 /* 			int proceso_a_eliminar = leer_buffer_enteroUint32(buffer); // id del proceso
-										 if (proceso_a_eliminar == proceso_en_ejecucion())
-										 {
-										 }
-										 else
-										 {
-											 log_info(logger, "La interrupcion que llego no es para el proceso que esta en ejecucion");
-										 } */
+		case SOLICITUD_EXIT:
+			tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt); // recibo el buffer de kernel
+			int pid = leer_buffer_enteroUint32(buffer_kernel);					  // id del proceso
+			destruir_buffer(buffer_kernel);
+			// si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
+			// pidiendo que desaloje el proceso de la cpu y retorne el cde
 
+			// guardamos en una lista las interrupciones que luego va a ser leida por check_interrupt aplicar semaforos mutex
+			break;
 		case -1:
 			log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
 			return EXIT_FAILURE;
-
 		default:
 			// destruir_buffer_nuestro(buffer);
 			log_error(logger, "Codigo de operacion desconocido.");
@@ -189,12 +195,12 @@ void *conexionAMemoria(void *ptr)
 
 char *fetch(t_cde *contexto)
 {
-	enviar_cod_enum(socket_memoria, PEDIDO_INSTRUCCION); // Pido la instruccion MOV AX BX
+	enviar_cod_enum(socket_memoria, PEDIDO_INSTRUCCION);
 	tipo_buffer *buffer = crear_buffer();
-	// actualizo el buffer escribiendo
-	agregar_buffer_para_enterosUint32(buffer, contexto->pid);			// consigo el procoeso asoc
-	log_info(logger,"%d",contexto->PC);
-	agregar_buffer_para_enterosUint32(buffer, contexto->PC); // con esto la memoria busca la prox ins a ejecutar
+
+	agregar_buffer_para_enterosUint32(buffer, contexto->pid);
+	agregar_buffer_para_enterosUint32(buffer, contexto->PC);
+	contexto->path = NULL; // no es relevante
 	enviar_buffer(buffer, socket_memoria);
 	destruir_buffer(buffer);
 
@@ -202,9 +208,9 @@ char *fetch(t_cde *contexto)
 
 	if (operacion_desde_memoria == ENVIAR_INSTRUCCION_CORRECTO)
 	{
-		tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);	   // memoria devuelvo MOV AX BX
-		char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion); // obtenemos la linea instruccion
-		log_info(logger, "Me llego la linea de instruccion %s", linea_de_instruccion);
+		tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);
+		char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion);
+		// log_info(logger, "Me llego la linea de instruccion %s", linea_de_instruccion);
 		destruir_buffer(bufferProximaInstruccion);
 		return linea_de_instruccion;
 	}
@@ -217,15 +223,14 @@ char *fetch(t_cde *contexto)
 
 char **decode(char *linea_de_instrucion)
 {
-	// AGARRA MOV AX BX
 	// falta implementar la parte de si se encesita traduccion de dir logica a fisica
-	char **instruccion = string_split(linea_de_instrucion, " "); // DEVUELVE ARRAY ["MOV","AX","BX"]
-	return instruccion;											 //["MOV","AX","BX"]
+	char **instruccion = string_split(linea_de_instrucion, " ");
+	return instruccion;
 }
 // Contexto de ejecucion
 void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 {
-	t_tipoDeInstruccion cod_instruccion = obtener_instruccion(instruccion[0]); // instrucicon parametro1 parametro2 parametro3
+	t_tipoDeInstruccion cod_instruccion = obtener_instruccion(instruccion[0]); // instruccion parametro1 parametro2 parametro3
 	switch (cod_instruccion)
 	{
 	case SET: // SET AX 1
@@ -243,15 +248,15 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		exec_sum(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
-	    break;
+		break;
 	case SUB: // SUB AX BX
 		exec_sub(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case JNZ: // JNZ AX 4
-		actualizar_cde(contextoProceso);
 		exec_jnz(instruccion[1], atoi((instruccion[2])));
+		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case RESIZE:
@@ -293,8 +298,8 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		break;
 	case EXIT:
+		exec_exit(contextoProceso);
 		actualizar_cde(contextoProceso);
-		exec_exit();
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
 		break;
 	default:
@@ -303,43 +308,30 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 	}
 }
 
-void check_interrupt(uint32_t pid_en_cpu)
+void check_interrupt()
 {
-	op_code codigo = recibir_operacion(socket_kernel_interrupt);
-	// int interrupcion;
-	if (codigo == PROCESO_INTERRUMPIDO) // por fin de quantum
+	tipo_buffer *buffer_cde = crear_buffer();
+	agregar_cde_buffer(buffer_cde, cde_recibido);
+	enviar_cod_enum(socket_kernel_dispatch, INTERRUPCION);
+	if (interrupcion_rr)
 	{
-		t_cde *cde = buscar_cde(pid_en_cpu);
-		tipo_buffer *buffer = crear_buffer();
-		agregar_cde_buffer(buffer, cde);
-		enviar_buffer(buffer, socket_kernel_dispatch);
-		// MOTIVOS
-		if (findequantum == 1)
-		{
-			enviar_cod_enum(socket_kernel_dispatch, FINDEQUANTUM);
-		}
-		else if (findeio == 1)
-		{
-			enviar_cod_enum(socket_kernel_dispatch, FINDEIO);
-		}
-
-		// tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt);
-		// int pid_interrumpido = leer_buffer_enteroUint32(buffer_kernel);
-		// if (pid_interrumpido == pid_en_cpu)
-		//{
-
-		// conseguimos el cde del proceso que esta en la cpu para luego devolverlo acutalizado al kernel
-		//}
-		// interrupcion = 1; // Hacer una var interrupcion que este en 1 ??
+		agregar_buffer_para_enterosUint32(buffer_cde, FIN_DE_QUANTUM);
+		interrupcion_rr = 0;
+		// accede a la lista de interrupciones
+	}
+	else if (interrrupcion_fifo)
+	{
+		agregar_buffer_para_enterosUint32(buffer_cde, BLOQUEADO_POR_IO);
+		interrrupcion_fifo = 0;
 	}
 	else
 	{
-		t_cde *cde = buscar_cde(pid_en_cpu);
-		tipo_buffer *buffer = crear_buffer();
-		agregar_cde_buffer(buffer, cde);
-		enviar_buffer(buffer, socket_kernel_dispatch);
+		log_info(logger, "No hay interrupciones");
 	}
+	enviar_buffer(buffer_cde, socket_kernel_dispatch);
+	destruir_buffer(buffer_cde);
 }
+
 /*En este momento, se deberá chequear si el Kernel nos envió una interrupción al PID que se está
 ejecutando, en caso afirmativo, se devuelve el Contexto de Ejecución actualizado al Kernel con
 motivo de la interrupción. Caso contrario, se descarta la interrupción.
@@ -445,9 +437,4 @@ config_cpu *configurar_cpu()
 	valores_config_cpu->cantidad_entradas_tlb = config_get_int_value(valores_config_cpu->config, "CANTIDAD_ENTRADAS_TLB");
 
 	return valores_config_cpu;
-}
-t_cde *buscar_cde(uint32_t pid)
-{
-
-	return NULL;
 }

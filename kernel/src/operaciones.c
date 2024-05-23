@@ -98,14 +98,28 @@ void iniciar_proceso(char *PATH)
 // pidiendo que desaloje el proceso de la cpu y retorne el cde
 // al eliminar se habilita +1 grado multiprogramacion
 
+/*● Finalizar proceso: Se encargará de finalizar un proceso que se encuentre dentro del sistema.
+Este mensaje se encargará de realizar las mismas operaciones como si el proceso llegara a
+EXIT por sus caminos habituales (deberá liberar recursos, archivos y memoria).
+Nomenclatura: FINALIZAR_PROCESO [PID]*/
+
 void finalizar_proceso(uint32_t PID)
 {
+    //buscamos el proceso en la cola de exec
     t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado);
 
-    if (proceso == NULL)
-        enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
-    else
+    if (proceso == NULL){// puede estar en new, ready, blocked
+        enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO); // enviamos solicitud a la memoria
+      }  // para que finalice el proceso
+    else{
         enviar_cod_enum(socket_cpu_interrupt, SOLICITUD_EXIT); // pero si el proceso esta ejecutandose en la cpu
+        tipo_buffer* buffer_cpu_interrupt= crear_buffer();
+        agregar_buffer_para_enterosUint32(buffer_cpu_interrupt, PID);
+        enviar_buffer(buffer_cpu_interrupt,socket_cpu_interrupt);
+        
+    }
+ //si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
+// pidiendo que desaloje el proceso de la cpu y retorne el cde
 
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, PID);
@@ -208,12 +222,12 @@ void liberar_proceso(t_pcb *proceso)
 
 void liberar_recursos(t_pcb *proceso)
 {
-    list_destroy_and_destroy_elements(proceso->recursosAsignados);
+    list_destroy(proceso->recursosAsignados);
 }
 
 void liberar_archivos(t_pcb *proceso)
 {
-    list_destroy_and_destroy_elements(proceso->archivosAsignados);
+    list_destroy(proceso->archivosAsignados);
 }
 
 void modificar_grado_multiprogramacion(int valor)
@@ -309,7 +323,6 @@ t_pcb *crear_proceso(char *PATH)
 {
     t_pcb *proceso_nuevo = malloc(sizeof(t_pcb)); // reservamos memoria para el proces
     proceso_nuevo->estado = NEW;
-
     proceso_nuevo->archivosAsignados = list_create();
     proceso_nuevo->recursosAsignados = list_create();
     proceso_nuevo->cde = iniciar_cde(PATH);
@@ -319,7 +332,6 @@ t_pcb *crear_proceso(char *PATH)
 t_cde *iniciar_cde(char *PATH)
 {
     t_cde *cde = malloc(sizeof(t_cde));
-
     cde->pid = PID_GLOBAL;
     PID_GLOBAL++;
     cde->path = malloc(strlen(PATH) + 1);

@@ -7,7 +7,8 @@
 			"string_view": "c",
 			"initializer_list": "c",
 			"utility": "c",
-			"string": "c"
+			"string": "c",
+			"random": "c"
 		},
 		"C_Cpp.errorSquiggles": "disabled",
 	},
