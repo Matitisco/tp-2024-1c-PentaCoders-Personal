@@ -17,6 +17,7 @@ sem_t *GRADO_MULTIPROGRAMACION;
 // Semaforos de binarios
 sem_t *binario_menu_lp;
 sem_t *b_largo_plazo_exit;
+sem_t *b_transicion_exec_ready;
 
 sem_t *b_exec_libre;
 
@@ -36,6 +37,7 @@ pthread_t hiloCPUINT;
 pthread_t hiloCPUDS;
 pthread_t hiloConsola;
 pthread_t largo_plazo_exit;
+pthread_t t_transicion_exec_ready;
 
 t_list *lista_interfaces;
 t_args *args_MEMORIA;
@@ -68,6 +70,7 @@ int main(int argc, char *argv[])
 	pthread_join(hiloIO, NULL);
 	pthread_join(hiloConsola, NULL);
 	pthread_join(largo_plazo_exit, NULL);
+	pthread_join(t_transicion_exec_ready, NULL);
 	// LIBERAR COSAS
 	liberar_conexion(socket_memoria);
 }
@@ -92,6 +95,7 @@ void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_ar
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
+	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
 }
 
 void *levantarIO()
@@ -204,6 +208,7 @@ void iniciar_semaforos()
 	b_largo_plazo_exit = malloc(sizeof(sem_t));
 	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
 	b_exec_libre = malloc(sizeof(sem_t));
+	b_transicion_exec_ready = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 
@@ -212,6 +217,7 @@ void iniciar_semaforos()
 	sem_init(b_reanudar_corto_plazo, 0, 0);
 	sem_init(b_exec_libre, 0, 1);
 	sem_init(b_largo_plazo_exit, 0, 0);
+	sem_init(b_transicion_exec_ready, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -274,24 +280,35 @@ void *levantar_CPU_Dispatch(void *ptr)
 	while (1)
 	{
 
-		op_code otro_codigo = recibir_operacion(socket_cpu_dispatch);
+		op_code cod = recibir_operacion(socket_cpu_dispatch); // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
 
-		if (otro_codigo == FINALIZAR_PROCESO)
+		t_cde *cde;
+		tipo_buffer *buffer_cpu;
+
+		switch (cod)
 		{
-			log_info(logger, "Recibi Finalizar proceso");
+		case FINALIZAR_PROCESO:
 
-			tipo_buffer *buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
+			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
 
-			t_cde *cde = leer_cde(buffer_cpu);
+			cde = leer_cde(buffer_cpu);
 
 			log_info(logger, "Se finalizo el proceso: %d", cde->pid);
 
 			sem_post(b_largo_plazo_exit); // otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
-		}
-		else
-		{
-			// FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
+			break;
+		case FIN_DE_QUANTUM:
+			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde->pid);
+
+			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
+
+			cde = leer_cde(buffer_cpu);
+			sem_post(b_transicion_exec_ready);
+			break;
+
+		default:
 			// log_info(logger, "No se pudo finalizar el proceso %d", PID);
+			break;
 		}
 	}
 }

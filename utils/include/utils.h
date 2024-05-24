@@ -55,8 +55,12 @@ typedef enum
 	FIN_DE_QUANTUM,	//cpu, kernel
 	BLOQUEADO_POR_IO,
 	INTERRUPCION,
+<<<<<<< HEAD
 	SOLICITUD_CONEXION_IO,
 	EJECUCION_IO_GEN_SLEEP_EXITOSA
+=======
+	PROCESO_INTERRUMPIDO_QUANTUM
+>>>>>>> refs/remotes/origin/main
 } op_code;
 typedef enum
 {
