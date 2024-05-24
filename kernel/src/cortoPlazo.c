@@ -205,30 +205,6 @@ void planificar_por_rr()
 
 
 
-/* 
-void controlar_tiempo_de_ejecucion(){  
-    while(1){
-        sem_wait(&sem_iniciar_quantum);
-
-        uint32_t pid_pcb_before_start_clock = pcb_en_ejecucion->cde->pid;
-        bool flag_clock_pcb_before_start_clock = pcb_en_ejecucion->flag_clock;
-
-        usleep(config_kernel.quantum * 1000);
-
-        if(pcb_en_ejecucion != NULL)
-            pcb_en_ejecucion->fin_q = true;
-
-        if(pcb_en_ejecucion != NULL && pid_pcb_before_start_clock == pcb_en_ejecucion->cde->pid && flag_clock_pcb_before_start_clock == pcb_en_ejecucion->flag_clock){
-            enviar_codigo(socket_cpu_interrupt, DESALOJO);
-
-            t_buffer* buffer = crear_buffer_nuestro();
-            buffer_write_uint32(buffer, pcb_en_ejecucion->cde->pid); // lo enviamos porque interrupt recibe un buffer, pero no hacemos nada con esto
-            enviar_buffer(buffer, socket_cpu_interrupt);
-            destruir_buffer_nuestro(buffer);
-        }
-        sem_post(&sem_reloj_destruido);
-    }
-} */
 
 
 
