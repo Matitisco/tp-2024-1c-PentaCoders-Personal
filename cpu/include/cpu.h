@@ -18,7 +18,7 @@
 
 // char *PUERTO_MEMORIA;
 //  t_log *logger;
-//  int socket_kernel_dispatch;
+extern int socket_kernel_dispatch;
 //  int socket_kernel_interrupt;
 extern t_registros *registros;
 // Variable Global
@@ -87,6 +87,6 @@ void exec_io_fs_delete();
 void exec_io_fs_truncate();
 void exec_io_fs_write();
 void exec_io_fs_read();
-void exec_exit();
+void exec_exit(t_cde* cde);
 
 #endif

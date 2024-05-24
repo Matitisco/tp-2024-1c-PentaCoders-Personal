@@ -97,6 +97,7 @@ extern sem_t *sem_kernel;
 extern sem_t *sem_kernel_io_generica;
 //Binarios
 extern sem_t *binario_menu_lp;
+extern sem_t *b_largo_plazo_exit;
 
 extern sem_t *exec_libre;
 extern sem_t *b_reanudar_largo_plazo;
@@ -145,7 +146,11 @@ void iniciar_hilos(config_kernel *valores_config);
 // planificadores
 
 void *largo_plazo();
+void *transicion_exit_largo_plazo();
+
+
 void *corto_plazo();
+
 
 // funciones de io
 

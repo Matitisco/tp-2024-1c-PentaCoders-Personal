@@ -98,7 +98,7 @@ void iniciar_proceso(char *PATH)
 // pidiendo que desaloje el proceso de la cpu y retorne el cde
 // al eliminar se habilita +1 grado multiprogramacion
 
-void finalizar_proceso(uint32_t PID)
+void finalizar_proceso(uint32_t PID) 
 {
     t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado);
 
@@ -111,23 +111,7 @@ void finalizar_proceso(uint32_t PID)
     agregar_buffer_para_enterosUint32(buffer, PID);
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
-    op_code otro_codigo = recibir_operacion(socket_memoria);
-
-    if (otro_codigo == FINALIZAR_PROCESO)
-    {
-        log_info(logger, "Finaliza el proceso %d - Motivo:", proceso->cde->pid);
-
-        agregar_a_estado(proceso, cola_exit_global, procesos_en_exit); // moverlo a la cola de exit
-        liberar_proceso(proceso);
-        log_info(logger, "Se finalizo el proceso %u \n", PID);
-
-        sem_post(&GRADO_MULTIPROGRAMACION);
-    }
-    else
-    {
-        // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
-        log_info(logger, "No se pudo finalizar el proceso %d", PID);
-    }
+    
 }
 
 // INICIAR PLANIFICACION
@@ -199,22 +183,34 @@ t_pcb *buscarProceso(uint32_t pid)
     }
 } */
 
-void liberar_proceso(t_pcb *proceso)
+/* void liberar_proceso(t_pcb *proceso)
 {
     liberar_recursos(proceso);
     liberar_archivos(proceso);
     proceso->estado = EXIT;
+} */
+
+/* void liberar_recursos(t_pcb *proceso)
+{
+    list_destroy_and_destroy_elements(proceso->recursosAsignados, destroy_recursos);
 }
 
-void liberar_recursos(t_pcb *proceso)
-{
-    list_destroy_and_destroy_elements(proceso->recursosAsignados);
+void* destroy_recursos(void* element) {
+    void* recurso = (void*)element;
+    free(recurso);
 }
+ */
 
 void liberar_archivos(t_pcb *proceso)
 {
-    list_destroy_and_destroy_elements(proceso->archivosAsignados);
+    list_destroy_and_destroy_elements(proceso->archivosAsignados, destroy_archivos);
 }
+
+void* destroy_archivos(void* element) {
+    char* archivo = (char*)element;
+    free(archivo);
+}
+
 
 void modificar_grado_multiprogramacion(int valor)
 {

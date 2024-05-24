@@ -43,4 +43,6 @@ void liberar_cde(t_pcb *proceso);
 void liberar_recursos(t_pcb *proceso);
 void liberar_archivos(t_pcb *proceso);
 
+void* destroy_archivos(void* element);
+
 #endif

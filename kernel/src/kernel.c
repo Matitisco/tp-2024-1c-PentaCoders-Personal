@@ -22,10 +22,13 @@ sem_t *exec_libre;
 
 // Semaforos de binarios
 sem_t *binario_menu_lp;
+sem_t *b_largo_plazo_exit;
 
 sem_t *sem_agregar_a_estado;
 
 sem_t *b_reanudar_largo_plazo;
+
+
 int habilitar_largo_plazo;
 
 int QUANTUM;
@@ -36,6 +39,8 @@ pthread_t hiloCortoPlazo;
 pthread_t hiloCPUINT;
 pthread_t hiloCPUDS;
 pthread_t hiloConsola;
+pthread_t largo_plazo_exit;
+
 
 t_args *args_MEMORIA;
 t_args *args_IO;
@@ -65,6 +70,7 @@ int main(int argc, char *argv[])
 	pthread_join(hiloCPUINT, NULL);
 	pthread_join(hiloIO, NULL);
 	pthread_join(hiloConsola, NULL);
+	pthread_join(largo_plazo_exit, NULL);
 	// LIBERAR COSAS
 	liberar_conexion(socket_memoria);
 }
@@ -86,7 +92,11 @@ void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_ar
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
+	pthread_create(&largo_plazo_exit, NULL,transicion_exit_largo_plazo, NULL);
 }
+
+
+
 void *levantarIO(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
@@ -199,6 +209,8 @@ void iniciar_semaforos()
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
 	exec_libre = malloc(sizeof(sem_t));
 
+	b_largo_plazo_exit = malloc(sizeof(sem_t));
+
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(procesos_en_new, 0, 0);
 	sem_init(procesos_en_ready, 0, 0);
@@ -211,6 +223,8 @@ void iniciar_semaforos()
 
 	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(sem_agregar_a_estado, 0, 0);
+
+	sem_init(b_largo_plazo_exit,0,0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -267,6 +281,31 @@ void *levantar_CPU_Dispatch(void *ptr)
 	datosConexion = (t_args *)ptr;
 	socket_cpu_dispatch = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU DISPATCH");
 	
+	op_code otro_codigo = recibir_operacion(socket_cpu_dispatch);
+	
+    if (otro_codigo == FINALIZAR_PROCESO)
+    {
+		log_info(logger, "Recibi Finalizar proceso");
+		
+		tipo_buffer*buffer_cpu = recibir_buffer(socket_cpu_dispatch);//recibo buffer
+
+		t_cde *cde = leer_cde(buffer_cpu);
+
+		log_info(logger,"Se finalizo el proceso: %d", cde->pid);
+
+		sem_post(b_largo_plazo_exit); //otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
+
+		
+		
+        
+
+    }
+    else
+    {
+        // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
+        //log_info(logger, "No se pudo finalizar el proceso %d", PID);
+    }
+
 	
 
 	free(datosConexion);

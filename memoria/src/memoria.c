@@ -315,11 +315,19 @@ void obtener_y_eliminar_cde(int pid)
 
 void eliminar_cde(t_cde *cde)
 {
-    list_clean_and_destroy_elements(cde->lista_instrucciones);
+    list_clean_and_destroy_elements(cde->lista_instrucciones, destroy_instruccion);
     free(cde->path);
     liberar_registros(cde->registros);
     // el pid y el pc no se liberan manualmente
 }
+
+
+void* destroy_instruccion(void* element) {
+    char* instruccion = (char*)element;
+    free(instruccion);
+}
+
+
 
 void liberar_registros(t_registros *registros)
 {

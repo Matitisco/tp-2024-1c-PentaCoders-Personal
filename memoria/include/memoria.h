@@ -55,7 +55,7 @@ void eliminar_cde(t_cde *cde);
 void liberar_registros(t_registros *registros);
 void finalizar_proceso(int kernel, tipo_buffer *buffer);
 
-
+void* destroy_instruccion(void* element);
 
 
 #endif

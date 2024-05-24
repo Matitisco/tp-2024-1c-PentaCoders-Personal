@@ -79,7 +79,7 @@ void levantar_Kernel_Dispatch(void *ptr)
 	argumento = (t_args *)ptr;
 	int server_fd = iniciar_servidor(argumento->logger, "CPU Dispatch", argumento->ip, argumento->puerto);
 	log_info(logger, "Esperando KERNEL DISPATCH....");
-	int socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
+	socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_dispatch);
@@ -294,7 +294,7 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		break;
 	case EXIT:
 		actualizar_cde(contextoProceso);
-		exec_exit();
+		exec_exit(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
 		break;
 	default:

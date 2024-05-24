@@ -391,11 +391,12 @@ t_cde *leer_cde(tipo_buffer *buffer)
 }
 void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
 {
-    // t_list *lista_instrucciones;
-    // agregar_buffer_para_enterosUint32(buffer,cde->pid);
-    // agregar_buffer_para_string(buffer, cde->path);
-    // agregar_buffer_para_registros(buffer,cde->registros);
-    //agregar_buffer_para_enterosUint32(buffer,cde->PC);
+    //t_list *lista_instrucciones;
+    agregar_buffer_para_enterosUint32(buffer,cde->pid);
+    agregar_buffer_para_enterosUint32(buffer,cde->PC);
+    //agregar_buffer_para_string(buffer, cde->path);
+    agregar_buffer_para_registros(buffer,cde->registros);
+    
 }
     
 
