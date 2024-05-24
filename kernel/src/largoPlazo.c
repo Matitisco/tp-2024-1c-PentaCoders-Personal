@@ -80,3 +80,6 @@ void *transicion_exit_largo_plazo(){
     }
     
 }
+
+
+

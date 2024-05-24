@@ -51,7 +51,7 @@ void *corto_plazo()
     }
     else if (strcmp(valores_config->algoritmo_planificacion, "RR") == 0)
     {
-        quantum = temporal_create();
+        
         planificar_por_rr();
     }
     else if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
@@ -141,60 +141,106 @@ void enviar_cde(int conexion, t_cde *cde)
     enviar_buffer(buffer, socket_cpu_dispatch);
 }
 // ROUND ROBIN
+
+
+/* t_pcb *proceso = malloc(sizeof(t_pcb));
+    sem_wait(b_exec_libre); // deja de estar libre exec  EL SEM_POST DEBE ESTAR EN CPU, YA QUE ES CUANDO DEJAMOS LA COLA DE READY LIBRE.
+    sem_wait(cola_ready_global->contador); // cantidad procesos en ready
+                               
+    proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
+    agregar_a_estado(proceso, cola_exec_global);
+    
+
+    // ENVIA A CPU
+    enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
+    enviar_cde(socket_cpu_dispatch, proceso->cde);
+    log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por FIFO\n", proceso->cde->pid);
+
+ */
 void planificar_por_rr()
 {
     t_pcb *proceso = malloc(sizeof(t_pcb));
 
-    // primer proceso que meto
-
-    pthread_mutex_lock(mutex_cola_ready);
-    proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-    pthread_mutex_unlock(mutex_cola_ready);
-
-    pthread_mutex_lock(mutex_cola_exec);
-    agregar_a_estado(proceso, cola_exec_global);
-    pthread_mutex_unlock(mutex_cola_exec);
-
-    enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
-    enviar_cde(socket_cpu_dispatch, proceso->cde);
-    log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
+    
     while (1)
     {
+        sem_wait(b_exec_libre); // deja de estar libre exec  EL SEM_POST DEBE ESTAR EN CPU, YA QUE ES CUANDO DEJAMOS LA COLA DE READY LIBRE.
+        sem_wait(cola_ready_global->contador);
+        quantum = temporal_create();
+        // primer proceso que meto
+        proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
+        agregar_a_estado(proceso, cola_exec_global);
+    
+
+        enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
+        enviar_cde(socket_cpu_dispatch, proceso->cde);
+        log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
+        
         // P1 4 RAFAGAS q = 2
-        while (temporal_gettime(quantum) != QUANTUM)
+        log_info(logger,"Inicio de QUANTUM");
+        
+
+        usleep(QUANTUM * 1000);
+
+        enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);     //Hay que hacer que un hilo reciba el retorno de la interrupcion de CPU y que habilite con un binario el hilo exec=>ready
+        //testear si esta en ejecucion o no
+        /* while (temporal_gettime(quantum) != QUANTUM)
         {
+            
             // simular la ejecucion de un proceso
-            // sleep() // Cuando el cronometros llego al quatum que queremos <-ojo que sleep es bloqueante
-        }
-        temporal_stop(quantum);
-        replanificar_por_rr(proceso); // se para el timer
-        temporal_destroy(quantum);
+            //sleep(); // Cuando el cronometros llego al quatum que queremos <-ojo que sleep es bloqueante
+        } 
+        
+        temporal_stop(quantum); */
+        
+        
+        
+        //replanificar_por_rr(proceso); // se para el timer
+        //temporal_destroy(quantum); 
         // caundo las rafagas de cpu son menores a las definidas por el quantum, la cpu nos debe avisar que el proceso se bloqueo o termino.
     }
     // ENVIA A CPU
 }
+
+
+
+
+
+
+
+void *transicion_exec_ready(){  //Falta ver el tema del motivo para que sea generico segun el caso
+	 
+    
+    while(1){
+        sem_wait(b_transicion_exec_ready);
+        t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
+        agregar_a_estado(proceso, cola_ready_global); // moverlo a la cola de exit, hay un lugar en memoria
+        sem_post(b_exec_libre); 
+        log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
+        //liberar_proceso(proceso);
+    }
+    
+} 
+
+
+
+
 void replanificar_por_rr(t_pcb *proceso)
 {
 
-    enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO);
-    enviar_cde(socket_cpu_dispatch, proceso->cde); // Envio que se pare el proceso a la conexion de interrupt
-    pthread_mutex_lock(mutex_cola_ready);
-    proceso = sacar_procesos_cola(cola_ready_global); // lo saco de running
-    pthread_mutex_unlock(mutex_cola_ready);
+    //enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO);
+    //enviar_cde(socket_cpu_dispatch, proceso->cde); // Envio que se pare el proceso a la conexion de interrupt
+    
+    //Hay que hacer que un hilo reciba el retorno de la interrupcion de CPU y que habilite con un binario el hilo exec=>ready
 
-    pthread_mutex_lock(mutex_cola_exec);
-    agregar_a_estado(proceso, cola_exec_global); // lo meto en ready
-    pthread_mutex_unlock(mutex_cola_exec);
+    /* proceso = sacar_procesos_cola(cola_ready_global); // lo saco de running  
+    agregar_a_estado(proceso, cola_exec_global); // lo meto en ready */
+    
+    /* t_pcb *otro_proceso = malloc(sizeof(t_pcb));
 
-    t_pcb *otro_proceso = malloc(sizeof(t_pcb));
-
-    pthread_mutex_lock(mutex_cola_ready);
     otro_proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-    pthread_mutex_unlock(mutex_cola_ready);
-
-    pthread_mutex_lock(mutex_cola_exec);
-    agregar_a_estado(otro_proceso, cola_exec_global);
-    pthread_mutex_unlock(mutex_cola_exec);
+    agregar_a_estado(otro_proceso, cola_exec_global); */
+    
 }
 // VIRTUAL ROUND ROBIN
 void planificar_por_vrr() {}
