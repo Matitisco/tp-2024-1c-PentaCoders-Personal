@@ -77,6 +77,7 @@ typedef struct
 	char *nombreEstado;
 	t_queue *estado;
 	pthread_mutex_t *mutex_estado;
+	sem_t *contador;
 
 } colaEstado;
 
@@ -87,21 +88,19 @@ typedef struct
 extern uint32_t PID_GLOBAL;
 extern t_log *logger;
 extern sem_t* GRADO_MULTIPROGRAMACION;
-extern sem_t* procesos_en_new;
-extern sem_t* procesos_en_ready;
-extern sem_t* procesos_en_exec;
-extern sem_t* procesos_en_block;
-extern sem_t* procesos_en_exit;
+
+
 extern sem_t* sem_agregar_a_estado;
 extern sem_t *sem_kernel;
 extern sem_t *sem_kernel_io_generica;
 //Binarios
 extern sem_t *binario_menu_lp;
 extern sem_t *b_largo_plazo_exit;
-
-extern sem_t *exec_libre;
+extern sem_t *b_exec_libre;
 extern sem_t *b_reanudar_largo_plazo;
-extern int habilitar_largo_plazo;
+extern sem_t *b_reanudar_corto_plazo;
+
+extern int habilitar_planificadores;
 
 
 
@@ -132,8 +131,8 @@ void inicializarEstados();
 colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado,  sem_t* contador_estado);
-t_pcb* sacar_procesos_cola(colaEstado *cola_estado, sem_t* contador_estado);
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
+t_pcb* sacar_procesos_cola(colaEstado *cola_estado);
 
 void iniciar_semaforos();
 

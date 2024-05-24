@@ -1,12 +1,6 @@
 #include "../include/operaciones.h"
 
-/* sem_t *GRADO_MULTIPROGRAMACION;
-sem_t *procesos_en_new;
-sem_t *procesos_en_ready;
-sem_t *procesos_en_exec;
-sem_t *procesos_en_block;
-sem_t *procesos_en_exit;
- */
+
 uint32_t PID_GLOBAL = 0;
 op_code estado_planificacion = PLANIFICACION_PAUSADA;
 // int socket_memoria;
@@ -80,7 +74,7 @@ void iniciar_proceso(char *PATH)
     op_code respuestaDeMemoria = recibir_operacion(socket_memoria);
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
-        agregar_a_estado(proceso, cola_new_global, procesos_en_new);
+        agregar_a_estado(proceso, cola_new_global);
         log_info(logger, "Se crea el proceso %u en NEW\n", proceso->cde->pid);
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
@@ -126,14 +120,17 @@ void finalizar_proceso(uint32_t PID)
 // INICIAR PLANIFICACION
 void iniciar_planificacion()
 {
-    habilitar_largo_plazo = 1;
+    habilitar_planificadores = 1;
     sem_post(b_reanudar_largo_plazo);
+    sem_post(b_reanudar_corto_plazo);
     estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
-}
+} 
 // DETENER PLANIFICACION
 void detener_planificacion()
 {
-    habilitar_largo_plazo = 0;
+    habilitar_planificadores = 0;
+    //sem_wait(b_reanudar_largo_plazo);
+    //sem_wait(b_reanudar_corto_plazo);
     estado_planificacion = PLANIFICACION_PAUSADA;
 }
 

@@ -13,23 +13,20 @@ int socket_io;
 
 // Contadores Semaforos
 sem_t *GRADO_MULTIPROGRAMACION;
-sem_t *procesos_en_new;
-sem_t *procesos_en_ready;
-sem_t *procesos_en_exec;
-sem_t *procesos_en_block;
-sem_t *procesos_en_exit;
-sem_t *exec_libre;
 
 // Semaforos de binarios
 sem_t *binario_menu_lp;
 sem_t *b_largo_plazo_exit;
 
+sem_t *b_exec_libre;
+
 sem_t *sem_agregar_a_estado;
 
 sem_t *b_reanudar_largo_plazo;
+sem_t *b_reanudar_corto_plazo;
 
 
-int habilitar_largo_plazo;
+int habilitar_planificadores;
 
 int QUANTUM;
 pthread_t hiloMEMORIA;
@@ -182,7 +179,8 @@ colaEstado *constructorColaEstado(char *nombre)
 	cola_estado_generica->nombreEstado = nombre;
 	cola_estado_generica->estado = queue_create();
 	cola_estado_generica->mutex_estado = malloc(sizeof(pthread_mutex_t));
-
+	cola_estado_generica->contador = malloc(sizeof(sem_t));
+	sem_init(cola_estado_generica->contador,0,0);
 	pthread_mutex_init(cola_estado_generica->mutex_estado, NULL);
 
 	return cola_estado_generica;
@@ -200,30 +198,22 @@ void inicializarEstados()
 void iniciar_semaforos()
 {
 	GRADO_MULTIPROGRAMACION = malloc(sizeof(sem_t));
-	procesos_en_new = malloc(sizeof(sem_t));
-	procesos_en_ready = malloc(sizeof(sem_t));
-	procesos_en_exec = malloc(sizeof(sem_t));
-	procesos_en_block = malloc(sizeof(sem_t));
-	procesos_en_exit = malloc(sizeof(sem_t));
+	
 	binario_menu_lp = malloc(sizeof(sem_t));
 
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
-	exec_libre = malloc(sizeof(sem_t));
 
 	b_largo_plazo_exit = malloc(sizeof(sem_t));
+	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
+	b_exec_libre = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
-	sem_init(procesos_en_new, 0, 0);
-	sem_init(procesos_en_ready, 0, 0);
-	sem_init(procesos_en_exec, 0, 0);
-	sem_init(procesos_en_block, 0, 0);
-	sem_init(procesos_en_exit, 0, 0);
-	sem_init(binario_menu_lp, 0, 0);
-	sem_init(exec_libre, 0, 1);
+
 	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(sem_agregar_a_estado, 0, 0);
-
+	sem_init(b_reanudar_corto_plazo, 0, 0);
+	sem_init(b_exec_libre,0,1);
 	sem_init(b_largo_plazo_exit,0,0);
 }
 
@@ -250,18 +240,18 @@ config_kernel *inicializar_config_kernel()
 	return configuracion;
 }
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado, sem_t *contador_estado) // Añade un proceso a la cola New //MONITOR DE QUEUE_PUSH
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso a la cola New //MONITOR DE QUEUE_PUSH
 {
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	queue_push(cola_estado->estado, pcb);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
-	sem_post(contador_estado);
+	sem_post(cola_estado->contador);
 }
 
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado, sem_t *contador_estado)
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 {
 	t_pcb *pcb = malloc(sizeof(pcb));
-	sem_wait(contador_estado);
+	sem_wait(cola_estado->contador);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
@@ -321,16 +311,16 @@ void atender_interrupciones()
 	{
 	case FIN_DE_QUANTUM:
 		t_cde *cde_proceso_interrumpido = leer_cde(buffer_desde_cpu);
-		t_pcb *proceso_interrumpido = sacar_procesos_cola(cola_exec_global, exec_libre);
+		t_pcb *proceso_interrumpido = sacar_procesos_cola(cola_exec_global);
 		proceso_interrumpido->cde = cde_proceso_interrumpido;
-		agregar_a_estado(proceso_interrumpido, cola_ready_global, procesos_en_ready);
+		agregar_a_estado(proceso_interrumpido, cola_ready_global);
 		free(proceso_interrumpido);
 		break;
 	case BLOQUEADO_POR_IO:
 		cde_proceso_interrumpido = leer_cde(buffer_desde_cpu);
-		proceso_interrumpido = sacar_procesos_cola(cola_exec_global, exec_libre);
+		proceso_interrumpido = sacar_procesos_cola(cola_exec_global);
 		proceso_interrumpido->cde = cde_proceso_interrumpido;
-		agregar_a_estado(proceso_interrumpido, cola_bloqueado_global, procesos_en_block);
+		agregar_a_estado(proceso_interrumpido, cola_bloqueado_global);
 		free(proceso_interrumpido);
 		break;
 	case FINALIZAR_PROCESO:

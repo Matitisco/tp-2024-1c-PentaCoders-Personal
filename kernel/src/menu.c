@@ -4,7 +4,7 @@
 
 void iniciar_consola_interactiva()
 {
-    habilitar_largo_plazo=0;
+    habilitar_planificadores =0;
     char *opcion;
     while (1)
     {
@@ -17,8 +17,9 @@ void iniciar_consola_interactiva()
 
         sem_post(binario_menu_lp); // Habilita largo plazo
         
-        if(habilitar_largo_plazo){
+        if(habilitar_planificadores){
             sem_post(b_reanudar_largo_plazo);
+            sem_post(b_reanudar_corto_plazo);
         }
     }
 }

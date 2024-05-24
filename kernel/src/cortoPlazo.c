@@ -34,18 +34,17 @@ pthread_mutex_t *mutex_estado_ejecutando;
 pthread_mutex_t *mutex_cola_ready;
 pthread_mutex_t *mutex_cola_exec;
 t_temporal *quantum;
-// pthread_mutex_init(mutex, NULL) INICIALIZAR EN EL MAIN -ACORDARSE
-/* sem_t *semaforo_ready;
-sem_t *procesos_en_ready;
-sem_t *procesos_en_exec; */
-/* sem_t *exec_libre; */
-//
+
+
 // CORTO PLAZO
 void *corto_plazo()
 {
     // op_code estado_planificacion = INICIAR_PLANIFICACION;
     // log_info(logger, "--------------Planificador de Corto Plazo Iniciado-------------- \n");
     iniciar_sem_cp();
+    
+
+    
     if (strcmp(valores_config->algoritmo_planificacion, "FIFO") == 0)
     {
         planificar_por_fifo();
@@ -60,8 +59,13 @@ void *corto_plazo()
         quantum = temporal_create();
         planificar_por_vrr();
     }
-    return (void *)1;
+    else {
+        return (void *)1;
+    }
+        
 }
+    
+
 
 void iniciar_sem_cp()
 {
@@ -81,6 +85,8 @@ void planificar_por_fifo()
 {
     while (1)
     {
+        sem_wait(b_reanudar_corto_plazo);
+
         cambiar_procesoActual_readyARunning();
 
         
@@ -92,24 +98,25 @@ void planificar_por_fifo()
         } */
     }
 }
+
 void cambiar_procesoActual_readyARunning()
 {
     t_pcb *proceso = malloc(sizeof(t_pcb));
-    sem_wait(exec_libre); // deja de estar libre exec  EL SEM_POST DEBE ESTAR EN CPU, YA QUE ES CUANDO DEJAMOS LA COLA DE READY LIBRE.
-    sem_wait(procesos_en_ready);
-    pthread_mutex_lock(mutex_cola_ready);                                // cantidad procesos en ready
-    proceso = sacar_procesos_cola(cola_ready_global, procesos_en_ready); // SALE DE READY
-    pthread_mutex_unlock(mutex_cola_ready);
-
-    pthread_mutex_lock(mutex_cola_exec);
-    agregar_a_estado(proceso, cola_exec_global, procesos_en_exec);
-    pthread_mutex_unlock(mutex_cola_exec);
+    sem_wait(b_exec_libre); // deja de estar libre exec  EL SEM_POST DEBE ESTAR EN CPU, YA QUE ES CUANDO DEJAMOS LA COLA DE READY LIBRE.
+    sem_wait(cola_ready_global->contador); // cantidad procesos en ready
+                               
+    proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
+    agregar_a_estado(proceso, cola_exec_global);
+    
 
     // ENVIA A CPU
     enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
     enviar_cde(socket_cpu_dispatch, proceso->cde);
     log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por FIFO\n", proceso->cde->pid);
 }
+
+
+
 
 int hayInstruccionBloqueante()
 {
@@ -141,11 +148,11 @@ void planificar_por_rr()
     // primer proceso que meto
 
     pthread_mutex_lock(mutex_cola_ready);
-    proceso = sacar_procesos_cola(cola_ready_global, procesos_en_ready); // SALE DE READY
+    proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
     pthread_mutex_unlock(mutex_cola_ready);
 
     pthread_mutex_lock(mutex_cola_exec);
-    agregar_a_estado(proceso, cola_exec_global, procesos_en_exec);
+    agregar_a_estado(proceso, cola_exec_global);
     pthread_mutex_unlock(mutex_cola_exec);
 
     enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
@@ -172,21 +179,21 @@ void replanificar_por_rr(t_pcb *proceso)
     enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO);
     enviar_cde(socket_cpu_dispatch, proceso->cde); // Envio que se pare el proceso a la conexion de interrupt
     pthread_mutex_lock(mutex_cola_ready);
-    proceso = sacar_procesos_cola(cola_ready_global, procesos_en_exec); // lo saco de running
+    proceso = sacar_procesos_cola(cola_ready_global); // lo saco de running
     pthread_mutex_unlock(mutex_cola_ready);
 
     pthread_mutex_lock(mutex_cola_exec);
-    agregar_a_estado(proceso, cola_exec_global, procesos_en_ready); // lo meto en ready
+    agregar_a_estado(proceso, cola_exec_global); // lo meto en ready
     pthread_mutex_unlock(mutex_cola_exec);
 
     t_pcb *otro_proceso = malloc(sizeof(t_pcb));
 
     pthread_mutex_lock(mutex_cola_ready);
-    otro_proceso = sacar_procesos_cola(cola_ready_global, procesos_en_ready); // SALE DE READY
+    otro_proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
     pthread_mutex_unlock(mutex_cola_ready);
 
     pthread_mutex_lock(mutex_cola_exec);
-    agregar_a_estado(otro_proceso, cola_exec_global, procesos_en_exec);
+    agregar_a_estado(otro_proceso, cola_exec_global);
     pthread_mutex_unlock(mutex_cola_exec);
 }
 // VIRTUAL ROUND ROBIN
