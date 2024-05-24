@@ -256,6 +256,11 @@ void agregar_buffer_para_string(tipo_buffer *buffer, char *args)
     uint32_t tamanio = 0;
 
     char *string = (char *)args;
+
+    if(args == NULL){
+        return;
+    }
+    
     while (string[tamanio] != NULL)
     {
         tamanio++; // sumo el tamanio
@@ -266,6 +271,25 @@ void agregar_buffer_para_string(tipo_buffer *buffer, char *args)
     memcpy(buffer->stream + buffer->size, string, tamanio);
     buffer->size += tamanio; // tamanio total
 }
+//
+
+/*
+void agregar_buffer_string_null(tipo_buffer *buffer,char *args)
+{
+     uint32_t tamanio = sizeof(char*);
+    char * string = NULL;
+    //size es el tamaño total del buffer -> hay que aumentarle 
+    //offset es el desplazamiento dentro del payload
+
+    agregar_buffer_para_enterosUint32(buffer, tamanio);//subo el tamanio del char* al buffer
+    
+    memcpy(buffer->stream + buffer->size, string, tamanio);//subo el contenido del string
+    buffer->size += tamanio;
+
+}
+
+
+*/
 void agregar_buffer_para_registros(tipo_buffer *buffer, t_registros *registros)
 {
     agregar_buffer_para_enterosUint8(buffer, registros->AX);
@@ -384,21 +408,30 @@ t_cde *leer_cde(tipo_buffer *buffer)
 {
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
+    //scde->path = leer_buffer_string(buffer);
     cde->registros = malloc(sizeof(t_registros));
-    cde->PC = leer_buffer_enteroUint32(buffer);
     cde->registros = leer_buffer_registros(buffer);
+    cde->PC = leer_buffer_enteroUint32(buffer);
+
     return cde;
 }
 void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
 {
+<<<<<<< HEAD
     //t_list *lista_instrucciones;
     agregar_buffer_para_enterosUint32(buffer,cde->pid);
     agregar_buffer_para_enterosUint32(buffer,cde->PC);
     //agregar_buffer_para_string(buffer, cde->path);
     agregar_buffer_para_registros(buffer,cde->registros);
     
+=======
+    // t_list *lista_instrucciones;
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);
+    //agregar_buffer_para_string(buffer, cde->path);
+    agregar_buffer_para_registros(buffer, cde->registros);
+    agregar_buffer_para_enterosUint32(buffer, cde->PC);
+>>>>>>> refs/remotes/origin/main
 }
-    
 
 // ESCRIBIR EN EL BUFFER UNA LISTA
 /*void escribir_buffer_para_listas(tipo_buffer *buffer, void *args)

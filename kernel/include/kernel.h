@@ -158,4 +158,6 @@ bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre);
 char *obtener_interfaz(enum_interfaz interfaz);
 void recibir_orden_interfaces_de_cpu(char **interfaces);
 
+void atender_interrupciones();
+
 #endif
