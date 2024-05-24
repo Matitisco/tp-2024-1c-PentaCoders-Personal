@@ -54,9 +54,32 @@ typedef enum
 	ENVIAR_INSTRUCCION_CORRECTO,
 	FIN_DE_QUANTUM,	//cpu, kernel
 	BLOQUEADO_POR_IO,
-	INTERRUPCION
+	INTERRUPCION,
+	SOLICITUD_CONEXION_IO,
+	EJECUCION_IO_GEN_SLEEP_EXITOSA
 } op_code;
+typedef enum
+{
+	GENERICA,
+	STDIN,
+	STDOUT,
+	DIALFS,
+} enum_interfaz;
 
+typedef struct
+{
+	enum_interfaz tipo_interfaz;
+	int tiempo_unidad_trabajo;
+	char *ip_kernel;
+	int puerto_kernel;
+	char *ip_memoria;
+	int puerto_memoria;
+	char *path_base_dialfs;
+	int block_size;
+	int block_count;
+	int retraso_compactacion;
+	char * nombre_interfaz;
+} t_interfaz;
 typedef struct
 {
 	t_log *logger;

@@ -137,7 +137,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 	int server_fd = iniciar_servidor(argumento->logger, "CPU Interrupt", argumento->ip, argumento->puerto);
 	log_info(logger, "Esperando KERNEL INTERRUPT....");
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
-	//log_info(logger, "Se conecto el Kernel por Interrupt");
+	// log_info(logger, "Se conecto el Kernel por Interrupt");
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_interrupt);
@@ -311,24 +311,30 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 void check_interrupt()
 {
 	tipo_buffer *buffer_cde = crear_buffer();
-	agregar_cde_buffer(buffer_cde, cde_recibido);
-	enviar_cod_enum(socket_kernel_dispatch, INTERRUPCION);
 	if (interrupcion_rr)
 	{
+		enviar_cod_enum(socket_kernel_dispatch, INTERRUPCION);
+		agregar_cde_buffer(buffer_cde, cde_recibido);
 		agregar_buffer_para_enterosUint32(buffer_cde, FIN_DE_QUANTUM);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		destruir_buffer(buffer_cde);
 		interrupcion_rr = 0;
 		// accede a la lista de interrupciones
 	}
 	else if (interrrupcion_fifo)
 	{
+		enviar_cod_enum(socket_kernel_dispatch, INTERRUPCION);
+		agregar_cde_buffer(buffer_cde, cde_recibido);
 		agregar_buffer_para_enterosUint32(buffer_cde, BLOQUEADO_POR_IO);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		destruir_buffer(buffer_cde);
 		interrrupcion_fifo = 0;
 	}
 	else
 	{
 		log_info(logger, "No hay interrupciones");
 	}
-	enviar_buffer(buffer_cde, socket_kernel_dispatch);
+	// enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	destruir_buffer(buffer_cde);
 }
 

@@ -25,7 +25,6 @@ sem_t *sem_agregar_a_estado;
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
 
-
 int habilitar_planificadores;
 
 int QUANTUM;
@@ -38,14 +37,15 @@ pthread_t hiloCPUDS;
 pthread_t hiloConsola;
 pthread_t largo_plazo_exit;
 
-
+t_list *lista_interfaces;
 t_args *args_MEMORIA;
 t_args *args_IO;
 t_args *args_KERNEL;
 t_args *args_CPU_DS;
 t_args *args_CPU_INT;
 extern t_log *logger;
-
+char *nombre_IO;
+int servidor_para_io;
 config_kernel *valores_config;
 
 int main(int argc, char *argv[])
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	inicializarEstados();
 
 	logger = iniciar_logger("kernel.log", "KERNEL");
-
+	lista_interfaces = list_create();
 	valores_config = inicializar_config_kernel();
 	QUANTUM = valores_config->quantum;
 	iniciar_semaforos();
@@ -83,59 +83,56 @@ void iniciar_hilos(config_kernel *valores_config)
 void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT)
 {
 	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
-	pthread_create(&hiloIO, NULL, levantarIO, (void *)args_IO);
+	servidor_para_io = iniciar_servidor(logger, "Kernel", valores_config->ip_memoria, valores_config->puerto_escucha);
+	log_info(logger, "Servidor KERNEL listo para recibir Interfaces de IO");
+	pthread_create(&hiloIO, NULL, levantarIO, NULL);
 	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
 	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT);
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
-	pthread_create(&largo_plazo_exit, NULL,transicion_exit_largo_plazo, NULL);
+	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 }
 
-
-
-void *levantarIO(void *ptr)
+void *levantarIO()
 {
-	t_args *argumento = malloc(sizeof(t_args));
-	argumento = (t_args *)ptr;
-	tipo_buffer *buffer_io;
-	int server_fd = iniciar_servidor(logger, "Kernel", argumento->ip, argumento->puerto);
-	log_info(logger, "Servidor KERNEL listo para recibir Interfaces de IO");
-	char **interfaces = string_array_new();
+	int disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
 	while (1)
 	{
-		// Debemos aplicar semaforos?? muy probable
-		// IO_GEN_SLEEP
-		int cliente_fd = esperar_cliente(logger, "Kernel", "Interfaz IO", server_fd); // se conecta una io al kernel
-		buffer_io = recibir_buffer(cliente_fd);										  // recibo la interfaz
-		// ACORDARSE DE LUEGO BORRAR LA ESTRCUTURA QUE SE NECUENTRA EN KERNEL.H TENEMOS QUE SOLO USAR LA QUE ESTA EN ENTRADA Y SALIDA.H
-		char *nombre_IO = leer_buffer_string(buffer_io);
-		int cant_interfaces = string_array_size(interfaces);
-		char *interfaz_encontrada = string_new();
-		enum_interfaz cod_io = leer_buffer_enteroUint32(buffer_io);
-		char *tipo_io = obtener_interfaz(cod_io);
-
-		for (int i = 0; i < cant_interfaces; i++)
+		op_code operacion = recibir_operacion(disp_io);
+		if (operacion == SOLICITUD_CONEXION_IO)
 		{
-			if (strcmp(interfaces[i], nombre_IO) == 0) // estas en el array de interfaces
+			tipo_buffer *buffer_io = recibir_buffer(disp_io);
+
+			int cod_io = leer_buffer_enteroUint32(buffer_io);
+			nombre_IO = leer_buffer_string(buffer_io);
+			char *tipo_io = obtener_interfaz(cod_io);
+
+			if (list_find(lista_interfaces, interfaz_esta_conectada) != NULL)
 			{
-				log_info(logger, "Esta Interfaz ya se encuentra conectada"); // sale del for
-				interfaz_encontrada = nombre_IO;
-				break;
+				log_info(logger, "Esta Interfaz ya se encuentra conectada");
 			}
+			else
+			{
+				log_info(logger, "Esta Interfaz no estaba conectada al kernel");
+				list_add(lista_interfaces, nombre_IO);
+			}
+
+			log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, nombre_IO);
+
+			// recibimos de cpu una instruccion
+			recibir_orden_interfaces_de_cpu();
 		}
-		if (string_is_empty(interfaz_encontrada))
+		else
 		{
-			string_array_push(interfaces, nombre_IO);
+			log_info(logger, "No entiendo la operacion enviada");
 		}
-
-		log_info(logger, "Me llego una interfaz del tipo:%s, y de nombre:%s", tipo_io, interfaz_encontrada);
-
-		// recibimos de cpu una instruccion
-		recibir_orden_interfaces_de_cpu(interfaces);
-		sem_post(sem_kernel_io_generica);
 	}
 	return NULL;
+}
+_Bool interfaz_esta_conectada(char *interfaz)
+{
+	return strcmp(interfaz, nombre_IO) == 0;
 }
 
 char *obtener_interfaz(enum_interfaz interfaz)
@@ -180,7 +177,7 @@ colaEstado *constructorColaEstado(char *nombre)
 	cola_estado_generica->estado = queue_create();
 	cola_estado_generica->mutex_estado = malloc(sizeof(pthread_mutex_t));
 	cola_estado_generica->contador = malloc(sizeof(sem_t));
-	sem_init(cola_estado_generica->contador,0,0);
+	sem_init(cola_estado_generica->contador, 0, 0);
 	pthread_mutex_init(cola_estado_generica->mutex_estado, NULL);
 
 	return cola_estado_generica;
@@ -198,7 +195,7 @@ void inicializarEstados()
 void iniciar_semaforos()
 {
 	GRADO_MULTIPROGRAMACION = malloc(sizeof(sem_t));
-	
+
 	binario_menu_lp = malloc(sizeof(sem_t));
 
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
@@ -213,8 +210,8 @@ void iniciar_semaforos()
 	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(sem_agregar_a_estado, 0, 0);
 	sem_init(b_reanudar_corto_plazo, 0, 0);
-	sem_init(b_exec_libre,0,1);
-	sem_init(b_largo_plazo_exit,0,0);
+	sem_init(b_exec_libre, 0, 1);
+	sem_init(b_largo_plazo_exit, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -271,40 +268,37 @@ void *levantar_CPU_Dispatch(void *ptr)
 	t_args *datosConexion = malloc(sizeof(t_args));
 	datosConexion = (t_args *)ptr;
 	socket_cpu_dispatch = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU DISPATCH");
-	
+
 	free(datosConexion);
 
-	while(1){
+	while (1)
+	{
 
 		op_code otro_codigo = recibir_operacion(socket_cpu_dispatch);
-	
+
 		if (otro_codigo == FINALIZAR_PROCESO)
 		{
 			log_info(logger, "Recibi Finalizar proceso");
-			
-			tipo_buffer*buffer_cpu = recibir_buffer(socket_cpu_dispatch);//recibo buffer
+
+			tipo_buffer *buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
 
 			t_cde *cde = leer_cde(buffer_cpu);
 
-			log_info(logger,"Se finalizo el proceso: %d", cde->pid);
+			log_info(logger, "Se finalizo el proceso: %d", cde->pid);
 
-			sem_post(b_largo_plazo_exit); //otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
-
+			sem_post(b_largo_plazo_exit); // otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
 		}
 		else
 		{
 			// FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
-			//log_info(logger, "No se pudo finalizar el proceso %d", PID);
+			// log_info(logger, "No se pudo finalizar el proceso %d", PID);
 		}
-
 	}
-
-
 }
 
 void atender_interrupciones()
 {
-	tipo_buffer * buffer_desde_cpu = crear_buffer();
+	tipo_buffer *buffer_desde_cpu = crear_buffer();
 	op_code motivo_interrupcion = leer_buffer_enteroUint32(buffer_desde_cpu);
 
 	switch (motivo_interrupcion)
@@ -331,39 +325,37 @@ void atender_interrupciones()
 	}
 }
 
-void recibir_orden_interfaces_de_cpu(char **interfaces)
+void recibir_orden_interfaces_de_cpu()
 {
-	op_code mensaje = recibir_operacion(socket_cpu_dispatch);
-	int cant_interfaces = string_array_size(interfaces);
-	switch (mensaje)
+	op_code operacion_desde_cpu_dispatch = recibir_operacion(socket_cpu_dispatch);
+	switch (operacion_desde_cpu_dispatch)
 	{
-	case SOLICITUD_INTERFAZ_GENERICA:
-		tipo_buffer *buffer = recibir_buffer(socket_cpu_dispatch);
-		char *nombre_interfaz = leer_buffer_string(buffer);
-		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer);
-		tipo_buffer *bufferInterfaz = crear_buffer();
-		char *interfaz_encontrada = string_new();
-		// se fija el kernel si tiene la interfaz conectada
-		for (int i = 0; i < cant_interfaces; i++)
+	case SOLICITUD_INTERFAZ_GENERICA: // ocurre cuando se va a ejecutar la instruccion IO_GEN_SLEEP
+
+		sem_post(cola_bloqueado_global->contador);
+
+		tipo_buffer *buffer_dispatch = recibir_buffer(socket_cpu_dispatch);
+		t_tipoDeInstruccion instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_dispatch);
+		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_dispatch);
+		nombre_IO = leer_buffer_string(buffer_dispatch); // recibo la interfaz que debe hacer la operacion pedida por la cpu
+
+		t_pcb *proceso_quitado = sacar_procesos_cola(cola_exec_global);
+
+		proceso_quitado->estado = BLOCKED;
+
+		agregar_a_estado(proceso_quitado, cola_bloqueado_global);
+
+		destruir_buffer(buffer_dispatch);
+
+		tipo_buffer *buffer_interfaz = crear_buffer();
+
+		if (list_find(lista_interfaces, interfaz_esta_conectada) == NULL)
 		{
-			if (strcmp(interfaces[i], nombre_interfaz) == 0)
-			{
-				interfaz_encontrada = interfaces[i];
-				break;
-			}
-		}
-		if (string_is_empty(interfaz_encontrada))
-		{
-			log_error(logger, "La interfaz %s no se encuentra conectada", nombre_interfaz);
-			// enviar proceso que pidio la ejecucion de la instruccion a exit
+			interfaz_no_conectada(); // IMPLEMENTAR
 		}
 		else
 		{
-			log_info(logger, "La interfaz %s esta conectada", nombre_interfaz);
-			enviar_cod_enum(socket_interfaz, SOLICITUD_INTERFAZ_GENERICA);
-			agregar_buffer_para_string(buffer, nombre_interfaz);
-			agregar_buffer_para_enterosUint32(buffer, unidades_trabajo);
-			enviar_buffer(buffer, socket_io); // falta definir quien es cliente_kernel
+			interfaz_conectada(buffer_interfaz, unidades_trabajo, instruccion_a_ejecutar);
 		}
 		break;
 	case SOLICITUD_INTERFAZ_STDIN:
@@ -375,5 +367,36 @@ void recibir_orden_interfaces_de_cpu(char **interfaces)
 	default:
 		log_error(logger, "No comprendo la solicitud enviada");
 		break;
+	}
+}
+
+void interfaz_no_conectada() // IMPLEMENTAR
+{
+	log_error(logger, "La interfaz %s no se encuentra conectada", nombre_IO);
+	// enviar_proceso_a_exit();
+	//  enviar proceso que pidio la ejecucion de la instruccion a exit
+}
+
+void interfaz_conectada(tipo_buffer *buffer_interfaz, int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar)
+{
+	log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+	enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
+	op_code operacion_io = recibir_operacion(socket_interfaz);
+	if (operacion_io == ESTOY_LIBRE)
+	{
+		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
+		enviar_buffer(buffer_interfaz, socket_io);
+		operacion_io = recibir_operacion(socket_interfaz);
+		if (operacion_io == CONCLUI_OPERACION)
+			enviar_cod_enum(socket_cpu_dispatch, EJECUCION_IO_GEN_SLEEP_EXITOSA);
+	}
+	else
+	{
+		operacion_io = recibir_operacion(socket_interfaz);
+		if (operacion_io == CONCLUI_OPERACION)
+		{
+			interfaz_conectada(buffer_interfaz, unidades_trabajo, instruccion_a_ejecutar);
+		}
 	}
 }

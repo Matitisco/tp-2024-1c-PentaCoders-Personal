@@ -187,12 +187,24 @@ void exec_signal() {}
 // IO_GEN_SLEEP
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
 {
-    int socket_kernel; // declaracion momentania
-    enviar_cod_enum(socket_kernel, SOLICITUD_INTERFAZ_GENERICA);
+    enviar_cod_enum(socket_kernel_dispatch, SOLICITUD_INTERFAZ_GENERICA);
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_string(buffer, nombre_interfaz);
+
+    agregar_buffer_para_enterosUint32(buffer, IO_GEN_SLEEP);
     agregar_buffer_para_enterosUint32(buffer, unidades_trabajo);
-    enviar_buffer(buffer, socket_kernel); // falta definir quien es cliente_kernel
+    agregar_buffer_para_string(buffer, nombre_interfaz);
+
+    enviar_buffer(buffer, socket_kernel_dispatch);
+    op_code esperar_operacion = recibir_operacion(socket_kernel_dispatch);
+    if (esperar_operacion == EJECUCION_IO_GEN_SLEEP_EXITOSA)
+    {
+        return;
+    }
+    else
+    {
+        log_info(logger, "Hubo un error al ejecutar la instruccion");
+        return;
+    }
 }
 // IO_STDIN_READ
 void exec_io_stdin_read() {}
@@ -203,11 +215,11 @@ void exec_io_fs_truncate() {}
 void exec_io_fs_write() {}
 void exec_io_fs_read() {}
 // EXIT
-void exec_exit(t_cde* cde)
+void exec_exit(t_cde *cde)
 {
     /*EXIT: Esta instrucción representa la syscall de finalización del proceso. Se deberá devolver el
 Contexto de Ejecución actualizado al Kernel para su finalización.*/
-    
+
     salida_exit = 0;
     enviar_cod_enum(socket_kernel_dispatch, FINALIZAR_PROCESO);
     // cuando enviamos el finalizar_proceso, el kernel debe enviar el proceso a exit

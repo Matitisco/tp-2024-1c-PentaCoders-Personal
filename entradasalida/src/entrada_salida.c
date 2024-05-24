@@ -2,27 +2,17 @@
 
 t_interfaz *interfaz_io;
 config_io *valores_config;
-extern sem_t *sem_kernel_io_generica;
+
 int main(int argc, char *argv[])
 {
 
 	logger = iniciar_logger("entrada_salida.log", "ENTRADA_SALIDA");
-	// config_io *valores_config = inicializar_config_IO("entrada_salida.config");
-	// conexion_memoria_desde_IO = levantarCliente(logger, "Servidor Memoria", valores_config->ip_memoria, valores_config->puerto_memoria, "ENTRADA/SALIDA se conecta a Memoria");
-	// conexion_kernel = levantarCliente(logger, "Servidor Kernel", valores_config->ip_kernel, valores_config->puerto_kernel, "ENTRADA/SALIDA se conecta a Kernel");
-	// esto previo no va, ya que cada interfaz se va a prender una vez que se levanta en el sistema
-
-	// ACA ARRANCA EL PROGRAMA
 
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
 	char *path_configuracion = readline("Ingrese PATH con la configuracion de la interfaz: ");
-	//  LEVANTAR INTERFAZ
-	levantar_interfaz(nombre_interfaz, path_configuracion); // recibo el nombre id de la interfaz y su archivo de configuracion
 
-	// esto no iria
-	// terminar_programa(conexion_memoria_desde_IO, logger, valores_config->config);
-	// liberarConexion(conexion_kernel);
-	/* creo de abse 4 instancias de los tipos de interfaces que existen, y luego dependiendo el tipo que se vaya a crear, luego borro los otros*/
+	levantar_interfaz(nombre_interfaz, "generica.config"); // recibo el nombre id de la interfaz y su archivo de configuracion
+
 	free(nombre_interfaz);
 	free(path_configuracion);
 	log_destroy(logger);
@@ -32,33 +22,31 @@ int main(int argc, char *argv[])
 // FUNCIONES
 void levantar_interfaz(char *nombre, char *PATH)
 {
-	// primero leo el path y obtengo el tipo de interfaz luego creo segun el tipo de interfaz
-	// aca solo inicializo el archivo de config
 	config_io *config_interfaz = inicializar_config_IO(PATH);
+	log_info(logger, "TIEMPO UNIDAD: %d", config_interfaz->tiempo_unidad_trabajo);
 	estoy_libre = 1;
 	switch (asignar_interfaz(config_interfaz->tipo_interfaz))
 	{
-	// aca creo segun el tipo de interfaz con su config
 	case GENERICA:
-		interfaz_io = crear_interfaz_generica(config_interfaz);
+		interfaz_io = crear_interfaz_generica(config_interfaz, nombre);
 		arrancar_interfaz_generica(interfaz_io);
 		break;
 	case STDIN:
-		interfaz_io = crear_interfaz_stdin(config_interfaz);
+		interfaz_io = crear_interfaz_stdin(config_interfaz, nombre);
 		arrancar_interfaz_stdin(interfaz_io);
 		break;
 	case STDOUT:
-		interfaz_io = crear_interfaz_stdout(config_interfaz);
+		interfaz_io = crear_interfaz_stdout(config_interfaz, nombre);
 		arrancar_interfaz_stdout(interfaz_io);
 		break;
 	case DIALFS:
-		interfaz_io = crear_interfaz_dialfs(config_interfaz);
+		interfaz_io = crear_interfaz_dialfs(config_interfaz, nombre);
 		arrancar_interfaz_dialfs(interfaz_io);
 		break;
 	}
 }
 
-t_interfaz *crear_interfaz_generica(config_io *config)
+t_interfaz *crear_interfaz_generica(config_io *config, char *nombre)
 {
 	t_interfaz *interfaz;
 	interfaz = malloc(sizeof(t_interfaz));
@@ -66,10 +54,11 @@ t_interfaz *crear_interfaz_generica(config_io *config)
 	interfaz->tiempo_unidad_trabajo = config->tiempo_unidad_trabajo;
 	interfaz->ip_kernel = config->ip_kernel;
 	interfaz->puerto_kernel = config->puerto_kernel;
+	interfaz->nombre_interfaz = nombre;
 	return interfaz;
 }
 
-t_interfaz *crear_interfaz_stdin(config_io *config)
+t_interfaz *crear_interfaz_stdin(config_io *config, char *nombre)
 {
 	t_interfaz *interfaz = malloc(sizeof(t_interfaz));
 	interfaz->tipo_interfaz = asignar_interfaz(config->tipo_interfaz);
@@ -77,10 +66,11 @@ t_interfaz *crear_interfaz_stdin(config_io *config)
 	interfaz->puerto_kernel = config->puerto_kernel;
 	interfaz->ip_memoria = config->ip_memoria;
 	interfaz->puerto_memoria = config->puerto_memoria;
+	interfaz->nombre_interfaz = nombre;
 	return interfaz;
 }
 
-t_interfaz *crear_interfaz_stdout(config_io *config)
+t_interfaz *crear_interfaz_stdout(config_io *config, char *nombre)
 {
 	t_interfaz *interfaz;
 	interfaz = malloc(sizeof(t_interfaz));
@@ -90,10 +80,11 @@ t_interfaz *crear_interfaz_stdout(config_io *config)
 	interfaz->puerto_kernel = config->puerto_kernel;
 	interfaz->ip_memoria = config->ip_memoria;
 	interfaz->puerto_memoria = config->puerto_memoria;
+	interfaz->nombre_interfaz = nombre;
 	return interfaz;
 }
 
-t_interfaz *crear_interfaz_dialfs(config_io *config)
+t_interfaz *crear_interfaz_dialfs(config_io *config, char *nombre)
 {
 	t_interfaz *interfaz;
 	interfaz = malloc(sizeof(t_interfaz));
@@ -107,6 +98,7 @@ t_interfaz *crear_interfaz_dialfs(config_io *config)
 	interfaz->block_size = config->block_size;
 	interfaz->block_count = config->block_count;
 	interfaz->retraso_compactacion = config->retraso_compactacion;
+	interfaz->nombre_interfaz = nombre;
 	return interfaz;
 }
 
@@ -171,20 +163,25 @@ config_io *inicializar_config_IO(char *PATH)
 
 void arrancar_interfaz_generica(t_interfaz *interfaz_io)
 {
-	int unidad_tiempo = interfaz_io->tiempo_unidad_trabajo;
-	char *ip = interfaz_io->ip_kernel;
-	int puerto = interfaz_io->puerto_kernel;
 	// 1-conectar con kernel
-	conexion_kernel = levantarCliente(logger, "KERNEL", ip, string_itoa(puerto), "Hola, soy una interfaz GENERICA");
+	conexion_kernel = levantarCliente(logger, "KERNEL", interfaz_io->ip_kernel, string_itoa(interfaz_io->puerto_kernel), "Hola, soy una interfaz GENERICA");
+	tipo_buffer *buffer_kernel_io = crear_buffer();
+
+	enviar_cod_enum(conexion_kernel, SOLICITUD_CONEXION_IO);
+	char *nombre_interfaz = interfaz_io->nombre_interfaz;
+	agregar_buffer_para_enterosUint32(buffer_kernel_io, pasar_a_int(interfaz_io->tipo_interfaz));
+	agregar_buffer_para_string(buffer_kernel_io, nombre_interfaz);
+
+	enviar_buffer(buffer_kernel_io, conexion_kernel);
+	destruir_buffer(buffer_kernel_io);
 	// 2-esperar que kernel envie un mensaje
 	while (1)
 	{
-		// 3-atender el mensaje que envia kernel
 		op_code consulta_kernel = recibir_operacion(conexion_kernel);
-		sem_wait(sem_kernel_io_generica); // espero a que el kernel me avise que envio algo
+		// 3-atender el mensaje que envia kernel
 		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
 		{
-			if (estoy_libre) // DE MOMENTO IMPLEMENTO CON INTS, ES MEDIO FEO,TALVEZ PODEMOS IMPLEMENTAR SEMAFOROS
+			if (estoy_libre) // de momento con ints
 			{
 				enviar_cod_enum(conexion_kernel, ESTOY_LIBRE);
 				estoy_libre = 0;
@@ -205,15 +202,36 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io)
 		// 5-vuelvo al paso 2
 	}
 }
+int pasar_a_int(enum_interfaz tipo_int)
+{
+	if (tipo_int == GENERICA)
+	{
+		return 0;
+	}
+	else if (tipo_int == STDIN)
+	{
+		return 1;
+	}
+	else if (tipo_int == STDOUT)
+	{
+		return 2;
+	}
+	else if (tipo_int == DIALFS)
+	{
+		return 3;
+	}
+	return -1;
+}
+
 void realizar_operacion_gen()
 {
-	tipo_buffer *buffer_sol_operacion = crear_buffer();
-	buffer_sol_operacion = recibir_buffer(socket_kernel);
+	tipo_buffer *buffer_sol_operacion = recibir_buffer(socket_kernel);
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
 	int unidades_tiempo = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_GEN_SLEEP)
 	{
 		sleep(unidades_tiempo);
+		log_info(logger, "SLEEP(%d)", unidades_tiempo);
 	}
 	else
 	{
@@ -259,6 +277,7 @@ void arrancar_interfaz_stdin(t_interfaz *interfaz_io)
 		// 5-vuelvo al paso 2
 	}
 }
+
 void realizar_operacion_stdin()
 {
 	tipo_buffer *buffer_sol_operacion = crear_buffer();
@@ -267,5 +286,6 @@ void realizar_operacion_stdin()
 
 	void *valor_ingresado;
 }
+
 void arrancar_interfaz_stdout(t_interfaz *interfaz_io) {}
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) {}

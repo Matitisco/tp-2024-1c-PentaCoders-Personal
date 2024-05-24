@@ -50,27 +50,7 @@ typedef struct
 } config_kernel;
 
 // QUITAR ENUM_INTERFAZ UNA VEZ MERGEADO INTERFACES Y KERNEL
-typedef enum
-{
-	GENERICA,
-	STDIN,
-	STDOUT,
-	DIALFS,
-} enum_interfaz;
 
-typedef struct
-{
-	enum_interfaz tipo_interfaz;
-	int tiempo_unidad_trabajo;
-	char *ip_kernel;
-	int puerto_kernel;
-	char *ip_memoria;
-	int puerto_memoria;
-	char *path_base_dialfs;
-	int block_size;
-	int block_count;
-	int retraso_compactacion;
-} t_interfaz;
 
 typedef struct
 {
@@ -139,7 +119,7 @@ void iniciar_semaforos();
 // FUNCIONES DE LEVANTAR MODULOS
 void *levantar_CPU_Dispatch(void *ptr);
 void *levantar_CPU_Interrupt(void *ptr);
-void *levantarIO(void *ptr);
+void *levantarIO();
 void iniciar_hilos(config_kernel *valores_config);
 
 // planificadores
@@ -155,8 +135,8 @@ void *corto_plazo();
 
 bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre);
 char *obtener_interfaz(enum_interfaz interfaz);
-void recibir_orden_interfaces_de_cpu(char **interfaces);
-
+void recibir_orden_interfaces_de_cpu();
+_Bool interfaz_esta_conectada();
 void atender_interrupciones();
 
 #endif
