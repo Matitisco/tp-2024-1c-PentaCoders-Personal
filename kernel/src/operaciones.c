@@ -116,14 +116,14 @@ void finalizar_proceso(uint32_t PID)
         tipo_buffer* buffer_cpu_interrupt= crear_buffer();
         agregar_buffer_para_enterosUint32(buffer_cpu_interrupt, PID);
         enviar_buffer(buffer_cpu_interrupt,socket_cpu_interrupt);
-        
+        destruir_buffer(buffer_cpu_interrupt);
     }
  //si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
 // pidiendo que desaloje el proceso de la cpu y retorne el cde
 
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, PID);
-    enviar_buffer(buffer, socket_memoria);
+    enviar_buffer(buffer, socket_memoria);//    le solicito a MEMORIA que ELIMINE el proceso
     destruir_buffer(buffer);
     op_code otro_codigo = recibir_operacion(socket_memoria);
 

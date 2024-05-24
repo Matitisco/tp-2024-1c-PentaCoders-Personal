@@ -137,7 +137,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 	int server_fd = iniciar_servidor(argumento->logger, "CPU Interrupt", argumento->ip, argumento->puerto);
 	log_info(logger, "Esperando KERNEL INTERRUPT....");
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
-	log_info(logger, "Se conecto el Kernel por Interrupt");
+	//log_info(logger, "Se conecto el Kernel por Interrupt");
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_interrupt);
