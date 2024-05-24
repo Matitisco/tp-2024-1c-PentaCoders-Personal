@@ -51,7 +51,7 @@ void *corto_plazo()
     }
     else if (strcmp(valores_config->algoritmo_planificacion, "RR") == 0)
     {
-        quantum = temporal_create();
+        
         planificar_por_rr();
     }
     else if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
@@ -141,6 +141,22 @@ void enviar_cde(int conexion, t_cde *cde)
     enviar_buffer(buffer, socket_cpu_dispatch);
 }
 // ROUND ROBIN
+
+
+/* t_pcb *proceso = malloc(sizeof(t_pcb));
+    sem_wait(b_exec_libre); // deja de estar libre exec  EL SEM_POST DEBE ESTAR EN CPU, YA QUE ES CUANDO DEJAMOS LA COLA DE READY LIBRE.
+    sem_wait(cola_ready_global->contador); // cantidad procesos en ready
+                               
+    proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
+    agregar_a_estado(proceso, cola_exec_global);
+    
+
+    // ENVIA A CPU
+    enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
+    enviar_cde(socket_cpu_dispatch, proceso->cde);
+    log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por FIFO\n", proceso->cde->pid);
+
+ */
 void planificar_por_rr()
 {
     t_pcb *proceso = malloc(sizeof(t_pcb));
@@ -148,6 +164,9 @@ void planificar_por_rr()
     
     while (1)
     {
+        sem_wait(b_exec_libre); // deja de estar libre exec  EL SEM_POST DEBE ESTAR EN CPU, YA QUE ES CUANDO DEJAMOS LA COLA DE READY LIBRE.
+        sem_wait(cola_ready_global->contador);
+        quantum = temporal_create();
         // primer proceso que meto
         proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
         agregar_a_estado(proceso, cola_exec_global);
@@ -158,22 +177,59 @@ void planificar_por_rr()
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
         
         // P1 4 RAFAGAS q = 2
+        log_info(logger,"Inicio de QUANTUM");
+        
 
-        while (temporal_gettime(quantum) != QUANTUM)
+        usleep(QUANTUM * 1000);
+
+        enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);     //Hay que hacer que un hilo reciba el retorno de la interrupcion de CPU y que habilite con un binario el hilo exec=>ready
+        //testear si esta en ejecucion o no
+        /* while (temporal_gettime(quantum) != QUANTUM)
         {
+            
             // simular la ejecucion de un proceso
             //sleep(); // Cuando el cronometros llego al quatum que queremos <-ojo que sleep es bloqueante
-        }
-        temporal_stop(quantum);
-        enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);     //Hay que hacer que un hilo reciba el retorno de la interrupcion de CPU y que habilite con un binario el hilo exec=>ready
+        } 
+        
+        temporal_stop(quantum); */
+        
         
         
         //replanificar_por_rr(proceso); // se para el timer
-        temporal_destroy(quantum);
+        //temporal_destroy(quantum); 
         // caundo las rafagas de cpu son menores a las definidas por el quantum, la cpu nos debe avisar que el proceso se bloqueo o termino.
     }
     // ENVIA A CPU
 }
+
+
+
+
+/* 
+void controlar_tiempo_de_ejecucion(){  
+    while(1){
+        sem_wait(&sem_iniciar_quantum);
+
+        uint32_t pid_pcb_before_start_clock = pcb_en_ejecucion->cde->pid;
+        bool flag_clock_pcb_before_start_clock = pcb_en_ejecucion->flag_clock;
+
+        usleep(config_kernel.quantum * 1000);
+
+        if(pcb_en_ejecucion != NULL)
+            pcb_en_ejecucion->fin_q = true;
+
+        if(pcb_en_ejecucion != NULL && pid_pcb_before_start_clock == pcb_en_ejecucion->cde->pid && flag_clock_pcb_before_start_clock == pcb_en_ejecucion->flag_clock){
+            enviar_codigo(socket_cpu_interrupt, DESALOJO);
+
+            t_buffer* buffer = crear_buffer_nuestro();
+            buffer_write_uint32(buffer, pcb_en_ejecucion->cde->pid); // lo enviamos porque interrupt recibe un buffer, pero no hacemos nada con esto
+            enviar_buffer(buffer, socket_cpu_interrupt);
+            destruir_buffer_nuestro(buffer);
+        }
+        sem_post(&sem_reloj_destruido);
+    }
+} */
+
 
 
 void *transicion_exec_ready(){  //Falta ver el tema del motivo para que sea generico segun el caso

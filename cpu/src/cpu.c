@@ -148,9 +148,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 		switch (codigo)
 		{
 		case PROCESO_INTERRUMPIDO_QUANTUM:
-			interrupcion_rr = 1;
-						
-
+			interrupcion_rr = 1;	
 			break;
 		case SOLICITUD_EXIT:
 			tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt); // recibo el buffer de kernel
@@ -287,6 +285,7 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		break;
 	case EXIT:
+		interrupcion_rr;
 		actualizar_cde(contextoProceso);
 		exec_exit(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);

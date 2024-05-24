@@ -303,10 +303,9 @@ void *levantar_CPU_Dispatch(void *ptr)
 				buffer_cpu= recibir_buffer(socket_cpu_dispatch);//recibo buffer
 
 				cde = leer_cde(buffer_cpu);
-
-				
-				
+				sem_post(b_transicion_exec_ready);
 			break;
+
 			default:
 				//log_info(logger, "No se pudo finalizar el proceso %d", PID);
 				break;
