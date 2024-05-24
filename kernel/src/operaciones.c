@@ -98,16 +98,7 @@ void iniciar_proceso(char *PATH)
 // pidiendo que desaloje el proceso de la cpu y retorne el cde
 // al eliminar se habilita +1 grado multiprogramacion
 
-<<<<<<< HEAD
 void finalizar_proceso(uint32_t PID) 
-=======
-/*● Finalizar proceso: Se encargará de finalizar un proceso que se encuentre dentro del sistema.
-Este mensaje se encargará de realizar las mismas operaciones como si el proceso llegara a
-EXIT por sus caminos habituales (deberá liberar recursos, archivos y memoria).
-Nomenclatura: FINALIZAR_PROCESO [PID]*/
-
-void finalizar_proceso(uint32_t PID)
->>>>>>> refs/remotes/origin/main
 {
     //buscamos el proceso en la cola de exec
     t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado);
@@ -213,25 +204,15 @@ t_pcb *buscarProceso(uint32_t pid)
     list_destroy_and_destroy_elements(proceso->recursosAsignados, destroy_recursos);
 }
 
-<<<<<<< HEAD
 void* destroy_recursos(void* element) {
     void* recurso = (void*)element;
     free(recurso);
-=======
-void liberar_recursos(t_pcb *proceso)
-{
-    list_destroy(proceso->recursosAsignados);
->>>>>>> refs/remotes/origin/main
 }
  */
 
 void liberar_archivos(t_pcb *proceso)
 {
-<<<<<<< HEAD
     list_destroy_and_destroy_elements(proceso->archivosAsignados, destroy_archivos);
-=======
-    list_destroy(proceso->archivosAsignados);
->>>>>>> refs/remotes/origin/main
 }
 
 void* destroy_archivos(void* element) {

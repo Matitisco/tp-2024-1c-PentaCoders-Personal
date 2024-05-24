@@ -281,58 +281,37 @@ void *levantar_CPU_Dispatch(void *ptr)
 	t_args *datosConexion = malloc(sizeof(t_args));
 	datosConexion = (t_args *)ptr;
 	socket_cpu_dispatch = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU DISPATCH");
-<<<<<<< HEAD
 	
-	op_code otro_codigo = recibir_operacion(socket_cpu_dispatch);
-	
-    if (otro_codigo == FINALIZAR_PROCESO)
-    {
-		log_info(logger, "Recibi Finalizar proceso");
-		
-		tipo_buffer*buffer_cpu = recibir_buffer(socket_cpu_dispatch);//recibo buffer
-
-		t_cde *cde = leer_cde(buffer_cpu);
-
-		log_info(logger,"Se finalizo el proceso: %d", cde->pid);
-
-		sem_post(b_largo_plazo_exit); //otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
-
-		
-		
-        
-
-    }
-    else
-    {
-        // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
-        //log_info(logger, "No se pudo finalizar el proceso %d", PID);
-    }
-
-	
-
-=======
->>>>>>> refs/remotes/origin/main
 	free(datosConexion);
 
-	while (1)
-	{
-		op_code operacion = recibir_operacion(socket_cpu_dispatch);
-		tipo_buffer *buffer_desde_cpu = recibir_buffer(socket_cpu_dispatch);
+	while(1){
 
-		switch (operacion)
+		op_code otro_codigo = recibir_operacion(socket_cpu_dispatch);
+	
+		if (otro_codigo == FINALIZAR_PROCESO)
 		{
-		case FINALIZAR_PROCESO:
-			t_cde *cde_proceso_finalizado = leer_cde(buffer_desde_cpu);
-			t_pcb *proceso_interrumpido = sacar_procesos_cola(cola_exec_global, exec_libre);
-			proceso_interrumpido->cde = cde_proceso_finalizado;
-			agregar_a_estado(proceso_interrumpido, cola_exit_global, procesos_en_exit);
-			break;
-		case INTERRUPCION:
-			atender_interrupciones();
-			break;
+			log_info(logger, "Recibi Finalizar proceso");
+			
+			tipo_buffer*buffer_cpu = recibir_buffer(socket_cpu_dispatch);//recibo buffer
+
+			t_cde *cde = leer_cde(buffer_cpu);
+
+			log_info(logger,"Se finalizo el proceso: %d", cde->pid);
+
+			sem_post(b_largo_plazo_exit); //otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
+
 		}
+		else
+		{
+			// FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
+			//log_info(logger, "No se pudo finalizar el proceso %d", PID);
+		}
+
 	}
+
+
 }
+
 void atender_interrupciones()
 {
 	tipo_buffer * buffer_desde_cpu = crear_buffer();

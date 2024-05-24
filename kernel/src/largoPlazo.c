@@ -73,7 +73,7 @@ void *transicion_exit_largo_plazo(){
         sem_wait(b_largo_plazo_exit);
         t_pcb *proceso = sacar_procesos_cola(cola_exec_global, procesos_en_exec);
         agregar_a_estado(proceso, cola_exit_global, procesos_en_exit); // moverlo a la cola de exit, hay un lugar en memoria
-        sem_post(&GRADO_MULTIPROGRAMACION);//se aumenta el grado
+        sem_post(GRADO_MULTIPROGRAMACION); //se aumenta el grado
         log_info(logger, "Finaliza el proceso %d - Motivo:", proceso->cde->pid);
         //liberar_proceso(proceso);
     }

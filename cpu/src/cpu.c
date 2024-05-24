@@ -298,7 +298,6 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		break;
 	case EXIT:
-		exec_exit(contextoProceso);
 		actualizar_cde(contextoProceso);
 		exec_exit(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
