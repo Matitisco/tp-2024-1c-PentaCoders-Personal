@@ -99,6 +99,8 @@ extern sem_t *b_largo_plazo_exit;
 extern sem_t *b_exec_libre;
 extern sem_t *b_reanudar_largo_plazo;
 extern sem_t *b_reanudar_corto_plazo;
+extern sem_t *b_transicion_exec_ready;
+
 
 extern int habilitar_planificadores;
 
@@ -146,7 +148,7 @@ void iniciar_hilos(config_kernel *valores_config);
 
 void *largo_plazo();
 void *transicion_exit_largo_plazo();
-
+void *transicion_exec_ready();
 
 void *corto_plazo();
 

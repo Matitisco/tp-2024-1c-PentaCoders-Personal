@@ -147,20 +147,9 @@ void levantar_Kernel_Interrupt(void *ptr)
 		//  envia la conexion
 		switch (codigo)
 		{
-		case PROCESO_INTERRUMPIDO:
-			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
-			interrupcion_rr = leer_buffer_enteroUint32(buffer_cde);
-
-			// replanificar
-			/* 			int proceso_a_interrumpir = leer_buffer_enteroUint32(buffer);
-						destruir_buffer(buffer);
-						if (proceso_a_interumpir == proceso_en_ejecucion())
-						{
-							// se interrumpe el proceso por planificacion
-						}
-						else
-						{
-						} */
+		case PROCESO_INTERRUMPIDO_QUANTUM:
+			interrupcion_rr = 1;
+						
 
 			break;
 		case SOLICITUD_EXIT:
@@ -331,7 +320,7 @@ void check_interrupt()
 	enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	destruir_buffer(buffer_cde);
 }
-
+//
 /*En este momento, se deberá chequear si el Kernel nos envió una interrupción al PID que se está
 ejecutando, en caso afirmativo, se devuelve el Contexto de Ejecución actualizado al Kernel con
 motivo de la interrupción. Caso contrario, se descarta la interrupción.

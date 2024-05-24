@@ -31,5 +31,7 @@ int hayInstruccionBloqueante();
 void planificar_por_rr();
 void replanificar_por_rr(t_pcb *proceso);
 void planificar_por_vrr();
+void *transicion_exec_ready();
+void *transicion_exit_largo_plazo();
 
 #endif
