@@ -202,6 +202,7 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io)
 		// 5-vuelvo al paso 2
 	}
 }
+
 int pasar_a_int(enum_interfaz tipo_int)
 {
 	if (tipo_int == GENERICA)
@@ -225,7 +226,7 @@ int pasar_a_int(enum_interfaz tipo_int)
 
 void realizar_operacion_gen()
 {
-	tipo_buffer *buffer_sol_operacion = recibir_buffer(socket_kernel);
+	tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
 	int unidades_tiempo = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_GEN_SLEEP)

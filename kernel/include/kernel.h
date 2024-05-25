@@ -139,6 +139,7 @@ bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre);
 char *obtener_interfaz(enum_interfaz interfaz);
 void recibir_orden_interfaces_de_cpu();
 _Bool interfaz_esta_conectada();
+void interfaz_conectada(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar);
 void atender_interrupciones();
 
 #endif

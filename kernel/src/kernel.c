@@ -10,7 +10,7 @@ int socket_cpu_dispatch;
 int socket_cpu_interrupt;
 int socket_interfaz;
 int socket_io;
-
+int disp_io;
 // Contadores Semaforos
 sem_t *GRADO_MULTIPROGRAMACION;
 
@@ -83,6 +83,7 @@ void iniciar_hilos(config_kernel *valores_config)
 	args_CPU_INT = crearArgumento(valores_config->puerto_cpu_interrupt, valores_config->ip_cpu);
 	crearHilos(args_MEMORIA, args_IO, args_CPU_DS, args_CPU_INT);
 }
+
 void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT)
 {
 	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
@@ -100,7 +101,7 @@ void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_ar
 
 void *levantarIO()
 {
-	int disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
+	disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
 	while (1)
 	{
 		op_code operacion = recibir_operacion(disp_io);
@@ -344,27 +345,23 @@ void atender_interrupciones()
 
 void recibir_orden_interfaces_de_cpu()
 {
+	tipo_buffer *buffer_dispatch = recibir_buffer(socket_cpu_dispatch);
 	op_code operacion_desde_cpu_dispatch = recibir_operacion(socket_cpu_dispatch);
 	switch (operacion_desde_cpu_dispatch)
 	{
 	case SOLICITUD_INTERFAZ_GENERICA: // ocurre cuando se va a ejecutar la instruccion IO_GEN_SLEEP
 
-		sem_post(cola_bloqueado_global->contador);
+		log_info(logger, "SOLICITD_INTERFAZ_GENERICA DE CPU DISPATCH");
 
-		tipo_buffer *buffer_dispatch = recibir_buffer(socket_cpu_dispatch);
 		t_tipoDeInstruccion instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_dispatch);
 		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_dispatch);
 		nombre_IO = leer_buffer_string(buffer_dispatch); // recibo la interfaz que debe hacer la operacion pedida por la cpu
 
 		t_pcb *proceso_quitado = sacar_procesos_cola(cola_exec_global);
-
 		proceso_quitado->estado = BLOCKED;
 
 		agregar_a_estado(proceso_quitado, cola_bloqueado_global);
-
 		destruir_buffer(buffer_dispatch);
-
-		tipo_buffer *buffer_interfaz = crear_buffer();
 
 		if (list_find(lista_interfaces, interfaz_esta_conectada) == NULL)
 		{
@@ -372,8 +369,9 @@ void recibir_orden_interfaces_de_cpu()
 		}
 		else
 		{
-			interfaz_conectada(buffer_interfaz, unidades_trabajo, instruccion_a_ejecutar);
+			interfaz_conectada(unidades_trabajo, instruccion_a_ejecutar);
 		}
+
 		break;
 	case SOLICITUD_INTERFAZ_STDIN:
 		break;
@@ -394,26 +392,35 @@ void interfaz_no_conectada() // IMPLEMENTAR
 	//  enviar proceso que pidio la ejecucion de la instruccion a exit
 }
 
-void interfaz_conectada(tipo_buffer *buffer_interfaz, int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar)
+void interfaz_conectada(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar)
 {
 	log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-	enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
-	op_code operacion_io = recibir_operacion(socket_interfaz);
+	enviar_cod_enum(disp_io, CONSULTAR_DISPONIBILDAD);
+
+	op_code operacion_io = recibir_operacion(disp_io);
+	tipo_buffer *buffer_interfaz = crear_buffer();
+
 	if (operacion_io == ESTOY_LIBRE)
 	{
+		log_info(logger, "INSTRUCICON : %d", instruccion_a_ejecutar);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
-		enviar_buffer(buffer_interfaz, socket_io);
-		operacion_io = recibir_operacion(socket_interfaz);
+		enviar_buffer(buffer_interfaz, disp_io);
+		operacion_io = recibir_operacion(disp_io);
 		if (operacion_io == CONCLUI_OPERACION)
+		{
+			t_pcb *proceso_quitado = sacar_procesos_cola(cola_bloqueado_global);
+			proceso_quitado->estado = EXEC;
+			agregar_a_estado(proceso_quitado, cola_exec_global);
 			enviar_cod_enum(socket_cpu_dispatch, EJECUCION_IO_GEN_SLEEP_EXITOSA);
+		}
 	}
 	else
 	{
-		operacion_io = recibir_operacion(socket_interfaz);
+		operacion_io = recibir_operacion(disp_io);
 		if (operacion_io == CONCLUI_OPERACION)
 		{
-			interfaz_conectada(buffer_interfaz, unidades_trabajo, instruccion_a_ejecutar);
+			interfaz_conectada(unidades_trabajo, instruccion_a_ejecutar);
 		}
 	}
 }

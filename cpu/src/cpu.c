@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
 	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
 
-	terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
+	//terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
 }
 void iniciar_hilos_CPU(config_cpu *valores_config_cpu)
 {

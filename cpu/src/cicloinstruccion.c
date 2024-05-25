@@ -187,14 +187,13 @@ void exec_signal() {}
 // IO_GEN_SLEEP
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
 {
-    enviar_cod_enum(socket_kernel_dispatch, SOLICITUD_INTERFAZ_GENERICA);
     tipo_buffer *buffer = crear_buffer();
-
     agregar_buffer_para_enterosUint32(buffer, IO_GEN_SLEEP);
     agregar_buffer_para_enterosUint32(buffer, unidades_trabajo);
     agregar_buffer_para_string(buffer, nombre_interfaz);
-
     enviar_buffer(buffer, socket_kernel_dispatch);
+    enviar_cod_enum(socket_kernel_dispatch, SOLICITUD_INTERFAZ_GENERICA);
+
     op_code esperar_operacion = recibir_operacion(socket_kernel_dispatch);
     if (esperar_operacion == EJECUCION_IO_GEN_SLEEP_EXITOSA)
     {
