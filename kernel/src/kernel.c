@@ -100,7 +100,8 @@ void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_ar
 int llego_proceso()
 {
 	int *sem_value_q = malloc(sizeof(int));
-	sem_getvalue(cola_exec_global->contador, sem_value_q);
+	sem_getvalue(cola_exec_global->contador, sem_value_q); // 0 o 1
+	log_info(logger, "VAlor sem: %d", *sem_value_q);
 	return *sem_value_q;
 }
 
@@ -287,10 +288,8 @@ void *levantar_CPU_Dispatch(void *ptr)
 	{
 
 		op_code cod = recibir_operacion(socket_cpu_dispatch); // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
-
-		t_cde *cde;
 		tipo_buffer *buffer_cpu;
-
+		t_cde *cde;
 		switch (cod)
 		{
 		case FINALIZAR_PROCESO:
@@ -307,12 +306,12 @@ void *levantar_CPU_Dispatch(void *ptr)
 
 			break;
 		case FIN_DE_QUANTUM:
-			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde->pid);
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
 			cde = leer_cde(buffer_cpu);
+			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde->pid);
+			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
 
-			pthread_cancel(hiloQuantum);
 
 			sem_post(b_transicion_exec_ready);
 			break;
@@ -323,6 +322,14 @@ void *levantar_CPU_Dispatch(void *ptr)
 		}
 	}
 }
+
+
+
+
+
+
+
+
 
 /* void atender_interrupciones()
 {

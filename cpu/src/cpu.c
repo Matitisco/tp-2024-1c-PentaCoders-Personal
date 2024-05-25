@@ -7,7 +7,7 @@ config_cpu *valores_config_cpu;
 int interrupcion_rr;
 int interrrupcion_fifo;
 int interrupcion_entrada_salida;
-
+int hay_interrupcion;
 int CONEXION_A_MEMORIA;
 int socket_memoria;
 int socket_kernel_dispatch;
@@ -22,6 +22,7 @@ t_args *args_memoria;
 t_args *kernel_ds;
 t_args *kernel_int;
 pthread_mutex_t *mutex_cde_ejecutando;
+sem_t *sem_check_interrupt;
 
 t_cde *cde_recibido;
 
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
 
 	// terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
 }
+
 void iniciar_hilos_CPU(config_cpu *valores_config_cpu)
 {
 	args_memoria = crearArgumento(valores_config_cpu->puerto_memoria, valores_config_cpu->ip);
@@ -52,10 +54,13 @@ void iniciar_hilos_CPU(config_cpu *valores_config_cpu)
 	kernel_int = crearArgumento(valores_config_cpu->puerto_escucha_interrupt, valores_config_cpu->ip);
 	crearHilos_CPU(args_memoria, kernel_int, kernel_ds);
 }
+
 void iniciar_semaforos_CPU()
 {
 	mutex_cde_ejecutando = malloc(sizeof(pthread_mutex_t));
+	sem_check_interrupt = malloc(sizeof(sem_t));
 	sem_init(mutex_cde_ejecutando, 0, 0);
+	sem_init(sem_check_interrupt, 0, 1);
 }
 
 void crearHilos_CPU(t_args *args_memoria, t_args *kernel_int, t_args *kernel_dis)
@@ -93,12 +98,14 @@ void levantar_Kernel_Dispatch(void *ptr)
 		switch (codigo)
 		{
 		case EJECUTAR_PROCESO:
+
 			log_info(logger, "EJECUTAR PROCESO");
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 
-			cde_recibido = leer_cde(buffer_cde); // variable global
+			cde_recibido = leer_cde(buffer_cde);
 
 			log_info(logger, "Me llego el proceso a ejecutar con PID: %d", cde_recibido->pid);
+
 			salida_exit = 1;
 
 			while (salida_exit)
@@ -106,19 +113,11 @@ void levantar_Kernel_Dispatch(void *ptr)
 				char *linea_instruccion = fetch(cde_recibido);
 				cde_recibido->PC++;
 				char **array_instruccion = decode(linea_instruccion);
-
 				execute(array_instruccion, cde_recibido);
 				check_interrupt();
-				//  while(interrupcion);
-
-				// pthread_mutex_lock(&mutex_cde_ejecutando);
-
-				// pthread_mutex_unlock(&mutex_cde_ejecutando);
 			}
-			destruir_buffer(buffer_cde);
 
-			// sem_post(GRADO_MULTIPROGRAMACION); // son de otro modulo, lo tiene que hacer kernel dispatch
-			// sem_post(exec_libre);
+			destruir_buffer(buffer_cde);
 			break;
 		case -1:
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
@@ -141,13 +140,11 @@ void levantar_Kernel_Interrupt(void *ptr)
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_interrupt);
-		// tipo_buffer *buffer = recibir_buffer(socket_kernel_interrupt);
-
-		// t_cde *cde_recibido = leer_cde(buffer);
-		//  envia la conexion
+		log_info(logger, "ME LLEGO UNA INTERRUPCION: %d", codigo);
 		switch (codigo)
 		{
 		case PROCESO_INTERRUMPIDO_QUANTUM:
+			hay_interrupcion = 1;
 			interrupcion_rr = 1;
 			break;
 		case SOLICITUD_EXIT:
@@ -188,6 +185,7 @@ char *fetch(t_cde *contexto)
 	agregar_buffer_para_enterosUint32(buffer, contexto->pid);
 
 	agregar_buffer_para_enterosUint32(buffer, contexto->PC);
+	log_info(logger, "PC: %d", contexto->PC);
 
 	contexto->path = NULL; // no es relevante
 	enviar_buffer(buffer, socket_memoria);
@@ -199,7 +197,6 @@ char *fetch(t_cde *contexto)
 	{
 		tipo_buffer *bufferProximaInstruccion = recibir_buffer(socket_memoria);
 		char *linea_de_instruccion = leer_buffer_string(bufferProximaInstruccion);
-		// log_info(logger, "Me llego la linea de instruccion %s", linea_de_instruccion);
 		destruir_buffer(bufferProximaInstruccion);
 		return linea_de_instruccion;
 	}
@@ -303,28 +300,25 @@ void check_interrupt()
 	tipo_buffer *buffer_cde = crear_buffer();
 	if (interrupcion_rr)
 	{
+		salida_exit = 0;
+		interrupcion_rr = 0;
 		enviar_cod_enum(socket_kernel_dispatch, FIN_DE_QUANTUM);
 		agregar_cde_buffer(buffer_cde, cde_recibido);
-		// agregar_buffer_para_enterosUint32(buffer_cde, FIN_DE_QUANTUM);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
-		
-		interrupcion_rr = 0;
-		// accede a la lista de interrupciones
+		log_info(logger, "INTERRUPCION - FIN DE QUANTUM - ");
 	}
 	else if (interrrupcion_fifo)
 	{
+		salida_exit = 0;
+		interrrupcion_fifo = 0;
 		enviar_cod_enum(socket_kernel_dispatch, BLOQUEADO_POR_IO);
 		agregar_cde_buffer(buffer_cde, cde_recibido);
-		//agregar_buffer_para_enterosUint32(buffer_cde, BLOQUEADO_POR_IO);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
-		
-		interrrupcion_fifo = 0;
 	}
 	else
 	{
 		log_info(logger, "No hay interrupciones");
 	}
-	// enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	destruir_buffer(buffer_cde);
 }
 //
@@ -334,6 +328,7 @@ motivo de la interrupción. Caso contrario, se descarta la interrupción.
 Cabe aclarar que en todos los casos el Contexto de Ejecución debe ser devuelto a través de la
 conexión de dispatch, quedando la conexión de interrupt dedicada solamente a recibir mensajes de
 interrupción.*/
+
 void actualizar_cde(t_cde *contexto)
 {
 	contexto->registros = registros;

@@ -34,7 +34,6 @@ a la espera de que finalicen procesos que se encuentran en ejecución.
 */
 void *largo_plazo()
 {
-    //log_info(logger, "--------------Planificador de Largo Plazo Iniciado-------------- \n");
     while (1)
     {
 
@@ -53,9 +52,9 @@ void *largo_plazo()
 
         sem_post(cola_ready_global->contador); 
 
-        
     }
 }
+
 t_pcb *transicion_new_a_ready()
 {
     t_pcb *proceso = malloc(sizeof(t_pcb));
@@ -68,15 +67,17 @@ t_pcb *transicion_new_a_ready()
 
 void *transicion_exit_largo_plazo(){
 	 
-    //sem_wait(b_reanudar_largo_plazo);
     while(1){
         sem_wait(b_largo_plazo_exit);
+
         t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
+        //proceso->cde = cde;
+
         agregar_a_estado(proceso, cola_exit_global); // moverlo a la cola de exit, hay un lugar en memoria
         sem_post(GRADO_MULTIPROGRAMACION); //se aumenta el grado
         sem_post(b_exec_libre); 
         log_info(logger, "Finaliza el proceso %d - Motivo:", proceso->cde->pid);
-        //liberar_proceso(proceso);
+
     }
     
 }

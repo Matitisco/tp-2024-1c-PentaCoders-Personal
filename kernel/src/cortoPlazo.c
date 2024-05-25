@@ -1,31 +1,6 @@
 #include "../include/cortoPlazo.h"
-/*
 
-EXEC -> READY // Se desata cuando CPU devuelve el CTE y el motivoDeDesalojo (por Interrupt?)
-
-
-READY -> EXEC // No se
-
-EXEC -> BLOCK //Cuando se completo la rafaga en CPU y se recibe CTE y mDD (por Dispatch)
-BLOCK -> READY // Cuando cumple su operacion en IO
-
-BLOCK -> EXIT // Cuando su operacion IO era lo ultimo pendiente
-*/
-
-/* Los procesos que estén en estado READY serán planificados mediante uno de los siguientes algoritmos:
-    -FIFO
-    -Round Robin
-    -Virtual Round Robin
-Una vez seleccionado el siguiente proceso a ejecutar,
-se lo transicionará al estado EXEC y se enviará su Contexto
-de Ejecución al CPU a través del puerto de dispatch, quedando
-a la espera de recibir dicho contexto actualizado después de la ejecución,
-junto con un motivo de desalojo por el cual fue desplazado a manejar.
-En caso que el algoritmo requiera desalojar al proceso en ejecución,
-se enviará una interrupción a través de la conexión de interrupt para forzar el desalojo del mismo.
-Al recibir el Contexto de Ejecución del proceso en ejecución,
-en caso de que el motivo de desalojo implique replanificar se seleccionará
-el siguiente proceso a ejecutar según indique el algoritmo. Durante este período la CPU se quedará esperando el nuevo contexto. */
+/* Los procesos que estén en estado READY serán planificados mediante uno de los siguientes algoritmos:*/
 
 // PASAR A KERNEL. H PARA QUE LO UTILICE LARGO PLAZO
 
@@ -48,7 +23,6 @@ void *corto_plazo()
     }
     else if (strcmp(valores_config->algoritmo_planificacion, "RR") == 0)
     {
-
         planificar_por_rr();
     }
     else if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
@@ -150,47 +124,20 @@ void planificar_por_rr()
 
     while (1)
     {
-        sem_wait(b_exec_libre); // deja de estar libre exec
-        sem_wait(cola_ready_global->contador);
-        //  quantum = temporal_create();
-        //   primer proceso que meto
+        sem_wait(b_exec_libre);                // deja de estar libre exec
+        sem_wait(cola_ready_global->contador); // contador de procesos en ready
+
         proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
         agregar_a_estado(proceso, cola_exec_global);
-
+        log_info(logger, "Proceso a enviar: %d", proceso->cde->pid);
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
 
-        // P1 4 RAFAGAS q = 2
         log_info(logger, "Inicio de QUANTUM");
         pthread_create(&hiloQuantum, NULL, hilo_quantum, NULL);
+        sem_post(sem_quantum);
         enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
         enviar_cde(socket_cpu_dispatch, proceso->cde);
-
-        sem_post(sem_quantum);
-
-        // temporal_start(quantum);
-
-        /* sem_getvalue(cola_exec_global->contador, valor_sem);
-        if (*valor_sem == 1)
-        {
-            enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
-        } */
-
-        // Hay que hacer que un hilo reciba el retorno de la interrupcion de CPU y que habilite con un binario el hilo exec=>ready
-        // testear si esta en ejecucion o no
-        /* while (temporal_gettime(quantum) != QUANTUM)
-        {
-
-            // simular la ejecucion de un proceso
-            //sleep(); // Cuando el cronometros llego al quatum que queremos <-ojo que sleep es bloqueante
-        }
-
-        temporal_stop(quantum); */
-
-        // replanificar_por_rr(proceso); // se para el timer
-        // temporal_destroy(quantum);
-        //  caundo las rafagas de cpu son menores a las definidas por el quantum, la cpu nos debe avisar que el proceso se bloqueo o termino.
     }
-    // ENVIA A CPU
 }
 
 void *hilo_quantum()
@@ -198,9 +145,15 @@ void *hilo_quantum()
     while (1)
     {
         sem_wait(sem_quantum);
-        usleep(QUANTUM * 1000);
-        if (!llego_proceso())
-            enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
+        usleep(QUANTUM);
+        // if (!llego_proceso())
+        //{
+        enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
+        //}
+        // else
+        //{
+        // log_info(logger, "El proceso salio antes del fin de quantum");
+        //}
     }
 }
 
