@@ -21,18 +21,7 @@
 #include "../../utils/include/instrucciones.h"
 
 extern int QUANTUM;
-
-// ENUMS
-
-typedef enum
-{
-	FIFO,
-	RR,
-	VRR
-} t_alg_planificadores;
-
-// ESTRUCTURAS
-
+extern pthread_t hiloQuantum;
 typedef struct
 {
 	t_config *config;
@@ -49,9 +38,6 @@ typedef struct
 	int grado_multiprogramacion;
 } config_kernel;
 
-// QUITAR ENUM_INTERFAZ UNA VEZ MERGEADO INTERFACES Y KERNEL
-
-
 typedef struct
 {
 	char *nombreEstado;
@@ -61,39 +47,26 @@ typedef struct
 
 } colaEstado;
 
-
-
-
 // VARIABLES
 extern uint32_t PID_GLOBAL;
 extern t_log *logger;
 extern sem_t* GRADO_MULTIPROGRAMACION;
-
-
 extern sem_t* sem_agregar_a_estado;
 extern sem_t *sem_kernel;
 extern sem_t *sem_kernel_io_generica;
 //Binarios
+extern sem_t *sem_quantum;
 extern sem_t *binario_menu_lp;
 extern sem_t *b_largo_plazo_exit;
 extern sem_t *b_exec_libre;
 extern sem_t *b_reanudar_largo_plazo;
 extern sem_t *b_reanudar_corto_plazo;
 extern sem_t *b_transicion_exec_ready;
-
-
 extern int habilitar_planificadores;
-
-
-
-
-
 extern config_kernel *valores_config;
-
 extern int socket_memoria;
 extern int socket_cpu_dispatch;
 extern int socket_cpu_interrupt;
-extern int socket_io;
 // DECLARACION VARIABLES GLOBALES
 
 extern colaEstado *cola_new_global;
@@ -129,8 +102,8 @@ void iniciar_hilos(config_kernel *valores_config);
 void *largo_plazo();
 void *transicion_exit_largo_plazo();
 void *transicion_exec_ready();
-
 void *corto_plazo();
+void *hilo_quantum();
 
 
 // funciones de io
@@ -141,5 +114,7 @@ void recibir_orden_interfaces_de_cpu();
 _Bool interfaz_esta_conectada();
 void interfaz_conectada(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar);
 void atender_interrupciones();
+int llego_proceso();
+
 
 #endif

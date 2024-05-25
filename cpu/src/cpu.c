@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
 	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
 
-	//terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
+	// terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
 }
 void iniciar_hilos_CPU(config_cpu *valores_config_cpu)
 {
@@ -148,7 +148,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 		switch (codigo)
 		{
 		case PROCESO_INTERRUMPIDO_QUANTUM:
-			interrupcion_rr = 1;	
+			interrupcion_rr = 1;
 			break;
 		case SOLICITUD_EXIT:
 			tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt); // recibo el buffer de kernel
@@ -186,7 +186,9 @@ char *fetch(t_cde *contexto)
 	tipo_buffer *buffer = crear_buffer();
 
 	agregar_buffer_para_enterosUint32(buffer, contexto->pid);
+
 	agregar_buffer_para_enterosUint32(buffer, contexto->PC);
+
 	contexto->path = NULL; // no es relevante
 	enviar_buffer(buffer, socket_memoria);
 	destruir_buffer(buffer);
@@ -301,21 +303,21 @@ void check_interrupt()
 	tipo_buffer *buffer_cde = crear_buffer();
 	if (interrupcion_rr)
 	{
-		enviar_cod_enum(socket_kernel_dispatch, INTERRUPCION);
+		enviar_cod_enum(socket_kernel_dispatch, FIN_DE_QUANTUM);
 		agregar_cde_buffer(buffer_cde, cde_recibido);
-		agregar_buffer_para_enterosUint32(buffer_cde, FIN_DE_QUANTUM);
+		// agregar_buffer_para_enterosUint32(buffer_cde, FIN_DE_QUANTUM);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
-		destruir_buffer(buffer_cde);
+		
 		interrupcion_rr = 0;
 		// accede a la lista de interrupciones
 	}
 	else if (interrrupcion_fifo)
 	{
-		enviar_cod_enum(socket_kernel_dispatch, INTERRUPCION);
+		enviar_cod_enum(socket_kernel_dispatch, BLOQUEADO_POR_IO);
 		agregar_cde_buffer(buffer_cde, cde_recibido);
-		agregar_buffer_para_enterosUint32(buffer_cde, BLOQUEADO_POR_IO);
+		//agregar_buffer_para_enterosUint32(buffer_cde, BLOQUEADO_POR_IO);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
-		destruir_buffer(buffer_cde);
+		
 		interrrupcion_fifo = 0;
 	}
 	else

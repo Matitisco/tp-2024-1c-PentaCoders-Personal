@@ -1,34 +1,32 @@
 #include "../include/kernel.h"
-extern sem_t *sem_kernel_io_generica;
+
+// COLAS
 colaEstado *cola_new_global;
 colaEstado *cola_ready_global;
 colaEstado *cola_exec_global;
 colaEstado *cola_bloqueado_global;
 colaEstado *cola_exit_global;
+// INTEGERS
 int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
 int socket_interfaz;
-int socket_io;
 int disp_io;
+int habilitar_planificadores;
+int QUANTUM;
 // Contadores Semaforos
 sem_t *GRADO_MULTIPROGRAMACION;
-
 // Semaforos de binarios
 sem_t *binario_menu_lp;
 sem_t *b_largo_plazo_exit;
 sem_t *b_transicion_exec_ready;
-
 sem_t *b_exec_libre;
-
+sem_t *sem_quantum;
 sem_t *sem_agregar_a_estado;
-
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
-
-int habilitar_planificadores;
-
-int QUANTUM;
+extern sem_t *sem_kernel_io_generica;
+// HILOS
 pthread_t hiloMEMORIA;
 pthread_t hiloIO;
 pthread_t hiloLargoPlazo;
@@ -38,6 +36,7 @@ pthread_t hiloCPUDS;
 pthread_t hiloConsola;
 pthread_t largo_plazo_exit;
 pthread_t t_transicion_exec_ready;
+pthread_t hiloQuantum;
 
 t_list *lista_interfaces;
 t_args *args_MEMORIA;
@@ -71,8 +70,7 @@ int main(int argc, char *argv[])
 	pthread_join(hiloConsola, NULL);
 	pthread_join(largo_plazo_exit, NULL);
 	pthread_join(t_transicion_exec_ready, NULL);
-	// LIBERAR COSAS
-	liberar_conexion(socket_memoria);
+	pthread_join(hiloQuantum, NULL);
 }
 
 void iniciar_hilos(config_kernel *valores_config)
@@ -97,6 +95,13 @@ void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_ar
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
+}
+
+int llego_proceso()
+{
+	int *sem_value_q = malloc(sizeof(int));
+	sem_getvalue(cola_exec_global->contador, sem_value_q);
+	return *sem_value_q;
 }
 
 void *levantarIO()
@@ -125,7 +130,6 @@ void *levantarIO()
 
 			log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, nombre_IO);
 
-			// recibimos de cpu una instruccion
 			recibir_orden_interfaces_de_cpu();
 		}
 		else
@@ -135,6 +139,7 @@ void *levantarIO()
 	}
 	return NULL;
 }
+
 _Bool interfaz_esta_conectada(char *interfaz)
 {
 	return strcmp(interfaz, nombre_IO) == 0;
@@ -202,14 +207,13 @@ void iniciar_semaforos()
 	GRADO_MULTIPROGRAMACION = malloc(sizeof(sem_t));
 
 	binario_menu_lp = malloc(sizeof(sem_t));
-
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
-
 	b_largo_plazo_exit = malloc(sizeof(sem_t));
 	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
 	b_exec_libre = malloc(sizeof(sem_t));
 	b_transicion_exec_ready = malloc(sizeof(sem_t));
+	sem_quantum = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 
@@ -219,6 +223,7 @@ void iniciar_semaforos()
 	sem_init(b_exec_libre, 0, 1);
 	sem_init(b_largo_plazo_exit, 0, 0);
 	sem_init(b_transicion_exec_ready, 0, 0);
+	sem_init(sem_quantum, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -294,16 +299,21 @@ void *levantar_CPU_Dispatch(void *ptr)
 
 			cde = leer_cde(buffer_cpu);
 
+			pthread_cancel(hiloQuantum);
+
 			log_info(logger, "Se finalizo el proceso: %d", cde->pid);
 
 			sem_post(b_largo_plazo_exit); // otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
+
 			break;
 		case FIN_DE_QUANTUM:
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde->pid);
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
-
 			cde = leer_cde(buffer_cpu);
+
+			pthread_cancel(hiloQuantum);
+
 			sem_post(b_transicion_exec_ready);
 			break;
 
@@ -314,7 +324,7 @@ void *levantar_CPU_Dispatch(void *ptr)
 	}
 }
 
-void atender_interrupciones()
+/* void atender_interrupciones()
 {
 	tipo_buffer *buffer_desde_cpu = crear_buffer();
 	op_code motivo_interrupcion = leer_buffer_enteroUint32(buffer_desde_cpu);
@@ -341,7 +351,7 @@ void atender_interrupciones()
 		log_error(logger, "Motivo de interrupcion incorrecto");
 		break;
 	}
-}
+} */
 
 void recibir_orden_interfaces_de_cpu()
 {

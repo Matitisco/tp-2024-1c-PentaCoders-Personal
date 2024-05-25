@@ -192,7 +192,7 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
     enviar_cod_enum(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
 
-    free(instruccion);
+    free(instruccion);//
     enviar_buffer(buffer_instruccion, cliente_fd);
     destruir_buffer(buffer_instruccion);
     destruir_buffer(buffer);

@@ -227,7 +227,7 @@ void destruir_buffer(tipo_buffer *buffer)
 {
     free(buffer->stream);
     free(buffer);
-}
+} 
 // AGREGAR EN EL BUFFER UN ENTERO UINT32
 void agregar_buffer_para_enterosUint32(tipo_buffer *buffer, uint32_t entero)
 {
@@ -408,10 +408,11 @@ t_cde *leer_cde(tipo_buffer *buffer)
 {
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
+    cde->PC = leer_buffer_enteroUint32(buffer);
     //scde->path = leer_buffer_string(buffer);
     cde->registros = malloc(sizeof(t_registros));
     cde->registros = leer_buffer_registros(buffer);
-    cde->PC = leer_buffer_enteroUint32(buffer);
+    
 
     return cde;
 }
