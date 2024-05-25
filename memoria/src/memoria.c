@@ -123,7 +123,7 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
         char *token = strdup(strtok(linea_instruccion, "\n"));
         char *token_copia = token;
 
-        log_info(logger, "%s", token);
+        log_info(logger, ">%s<", token);
         list_add(list_instrucciones, token);
     }
     fclose(archivo);
@@ -185,6 +185,8 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
     t_cde *contexto = malloc(sizeof(t_cde));
 
     contexto = obtener_contexto_en_ejecucion(PID, contextos);
+
+    log_info(logger, "INSTRUCCION: %s", list_get(contexto->lista_instrucciones,PC));
 
     tipo_buffer *buffer_instruccion = crear_buffer();
     char *instruccion = string_new();
