@@ -22,6 +22,7 @@
 
 extern int QUANTUM;
 extern pthread_t hiloQuantum;
+extern t_cde *cde_interrumpido_por_dispatch;
 typedef struct
 {
 	t_config *config;

@@ -37,7 +37,7 @@ pthread_t hiloConsola;
 pthread_t largo_plazo_exit;
 pthread_t t_transicion_exec_ready;
 pthread_t hiloQuantum;
-
+t_cde *cde_interrumpido_por_dispatch;
 t_list *lista_interfaces;
 t_args *args_MEMORIA;
 t_args *args_IO;
@@ -289,18 +289,18 @@ void *levantar_CPU_Dispatch(void *ptr)
 
 		op_code cod = recibir_operacion(socket_cpu_dispatch); // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
 		tipo_buffer *buffer_cpu;
-		t_cde *cde;
+		
 		switch (cod)
 		{
 		case FINALIZAR_PROCESO:
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
 
-			cde = leer_cde(buffer_cpu);
+			cde_interrumpido_por_dispatch = leer_cde(buffer_cpu);
 
 			pthread_cancel(hiloQuantum);
 
-			log_info(logger, "Se finalizo el proceso: %d", cde->pid);
+			log_info(logger, "Se finalizo el proceso: %d", cde_interrumpido_por_dispatch->pid);
 
 			sem_post(b_largo_plazo_exit); // otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
 
@@ -308,8 +308,8 @@ void *levantar_CPU_Dispatch(void *ptr)
 		case FIN_DE_QUANTUM:
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
-			cde = leer_cde(buffer_cpu);
-			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde->pid);
+			cde_interrumpido_por_dispatch = leer_cde(buffer_cpu);
+			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido_por_dispatch->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
 
 

@@ -164,6 +164,7 @@ void *transicion_exec_ready()
     {
         sem_wait(b_transicion_exec_ready);
         t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
+        proceso->cde = cde_interrumpido_por_dispatch;
         agregar_a_estado(proceso, cola_ready_global); // moverlo a la cola de exit, hay un lugar en memoria
         sem_post(b_exec_libre);
         log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
