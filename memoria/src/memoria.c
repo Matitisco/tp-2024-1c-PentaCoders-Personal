@@ -123,7 +123,7 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
         char *token = strdup(strtok(linea_instruccion, "\n"));
         char *token_copia = token;
 
-        log_info(logger, "%s", token);
+        log_info(logger, ">%s<", token);
         list_add(list_instrucciones, token);
     }
     fclose(archivo);
@@ -185,6 +185,8 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
 
     contexto = obtener_contexto_en_ejecucion(PID, contextos);
 
+    log_info(logger, "INSTRUCCION: %s", list_get(contexto->lista_instrucciones,PC));
+
     tipo_buffer *buffer_instruccion = crear_buffer();
     char *instruccion = string_new();
     instruccion = list_get(contexto->lista_instrucciones, PC);
@@ -209,7 +211,7 @@ t_cde *obtener_contexto_en_ejecucion(int PID, t_list *contextos)
     cde_proceso->lista_instrucciones = list_get(lista_instrucciones, cde_proceso->pid);
 
     log_info(logger, "SE OBTUVO EL PROCESO PID: %d CON PATH: %s Y CON: %d INSTRUCCIONES", cde_proceso->pid, cde_proceso->path, list_size(cde_proceso->lista_instrucciones));
-    log_info(logger, "INSTRUCCION: %s", cde_proceso->lista_instrucciones->head->data);
+
     return cde_proceso;
 }
 
