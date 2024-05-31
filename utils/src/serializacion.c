@@ -332,6 +332,7 @@ tipo_buffer *recibir_buffer(int socket)
     }
     return buffer;
 }
+
 // LEER BUFFER UINT_32
 uint32_t leer_buffer_enteroUint32(tipo_buffer *buffer)
 {

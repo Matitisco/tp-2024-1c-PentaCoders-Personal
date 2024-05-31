@@ -7,7 +7,7 @@ config_cpu *valores_config_cpu;
 int interrupcion_rr;
 int interrrupcion_fifo;
 int interrupcion_entrada_salida;
-int hay_interrupcion;
+int interrupcion_io;
 int CONEXION_A_MEMORIA;
 int socket_memoria;
 int socket_kernel_dispatch;
@@ -16,6 +16,7 @@ int salida_exit;
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
 pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
+tipo_buffer *buffer_instruccion_io;
 // Semaforos
 // mutex_cde_ejecutando;
 t_args *args_memoria;
@@ -90,7 +91,6 @@ void levantar_Kernel_Dispatch(void *ptr)
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
 	int server_fd = iniciar_servidor(argumento->logger, "CPU Dispatch", argumento->ip, argumento->puerto);
-	log_info(logger, "Esperando KERNEL DISPATCH....");
 	socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
@@ -99,7 +99,6 @@ void levantar_Kernel_Dispatch(void *ptr)
 		{
 		case EJECUTAR_PROCESO:
 
-			log_info(logger, "EJECUTAR PROCESO");
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 
 			cde_recibido = leer_cde(buffer_cde);
@@ -114,9 +113,9 @@ void levantar_Kernel_Dispatch(void *ptr)
 				cde_recibido->PC++;
 				char **array_instruccion = decode(linea_instruccion);
 				execute(array_instruccion, cde_recibido);
+
 				check_interrupt();
 			}
-
 			destruir_buffer(buffer_cde);
 			break;
 		case -1:
@@ -134,17 +133,14 @@ void levantar_Kernel_Interrupt(void *ptr)
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
 	int server_fd = iniciar_servidor(argumento->logger, "CPU Interrupt", argumento->ip, argumento->puerto);
-	log_info(logger, "Esperando KERNEL INTERRUPT....");
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
-	// log_info(logger, "Se conecto el Kernel por Interrupt");
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_interrupt);
-		log_info(logger, "ME LLEGO UNA INTERRUPCION: %d", codigo);
+		log_info(logger, "Me llego una interrupcion");
 		switch (codigo)
 		{
 		case PROCESO_INTERRUMPIDO_QUANTUM:
-			hay_interrupcion = 1;
 			interrupcion_rr = 1;
 			break;
 		case SOLICITUD_EXIT:
@@ -173,7 +169,7 @@ void *conexionAMemoria(void *ptr)
 {
 	t_args *argumento = malloc(sizeof(t_args));
 	argumento = (t_args *)ptr;
-	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "CPU SE CONECTO A MEMORIA");
+	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto);
 	free(argumento);
 }
 
@@ -185,9 +181,8 @@ char *fetch(t_cde *contexto)
 	agregar_buffer_para_enterosUint32(buffer, contexto->pid);
 
 	agregar_buffer_para_enterosUint32(buffer, contexto->PC);
-	log_info(logger, "PC: %d", contexto->PC);
 
-	contexto->path = NULL; // no es relevante
+	contexto->path = NULL;
 	enviar_buffer(buffer, socket_memoria);
 	destruir_buffer(buffer);
 
@@ -213,7 +208,7 @@ char **decode(char *linea_de_instrucion)
 	char **instruccion = string_split(linea_de_instrucion, " ");
 	return instruccion;
 }
-// Contexto de ejecucion
+
 void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 {
 	t_tipoDeInstruccion cod_instruccion = obtener_instruccion(instruccion[0]); // instruccion parametro1 parametro2 parametro3
@@ -311,9 +306,17 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		interrrupcion_fifo = 0;
-		enviar_cod_enum(socket_kernel_dispatch, BLOQUEADO_POR_IO);
+		// enviar_cod_enum(socket_kernel_dispatch, BLOQUEADO_POR_IO);
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+	}
+	else if (interrupcion_io)
+	{
+		salida_exit = 0;
+		interrupcion_io = 0;
+		agregar_cde_buffer(buffer_cde, cde_recibido);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch); // enviamos proceso interrumpido
+		enviar_buffer(buffer_instruccion_io,socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
 	}
 	else
 	{

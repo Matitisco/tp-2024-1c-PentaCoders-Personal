@@ -20,11 +20,13 @@ sem_t *GRADO_MULTIPROGRAMACION;
 sem_t *binario_menu_lp;
 sem_t *b_largo_plazo_exit;
 sem_t *b_transicion_exec_ready;
+sem_t *b_transicion_exec_blocked;
 sem_t *b_exec_libre;
 sem_t *sem_quantum;
 sem_t *sem_agregar_a_estado;
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
+sem_t *b_transicion_blocked_ready;
 extern sem_t *sem_kernel_io_generica;
 // HILOS
 pthread_t hiloMEMORIA;
@@ -36,8 +38,10 @@ pthread_t hiloCPUDS;
 pthread_t hiloConsola;
 pthread_t largo_plazo_exit;
 pthread_t t_transicion_exec_ready;
+pthread_t t_transicion_exec_blocked;
+pthread_t t_transicion_blocked_ready;
 pthread_t hiloQuantum;
-t_cde *cde_interrumpido_por_dispatch;
+t_cde *cde_interrumpido;
 t_list *lista_interfaces;
 t_args *args_MEMORIA;
 t_args *args_IO;
@@ -51,15 +55,8 @@ config_kernel *valores_config;
 
 int main(int argc, char *argv[])
 {
-	inicializarEstados();
 
-	logger = iniciar_logger("kernel.log", "KERNEL");
-	lista_interfaces = list_create();
-	valores_config = inicializar_config_kernel();
-	QUANTUM = valores_config->quantum;
-	iniciar_semaforos();
-
-	iniciar_hilos(valores_config);
+	iniciar_kernel();
 
 	pthread_join(hiloMEMORIA, NULL);
 	pthread_join(hiloLargoPlazo, NULL);
@@ -73,28 +70,38 @@ int main(int argc, char *argv[])
 	pthread_join(hiloQuantum, NULL);
 }
 
-void iniciar_hilos(config_kernel *valores_config)
+void iniciar_kernel()
 {
-	args_MEMORIA = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
-	args_IO = crearArgumento(valores_config->puerto_escucha, valores_config->ip_memoria);
-	args_CPU_DS = crearArgumento(valores_config->puerto_cpu_dispatch, valores_config->ip_cpu);
-	args_CPU_INT = crearArgumento(valores_config->puerto_cpu_interrupt, valores_config->ip_cpu);
-	crearHilos(args_MEMORIA, args_IO, args_CPU_DS, args_CPU_INT);
+	inicializarEstados();
+	logger = iniciar_logger("kernel.log", "KERNEL");
+	nombre_IO = string_new();
+	lista_interfaces = list_create();
+	valores_config = inicializar_config_kernel();
+	QUANTUM = valores_config->quantum;
+
+	iniciar_semaforos();
+	levantar_servidores();
+	crear_hilos();
 }
 
-void crearHilos(t_args *args_MEMORIA, t_args *args_IO, t_args *args_CPU_DS, t_args *args_CPU_INT)
+void crear_hilos()
 {
-	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, (void *)args_MEMORIA);
-	servidor_para_io = iniciar_servidor(logger, "Kernel", valores_config->ip_memoria, valores_config->puerto_escucha);
-	log_info(logger, "Servidor KERNEL listo para recibir Interfaces de IO");
+	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, NULL);
 	pthread_create(&hiloIO, NULL, levantarIO, NULL);
-	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, (void *)args_CPU_DS);
-	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, (void *)args_CPU_INT);
+	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, NULL);
+	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, NULL);
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
+	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
+	pthread_create(&t_transicion_blocked_ready, NULL, transicion_blocked_ready, NULL);
+}
+
+void levantar_servidores()
+{
+	servidor_para_io = iniciar_servidor(logger, "Kernel", valores_config->ip_memoria, valores_config->puerto_escucha);
 }
 
 int llego_proceso()
@@ -107,9 +114,9 @@ int llego_proceso()
 
 void *levantarIO()
 {
-	disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
 	while (1)
 	{
+		disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
 		op_code operacion = recibir_operacion(disp_io);
 		if (operacion == SOLICITUD_CONEXION_IO)
 		{
@@ -119,19 +126,21 @@ void *levantarIO()
 			nombre_IO = leer_buffer_string(buffer_io);
 			char *tipo_io = obtener_interfaz(cod_io);
 
+			t_infoIO *infoIO = malloc(sizeof(t_infoIO));
+			infoIO->cliente_io = disp_io;
+			infoIO->nombre_io = nombre_IO;
+
 			if (list_find(lista_interfaces, interfaz_esta_conectada) != NULL)
 			{
-				log_info(logger, "Esta Interfaz ya se encuentra conectada");
+				log_info(logger, "La Interfaz %s ya esta conectada", infoIO->nombre_io);
+				enviar_cod_enum(disp_io, ESTABA_CONECTADO);
 			}
 			else
 			{
-				log_info(logger, "Esta Interfaz no estaba conectada al kernel");
-				list_add(lista_interfaces, nombre_IO);
+				log_info(logger, "La Interfaz %s no estaba conectada", infoIO->nombre_io);
+				list_add(lista_interfaces, infoIO);
+				log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, infoIO->nombre_io);
 			}
-
-			log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, nombre_IO);
-
-			recibir_orden_interfaces_de_cpu();
 		}
 		else
 		{
@@ -141,9 +150,9 @@ void *levantarIO()
 	return NULL;
 }
 
-_Bool interfaz_esta_conectada(char *interfaz)
+_Bool interfaz_esta_conectada(t_infoIO *interfaz)
 {
-	return strcmp(interfaz, nombre_IO) == 0;
+	return strcmp(interfaz->nombre_io, nombre_IO) == 0;
 }
 
 char *obtener_interfaz(enum_interfaz interfaz)
@@ -167,17 +176,9 @@ char *obtener_interfaz(enum_interfaz interfaz)
 	return "NO SE ENTIENDE LA INTERFAZ ENVIADA";
 }
 
-bool se_encuentra_conectada(char *elem_lista, char *interfaz_nombre)
+void *conexionAMemoria()
 {
-	return strcmp(elem_lista, interfaz_nombre) == 0;
-}
-
-void *conexionAMemoria(void *ptr)
-{
-	t_args *argumento = malloc(sizeof(t_args));
-	argumento = (t_args *)ptr;
-	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto, "KERNEL SE CONECTO A MEMORIA");
-	free(argumento);
+	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria);
 }
 
 colaEstado *constructorColaEstado(char *nombre)
@@ -206,7 +207,6 @@ void inicializarEstados()
 void iniciar_semaforos()
 {
 	GRADO_MULTIPROGRAMACION = malloc(sizeof(sem_t));
-
 	binario_menu_lp = malloc(sizeof(sem_t));
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
@@ -214,10 +214,11 @@ void iniciar_semaforos()
 	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
 	b_exec_libre = malloc(sizeof(sem_t));
 	b_transicion_exec_ready = malloc(sizeof(sem_t));
+	b_transicion_exec_blocked = malloc(sizeof(sem_t));
+	b_transicion_blocked_ready = malloc(sizeof(sem_t));
 	sem_quantum = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
-
 	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(sem_agregar_a_estado, 0, 0);
 	sem_init(b_reanudar_corto_plazo, 0, 0);
@@ -225,6 +226,8 @@ void iniciar_semaforos()
 	sem_init(b_largo_plazo_exit, 0, 0);
 	sem_init(b_transicion_exec_ready, 0, 0);
 	sem_init(sem_quantum, 0, 0);
+	sem_init(b_transicion_exec_blocked, 0, 0);
+	sem_init(b_transicion_blocked_ready, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -242,11 +245,9 @@ config_kernel *inicializar_config_kernel()
 	configuracion->algoritmo_planificacion = config_get_string_value(configuracion->config, "ALGORITMO_PLANIFICACION");
 	configuracion->quantum = config_get_int_value(configuracion->config, "QUANTUM");
 	configuracion->grado_multiprogramacion = config_get_int_value(configuracion->config, "GRADO_MULTIPROGRAMACION");
-	// configuracion->listaRecursos = list_create();
-	// configuracion->listaRecursos = string_get_string_as_array((config_get_string_value(configuracion->listaRecursos, "RECURSOS")));
-	// configuracion->instanciasRecursos = list_create();
-	// RECURSOS=[RA,RB,RC]
-	// INSTANCIAS_RECURSOS=[1,2,1]
+	configuracion->listaRecursos = config_get_array_value(configuracion->config, "RECURSOS");
+	configuracion->instanciasRecursos = config_get_array_value(configuracion->config, "INSTANCIAS_RECURSOS");
+
 	return configuracion;
 }
 
@@ -268,131 +269,123 @@ t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 	return pcb;
 }
 
-void *levantar_CPU_Interrupt(void *ptr)
+void *levantar_CPU_Interrupt()
 {
-	t_args *datosConexion = malloc(sizeof(t_args));
-	datosConexion = (t_args *)ptr;
-	socket_cpu_interrupt = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU INTERRUPT");
-	free(datosConexion);
+	socket_cpu_interrupt = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_interrupt);
 }
 
-void *levantar_CPU_Dispatch(void *ptr)
+void *levantar_CPU_Dispatch()
 {
-	t_args *datosConexion = malloc(sizeof(t_args));
-	datosConexion = (t_args *)ptr;
-	socket_cpu_dispatch = levantarCliente(logger, "CPU", datosConexion->ip, datosConexion->puerto, "KERNEL SE CONECTO A CPU DISPATCH");
-
-	free(datosConexion);
+	socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch);
 
 	while (1)
 	{
-
-		op_code cod = recibir_operacion(socket_cpu_dispatch); // FALTA VER COMO MOSTRAMOS EL MOTIVO POR EL QUE HA FINALIZADO EL PROCESO
+		op_code cod = recibir_operacion(socket_cpu_dispatch);
 		tipo_buffer *buffer_cpu;
-		
+
 		switch (cod)
 		{
 		case FINALIZAR_PROCESO:
-
-			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
-
-			cde_interrumpido_por_dispatch = leer_cde(buffer_cpu);
-
-			pthread_cancel(hiloQuantum);
-
-			log_info(logger, "Se finalizo el proceso: %d", cde_interrumpido_por_dispatch->pid);
-
-			sem_post(b_largo_plazo_exit); // otro hilo de largo plazo manda el proceso en exec a exit y aumenta el grado de multiprogramacion => tambien llama a finalizar_proceso(PID)
-
+			// debemos llamar a la funcion finalizar_proceso(int pid) de operaciones para esto y que luego siga el codigo normal
+			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
+			cde_interrumpido = leer_cde(buffer_cpu);
+			// pthread_cancel(hiloQuantum); VER QUE ONDA para rr y vrr
+			log_info(logger, "Se finalizo el proceso: %d", cde_interrumpido->pid);
+			sem_post(b_largo_plazo_exit);
+			sem_post(b_reanudar_largo_plazo);
+			sem_post(b_reanudar_corto_plazo);
 			break;
+
 		case FIN_DE_QUANTUM:
 
-			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // recibo buffer
-			cde_interrumpido_por_dispatch = leer_cde(buffer_cpu);
-			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido_por_dispatch->pid);
+			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
+			cde_interrumpido = leer_cde(buffer_cpu);
+			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
-
-
 			sem_post(b_transicion_exec_ready);
 			break;
 
+		case INSTRUCCION_INTERFAZ: // recibimos de cpu ciclo de instruccion // ESTO YA ANDA
+
+			tipo_buffer *buffer_cde = recibir_buffer(socket_cpu_dispatch); // recibimos CDE
+			buffer_cpu = recibir_buffer(socket_cpu_dispatch);			   // recibimos datos de la instruccion
+			cde_interrumpido = leer_cde(buffer_cde);
+			sem_post(b_transicion_exec_blocked); // bloqueamos el proceso interrumpido
+			sem_post(b_reanudar_largo_plazo);
+			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_cpu);
+			break;
+
 		default:
-			// log_info(logger, "No se pudo finalizar el proceso %d", PID);
+			log_warning(logger, "La operacion enviada por CPU Dispatch no la Puedo ejecutar");
 			break;
 		}
 	}
 }
 
-
-
-
-
-
-
-
-
-/* void atender_interrupciones()
+void enviar_proceso_exec_a_exit()
 {
-	tipo_buffer *buffer_desde_cpu = crear_buffer();
-	op_code motivo_interrupcion = leer_buffer_enteroUint32(buffer_desde_cpu);
+	t_pcb *pcb_quitado = sacar_procesos_cola(cola_exec_global);
+	agregar_a_estado(pcb_quitado, cola_exit_global);
+}
 
-	switch (motivo_interrupcion)
-	{
-	case FIN_DE_QUANTUM:
-		t_cde *cde_proceso_interrumpido = leer_cde(buffer_desde_cpu);
-		t_pcb *proceso_interrumpido = sacar_procesos_cola(cola_exec_global);
-		proceso_interrumpido->cde = cde_proceso_interrumpido;
-		agregar_a_estado(proceso_interrumpido, cola_ready_global);
-		free(proceso_interrumpido);
-		break;
-	case BLOQUEADO_POR_IO:
-		cde_proceso_interrumpido = leer_cde(buffer_desde_cpu);
-		proceso_interrumpido = sacar_procesos_cola(cola_exec_global);
-		proceso_interrumpido->cde = cde_proceso_interrumpido;
-		agregar_a_estado(proceso_interrumpido, cola_bloqueado_global);
-		free(proceso_interrumpido);
-		break;
-	case FINALIZAR_PROCESO:
-
-	default:
-		log_error(logger, "Motivo de interrupcion incorrecto");
-		break;
-	}
-} */
-
-void recibir_orden_interfaces_de_cpu()
+void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion)
 {
-	tipo_buffer *buffer_dispatch = recibir_buffer(socket_cpu_dispatch);
-	op_code operacion_desde_cpu_dispatch = recibir_operacion(socket_cpu_dispatch);
+	op_code operacion_desde_cpu_dispatch = leer_buffer_enteroUint32(buffer_con_instruccion);
+	t_infoIO *informacion_interfaz;
+	t_tipoDeInstruccion instruccion_a_ejecutar;
 	switch (operacion_desde_cpu_dispatch)
 	{
-	case SOLICITUD_INTERFAZ_GENERICA: // ocurre cuando se va a ejecutar la instruccion IO_GEN_SLEEP
+	case SOLICITUD_INTERFAZ_GENERICA:
 
-		log_info(logger, "SOLICITD_INTERFAZ_GENERICA DE CPU DISPATCH");
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
+		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
+		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 
-		t_tipoDeInstruccion instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_dispatch);
-		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_dispatch);
-		nombre_IO = leer_buffer_string(buffer_dispatch); // recibo la interfaz que debe hacer la operacion pedida por la cpu
+		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
 
-		t_pcb *proceso_quitado = sacar_procesos_cola(cola_exec_global);
-		proceso_quitado->estado = BLOCKED;
-
-		agregar_a_estado(proceso_quitado, cola_bloqueado_global);
-		destruir_buffer(buffer_dispatch);
-
-		if (list_find(lista_interfaces, interfaz_esta_conectada) == NULL)
+		if (informacion_interfaz == NULL)
 		{
-			interfaz_no_conectada(); // IMPLEMENTAR
+			interfaz_no_conectada();
 		}
 		else
 		{
-			interfaz_conectada(unidades_trabajo, instruccion_a_ejecutar);
+			interfaz_conectada_generica(unidades_trabajo, instruccion_a_ejecutar, informacion_interfaz->cliente_io, pid);
+			destruir_buffer(buffer_con_instruccion);
 		}
 
 		break;
 	case SOLICITUD_INTERFAZ_STDIN:
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
+		// falta que reciba mas cosas
+		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
+
+		if (informacion_interfaz == NULL)
+		{
+			interfaz_no_conectada();
+		}
+		else
+		{
+			interfaz_conectada_stdin(pid);
+			destruir_buffer(buffer_con_instruccion);
+		}
+
 		break;
 	case SOLICITUD_INTERFAZ_STDOUT:
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
+		// falta que reciba mas cosas
+		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
+
+		if (informacion_interfaz == NULL)
+		{
+			interfaz_no_conectada();
+		}
+		else
+		{
+			interfaz_conectada_stdout(pid);
+			destruir_buffer(buffer_con_instruccion);
+		}
 		break;
 	case SOLICITUD_INTERFAZ_DIALFS:
 		break;
@@ -402,42 +395,87 @@ void recibir_orden_interfaces_de_cpu()
 	}
 }
 
-void interfaz_no_conectada() // IMPLEMENTAR
+void interfaz_no_conectada()
 {
 	log_error(logger, "La interfaz %s no se encuentra conectada", nombre_IO);
-	// enviar_proceso_a_exit();
-	//  enviar proceso que pidio la ejecucion de la instruccion a exit
+	enviar_proceso_exec_a_exit(); // talvez implementar con un hilo talvez
 }
 
-void interfaz_conectada(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar)
+void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, int socket_io, int pid)
 {
 	log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-	enviar_cod_enum(disp_io, CONSULTAR_DISPONIBILDAD);
-
-	op_code operacion_io = recibir_operacion(disp_io);
-	tipo_buffer *buffer_interfaz = crear_buffer();
-
-	if (operacion_io == ESTOY_LIBRE)
+	if (instruccion_a_ejecutar != IO_GEN_SLEEP)
 	{
-		log_info(logger, "INSTRUCICON : %d", instruccion_a_ejecutar);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
-		enviar_buffer(buffer_interfaz, disp_io);
-		operacion_io = recibir_operacion(disp_io);
-		if (operacion_io == CONCLUI_OPERACION)
-		{
-			t_pcb *proceso_quitado = sacar_procesos_cola(cola_bloqueado_global);
-			proceso_quitado->estado = EXEC;
-			agregar_a_estado(proceso_quitado, cola_exec_global);
-			enviar_cod_enum(socket_cpu_dispatch, EJECUCION_IO_GEN_SLEEP_EXITOSA);
-		}
+		enviar_proceso_exec_a_exit();
 	}
 	else
 	{
-		operacion_io = recibir_operacion(disp_io);
-		if (operacion_io == CONCLUI_OPERACION)
+		enviar_cod_enum(socket_io, CONSULTAR_DISPONIBILDAD);
+
+		op_code operacion_io = recibir_operacion(socket_io);
+		tipo_buffer *buffer_interfaz = crear_buffer();
+
+		if (operacion_io == ESTOY_LIBRE)
 		{
-			interfaz_conectada(unidades_trabajo, instruccion_a_ejecutar);
+			agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
+			agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
+			agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
+			enviar_buffer(buffer_interfaz, socket_io);
+			operacion_io = recibir_operacion(socket_io);
+			if (operacion_io == CONCLUI_OPERACION)
+			{
+				sem_post(b_transicion_blocked_ready);
+				sem_post(b_reanudar_largo_plazo);
+				sem_post(b_reanudar_corto_plazo);
+			}
+		}
+		else
+		{
+			operacion_io = recibir_operacion(socket_io);
+			if (operacion_io == CONCLUI_OPERACION)
+			{
+				interfaz_conectada_generica(unidades_trabajo, instruccion_a_ejecutar, socket_io, pid);
+			}
 		}
 	}
+}
+
+void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int socket_io, int pid) // IMPLMEEMNTAR
+{
+	log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+	if (instruccion_a_ejecutar != IO_STDIN_READ)
+	{
+		enviar_proceso_exec_a_exit();
+	}
+	else
+	{
+		enviar_cod_enum(socket_io, CONSULTAR_DISPONIBILDAD);
+
+		op_code operacion_io = recibir_operacion(socket_io);
+		tipo_buffer *buffer_interfaz = crear_buffer();
+
+		if (operacion_io == ESTOY_LIBRE)
+		{
+			/* agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
+			agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
+			agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
+			enviar_buffer(buffer_interfaz, socket_io);
+			operacion_io = recibir_operacion(socket_io); */
+			if (operacion_io == CONCLUI_OPERACION)
+			{
+				sem_post(b_transicion_blocked_ready);
+			}
+		}
+		else
+		{
+			operacion_io = recibir_operacion(socket_io);
+			if (operacion_io == CONCLUI_OPERACION)
+			{
+				interfaz_conectada_stdin(instruccion_a_ejecutar, socket_io, pid);
+			}
+		}
+	}
+}
+void interfaz_conectada_stdout(int pid) // IMPLEMENTAR
+{
 }

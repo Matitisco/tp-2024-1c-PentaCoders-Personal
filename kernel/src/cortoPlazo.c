@@ -13,8 +13,6 @@ t_temporal *quantum;
 // CORTO PLAZO
 void *corto_plazo()
 {
-    // op_code estado_planificacion = INICIAR_PLANIFICACION;
-    // log_info(logger, "--------------Planificador de Corto Plazo Iniciado-------------- \n");
     iniciar_sem_cp();
 
     if (strcmp(valores_config->algoritmo_planificacion, "FIFO") == 0)
@@ -49,52 +47,27 @@ void iniciar_sem_cp()
     pthread_mutex_init(mutex_cola_exec, NULL);
 }
 
-// FIFO
 void planificar_por_fifo()
 {
     while (1)
     {
         sem_wait(b_reanudar_corto_plazo);
 
-        cambiar_procesoActual_readyARunning();
+        t_pcb *proceso = malloc(sizeof(t_pcb));
+        sem_wait(b_exec_libre);
+        sem_wait(cola_ready_global->contador);
+        proceso = sacar_procesos_cola(cola_ready_global);
+        log_info(logger, "SACO PROCESO DE READY");
+        agregar_a_estado(proceso, cola_exec_global);
 
-        /*         if (hayInstruccionBloqueante()) // si es true
-                {
-                    // log_info(logger, "Se quito el proceso %d  de Execute \n", proceso->cde->pid);
-                    cambiar_procesoActual_readyARunning();
-                } */
+        proceso->estado = EXEC;
+
+        enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO);
+        enviar_cde(socket_cpu_dispatch, proceso->cde);
+        log_info(logger, "Se agrego el proceso %d y PC %d a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
     }
 }
 
-void cambiar_procesoActual_readyARunning()
-{
-    t_pcb *proceso = malloc(sizeof(t_pcb));
-    sem_wait(b_exec_libre);
-    sem_wait(cola_ready_global->contador); // cantidad procesos en ready
-
-    proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-    agregar_a_estado(proceso, cola_exec_global);
-
-    // ENVIA A CPU
-    enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
-    enviar_cde(socket_cpu_dispatch, proceso->cde);
-    log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por FIFO\n", proceso->cde->pid);
-}
-int hayInstruccionBloqueante()
-{
-    // recibamos cod enum de cpi
-    op_code operacion = recibir_operacion(socket_cpu_interrupt); // recibimos dle socket interrupt por que es bloqueante
-    if (operacion == PROCESO_INTERRUMPIDO)
-    {
-        // Agregar en cpu una funcio que diga si una isntruccion es bloqueantes o no
-
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
 void enviar_cde(int conexion, t_cde *cde)
 {
     tipo_buffer *buffer = crear_buffer();
@@ -102,22 +75,7 @@ void enviar_cde(int conexion, t_cde *cde)
     enviar_buffer(buffer, socket_cpu_dispatch);
     destruir_buffer(buffer);
 }
-// ROUND ROBIN
 
-/* t_pcb *proceso = malloc(sizeof(t_pcb));
-    sem_wait(b_exec_libre); // deja de estar libre exec  EL SEM_POST DEBE ESTAR EN CPU, YA QUE ES CUANDO DEJAMOS LA COLA DE READY LIBRE.
-    sem_wait(cola_ready_global->contador); // cantidad procesos en ready
-
-    proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-    agregar_a_estado(proceso, cola_exec_global);
-
-
-    // ENVIA A CPU
-    enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
-    enviar_cde(socket_cpu_dispatch, proceso->cde);
-    log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por FIFO\n", proceso->cde->pid);
-
- */
 void planificar_por_rr()
 {
     t_pcb *proceso = malloc(sizeof(t_pcb));
@@ -164,11 +122,41 @@ void *transicion_exec_ready()
     {
         sem_wait(b_transicion_exec_ready);
         t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
-        proceso->cde = cde_interrumpido_por_dispatch;
+        proceso->cde = cde_interrumpido;
+        proceso->estado = READY;
         agregar_a_estado(proceso, cola_ready_global); // moverlo a la cola de exit, hay un lugar en memoria
         sem_post(b_exec_libre);
         log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
         // liberar_proceso(proceso);
+        free(proceso);
+    }
+}
+
+void *transicion_exec_blocked() // mover a largo plazo
+{
+    while (1)
+    {
+        sem_wait(b_transicion_exec_blocked);
+        sem_post(b_exec_libre);
+        t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
+        proceso->cde = cde_interrumpido;
+        agregar_a_estado(proceso, cola_bloqueado_global);
+        log_info(logger, "Se bloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
+        proceso->estado = BLOCKED;
+    }
+}
+
+void *transicion_blocked_ready() // mover a largo plazo
+{
+    while (1)
+    {
+        sem_wait(b_transicion_blocked_ready);
+        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global);
+
+        agregar_a_estado(proceso, cola_ready_global);
+        log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
+        sem_post(cola_ready_global->contador);
+        proceso->estado = READY;
     }
 }
 

@@ -32,7 +32,6 @@ int main(int argc, char *argv[])
 void crearHilos()
 {
     server_fd = iniciar_servidor(logger, "Memoria", valores_config->ip_memoria, valores_config->puerto_memoria);
-    log_info(logger, "Memoria lista para recibir KERNEL, CPU Y dispositivos de ENTRADA/SALIDA");
 
     pthread_create(&hiloCpu, NULL, recibirCPU, NULL);
     pthread_create(&hiloKernel, NULL, recibirKernel, NULL);
@@ -123,7 +122,6 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
         char *token = strdup(strtok(linea_instruccion, "\n"));
         char *token_copia = token;
 
-        log_info(logger, ">%s<", token);
         list_add(list_instrucciones, token);
     }
     fclose(archivo);
@@ -181,22 +179,18 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
     tipo_buffer *buffer = recibir_buffer(cliente_fd);
     uint32_t PID = leer_buffer_enteroUint32(buffer);
     uint32_t PC = leer_buffer_enteroUint32(buffer);
-    log_info(logger, "program counter : %d", PC);
     t_cde *contexto = malloc(sizeof(t_cde));
 
     contexto = obtener_contexto_en_ejecucion(PID, contextos);
 
-    log_info(logger, "INSTRUCCION: %s", list_get(contexto->lista_instrucciones,PC));
-
     tipo_buffer *buffer_instruccion = crear_buffer();
     char *instruccion = string_new();
     instruccion = list_get(contexto->lista_instrucciones, PC);
-    log_info(logger, "INSTRUCCION: %s", instruccion);
 
     enviar_cod_enum(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
 
-    free(instruccion); //
+    free(instruccion);
     enviar_buffer(buffer_instruccion, cliente_fd);
     destruir_buffer(buffer_instruccion);
     destruir_buffer(buffer);
@@ -322,7 +316,6 @@ void eliminar_cde(t_cde *cde)
     list_clean_and_destroy_elements(cde->lista_instrucciones, destroy_instruccion);
     free(cde->path);
     liberar_registros(cde->registros);
-    // el pid y el pc no se liberan manualmente
 }
 
 void *destroy_instruccion(void *element)

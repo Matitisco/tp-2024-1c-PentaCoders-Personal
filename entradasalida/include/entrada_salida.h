@@ -9,26 +9,13 @@
 #include "../../utils/include/serializacion.h"
 
 extern t_log *logger;
-int conexion_kernel, conexion_memoria_desde_IO;
+int conexion_kernel, conexion_memoria;
 int socket_memoria;
 int socket_kernel;
 int estoy_libre;
 
-/*
 
-	PRUEBA CON DIALFS QUE ANDA TODO BIEN Y SE LEEN LOS ARCHIVOS
-	printf("%d\n", interfaz_io->tipo_interfaz);
-	printf("%d\n", interfaz_io->tiempo_unidad_trabajo);
-	// printf("%d\n", interfaz_io->retraso_compactacion);
-	// printf("%d\n", interfaz_io->puerto_memoria);
-	printf("%d\n", interfaz_io->puerto_kernel);
-	// printf("%s\n", interfaz_io->path_base_dialfs);
-	// printf("%s\n", interfaz_io->ip_memoria);
-	printf("%s\n", interfaz_io->ip_kernel);
-	// printf("%d\n", interfaz_io->block_size);
-	// printf("%d\n", interfaz_io->block_count);
 
-*/
 typedef struct
 {
 	t_config *config;

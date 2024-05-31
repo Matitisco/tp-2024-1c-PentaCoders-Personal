@@ -187,23 +187,14 @@ void exec_signal() {}
 // IO_GEN_SLEEP
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
 {
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, IO_GEN_SLEEP);
-    agregar_buffer_para_enterosUint32(buffer, unidades_trabajo);
-    agregar_buffer_para_string(buffer, nombre_interfaz);
-    enviar_buffer(buffer, socket_kernel_dispatch);
-    enviar_cod_enum(socket_kernel_dispatch, SOLICITUD_INTERFAZ_GENERICA);
+    buffer_instruccion_io = crear_buffer();
+    interrupcion_io = 1;
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
-    op_code esperar_operacion = recibir_operacion(socket_kernel_dispatch);
-    if (esperar_operacion == EJECUCION_IO_GEN_SLEEP_EXITOSA)
-    {
-        return;
-    }
-    else
-    {
-        log_info(logger, "Hubo un error al ejecutar la instruccion");
-        return;
-    }
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_GENERICA);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_GEN_SLEEP);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, unidades_trabajo);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
 }
 // IO_STDIN_READ
 void exec_io_stdin_read() {}

@@ -1,6 +1,5 @@
 #include "../include/operaciones.h"
 
-
 uint32_t PID_GLOBAL = 0;
 op_code estado_planificacion = PLANIFICACION_PAUSADA;
 // int socket_memoria;
@@ -92,29 +91,30 @@ void iniciar_proceso(char *PATH)
 // pidiendo que desaloje el proceso de la cpu y retorne el cde
 // al eliminar se habilita +1 grado multiprogramacion
 
-void finalizar_proceso(uint32_t PID) 
+void finalizar_proceso(uint32_t PID)
 {
-    //buscamos el proceso en la cola de exec
+    // buscamos el proceso en la cola de exec
     t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado);
 
-    if (proceso == NULL){// puede estar en new, ready, blocked
+    if (proceso == NULL)
+    {                                                                 // puede estar en new, ready, blocked
         enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO); // enviamos solicitud a la memoria
-      }  // para que finalice el proceso
-    else{
+    } // para que finalice el proceso
+    else
+    {
         enviar_cod_enum(socket_cpu_interrupt, SOLICITUD_EXIT); // pero si el proceso esta ejecutandose en la cpu
-        tipo_buffer* buffer_cpu_interrupt= crear_buffer();
+        tipo_buffer *buffer_cpu_interrupt = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer_cpu_interrupt, PID);
-        enviar_buffer(buffer_cpu_interrupt,socket_cpu_interrupt);
+        enviar_buffer(buffer_cpu_interrupt, socket_cpu_interrupt);
         destruir_buffer(buffer_cpu_interrupt);
     }
- //si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
-// pidiendo que desaloje el proceso de la cpu y retorne el cde
+    // si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
+    // pidiendo que desaloje el proceso de la cpu y retorne el cde
 
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, PID);
-    enviar_buffer(buffer, socket_memoria);//    le solicito a MEMORIA que ELIMINE el proceso
+    enviar_buffer(buffer, socket_memoria); //    le solicito a MEMORIA que ELIMINE el proceso
     destruir_buffer(buffer);
-    
 }
 
 // INICIAR PLANIFICACION
@@ -124,13 +124,13 @@ void iniciar_planificacion()
     sem_post(b_reanudar_largo_plazo);
     sem_post(b_reanudar_corto_plazo);
     estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
-} 
+}
 // DETENER PLANIFICACION
 void detener_planificacion()
 {
     habilitar_planificadores = 0;
-    //sem_wait(b_reanudar_largo_plazo);
-    //sem_wait(b_reanudar_corto_plazo);
+    sem_wait(b_reanudar_largo_plazo);
+    sem_wait(b_reanudar_corto_plazo);
     estado_planificacion = PLANIFICACION_PAUSADA;
 }
 
@@ -212,11 +212,11 @@ void liberar_archivos(t_pcb *proceso)
     list_destroy_and_destroy_elements(proceso->archivosAsignados, destroy_archivos);
 }
 
-void* destroy_archivos(void* element) {
-    char* archivo = (char*)element;
+void *destroy_archivos(void *element)
+{
+    char *archivo = (char *)element;
     free(archivo);
 }
-
 
 void modificar_grado_multiprogramacion(int valor)
 {

@@ -16,11 +16,11 @@
 #include "../../kernel/include/kernel.h"
 
 
-// char *PUERTO_MEMORIA;
-//  t_log *logger;
 extern int socket_kernel_dispatch;
 //  int socket_kernel_interrupt;
 extern t_registros *registros;
+extern int interrupcion_io;
+extern tipo_buffer *buffer_instruccion_io;
 // Variable Global
 // extern uint32_t pid_ejecutar;
 
