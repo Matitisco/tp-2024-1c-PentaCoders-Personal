@@ -358,3 +358,16 @@ config_memoria *configuracion_memoria()
     valores_config->retardo_respuesta = config_get_int_value(valores_config->config, "RETARDO_RESPUESTA");
     return valores_config;
 }
+
+t_pagina*crear_pagina(int bit_presencia, int marco, int pidProceso){
+   t_pagina *pagina = malloc(sizeof(t_pagina));
+   pagina->marco = marco;
+   pagina->bit_modificado = false;
+   pagina->bit_presencia = true;
+   pagina->pid = pidProceso;
+   //list_add(list_paginas, NULL);//la lista de paginas seria la tabla
+
+}
+t_list*agregar_pagina(t_pagina*pagina, t_list*list_paginas){
+ list_add(list_paginas,pagina);
+}

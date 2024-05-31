@@ -100,11 +100,13 @@ typedef struct
 {
 	t_cde *cde;		  // contexto de ejecucion
 	t_estados estado; // estado del proceso
-	// int prioridad no va por ahora
 	t_list *archivosAsignados;
 	t_list *recursosAsignados;
 	int prioridad;
+	t_list* lista_paginas; // cada proceso tiene su lista de paginas-la tabla de paginas
 } t_pcb;
+
+
 extern sem_t *sem_kernel;
 extern sem_t *sem_kernel_io_generica;
 extern t_log *logger;
