@@ -57,7 +57,6 @@ void planificar_por_fifo()
         sem_wait(b_exec_libre);
         sem_wait(cola_ready_global->contador);
         proceso = sacar_procesos_cola(cola_ready_global);
-        log_info(logger, "SACO PROCESO DE READY");
         agregar_a_estado(proceso, cola_exec_global);
 
         proceso->estado = EXEC;

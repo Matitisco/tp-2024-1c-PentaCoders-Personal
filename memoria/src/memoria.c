@@ -89,7 +89,7 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
         list_add(lista_contextos, cde);
         list_add(lista_instrucciones, cde->lista_instrucciones);
         enviar_cod_enum(cliente_fd, INICIAR_PROCESO_CORRECTO);
-        log_info(logger, "Se inicio el proceso de PID: %d y PATH: %s", cde->pid, cde->path);
+        log_info(logger, "PID: <%d> - Iniciar Proceso: <%s>", cde->pid, cde->path);
     }
 }
 
@@ -113,7 +113,7 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 
     if (archivo == NULL)
     {
-        log_warning(logger, "No se pudo abrir el archivo: >%s<", ruta_completa);
+        log_error(logger, "No se pudo abrir el archivo: <%s>", ruta_completa);
         return NULL;
     }
     char linea_instruccion[1024];
@@ -139,7 +139,7 @@ char *obtener_ruta(char *nombre_archivo)
         log_info(logger, "No se pudo obtener la raiz");
         return NULL;
     }
-
+    // TODO: esto debe tener configurada en realidad el path de config de memoria
     string_append(&ruta_completa, ruta_acceso);
     string_append(&ruta_completa, "/pruebas/");
     string_append(&ruta_completa, nombre_archivo);
@@ -174,8 +174,10 @@ void *recibirCPU()
 
 void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
 {
-    log_info(logger, "PEDIDO DE INSTRUCCION POR CPU DISPATCH");
-
+    // Ante cada petición se deberá esperar un tiempo determinado a modo de
+    // retardo en la obtención de la instrucción, y este tiempo,
+    // estará indicado en el archivo de configuración.
+    usleep(valores_config->retardo_respuesta);
     tipo_buffer *buffer = recibir_buffer(cliente_fd);
     uint32_t PID = leer_buffer_enteroUint32(buffer);
     uint32_t PC = leer_buffer_enteroUint32(buffer);
@@ -190,24 +192,19 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
     enviar_cod_enum(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
 
-    free(instruccion);
     enviar_buffer(buffer_instruccion, cliente_fd);
     destruir_buffer(buffer_instruccion);
     destruir_buffer(buffer);
-    log_info(logger, "SE APRUEBA PEDIDO DE INSTRUCCION");
+    log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
+    free(instruccion);
 }
 
 t_cde *obtener_contexto_en_ejecucion(int PID, t_list *contextos)
 {
     PID_buscado = PID;
     t_cde *cde_proceso = malloc(sizeof(t_cde));
-
-    cde_proceso = list_find(contextos, estaElContextoConCiertoPID); // problema al hacer list find, no guarda la lsita de ionstrucciones corracmentae
-
+    cde_proceso = list_find(contextos, estaElContextoConCiertoPID);
     cde_proceso->lista_instrucciones = list_get(lista_instrucciones, cde_proceso->pid);
-
-    log_info(logger, "SE OBTUVO EL PROCESO PID: %d CON PATH: %s Y CON: %d INSTRUCCIONES", cde_proceso->pid, cde_proceso->path, list_size(cde_proceso->lista_instrucciones));
-
     return cde_proceso;
 }
 
