@@ -53,6 +53,7 @@ char *nombre_IO;
 int servidor_para_io;
 config_kernel *valores_config;
 
+
 int main(int argc, char *argv[])
 {
 
@@ -70,18 +71,15 @@ int main(int argc, char *argv[])
 	pthread_join(hiloQuantum, NULL);
 }
 
-void iniciar_kernel()
-{
-	inicializarEstados();
-	logger = iniciar_logger("kernel.log", "KERNEL");
-	nombre_IO = string_new();
-	lista_interfaces = list_create();
-	valores_config = inicializar_config_kernel();
-	QUANTUM = valores_config->quantum;
 
-	iniciar_semaforos();
-	levantar_servidores();
-	crear_hilos();
+
+void iniciar_hilos(config_kernel *valores_config)
+{
+	args_MEMORIA = crearArgumento(valores_config->puerto_memoria, valores_config->ip_memoria);
+	args_IO = crearArgumento(valores_config->puerto_escucha, valores_config->ip_memoria);
+	args_CPU_DS = crearArgumento(valores_config->puerto_cpu_dispatch, valores_config->ip_cpu);
+	args_CPU_INT = crearArgumento(valores_config->puerto_cpu_interrupt, valores_config->ip_cpu);
+	crearHilos(args_MEMORIA, args_IO, args_CPU_DS, args_CPU_INT);
 }
 
 void crear_hilos()

@@ -222,11 +222,15 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case MOV_IN:
+	case MOV_IN:// MOV_IN EDX ECX
+		exec_mov_in(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case MOV_OUT:
+	case MOV_OUT:// MOV_OUT EDX ECX
+		exec_mov_out(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case SUM: // SUM AX BX
 		exec_sum(instruccion[1], instruccion[2]);
@@ -243,11 +247,15 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case RESIZE:
+	case RESIZE:// RESIZE 128
+		exec_resize(instruccion[1]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		break;
-	case COPY_STRING:
+	case COPY_STRING:// COPY_STRING 8
+		exec_copy_string(instruccion[1]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		break;
 	case WAIT:
 		actualizar_cde(contextoProceso);
@@ -256,15 +264,19 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		break;
 	case IO_GEN_SLEEP:
-		actualizar_cde(contextoProceso);
 		exec_io_gen_sleep(instruccion[1], atoi((instruccion[2])));
+		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case IO_STDIN_READ:
+	case IO_STDIN_READ://IO_STDIN_READ Int2 EAX AX
+		exec_io_stdin_read(instruccion[1],instruccion[2],instruccion[3]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
-	case IO_STDOUT_WRITE:
+	case IO_STDOUT_WRITE://IO_STDOUT_WRITE Int3 BX EAX
+		exec_io_stdin_read(instruccion[1],instruccion[2],instruccion[3]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
 	case IO_FS_CREATE:
 		actualizar_cde(contextoProceso);
