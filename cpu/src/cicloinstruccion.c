@@ -39,6 +39,7 @@ void exec_set(char *registro, uint32_t valor) //
 }
 
 /*
+
 MOV_IN EDX ECX
 MOV_IN (Registro Datos, Registro Dirección): Lee el valor de memoria correspondiente a la
 Dirección Lógica que se encuentra en el Registro Dirección y lo almacena en el Registro
@@ -46,8 +47,25 @@ Datos.
 */
 void exec_mov_in(char *datos, char *direccion) {
 uint32_t direccionLogica = obtener_valor_origen(direccion);
-//uint32_t valor = obtener_valor_direccion_logica(direccionLogica);
-//exec_set(datos, valor);
+//direccionFisica = direccion_logica_a_fisica(direccionLogica);
+//enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
+//tipo_buffer *buffer = crear_buffer();
+//agregar_buffer_para_direccionFisica(buffer,direccionFisica);
+//enviar_buffer(buffer, socket_memoria); -> hay que enviar la direccion física
+
+/*
+op_code lectura_memoria = recibir_operacion(socket_memoria);
+if (lectura_memoria == DIRECCION_CORRECTA){
+    tipo_buffer *bufferValor = recibir_buffer(socket_memoria);
+    uint32_t valor = leer_buffer_enteroUint32(bufferValor);
+    exec_set(datos, valor);
+    free(bufferValor);
+}
+else{//Informar direccion incorrecta
+
+}
+free(buffer);
+*/
 }
 
 
@@ -57,14 +75,33 @@ MOV_OUT (Registro Dirección, Registro Datos): Lee el valor del Registro Datos y
 la dirección física de memoria obtenida a partir de la Dirección Lógica almacenada en el
 Registro Dirección.
 
-la dirección lógica es manejada por el sistema operativo y se traduce a direcciones físicas
-reales por medio de la unidad de gestión de memoria (MMU, por sus siglas en inglés)
+[la dirección lógica es manejada por el sistema operativo y se traduce a direcciones físicas
+reales por medio de la unidad de gestión de memoria (MMU, por sus siglas en inglés)]
+*/
+/*
+typedef struct
+{
+    uint32_t valor;
+    direccionFisica;
+}t_escrituraMemoria
 */
 void exec_mov_out(char *direccion, char *datos) {
     uint32_t valor = obtener_valor_origen(datos);
     uint32_t direccionLogica = obtener_valor_origen(direccion);
-    //char* direccionFisica = obtener_direccion_fisica(direccionLogica);
-    //escribir_valor_direccion_fisica(direccionFisica,valor);
+    //direccionFisica = direccion_logica_a_fisica(direccionLogica);
+
+    //enviar_cod_enum(socket_memoria, PEDIDO_ESCRITURA);
+    //tipo_buffer *buffer = crear_buffer();
+    //t_escrituraMemoria valores = {valor,direccionFisica};
+    //agregar_buffer_para_escrituraMemoria(buffer,valores);
+    //enviar_buffer(buffer, socket_memoria);
+    //memoria hace la escritura si está todo ok
+    /*
+        op_code escritura_memoria = recibir_operacion(socket_memoria);
+        if(escritura_memoria == OK) //escritura correcta
+    */
+
+    
 }
 
 /*
