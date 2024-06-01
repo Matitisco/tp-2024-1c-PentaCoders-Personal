@@ -136,32 +136,35 @@ void levantar_Kernel_Interrupt(void *ptr)
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
 	while (1)
 	{
-		op_code codigo = recibir_operacion(socket_kernel_interrupt);
-		log_info(logger, "Me llego una interrupcion");
-		switch (codigo)
-		{
-		case PROCESO_INTERRUMPIDO_QUANTUM:
-			interrupcion_rr = 1;
-			break;
-		case SOLICITUD_EXIT:
-			tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt); // recibo el buffer de kernel
-			int pid = leer_buffer_enteroUint32(buffer_kernel);					  // id del proceso
-			destruir_buffer(buffer_kernel);
-			// si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
-			// pidiendo que desaloje el proceso de la cpu y retorne el cde
+		if(salida_exit){
+			op_code codigo = recibir_operacion(socket_kernel_interrupt);
+			log_info(logger, "Me llego una interrupcion");
+			switch (codigo)
+			{
+				case PROCESO_INTERRUMPIDO_QUANTUM:
+					interrupcion_rr = 1;
+					break;
+				case SOLICITUD_EXIT:
+					tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt); // recibo el buffer de kernel
+					int pid = leer_buffer_enteroUint32(buffer_kernel);					  // id del proceso
+					destruir_buffer(buffer_kernel);
+					// si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
+					// pidiendo que desaloje el proceso de la cpu y retorne el cde
 
-			// guardamos en una lista las interrupciones que luego va a ser leida por check_interrupt aplicar semaforos mutex
-			break;
-		case -1:
-			log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-			return EXIT_FAILURE;
-		default:
-			// destruir_buffer_nuestro(buffer);
-			log_error(logger, "Codigo de operacion desconocido.");
-			log_error(logger, "Finalizando modulo.");
-			exit(1);
-			break;
+					// guardamos en una lista las interrupciones que luego va a ser leida por check_interrupt aplicar semaforos mutex
+					break;
+				case -1:
+					log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
+					return EXIT_FAILURE;
+				default:
+					// destruir_buffer_nuestro(buffer);
+					log_error(logger, "Codigo de operacion desconocido.");
+					log_error(logger, "Finalizando modulo.");
+					exit(1);
+					break;
+			}
 		}
+		
 	}
 }
 
@@ -279,10 +282,11 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		break;
 	case EXIT:
-		interrupcion_rr;
+		interrupcion_rr = 0;
 		actualizar_cde(contextoProceso);
 		exec_exit(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
+		log_info(logger, "\n------- FIN DE EJECUCION ---------\n");
 		break;
 	default:
 		log_info(logger, "No encontre la instruccion");
@@ -300,7 +304,7 @@ void check_interrupt()
 		enviar_cod_enum(socket_kernel_dispatch, FIN_DE_QUANTUM);
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
-		log_info(logger, "INTERRUPCION - FIN DE QUANTUM - ");
+		log_info(logger, "\nINTERRUPCION - FIN DE QUANTUM - \n");
 	}
 	else if (interrrupcion_fifo)
 	{
@@ -309,6 +313,7 @@ void check_interrupt()
 		// enviar_cod_enum(socket_kernel_dispatch, BLOQUEADO_POR_IO);
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		log_info(logger, "\nINTERRUPCION - BLOCK - \n");
 	}
 	else if (interrupcion_io)
 	{

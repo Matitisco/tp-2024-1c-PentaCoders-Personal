@@ -199,6 +199,8 @@ void inicializarEstados()
 {
 	cola_new_global = constructorColaEstado("NEW");
 	cola_ready_global = constructorColaEstado("READY");
+	cola_ready_global->contador = malloc(sizeof(sem_t));
+	sem_init(cola_ready_global->contador, 0, 0);
 	cola_exec_global = constructorColaEstado("EXEC");
 	cola_bloqueado_global = constructorColaEstado("BLOCK");
 	cola_exit_global = constructorColaEstado("EXIT");
@@ -303,6 +305,7 @@ void *levantar_CPU_Dispatch()
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
 			sem_post(b_transicion_exec_ready);
+			//sem_post(b_reanudar_corto_plazo);
 			break;
 
 		case INSTRUCCION_INTERFAZ: // recibimos de cpu ciclo de instruccion // ESTO YA ANDA
