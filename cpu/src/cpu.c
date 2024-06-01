@@ -226,9 +226,12 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		break;
 	case MOV_IN:
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case MOV_OUT:
+		exec_mov_out(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case SUM: // SUM AX BX
 		exec_sum(instruccion[1], instruccion[2]);

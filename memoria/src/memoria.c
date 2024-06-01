@@ -186,8 +186,6 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
 
     contexto = obtener_contexto_en_ejecucion(PID, contextos);
 
-    log_info(logger, "INSTRUCCION: %s", list_get(contexto->lista_instrucciones,PC));
-
     tipo_buffer *buffer_instruccion = crear_buffer();
     char *instruccion = string_new();
     instruccion = list_get(contexto->lista_instrucciones, PC);

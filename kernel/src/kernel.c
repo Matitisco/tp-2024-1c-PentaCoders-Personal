@@ -49,65 +49,9 @@ char *nombre_IO;
 int servidor_para_io;
 config_kernel *valores_config;
 
-void iniciar_consola(){
-	char *line = readline("kernel:~$ ");
-	char copia[strlen(line) + 1]; // almacena espacio
-    strcpy(copia, line);
-
-	char *comando = strtok(copia, " ");
-
-	if(strcmp(comando, "EJECUTAR_PROCESO \n") == 0){
-		printf("EJECUTAR_PROCESO");
-	}
-	else if(strcmp(comando, "INICIAR_PROCESO \n") == 0){
-		printf("INICIAR_PROCESO");
-	}
-	else if(strcmp(comando, "FINALIZAR_PROCESO \n") == 0){
-		printf("INICIAR_PROCESO");
-	}
-	else if(strcmp(comando, "DETENER_PLANIFICACION \n") == 0){
-		printf("DETENER_PLANIFICACION");
-	}
-	else if(strcmp(comando, "INICIAR_PLANIFICACION \n") == 0){
-		printf("INICIAR_PLANIFICACION");
-	}
-	else if(strcmp(comando, "MULTIPROGRAMACION \n") == 0){
-		printf("MULTIPROGRAMACION");
-	}
-	else if(strcmp(comando, "PROCESO_ESTADO") == 0){
-		printf("PROCESO_ESTADO \n");
-	}
-
-    if (line == NULL) {
-        printf("No se ingresó nada.\n");
-    } else {
-        printf("La línea que ingresaste es: >%s<\n", line);
-        free(line);
-		
-    }
-
-	/*
-	char copia[strlen(cadena) + 1]; // almacena espacio
-    strcpy(copia, cadena);
-
-    // tokenizacion
-    char *token = strtok(copia, " ");
-    
-    // cada token
-    while (token != NULL) {
-        printf("%s\n", token);
-        token = strtok(NULL, " ");
-    }
-	*/
-}
-
 
 int main(int argc, char *argv[])
 {
-
-	iniciar_consola();
-
-	/*
 	inicializarEstados();
 
 	logger = iniciar_logger("kernel.log", "KERNEL");
@@ -127,7 +71,7 @@ int main(int argc, char *argv[])
 	pthread_join(hiloConsola, NULL);
 	pthread_join(largo_plazo_exit, NULL);
 	pthread_join(t_transicion_exec_ready, NULL);
-	pthread_join(hiloQuantum, NULL);*/
+	pthread_join(hiloQuantum, NULL);
 }
 
 
