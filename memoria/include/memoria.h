@@ -38,14 +38,18 @@ typedef struct
 	int pid; //la pagina conoce al proceso del cual es parte ?
 }t_pagina;
 /*Paginacion */ 
+t_list *lista_marcos;
+int tam_marco;
 t_list*list_paginas;
 t_pagina*crear_pagina(int bit_presencia, int marco, int pidProceso);
-
+void eliminar_paginas(uint32_t pid);
+uint32_t obtener_marco_libre();
+uint32_t hay_marco_libre();
+t_list*agregar_pagina(t_pagina*pagina, t_list*list_paginas);
 
 typedef struct {
 	int numero_marco; //numero de marco
 	int bit_libre;//esta libre o no el marco
-	
 }t_bit_map;
 
 
