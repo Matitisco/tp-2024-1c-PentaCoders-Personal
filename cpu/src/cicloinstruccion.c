@@ -62,6 +62,11 @@ void* leer_memoria(direccionFisica){
 void escribir_memoria(direccionFisica2,void * valor){
 
 }
+void solicitar_stdin_kernel(char * interfaz,char * reg_tamanio){
+    //hay que enviar a kernel cod_op 
+    //kernel lo recibe y mediante char *line = readline("texto"); (usar otra funcion que lea solo un tamanio) realiza la lectura
+    //kernel devuelve lo leido  
+}
 */
 /*
 
@@ -208,10 +213,13 @@ kernel en la direccion
 */
 //IO_STDIN_READ
 void exec_io_stdin_read(char * interfaz,char * reg_direccion,char * reg_tamanio) {
-    //hay que enviar a kernel cod_op 
-    //kernel lo recibe y mediante char *line = readline("texto"); (usar otra funcion que lea solo un tamanio) realiza la lectura
-    //kernel devuelve lo leido 
-    //Se almacena lo leido a partir de reg_direccion
+    uint32_t direccionLogica1 = obtener_valor_origen(reg_direccion);
+    /*
+    direccionFisica1 = direccion_logica_a_fisica(direccionLogica1);
+
+    char * lectura_kernel = solicitar_stdin_kernel(interfaz,reg_tamanio);
+    escribir_memoria(direccionFisica1,(void*)lectura_kernel);
+    */
 }
 
 /*
@@ -221,9 +229,30 @@ al Kernel que mediante la interfaz seleccionada, se lea desde la posición de me
 indicada por la Dirección Lógica almacenada en el Registro Dirección, un tamaño indicado
 por el Registro Tamaño y se imprima por pantalla.
 */
+
+/*
+
+*/
+/*
+typedef struct
+{
+    uint32_t direccionLogica;
+    char * interfaz;
+    uint32_t tamanio;
+
+}stdout_kernel
+*/
 void exec_io_stdout_write(char * interfaz,char * reg_direccion,char * reg_tamanio) {
-    //hay que enviar kernel cod_op 
-    //hay enviarle toda una estructura con los valores para que kernel se encargue de todo
+    /*
+    stdout_kernel enviar = {obtener_valor_origen(reg_direccion),interfaz,string_to_int(reg_tamanio)};
+    enviar_cod_enum(socket_kernel_dispatch, STDOUT);
+
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_stdout(buffer,enviar);
+    enviar_buffer(buffer,socket_kernel_dispatch);
+    free(buffer);
+    */
+
 }
 
 
