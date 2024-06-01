@@ -224,11 +224,12 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case MOV_IN:
+	case MOV_IN:// MOV_IN EDX ECX
+		exec_mov_in(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case MOV_OUT:
+	case MOV_OUT:// MOV_OUT EDX ECX
 		exec_mov_out(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
@@ -248,8 +249,10 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case RESIZE:
+	case RESIZE://RESIZE 128
+		exec_resize(instruccion[1]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		break;
 	case COPY_STRING:
 		actualizar_cde(contextoProceso);

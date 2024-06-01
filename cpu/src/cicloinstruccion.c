@@ -100,7 +100,7 @@ void exec_mov_out(char *direccion, char *datos) {
         op_code escritura_memoria = recibir_operacion(socket_memoria);
         if(escritura_memoria == OK) //escritura correcta
     */
-
+   //free(buffer);
     
 }
 
@@ -112,8 +112,23 @@ devolver el contexto de ejecución al Kernel informando de esta situación.
 */
 void exec_resize(char * tamanio) {
 //tiene que ser el proceso actual
-//hay que enviarle el tamaño pasado por parametro a Memoria
+//hay que enviarle el tamaño pasado por parametro a Memoria 
 //devolver el cde si la respuesta es ...
+    /*
+    enviar_cod_enum(socket_memoria, RESIZE_EXTEND);
+    uint32_t tamanioValor = string_to_in(tamanio); //hacer string_to_int
+    
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer,tamanioValor);
+    enviar_buffer(buffer,socket_memoria);
+
+    op_code resize_memoria = recibir_operacion(socket_memoria);
+    if(resize_memoria == OUT_OF_MEMORY){
+        //enviar cod_op a kernel
+        //enviar cde a kernel
+    }
+    */
+
 }
 /*
 COPY_STRING 8
