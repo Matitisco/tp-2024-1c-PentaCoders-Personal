@@ -37,7 +37,32 @@ void exec_set(char *registro, uint32_t valor) //
         registros->EDX = valor;
     }
 }
+//aux instrucciones
+/*
+void* leer_memoria(direccionFisica){
+    
+    enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_direccionFisica(buffer,direccionFisica);
+    enviar_buffer(buffer, socket_memoria);
 
+
+    op_code lectura_memoria = recibir_operacion(socket_memoria);
+    if (lectura_memoria == DIRECCION_CORRECTA){
+        tipo_buffer *bufferValor = recibir_buffer(socket_memoria);
+        void * valorLeido;//pensar tipo generico que manda memoria que luego se lo castea
+        free(bufferValor);
+    }
+    else{//Informar direccion incorrecta
+        
+    }
+    free(buffer);
+    return valorLeido;
+}
+void escribir_memoria(direccionFisica2,void * valor){
+
+}
+*/
 /*
 
 MOV_IN EDX ECX
@@ -47,24 +72,25 @@ Datos.
 */
 void exec_mov_in(char *datos, char *direccion) {
 uint32_t direccionLogica = obtener_valor_origen(direccion);
-//direccionFisica = direccion_logica_a_fisica(direccionLogica);
-//enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
-//tipo_buffer *buffer = crear_buffer();
-//agregar_buffer_para_direccionFisica(buffer,direccionFisica);
-//enviar_buffer(buffer, socket_memoria); -> hay que enviar la direccion física
-
 /*
-op_code lectura_memoria = recibir_operacion(socket_memoria);
-if (lectura_memoria == DIRECCION_CORRECTA){
-    tipo_buffer *bufferValor = recibir_buffer(socket_memoria);
-    uint32_t valor = leer_buffer_enteroUint32(bufferValor);
-    exec_set(datos, valor);
-    free(bufferValor);
-}
-else{//Informar direccion incorrecta
+    direccionFisica = direccion_logica_a_fisica(direccionLogica);
+    enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_direccionFisica(buffer,direccionFisica);
+    enviar_buffer(buffer, socket_memoria); -> hay que enviar la direccion física
 
-}
-free(buffer);
+
+    op_code lectura_memoria = recibir_operacion(socket_memoria);
+    if (lectura_memoria == DIRECCION_CORRECTA){
+        tipo_buffer *bufferValor = recibir_buffer(socket_memoria);
+        uint32_t valor = leer_buffer_enteroUint32(bufferValor);
+        exec_set(datos, valor);
+        free(bufferValor);
+    }
+    else{//Informar direccion incorrecta
+
+    }
+    free(buffer);
 */
 }
 
@@ -88,19 +114,21 @@ typedef struct
 void exec_mov_out(char *direccion, char *datos) {
     uint32_t valor = obtener_valor_origen(datos);
     uint32_t direccionLogica = obtener_valor_origen(direccion);
+    /*
     //direccionFisica = direccion_logica_a_fisica(direccionLogica);
 
-    //enviar_cod_enum(socket_memoria, PEDIDO_ESCRITURA);
-    //tipo_buffer *buffer = crear_buffer();
-    //t_escrituraMemoria valores = {valor,direccionFisica};
-    //agregar_buffer_para_escrituraMemoria(buffer,valores);
-    //enviar_buffer(buffer, socket_memoria);
+    enviar_cod_enum(socket_memoria, PEDIDO_ESCRITURA);
+    tipo_buffer *buffer = crear_buffer();
+    t_escrituraMemoria valores = {valor,direccionFisica};
+    agregar_buffer_para_escrituraMemoria(buffer,valores);
+    enviar_buffer(buffer, socket_memoria);
     //memoria hace la escritura si está todo ok
-    /*
+    
         op_code escritura_memoria = recibir_operacion(socket_memoria);
         if(escritura_memoria == OK) //escritura correcta
-    */
-   //free(buffer);
+    
+   free(buffer);
+   */
     
 }
 
@@ -137,16 +165,34 @@ bytes indicadas en el parámetro tamaño a la posición de memoria apuntada por 
 DI.
 */
 // COPY_STRING
-void exec_copy_string(char * tamanio) {
+void exec_copy_string(char * tamanio) {// hace lectura y escritura de memoria
     uint32_t direccionLogica1 = registros->SI;
-    uint32_t direccionLogica1 = registros->DI;
+    uint32_t direccionLogica2 = registros->DI;
+
+    /*
+    direccionFisica1 = direccion_logica_a_fisica(direccionLogica1);
+    char * string_SI = (char *)leer_memoria(direccionFisica1);
+
+    int bytes_a_copiar = string_to_int(tamanio);
+    char *subcadena = (char *)malloc(bytes_a_copiar + 1);
+    strncpy(subcadena, string_SI, bytes_a_copiar);
+    subcadena[bytes_a_copiar] = '\0'; //por las dudas
+
+    direccionFisica2 = direccion_logica_a_fisica(direccionLogica2);
+    escribir_memoria(direccionFisica2,subcadena);
+
+    free(string_SI);
+    free(subcadena);
+    */
+    //primero hay que tener todo el valor del string  
+
+
     //uint32_t longitud = strin_to_int(tamanio);
 //SI tiene una direccion lógica a un string 
 //hay que obtener el string que tiene dicha direccion
 //hay que copiar la cantidad de bytes indicada por tamanio
 //hay que obtener la direccion lógiaca de DI
 //luego hay que asignar lo copiado a dicha direccion
-
 //usar string to int para tamanio
 }
 
