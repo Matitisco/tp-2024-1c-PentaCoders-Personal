@@ -37,7 +37,7 @@ void exec_set(char *registro, uint32_t valor) //
         registros->EDX = valor;
     }
 }
-//aux instrucciones
+//auxiliares instrucciones
 /*
 void* leer_memoria(direccionFisica){
     
@@ -416,19 +416,16 @@ void exec_io_fs_create() {}
 void exec_io_fs_delete() {}
 void exec_io_fs_truncate() {}
 void exec_io_fs_write() {}
-void exec_io_fs_read() {}void exec_io_stdin_read() {}
-void exec_io_stdout_write() {}
+void exec_io_fs_read() {}
+
 // EXIT
 void exec_exit(t_cde *cde)
 {
-    /*EXIT: Esta instrucción representa la syscall de finalización del proceso. Se deberá devolver el
-Contexto de Ejecución actualizado al Kernel para su finalización.*/
-
     salida_exit = 0;
     enviar_cod_enum(socket_kernel_dispatch, FINALIZAR_PROCESO);
-    // cuando enviamos el finalizar_proceso, el kernel debe enviar el proceso a exit
-    tipo_buffer *buffer = crear_buffer();
 
+    tipo_buffer *buffer = crear_buffer();
+    
     agregar_cde_buffer(buffer, cde);
     enviar_buffer(buffer, socket_kernel_dispatch);
 }

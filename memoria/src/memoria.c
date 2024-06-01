@@ -17,10 +17,13 @@ int main(int argc, char *argv[])
     logger = iniciar_logger("memoria.log", "MEMORIA");
     valores_config = configuracion_memoria();
     lista_marcos = list_create();
-    tam_marco =valores_config->tam_memoria/valores_config->tam_pagina;
-    int i=0;
-    while(i<tam_marco){
-        list_add(lista_marcos,NULL);// creo mi lista de marcos
+    
+    tam_marco = valores_config->tam_memoria / valores_config->tam_pagina;
+    int i = 0;
+    while (i < tam_marco)
+    {
+        list_add(lista_marcos, NULL); // creo mi lista de marcos
+        i++;
     }
 
     lista_contextos = list_create();
@@ -82,7 +85,7 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     log_info(logger, "SOLICITUD INICIAR PROCESO");
     buffer = recibir_buffer(cliente_fd);
     t_cde *cde = armarCde(buffer);
-    log_info(logger, "La ruta del archivo recibida es:>%s<", cde->path);
+    log_info(logger, "Ruta Archivo: <%s>", cde->path);
 
     destruir_buffer(buffer);
     cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
@@ -356,43 +359,53 @@ config_memoria *configuracion_memoria()
     return valores_config;
 }
 
-t_pagina*crear_pagina(int bit_presencia, int marco, int pidProceso){
-   t_pagina *pagina = malloc(sizeof(t_pagina));
-   pagina->marco = marco;
-   pagina->bit_modificado = false;
-   pagina->bit_presencia = true;
-   pagina->pid = pidProceso;
-   //list_add(list_paginas, NULL);//la lista de paginas seria la tabla
-
+t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso)
+{
+    t_pagina *pagina = malloc(sizeof(t_pagina));
+    pagina->marco = marco;
+    pagina->bit_modificado = false;
+    pagina->bit_presencia = true;
+    pagina->pid = pidProceso;
+    // list_add(list_paginas, NULL);//la lista de paginas seria la tabla
 }
-t_list*agregar_pagina(t_pagina*pagina, t_list*list_paginas){
- list_add(list_paginas,pagina);
+t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas)
+{
+    list_add(list_paginas, pagina);
 }
-uint32_t hay_marco_libre(){
-    for(int i=0;i<tam_marco; i++){
+uint32_t hay_marco_libre()
+{
+    for (int i = 0; i < tam_marco; i++)
+    {
         t_pagina *pag = list_get(lista_marcos, i);
-        if(pag == NULL) return 1; else return 0;
-
+        if (pag == NULL)
+            return 1;
+        else
+            return 0;
     }
 }
-uint32_t obtener_marco_libre(){
-	for(int i = 0; i < tam_marco; i++){
-		t_pagina* pagina = list_get(lista_marcos, i);
-		if(pagina == NULL)return i;
-	}
+uint32_t obtener_marco_libre()
+{
+    for (int i = 0; i < tam_marco; i++)
+    {
+        t_pagina *pagina = list_get(lista_marcos, i);
+        if (pagina == NULL)
+            return i;
+    }
 }
-void eliminar_paginas(uint32_t pid){
+void eliminar_paginas(uint32_t pid)
+{
+    /*
     int cant_paginas=0;//pongo contador de paginas
-	t_pcb*pcb = buscar_proceso_por_pid(pid);//busco el proceso por pid
+    t_pcb*pcb = buscar_proceso_por_pid(pid);//busco el proceso por pid
     if(pcb == NULL || pcb->lista_paginas == NULL) return;
     int tamanio_lista_pag =list_size(pcb->lista_paginas);
     for(int i=0;i< tamanio_lista_pag;i++){//voy recorriendo el proceso la cantida dd epaginas
-     t_pagina* pagina = (t_pagina*)list_get(pcb->lista_paginas, i);//agarro una pagina 
+     t_pagina* pagina = (t_pagina*)list_get(pcb->lista_paginas, i);//agarro una pagina
      if(pagina !=NULL){
         free(pagina);//elimino la pag
         cant_paginas++;//voy contando las pag
       }
-    }   
+    }
     log_info(logger,"Destruccion :PID:%d  - Tamaño: %d ",pid,cant_paginas);
-    
+    */
 }
