@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-//#include <sockets.c>
+// #include <sockets.c>
 #include <pthread.h>
 
-//#include "../../utils/include/sockets.h"
+// #include "../../utils/include/sockets.h"
 #include "../../utils/include/utils.h"
 #include "../../utils/include/conexiones.h"
 #include "../../utils/include/instrucciones.h"
@@ -15,12 +15,13 @@
 #include "../../utils/include/registros.h"
 #include "../../kernel/include/kernel.h"
 
-
 extern int socket_kernel_dispatch;
 //  int socket_kernel_interrupt;
 extern t_registros *registros;
+//extern config_cpu *valores_config_cpu;
 extern int interrupcion_io;
 extern tipo_buffer *buffer_instruccion_io;
+extern int tamanio_pagina;
 // Variable Global
 // extern uint32_t pid_ejecutar;
 
@@ -88,7 +89,7 @@ void exec_io_fs_delete();
 void exec_io_fs_truncate();
 void exec_io_fs_write();
 void exec_io_fs_read();
-void exec_exit(t_cde* cde);
+void exec_exit(t_cde *cde);
 
 void check_interrupt();
 

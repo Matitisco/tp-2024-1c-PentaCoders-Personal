@@ -17,7 +17,6 @@ int main(int argc, char *argv[])
     logger = iniciar_logger("memoria.log", "MEMORIA");
     valores_config = configuracion_memoria();
     lista_marcos = list_create();
-    
     tam_marco = valores_config->tam_memoria / valores_config->tam_pagina;
     int i = 0;
     while (i < tam_marco)
@@ -68,6 +67,15 @@ void *recibirKernel()
         case SOLICITUD_FINALIZAR_PROCESO:
             finalizar_proceso(cliente_fd, buffer);
             break;
+        case AMPLIACION_PROCESO:
+            ampliar_proceso(cliente_fd, buffer);
+            break;
+        case REDUCION_PROCESO:
+            reduccion_proceso(cliente_fd, buffer);
+            break;
+        case ACCESO_ESPACIO_USUARIO:
+            acceso_a_espacio_usuario(cliente_fd, buffer);
+            break;
         case -1:
             log_error(logger, " El KERNEL se desconecto. Terminando servidor");
             return (void *)EXIT_FAILURE;
@@ -79,14 +87,20 @@ void *recibirKernel()
         }
     }
 }
-
+void ampliar_proceso(int cliente, tipo_buffer *buffer)
+{
+}
+void reduccion_proceso(int cliente, tipo_buffer *buffer)
+{
+}
+void acceso_a_espacio_usuario(int cliente, tipo_buffer *buffer)
+{
+}
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
 {
-    log_info(logger, "SOLICITUD INICIAR PROCESO");
     buffer = recibir_buffer(cliente_fd);
+    list_tabla_paginas = list_create(); // La tabla empieza vacia
     t_cde *cde = armarCde(buffer);
-    log_info(logger, "Ruta Archivo: <%s>", cde->path);
-
     destruir_buffer(buffer);
     cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
     if (cde->path == NULL || cde->lista_instrucciones == NULL)
@@ -101,6 +115,16 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
         log_info(logger, "PID: <%d> - Iniciar Proceso: <%s>", cde->pid, cde->path);
     }
 }
+
+/*t_proceso* crearProceso(t_list* listaInstrucciones, uint32_t pid, uint32_t tamanio){
+    t_proceso* proceso = malloc(sizeof(t_proceso));
+
+    proceso->instrucciones = listaInstrucciones;
+    proceso->pid = pid;
+    proceso->cantMaxMarcos = tamanio / config_memoria.tam_pagina;
+
+    return proceso;
+}*/
 
 t_cde *armarCde(tipo_buffer *buffer)
 {
@@ -159,6 +183,7 @@ char *obtener_ruta(char *nombre_archivo)
 void *recibirCPU()
 {
     int cliente_cpu = esperar_cliente(logger, "Memoria", "CPU", server_fd);
+    enviar_tamanio_pagina(cliente_cpu);
     while (1)
     {
         op_code cod_op = recibir_operacion(cliente_cpu);
@@ -179,6 +204,14 @@ void *recibirCPU()
             break;
         }
     }
+}
+
+void enviar_tamanio_pagina(int cpu)
+{
+    tipo_buffer *buffer_con_tam_pagina = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer_con_tam_pagina, valores_config->tam_pagina);
+    enviar_buffer(buffer_con_tam_pagina, cpu);
+    destruir_buffer(buffer_con_tam_pagina);
 }
 
 void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
@@ -366,7 +399,7 @@ t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso)
     pagina->bit_modificado = false;
     pagina->bit_presencia = true;
     pagina->pid = pidProceso;
-    // list_add(list_paginas, NULL);//la lista de paginas seria la tabla
+    list_add(list_tabla_paginas, NULL); // la lista de paginas seria la tabla
 }
 t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas)
 {
@@ -394,18 +427,25 @@ uint32_t obtener_marco_libre()
 }
 void eliminar_paginas(uint32_t pid)
 {
-    /*
-    int cant_paginas=0;//pongo contador de paginas
-    t_pcb*pcb = buscar_proceso_por_pid(pid);//busco el proceso por pid
-    if(pcb == NULL || pcb->lista_paginas == NULL) return;
-    int tamanio_lista_pag =list_size(pcb->lista_paginas);
-    for(int i=0;i< tamanio_lista_pag;i++){//voy recorriendo el proceso la cantida dd epaginas
-     t_pagina* pagina = (t_pagina*)list_get(pcb->lista_paginas, i);//agarro una pagina
-     if(pagina !=NULL){
-        free(pagina);//elimino la pag
-        cant_paginas++;//voy contando las pag
-      }
+
+    int cant_paginas = 0;                     // pongo contador de paginas
+    t_pcb *pcb = buscar_proceso_por_pid(pid); // busco el proceso por pid//FALTA AHCER
+    if (pcb == NULL || pcb->lista_paginas == NULL)
+        return;
+    int tamanio_lista_pag = list_size(pcb->lista_paginas);
+    for (int i = 0; i < tamanio_lista_pag; i++)
+    {                                                                   // voy recorriendo el proceso la cantida dd epaginas
+        t_pagina *pagina = (t_pagina *)list_get(pcb->lista_paginas, i); // agarro una pagina
+        if (pagina != NULL)
+        {
+            free(pagina);   // elimino la pag
+            cant_paginas++; // voy contando las pag
+        }
     }
-    log_info(logger,"Destruccion :PID:%d  - Tamaño: %d ",pid,cant_paginas);
-    */
+    log_info(logger, "Destruccion :PID:%d  - Tamaño: %d ", pid, cant_paginas);
+}
+
+t_pcb *buscar_proceso_por_pid(int pid) // IMPLEMENTAR
+{
+    return NULL;
 }

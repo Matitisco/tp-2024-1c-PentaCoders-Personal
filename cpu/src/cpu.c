@@ -13,6 +13,7 @@ int socket_memoria;
 int socket_kernel_dispatch;
 int socket_kernel_interrupt;
 int salida_exit;
+int tamanio_pagina;
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
 pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
@@ -110,6 +111,7 @@ void levantar_Kernel_Dispatch(void *ptr)
 			while (salida_exit)
 			{
 				char *linea_instruccion = fetch(cde_recibido);
+				log_info(logger, "PID: <%d> - FETCH - Program Counter: <%d>", cde_recibido->pid, cde_recibido->PC);
 				cde_recibido->PC++;
 				char **array_instruccion = decode(linea_instruccion);
 				execute(array_instruccion, cde_recibido);
@@ -136,35 +138,35 @@ void levantar_Kernel_Interrupt(void *ptr)
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
 	while (1)
 	{
-		if(salida_exit){
+		if (salida_exit)
+		{
 			op_code codigo = recibir_operacion(socket_kernel_interrupt);
 			log_info(logger, "Me llego una interrupcion");
 			switch (codigo)
 			{
-				case PROCESO_INTERRUMPIDO_QUANTUM:
-					interrupcion_rr = 1;
-					break;
-				case SOLICITUD_EXIT:
-					tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt); // recibo el buffer de kernel
-					int pid = leer_buffer_enteroUint32(buffer_kernel);					  // id del proceso
-					destruir_buffer(buffer_kernel);
-					// si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
-					// pidiendo que desaloje el proceso de la cpu y retorne el cde
+			case PROCESO_INTERRUMPIDO_QUANTUM:
+				interrupcion_rr = 1;
+				break;
+			case SOLICITUD_EXIT:
+				tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt); // recibo el buffer de kernel
+				int pid = leer_buffer_enteroUint32(buffer_kernel);					  // id del proceso
+				destruir_buffer(buffer_kernel);
+				// si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
+				// pidiendo que desaloje el proceso de la cpu y retorne el cde
 
-					// guardamos en una lista las interrupciones que luego va a ser leida por check_interrupt aplicar semaforos mutex
-					break;
-				case -1:
-					log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-					return EXIT_FAILURE;
-				default:
-					// destruir_buffer_nuestro(buffer);
-					log_error(logger, "Codigo de operacion desconocido.");
-					log_error(logger, "Finalizando modulo.");
-					exit(1);
-					break;
+				// guardamos en una lista las interrupciones que luego va a ser leida por check_interrupt aplicar semaforos mutex
+				break;
+			case -1:
+				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
+				return EXIT_FAILURE;
+			default:
+				// destruir_buffer_nuestro(buffer);
+				log_error(logger, "Codigo de operacion desconocido.");
+				log_error(logger, "Finalizando modulo.");
+				exit(1);
+				break;
 			}
 		}
-		
 	}
 }
 
@@ -174,6 +176,15 @@ void *conexionAMemoria(void *ptr)
 	argumento = (t_args *)ptr;
 	socket_memoria = levantarCliente(logger, "MEMORIA", argumento->ip, argumento->puerto);
 	free(argumento);
+
+	recibir_tamanio_pagina(socket_memoria);
+}
+
+void recibir_tamanio_pagina(int socket_memoria)
+{
+	tipo_buffer *buffer_tamanio = recibir_buffer(socket_memoria);
+	tamanio_pagina = leer_buffer_enteroUint32(buffer_tamanio); // La hacemos global para que la use MMU
+	destruir_buffer(buffer_tamanio);
 }
 
 char *fetch(t_cde *contexto)
@@ -222,12 +233,12 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case MOV_IN:// MOV_IN EDX ECX
+	case MOV_IN: // MOV_IN EDX ECX
 		exec_mov_in(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case MOV_OUT:// MOV_OUT EDX ECX
+	case MOV_OUT: // MOV_OUT EDX ECX
 		exec_mov_out(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
@@ -247,12 +258,12 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case RESIZE:// RESIZE 128
+	case RESIZE: // RESIZE 128
 		exec_resize(instruccion[1]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		break;
-	case COPY_STRING:// COPY_STRING 8
+	case COPY_STRING: // COPY_STRING 8
 		exec_copy_string(instruccion[1]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
@@ -268,13 +279,13 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case IO_STDIN_READ://IO_STDIN_READ Int2 EAX AX
-		exec_io_stdin_read(instruccion[1],instruccion[2],instruccion[3]);
+	case IO_STDIN_READ: // IO_STDIN_READ Int2 EAX AX
+		exec_io_stdin_read(instruccion[1], instruccion[2], instruccion[3]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
-	case IO_STDOUT_WRITE://IO_STDOUT_WRITE Int3 BX EAX
-		exec_io_stdin_read(instruccion[1],instruccion[2],instruccion[3]);
+	case IO_STDOUT_WRITE: // IO_STDOUT_WRITE Int3 BX EAX
+		exec_io_stdin_read(instruccion[1], instruccion[2], instruccion[3]);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
@@ -332,8 +343,8 @@ void check_interrupt()
 		salida_exit = 0;
 		interrupcion_io = 0;
 		agregar_cde_buffer(buffer_cde, cde_recibido);
-		enviar_buffer(buffer_cde, socket_kernel_dispatch); // enviamos proceso interrumpido
-		enviar_buffer(buffer_instruccion_io,socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
+		enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
 	}
 	else
 	{

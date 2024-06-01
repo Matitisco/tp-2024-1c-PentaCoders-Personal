@@ -72,7 +72,7 @@ void *transicion_exit_largo_plazo()
         agregar_a_estado(proceso, cola_exit_global); // moverlo a la cola de exit, hay un lugar en memoria
         sem_post(GRADO_MULTIPROGRAMACION);           // se aumenta el grado
         sem_post(b_exec_libre);
-        //sem_post(cola_ready_global->contador);
+        // sem_post(cola_ready_global->contador);
         log_info(logger, "Finaliza el proceso %d - Motivo:", proceso->cde->pid);
     }
 }
