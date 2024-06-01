@@ -266,15 +266,19 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		actualizar_cde(contextoProceso);
 		break;
 	case IO_GEN_SLEEP:
-		actualizar_cde(contextoProceso);
 		exec_io_gen_sleep(instruccion[1], atoi((instruccion[2])));
+		actualizar_cde(contextoProceso);
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
-	case IO_STDIN_READ:
+	case IO_STDIN_READ://IO_STDIN_READ Int2 EAX AX
+		exec_io_stdin_read(instruccion[1],instruccion[2],instruccion[3]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
-	case IO_STDOUT_WRITE:
+	case IO_STDOUT_WRITE://IO_STDOUT_WRITE Int3 BX EAX
+		exec_io_stdin_read(instruccion[1],instruccion[2],instruccion[3]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
 	case IO_FS_CREATE:
 		actualizar_cde(contextoProceso);

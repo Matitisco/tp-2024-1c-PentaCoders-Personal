@@ -202,6 +202,9 @@ IO_STDIN_READ (Interfaz, Registro Dirección, Registro Tamaño): Esta instrucci�
 Kernel que mediante la interfaz ingresada se lea desde el STDIN (Teclado) un valor cuyo
 tamaño está delimitado por el valor del Registro Tamaño y el mismo se guarde a partir de la
 Dirección Lógica almacenada en el Registro Dirección.
+
+-Kernel le manda a CPU algo que leyó por consola, CPU le solicita la escritura de lo recibido de
+kernel en la direccion 
 */
 //IO_STDIN_READ
 void exec_io_stdin_read(char * interfaz,char * reg_direccion,char * reg_tamanio) {
