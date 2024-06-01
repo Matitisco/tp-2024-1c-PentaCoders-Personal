@@ -314,6 +314,7 @@ t_pcb *crear_proceso(char *PATH)
     proceso_nuevo->archivosAsignados = list_create();
     proceso_nuevo->recursosAsignados = list_create();
     proceso_nuevo->cde = iniciar_cde(PATH);
+
     return proceso_nuevo;
 }
 
