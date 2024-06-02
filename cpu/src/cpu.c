@@ -30,7 +30,7 @@ t_cde *cde_recibido;
 
 int main(int argc, char *argv[])
 {
-	logger = iniciar_logger("../cpu.log", "CPU");
+	logger = iniciar_logger("cpu.log", "CPU");
 	valores_config_cpu = configurar_cpu(); // CONFIG
 
 	iniciar_registros();
@@ -450,7 +450,7 @@ config_cpu *configurar_cpu()
 {
 	config_cpu *valores_config_cpu = malloc(sizeof(config_cpu));
 
-	valores_config_cpu->config = iniciar_config("cpu.config");
+	valores_config_cpu->config = iniciar_config(RUTA_RAIZ"/cpu/cpu.config");
 	valores_config_cpu->ip = config_get_string_value(valores_config_cpu->config, "IP_MEMORIA");
 	valores_config_cpu->puerto_memoria = config_get_string_value(valores_config_cpu->config, "PUERTO_MEMORIA");
 	valores_config_cpu->puerto_escucha_dispatch = config_get_string_value(valores_config_cpu->config, "PUERTO_ESCUCHA_DISPATCH");

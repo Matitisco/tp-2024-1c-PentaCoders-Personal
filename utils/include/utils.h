@@ -18,6 +18,8 @@
 #include <assert.h>
 #include "registros.h"
 #include "sockets.h"
+//const char RUTA_RAIZ[]="/home/nahuel/tp-2024-1c-PentaCoders";
+#define RUTA_RAIZ "/home/nahuel/tp-2024-1c-PentaCoders"
 typedef enum
 {
 	MENSAJE,

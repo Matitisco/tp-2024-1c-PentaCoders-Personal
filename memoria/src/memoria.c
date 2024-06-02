@@ -14,7 +14,7 @@ t_list *lista_instrucciones;
 int main(int argc, char *argv[])
 {
 
-    logger = iniciar_logger("../memoria.log", "MEMORIA");
+    logger = iniciar_logger("memoria.log", "MEMORIA");
     valores_config = configuracion_memoria();
     lista_marcos = list_create();
     tam_marco = valores_config->tam_memoria / valores_config->tam_pagina;
@@ -134,13 +134,24 @@ t_cde *armarCde(tipo_buffer *buffer)
     cde->lista_instrucciones = list_create();
     return cde;
 }
+char *obtener_ruta2(char *cadena)
+{
+    char *ruta_completa = string_new();
+    // Tamaño suficiente para contener la cadena original y la cadena definida
+
+    string_append(&ruta_completa, RUTA_RAIZ);
+    string_append(&ruta_completa, "/memoria/pruebas/");
+    string_append(&ruta_completa, cadena);
+
+    return ruta_completa;
+}
 
 t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 {
     t_list *list_instrucciones = list_create();
-    char *ruta_completa = string_new();
+    char *ruta_completa ;//= string_new();
 
-    ruta_completa = obtener_ruta(nombre_archivo);
+    ruta_completa = obtener_ruta2(nombre_archivo);
 
     FILE *archivo = fopen(ruta_completa, "r");
 
@@ -179,6 +190,8 @@ char *obtener_ruta(char *nombre_archivo)
 
     return ruta_completa;
 }
+
+
 
 void *recibirCPU()
 {
@@ -377,18 +390,18 @@ void liberar_registros(t_registros *registros)
     free(registros->EDX);
     free(registros->SI);
 }
-
 config_memoria *configuracion_memoria()
 {
     config_memoria *valores_config = malloc(sizeof(config_memoria));
-
-    valores_config->config = iniciar_config("memoria.config");
+  
+    valores_config->config = iniciar_config(RUTA_RAIZ"/memoria/memoria.config");
     valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
     valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
     valores_config->path_instrucciones = config_get_string_value(valores_config->config, "PATH_INSTRUCCIONES");
     valores_config->tam_memoria = config_get_int_value(valores_config->config, "TAM_MEMORIA");
     valores_config->tam_pagina = config_get_int_value(valores_config->config, "TAM_PAGINA");
     valores_config->retardo_respuesta = config_get_int_value(valores_config->config, "RETARDO_RESPUESTA");
+   
     return valores_config;
 }
 

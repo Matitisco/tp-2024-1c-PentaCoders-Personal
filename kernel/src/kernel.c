@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 void iniciar_kernel()
 {
 	inicializarEstados();
-	logger = iniciar_logger("../kernel.log", "KERNEL");
+	logger = iniciar_logger("kernel.log", "KERNEL");
 	nombre_IO = string_new();
 	lista_interfaces = list_create();
 	valores_config = inicializar_config_kernel();
@@ -236,7 +236,7 @@ config_kernel *inicializar_config_kernel()
 {
 	config_kernel *configuracion = (config_kernel *)malloc(sizeof(config_kernel));
 
-	configuracion->config = iniciar_config("kernel.config");
+	configuracion->config = iniciar_config(RUTA_RAIZ"/kernel/kernel.config");
 
 	configuracion->ip_memoria = config_get_string_value(configuracion->config, "IP_MEMORIA");
 	configuracion->ip_cpu = config_get_string_value(configuracion->config, "IP_CPU");
