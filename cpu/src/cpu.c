@@ -30,7 +30,7 @@ t_cde *cde_recibido;
 
 int main(int argc, char *argv[])
 {
-	logger = iniciar_logger("cpu.log", "CPU");
+	logger = iniciar_logger("../cpu.log", "CPU");
 	valores_config_cpu = configurar_cpu(); // CONFIG
 
 	iniciar_registros();

@@ -14,7 +14,7 @@ t_list *lista_instrucciones;
 int main(int argc, char *argv[])
 {
 
-    logger = iniciar_logger("memoria.log", "MEMORIA");
+    logger = iniciar_logger("../memoria.log", "MEMORIA");
     valores_config = configuracion_memoria();
     lista_marcos = list_create();
     tam_marco = valores_config->tam_memoria / valores_config->tam_pagina;
