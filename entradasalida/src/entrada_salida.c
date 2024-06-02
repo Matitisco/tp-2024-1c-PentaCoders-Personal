@@ -9,9 +9,9 @@ int main(int argc, char *argv[])
 	logger = iniciar_logger("entrada_salida.log", "ENTRADA_SALIDA");
 
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
-	char *path_configuracion = readline("Ingrese PATH con la configuracion de la interfaz: ");
-
-	levantar_interfaz(nombre_interfaz, "generica.config");
+	char *path_configuracion = readline("Ingrese el nombre del archivo con la configuracion de la interfaz: ");
+	strcat(path_configuracion, ".config");
+	levantar_interfaz(nombre_interfaz, path_configuracion);
 
 	free(nombre_interfaz);
 	free(path_configuracion);
@@ -173,10 +173,16 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io)
 	enviar_buffer(buffer_kernel_io, conexion_kernel);
 	destruir_buffer(buffer_kernel_io);
 	// 2-esperar que kernel envie un mensaje
-	/* 	if (recibir_operacion(conexion_kernel) == ESTABA_CONECTADO)
-		{
-			return EXIT_FAILURE;
-		} */
+	op_code mensaje_kernel = recibir_operacion(conexion_kernel);
+	if (mensaje_kernel == ESTABA_CONECTADO)
+	{
+		log_info(logger, "Ya estoy conectada al Kernel");
+		exit(1);
+	}
+	else if (mensaje_kernel == NO_ESTABA_CONECTADO)
+	{
+		log_info(logger, "Conexion a Kernel Correcta");
+	}
 	while (1)
 	{
 		op_code consulta_kernel = recibir_operacion(conexion_kernel);
@@ -239,10 +245,17 @@ void arrancar_interfaz_stdin(t_interfaz *interfaz_io)
 	enviar_buffer(buffer_kernel_io, conexion_kernel);
 	destruir_buffer(buffer_kernel_io);
 	// 2-esperar que kernel envie un mensaje
-	/* 	if (recibir_operacion(conexion_kernel) == ESTABA_CONECTADO)
-		{
-			return EXIT_FAILURE;
-		} */
+	op_code mensaje_kernel = recibir_operacion(conexion_kernel);
+	if (mensaje_kernel == ESTABA_CONECTADO)
+	{
+		log_info(logger, "Ya estoy conectada al Kernel");
+		exit(1);
+	}
+	else if (mensaje_kernel == NO_ESTABA_CONECTADO)
+	{
+		log_info(logger, "Conexion a Kernel Correcta");
+	}
+
 	while (1)
 	{
 		op_code consulta_kernel = recibir_operacion(conexion_kernel);
@@ -270,15 +283,38 @@ void arrancar_interfaz_stdin(t_interfaz *interfaz_io)
 	}
 }
 
-void realizar_operacion_stdin() // IMPLEMENTAR
+void realizar_operacion_stdin()
 {
 	tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
+	int limitante_cadena = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, limito la cadena que meto
+	// ej si meto la cadena, Interfaz y el limite es de 3 bytes, entonces solo puedo meter Int
+	int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a grabar el dato en memoria
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_STDIN_READ)
 	{
-		char *texto = readline("Ingrese un texto por teclado: ");
-		log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
+		char *texto_ingresado = readline("Ingrese un texto por teclado: ");
+		strncpy(texto_ingresado, texto_ingresado, limitante_cadena); // obtuve la cadena "limitada" //
+
+		tipo_buffer *buffer_a_memoria = crear_buffer();
+
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, PEDIDO_ESCRITURA);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
+		agregar_buffer_para_string(buffer_a_memoria, texto_ingresado);
+
+		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
+		enviar_buffer(buffer_a_memoria, conexion_memoria);
+		destruir_buffer(buffer_a_memoria);
+
+		op_code codigo_memoria = recibir_operacion(socket_memoria);
+		if (codigo_memoria == PEDIDO_ESCRITURA_CORRECTO)
+		{
+			log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
+		}
+		else if (codigo_memoria == ERROR_PEDIDO_ESCRITURA)
+		{
+			log_error(logger, "PID: <%d> - ERROR Operacion: <IO_STDIN_READ>", pid);
+		}
 	}
 	else
 	{
@@ -304,10 +340,16 @@ void arrancar_interfaz_stdout(t_interfaz *interfaz_io)
 	enviar_buffer(buffer_kernel_io, conexion_kernel);
 	destruir_buffer(buffer_kernel_io);
 	// 2-esperar que kernel envie un mensaje
-	/* 	if (recibir_operacion(conexion_kernel) == ESTABA_CONECTADO)
-		{
-			return EXIT_FAILURE;
-		} */
+	op_code mensaje_kernel = recibir_operacion(conexion_kernel);
+	if (mensaje_kernel == ESTABA_CONECTADO)
+	{
+		log_info(logger, "Ya estoy conectada al Kernel");
+		exit(1);
+	}
+	else if (mensaje_kernel == NO_ESTABA_CONECTADO)
+	{
+		log_info(logger, "Conexion a Kernel Correcta");
+	}
 	while (1)
 	{
 		op_code consulta_kernel = recibir_operacion(conexion_kernel);
@@ -335,15 +377,40 @@ void arrancar_interfaz_stdout(t_interfaz *interfaz_io)
 	}
 }
 
-void realizar_operacion_stdout() // IMPLEMENTAR
+void realizar_operacion_stdout()
 {
 	tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
+	int limitante_cadena = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, se lo envio a la memoria para que
+	// solo lea una cierta cantidad
+	int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a pedirle a memoria que busque el dato
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_STDOUT_WRITE)
 	{
-		char *texto = readline("Ingrese un texto por teclado: ");
-		log_info(logger, "PID: <%d> - Operacion: <IO_STDOUT_WRITE>", pid);
+		tipo_buffer *buffer_a_memoria = crear_buffer();
+
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, PEDIDO_LECTURA);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
+
+		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
+		enviar_buffer(buffer_a_memoria, conexion_memoria);
+		destruir_buffer(buffer_a_memoria);
+
+		op_code codigo_memoria = recibir_operacion(socket_memoria);
+		if (codigo_memoria == PEDIDO_LECTURA_CORRECTO)
+		{
+			tipo_buffer *lectura = recibir_buffer(socket_memoria);
+			char *valor = leer_buffer_string(lectura);
+			destruir_buffer(lectura);
+
+			log_info(logger, "Valor hallado en Direccion Fisica <%d> : %s", direccion_fisica, valor);
+			log_info(logger, "PID: <%d> - Operacion: <IO_STDOUT_WRITE>", pid);
+		}
+		else if (codigo_memoria == ERROR_PEDIDO_LECTURA)
+		{
+			log_error(logger, "PID: <%d> - ERROR Operacion: <IO_STDOUT_WRITE>", pid);
+		}
 	}
 	else
 	{

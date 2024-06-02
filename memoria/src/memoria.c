@@ -43,13 +43,33 @@ void crearHilos()
 
     pthread_create(&hiloCpu, NULL, recibirCPU, NULL);
     pthread_create(&hiloKernel, NULL, recibirKernel, NULL);
-    pthread_create(&hiloIO, NULL, recibirIO, NULL);
+    pthread_create(&hiloIO, NULL, recibir_interfaces_io, NULL);
 }
 
-void *recibirIO()
+void *recibir_interfaces_io()
 {
     // va a recibir interfaces que le van a pedir acceso al espacio del usuario (stdin,stdout y dialfs) :D
-    return EXIT_SUCCESS;
+    while (1)
+    {
+        int dispositivo_io = esperar_cliente(logger, "Memoria", "Interfaz IO", server_fd);
+        op_code codigo_io = recibir_operacion(dispositivo_io);
+        tipo_buffer *buffer_io;
+        switch (codigo_io)
+        {
+        case SOLICITUD_INTERFAZ_STDIN:
+            buffer_io = recibir_buffer(dispositivo_io);
+            codigo_io = leer_buffer_enteroUint32(buffer_io);
+            acceso_a_espacio_usuario(codigo_io, buffer_io, SOLICITUD_INTERFAZ_STDIN, dispositivo_io); // IMPLEMENTAR
+            break;
+        case SOLICITUD_INTERFAZ_STDOUT:
+            buffer_io = recibir_buffer(dispositivo_io);
+            codigo_io = leer_buffer_enteroUint32(buffer_io);
+            acceso_a_espacio_usuario(codigo_io, buffer_io, SOLICITUD_INTERFAZ_STDOUT, dispositivo_io);
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 void *recibirKernel()
@@ -87,15 +107,72 @@ void *recibirKernel()
         }
     }
 }
+
 void ampliar_proceso(int cliente, tipo_buffer *buffer)
 {
 }
+
 void reduccion_proceso(int cliente, tipo_buffer *buffer)
 {
 }
-void acceso_a_espacio_usuario(int cliente, tipo_buffer *buffer)
+
+void acceso_a_espacio_usuario(int codigo, tipo_buffer *buffer, op_code solicitud, int cliente_solicitante)
 {
+    int direccion_fisica;
+    switch (codigo)
+    {
+    case PEDIDO_ESCRITURA:
+
+        if (solicitud == SOLICITUD_INTERFAZ_STDIN)
+        {
+            direccion_fisica = leer_buffer_enteroUint32(buffer);
+            char *texto = leer_buffer_string(buffer);
+            char *resultado = guardar_texto_en(direccion_fisica, texto); // IMPLEMENTAR
+            if (resultado == "OK")
+            {
+                enviar_cod_enum(cliente_solicitante, PEDIDO_ESCRITURA_CORRECTO);
+            }
+            else
+            {
+                enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
+            }
+        }
+        break;
+
+    case PEDIDO_LECTURA:
+
+        if (solicitud == SOLICITUD_INTERFAZ_STDOUT)
+        {
+            direccion_fisica = leer_buffer_enteroUint32(buffer);
+            int limite = leer_buffer_enteroUint32(buffer);
+            char *texto_encontrado = leer_texto_en(direccion_fisica, limite); // IMPLEMENTAR
+            if (texto_encontrado != NULL)
+            {
+                enviar_cod_enum(cliente_solicitante, PEDIDO_ESCRITURA_CORRECTO);
+            }
+            else
+            {
+                enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
+            }
+        }
+        break;
+    default:
+        break;
+    }
 }
+
+char *guardar_texto_en(int direccion_fisica, char *texto) // IMPLEMENTAR
+{
+    // aca se guardaria el texto con paginacion, etc,etc
+    return "OK";
+}
+
+char *leer_texto_en(int direccion_fisica, int limite) // esta en bytes el limite // IMPLEMENTAR
+{
+    // aca se accede a la tbala y se lee el texto y se retorna limitado etc etc.
+    return "Texto Leido";
+}
+
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
 {
     buffer = recibir_buffer(cliente_fd);

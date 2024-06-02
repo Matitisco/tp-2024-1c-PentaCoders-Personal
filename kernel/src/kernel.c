@@ -137,6 +137,7 @@ void *levantarIO()
 			}
 			else
 			{
+				enviar_cod_enum(disp_io, NO_ESTABA_CONECTADO);
 				log_info(logger, "La Interfaz %s no estaba conectada", infoIO->nombre_io);
 				list_add(lista_interfaces, infoIO);
 				log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, infoIO->nombre_io);

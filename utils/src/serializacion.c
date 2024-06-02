@@ -5,7 +5,7 @@ t_log *logger;
 // ENVIAR MENSAJE
 void enviar_mensaje(char *mensaje, int socket_cliente)
 {
-    t_paquete *paquete = malloc(sizeof(t_paquete));
+    /* t_paquete *paquete = malloc(sizeof(t_paquete));
 
     paquete->codigo_operacion = MENSAJE;
     paquete->buffer = malloc(sizeof(tipo_buffer));
@@ -20,7 +20,7 @@ void enviar_mensaje(char *mensaje, int socket_cliente)
     send(socket_cliente, a_enviar, bytes, 0);
 
     free(a_enviar);
-    eliminar_paquete(paquete);
+    eliminar_paquete(paquete); */
 }
 // RECIBIR MENSAJE
 void recibir_mensaje(int socket_cliente)
@@ -35,10 +35,10 @@ void recibir_mensaje(int socket_cliente)
 // CREAR PAQUETE
 t_paquete *crear_paquete(void)
 {
-    t_paquete *paquete = malloc(sizeof(t_paquete));
+/*     t_paquete *paquete = malloc(sizeof(t_paquete));
     paquete->codigo_operacion = PAQUETE;
     paquete->buffer = crear_buffer();
-    return paquete;
+    return paquete; */
 }
 
 t_paquete *crear_paquete_cde(void)

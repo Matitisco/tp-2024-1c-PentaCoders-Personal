@@ -59,7 +59,7 @@ void crearHilos();
 config_memoria *configuracion_memoria();
 void *recibirCPU();
 void *recibirKernel();
-void *recibirIO();
+void *recibir_interfaces_io();
 // void iniciar_sem_globales();
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
 void finalizar_proceso(int cliente_fd, tipo_buffer *buffer);
@@ -80,5 +80,7 @@ void liberar_registros(t_registros *registros);
 void finalizar_proceso(int kernel, tipo_buffer *buffer);
 
 void *destroy_instruccion(void *element);
+char *guardar_texto_en(int direccion_fisica, char *texto);
+char *leer_texto_en(int direccion_fisica, int limite);
 
 #endif
