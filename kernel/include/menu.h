@@ -5,6 +5,7 @@
 #include "../include/operaciones.h"
 
 void iniciar_consola_interactiva();
+void iniciar_consola_interactiva2();
 void mostrar_operaciones_realizables();
 op_code obtenerCodigo(char *opcion, t_log *logger);
 void ejecutar_operacion(char *codigo_operacion, t_log *logger);

@@ -1,5 +1,72 @@
 #include "../include/menu.h"
 
+
+char * obtener_comando(char *entrada){
+    return strtok(entrada, " ");
+}
+//hacer funcion controlar argumentos
+bool cantidad_argumentos_correcta(char *entrada){
+
+}
+void ejecutar_comando(char *comando)
+{
+    if(strcmp(comando, "EJECUTAR_SCRIPT") == 0){
+		//printf("EJECUTAR_SCRIPT \n");
+        ejecutar_script(strtok(NULL, "\0"));
+	}
+	else if(strcmp(comando, "INICIAR_PROCESO") == 0){
+		//printf("INICIAR_PROCESO \n");
+        iniciar_proceso(strtok(NULL, "\0"));
+        /*
+        char *PATH_INSTRUCCIONES = readline("Ingrese el nombre del archivo: ");
+        iniciar_proceso(PATH_INSTRUCCIONES);
+        free(PATH_INSTRUCCIONES);
+        */
+	}
+	else if(strcmp(comando, "FINALIZAR_PROCESO") == 0){
+		//printf("FINALIZAR_PROCESO \n");
+        finalizar_proceso(atoi(strtok(NULL, "\0")));
+	}
+	else if(strcmp(comando, "DETENER_PLANIFICACION") == 0){
+		//printf("DETENER_PLANIFICACION \n");
+        detener_planificacion();
+	}
+	else if(strcmp(comando, "INICIAR_PLANIFICACION") == 0){
+		//printf("INICIAR_PLANIFICACION \n");
+        iniciar_planificacion();
+	}
+	else if(strcmp(comando, "MULTIPROGRAMACION") == 0){
+		//printf("MULTIPROGRAMACION \n");
+        grado_multiprogramacion(atoi( strtok(NULL, "\0") ));
+	}
+	else if(strcmp(comando, "PROCESO_ESTADO") == 0){
+		//printf("PROCESO_ESTADO \n");
+        proceso_estado();
+	}
+    else{
+        printf("%s: command not found \n",comando);
+    }
+}
+
+void iniciar_consola_interactiva2()
+{
+    habilitar_planificadores = 0;
+    while (1)
+    {
+        sleep(1);
+        sem_post(binario_menu_lp); // Habilita largo plazo
+        if (habilitar_planificadores)
+        {
+            sem_post(b_reanudar_largo_plazo);
+            sem_post(b_reanudar_corto_plazo);
+        }
+
+        char *entrada = readline("\033[1;32mkernel\033[0m:\033[1;34m~\033[0m$ ");
+        char *comando =  obtener_comando(entrada);
+        ejecutar_comando(comando);
+        free(entrada);
+    }
+}
 void iniciar_consola_interactiva()
 {
     habilitar_planificadores = 0;
