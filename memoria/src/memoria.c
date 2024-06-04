@@ -476,6 +476,8 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio) {
             list_add(paginas, nueva_pagina);
     
     }
+    log_info(logger, "PID: %d - Tamaño Actual: %d - Tamaño a Ampliar: %d", pid, valores_config->tam_memoria, tamanio);
+
 }
 
 void reducir_proceso(uint32_t pid,uint32_t tamanio){
@@ -578,6 +580,24 @@ int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina)
             return pagina->marco;
         }
     }
+    log_info(logger, "PID: %d - Pagina: %d- Marco: %d",);
+}
+int consultar_marco(uint32_t pid, t_pagina*pagina)
+{
+
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
+     int cant_paginas = list_size(tabla_paginas->tabla_paginas_proceso);
+    for (int i = 0; i < cant_paginas; i++)
+    {
+        if (list_get(tabla_paginas->tabla_paginas_proceso, i) == pagina)
+        {
+
+            return pagina->marco;
+        }
+    }
+   
+    log_info(logger, "PID: %d - Pagina: %d- Marco: %d",pid,pagina,pagina->marco);
 }
 
+/*  t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);*/
 // direccion física = nro marco * tamaño marco + OFFSET
