@@ -568,7 +568,7 @@ int obtener_marco_libre()
     return -1;
 }
 
-int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina)
+/*int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina)
 { // para obtener el nro del marco que tiene una pagina asociado{
     int cant_paginas = list_size(tabla->tabla_paginas_proceso);
 
@@ -582,6 +582,7 @@ int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina)
     }
     log_info(logger, "PID: %d - Pagina: %d- Marco: %d",);
 }
+*/
 int consultar_marco(uint32_t pid, t_pagina*pagina)
 {
 
@@ -599,5 +600,3 @@ int consultar_marco(uint32_t pid, t_pagina*pagina)
     log_info(logger, "PID: %d - Pagina: %d- Marco: %d",pid,pagina,pagina->marco);
 }
 
-/*  t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);*/
-// direccion física = nro marco * tamaño marco + OFFSET

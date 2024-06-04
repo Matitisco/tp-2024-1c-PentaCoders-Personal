@@ -54,7 +54,7 @@ uint32_t hay_marco_libre();
 t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
 void crear_y_agregar_tabla_a_lista_global(int pid);
 int *agarro_marco_que_este_libre();
-
+int consultar_marco(uint32_t pid, t_pagina*pagina);
 typedef struct
 {
 	int numero_marco; // numero de marco
