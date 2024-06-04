@@ -424,35 +424,69 @@ void ajustar_tamanio_proceso()
         tipo_buffer *buffer_cpu= recibir_buffer(socket_cpu);
         uint32_t nuevo_tamanio=leer_buffer_enteroUint32(buffer_cpu);
         t_cde*cde =leer_cde(buffer_cpu);
-        if(tamanio>nuevo_tamanio){
-        reducir_proceso(cde->pid,nuevo_tamanio);
+        if(valores_config->tam_memoria>nuevo_tamanio){
+        reducir_proceso(cde->pid,nuevo_tamanio);//entonce signfica que hay que reducir
     }else {
-        ampliar_proceso(cde->pid,nuevo_tamanio);
+        ampliar_proceso(cde->pid,nuevo_tamanio);//significa que es mair
         }
-        //enviar cod_op a kernel
-        //enviar cde a kernel
+    }
+}
+void ampliar_proceso(uint32_t pid, uint32_t tamanio) {
+    // CVemos cuantas paginas tenemos que agregar con este nuevo tamanio
+    int paginas_adicionales = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
+
+    // Verificar si hay suficientes marcos disponibles
+    int marcos_disponibles = 0;
+    for (int i = 0; i <cant_marcos; i++) {
+        if (array_bitmap[i].bit_ocupado == 0) {//si no esta ocupado
+            marcos_disponibles++;
+        }
+    }
+
+    if (paginas_adicionales > marcos_disponibles) { //si hay mas paginas que marcos le avisamos a cpu
+
+        enviar_cod_enum(socket_cpu, OUT_OF_MEMORY);
+
+        return;
+    }
+
+    // Buscar la tabla de páginas del proceso correspondiente
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
+     if (tabla_paginas == NULL) {
+       log_info("NO se encontro la tabla de paginas con pid %d", pid);
+        return;
+    }
+
+    // Agregar las páginas adicionales al proceso
+    t_list *paginas = tabla_paginas->tabla_paginas_proceso;
+    for (int i = 0; i < paginas_adicionales; i++) {
+        // Encontrar el próximo marco libre en el bitmap
+        int marco_libre = -1;
+        for (int j = 0; j < cant_marcos; j++) {
+            if (array_bitmap[j].bit_ocupado == 0) {
+                marco_libre = j;
+                array_bitmap[j].bit_ocupado = 1; // Marcar el marco como ocupado
+                
+            }
+        }
+            // Crear una nueva página y agregarla al proceso
+            t_pagina *nueva_pagina = malloc(sizeof(t_pagina));
+            nueva_pagina->marco = marco_libre;//Pongo el marco libre que encontre
+            nueva_pagina->bit_validez = 1;
+            list_add(paginas, nueva_pagina);
+    
     }
 }
 
-void ampliar_proceso(uint32_t pid,uint32_t tamanio){
-    
-
-
-        /*Ampliación de un proceso
-Se deberá ampliar el tamaño del proceso al final del mismo, pudiendo solicitarse múltiples páginas.
-Es posible que en un punto no se puedan solicitar más marcos ya que la memoria se encuentra llena,
-por lo que en ese caso se deberá contestar con un error de Out Of Memory.
-Reducción de un proceso
-Se reducirá el mismo desde el final, liberando, en caso de ser necesario, las páginas que ya no sean
-utilizadas (desde la última hacia la primera).
-*/
-
-}
 void reducir_proceso(uint32_t pid,uint32_t tamanio){
     
     int paginas_requeridas = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina; //cant de paginas que tiene que tener con este nuevo tamanio
     
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);//busco en la lista de listaa 
+     if (tabla_paginas == NULL) {
+       log_info("NO se encontro la tabla de paginas con pid %d", pid);
+        return;
+    }
     int paginas_actuales= list_size(tabla_paginas->tabla_paginas_proceso);// cantida de paginas que hay jasta el momento
      // Si el proceso tiene más páginas de las requeridas, liberar las excesivas desde el final
     t_list *paginas = tabla_paginas->tabla_paginas_proceso;
