@@ -89,12 +89,6 @@ void *recibirKernel()
         case SOLICITUD_FINALIZAR_PROCESO:
             finalizar_proceso(cliente_fd, buffer);
             break;
-        case AMPLIACION_PROCESO:
-            ampliar_proceso(cliente_fd, buffer);
-            break;
-        case REDUCION_PROCESO:
-            reduccion_proceso(cliente_fd, buffer);
-            break;
         case ACCESO_ESPACIO_USUARIO:
             acceso_a_espacio_usuario(cliente_fd, buffer);
             break;
@@ -108,12 +102,6 @@ void *recibirKernel()
             break;
         }
     }
-}
-void ampliar_proceso(int cliente, tipo_buffer *buffer)
-{
-}
-void reduccion_proceso(int cliente, tipo_buffer *buffer)
-{
 }
 void acceso_a_espacio_usuario(int cliente, tipo_buffer *buffer)
 {
@@ -214,7 +202,7 @@ void *recibirCPU()
         case PEDIDO_INSTRUCCION:
             pedido_instruccion_cpu_dispatch(cliente_cpu, lista_contextos);
             break;
-            // case ACCESO_ESPACIO_USUARIO:
+        //case ACCESO_ESPACIO_USUARIO
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             exit(EXIT_FAILURE);
@@ -355,7 +343,7 @@ char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code)
     return -1;
 }
 
-_Bool estaElContextoConCiertoPID(t_cde *contexto)
+bool estaElContextoConCiertoPID(t_cde *contexto)
 {
     return contexto->pid == PID_buscado;
 }
@@ -416,12 +404,11 @@ config_memoria *configuracion_memoria()
     return valores_config;
 }
 
-t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso)
+t_pagina *crear_pagina( int marco, int pidProceso)
 {
     t_pagina *pagina = malloc(sizeof(t_pagina));
     pagina->marco = marco;
-    pagina->bit_modificado = false;
-    pagina->bit_presencia = true;
+    pagina->bit_validez= true;
     pagina->pid = pidProceso;
     list_add(list_tabla_paginas, NULL); // la lista de paginas seria la tabla
 }
@@ -429,26 +416,64 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas)
 {
     list_add(list_paginas, pagina);
 }
-/*
-uint32_t hay_marco_libre()
+
+void ajustar_tamanio_proceso()
 {
-    for (int i = 0; i < tam_marco; i++)
-    {
-        t_pagina *pag = list_get(lista_marcos, i);
-        if (pag == NULL)
-            return 1;
-        else
-            return 0;
+    op_code mensaje_cpu=recibir_operacion(socket_cpu);
+    if(mensaje_cpu == RESIZE_EXTEND){
+        tipo_buffer *buffer_cpu= recibir_buffer(socket_cpu);
+        uint32_t nuevo_tamanio=leer_buffer_enteroUint32(buffer_cpu);
+        t_cde*cde =leer_cde(buffer_cpu);
+        if(tamanio>nuevo_tamanio){
+        reducir_proceso(cde->pid,nuevo_tamanio);
+    }else {
+        ampliar_proceso(cde->pid,nuevo_tamanio);
+        }
+        //enviar cod_op a kernel
+        //enviar cde a kernel
     }
 }
+
+void ampliar_proceso(uint32_t pid,uint32_t tamanio){
+    
+
+
+        /*Ampliación de un proceso
+Se deberá ampliar el tamaño del proceso al final del mismo, pudiendo solicitarse múltiples páginas.
+Es posible que en un punto no se puedan solicitar más marcos ya que la memoria se encuentra llena,
+por lo que en ese caso se deberá contestar con un error de Out Of Memory.
+Reducción de un proceso
+Se reducirá el mismo desde el final, liberando, en caso de ser necesario, las páginas que ya no sean
+utilizadas (desde la última hacia la primera).
 */
 
+}
+void reducir_proceso(uint32_t pid,uint32_t tamanio){
+    
+    int paginas_requeridas = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina; //cant de paginas que tiene que tener con este nuevo tamanio
+    
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);//busco en la lista de listaa 
+    int paginas_actuales= list_size(tabla_paginas->tabla_paginas_proceso);// cantida de paginas que hay jasta el momento
+     // Si el proceso tiene más páginas de las requeridas, liberar las excesivas desde el final
+    t_list *paginas = tabla_paginas->tabla_paginas_proceso;
+    while (paginas_actuales > paginas_requeridas) {
+                t_pagina *pagina_a_eliminar = list_remove(paginas,paginas_actuales  - 1);
+                pagina_a_eliminar->bit_validez = 0; // Marcar como no válida
+                free(pagina_a_eliminar); // Liberar la memoria de la página
+               paginas_actuales--;
+            }
 
-void eliminar_tabla_paginas(uint32_t pid)
-{
+    log_info(logger, "PID: %d - Tamaño Actual: %d - Tamaño a Reducir: %d", pid, valores_config->tam_memoria, tamanio);
+
+ }       
+        
+void eliminar_tabla_paginas(uint32_t pid){
     int cant_paginas = 0;
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista global de  tabla del proceso
-
+    if (tabla_paginas == NULL) {
+       log_info("NO se encontro la tabla de paginas con pid %d", pid);
+        return;
+    }
     int tamanio_tabla_pag = list_size(tabla_paginas->tabla_paginas_proceso);
     for (int i = 0; i < tamanio_tabla_pag; i++)
     {
@@ -463,6 +488,7 @@ void eliminar_tabla_paginas(uint32_t pid)
     list_destroy(tabla_paginas->tabla_paginas_proceso); // elimino todas las paginas
     log_info(logger, "Destruccion :PID:%d  - Tamaño: %d ", pid, cant_paginas);
 }
+
 
 t_tabla_paginas *buscar_en_lista_global(int pid)
 {
@@ -485,7 +511,7 @@ void colocar_pagina_en_marco(t_pagina *pagina)
         log_info(logger,"No hay ningun marco libre, OUT OF MEMORY");
         // puede ser que debamos finalizar el proceso
     }
-    pagina->bit_presencia = 1; // esta en memoria ffisica , o sea tiene un marco
+    pagina->bit_validez = 1; // esta en memoria ffisica , o sea tiene un marco
     pagina->marco = marco_libre;
 }
 int *agarro_marco_que_este_libre()

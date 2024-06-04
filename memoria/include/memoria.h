@@ -38,8 +38,7 @@ void *espacio_memoria;
 typedef struct
 {
 	int marco;			// numeor de marco donde esta la pagina
-	int bit_presencia;	// si esta en memoroa
-	int bit_modificado; // si la pag fue modifica
+	int bit_validez;	// si esta en memoria
 	int pid;			// la pagina conoce al proceso del cual es parte ?
 } t_pagina;
 
@@ -47,7 +46,7 @@ typedef struct
 t_list *list_tabla_paginas; // losta global de paginas y cada nodo tiene una tabla del proceso
 
 int cant_marcos;
-t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso);
+t_pagina *crear_pagina(int marco, int pidProceso);
 void eliminar_tabla_paginas(uint32_t pid);
 t_tabla_paginas *buscar_en_lista_global(int pid);
 int obtener_marco_libre();
@@ -79,7 +78,7 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos);
 t_list *leerArchivoConInstrucciones(char *nombre_archivo);
 t_cde *obtener_contexto_en_ejecucion(int PID, t_list *contextos);
 t_instruccion *crearInstruccion(char *linea);
-_Bool estaElContextoConCiertoPID(t_cde *contexto);
+bool estaElContextoConCiertoPID(t_cde *contexto);
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde *armarCde(tipo_buffer *buffer);
 
