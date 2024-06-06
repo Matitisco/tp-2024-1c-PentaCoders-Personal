@@ -61,7 +61,8 @@ t_list *recibir_paquete_cde(int socket_cliente);
 
 t_paquete *crear_paquete_cde(void);
 
-
+void agregar_escrituraMemoria_buffer(tipo_buffer * buffer,t_escrituraMemoria valores);
+t_escrituraMemoria leer_escrituraMemoria(tipo_buffer *buffer);
 /* op_code recibir_operacion2(int socket_cliente); */
 
 #endif

@@ -13,6 +13,7 @@
 #include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
 
+
 extern t_log *logger;
 int socket_cpu;
 pthread_t hiloCPU, hiloKernel, hiloIO;

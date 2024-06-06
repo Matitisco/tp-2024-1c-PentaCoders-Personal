@@ -264,6 +264,7 @@ void *recibirCPU()
     while (1)
     {
         op_code cod_op = recibir_operacion(cliente_cpu);
+        tipo_buffer *buffer;
         switch (cod_op)
         {
         case PEDIDO_INSTRUCCION:
@@ -271,7 +272,7 @@ void *recibirCPU()
             break;
             // case ACCESO_ESPACIO_USUARIO:
         case PEDIDO_LECTURA:
-            tipo_buffer *buffer = recibir_buffer(cliente_cpu);
+            buffer = recibir_buffer(cliente_cpu);
             uint32_t direccionFisica = leer_buffer_enteroUint32(buffer);
             destruir_buffer(buffer);
 
@@ -279,7 +280,11 @@ void *recibirCPU()
             agregar_buffer_para_enterosUint32(buffer,1000);//envio un valor aleatorio
             enviar_buffer(buffer,cliente_cpu);
             destruir_buffer(buffer);
-            //enviar_
+        break;
+        case PEDIDO_ESCRITURA:
+            buffer = recibir_buffer(cliente_cpu);
+            t_escrituraMemoria valores_escritura = leer_escrituraMemoria(buffer);
+            destruir_buffer(buffer);
         break;
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");

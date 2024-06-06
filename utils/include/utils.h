@@ -118,6 +118,12 @@ typedef struct
 	t_list *lista_paginas; // cada proceso tiene su lista de paginas-la tabla de paginas
 } t_pcb;
 
+typedef struct
+{
+    uint32_t valor;
+    uint32_t direccionFisica;
+}t_escrituraMemoria;
+
 extern sem_t *sem_kernel;
 extern sem_t *sem_kernel_io_generica;
 extern t_log *logger;

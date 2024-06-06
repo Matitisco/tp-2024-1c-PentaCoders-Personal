@@ -427,6 +427,18 @@ void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
     
 }
 
+void agregar_escrituraMemoria_buffer(tipo_buffer * buffer,t_escrituraMemoria valores)
+{
+    agregar_buffer_para_enterosUint32(buffer,valores.valor);
+    agregar_buffer_para_enterosUint32(buffer,valores.direccionFisica);
+}
+t_escrituraMemoria leer_escrituraMemoria(tipo_buffer *buffer)
+{
+    t_escrituraMemoria valores;
+    valores.valor = leer_buffer_enteroUint32(buffer);
+    valores.direccionFisica = leer_buffer_enteroUint32(buffer);
+    return valores;
+}
 // ESCRIBIR EN EL BUFFER UNA LISTA
 /*void escribir_buffer_para_listas(tipo_buffer *buffer, void *args)
 {
