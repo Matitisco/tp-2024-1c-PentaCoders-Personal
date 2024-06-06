@@ -82,3 +82,28 @@ t_args *crearArgumento(char *puerto, char *ip)
 
 	return a;
 }
+
+int string_to_int(char *str) {
+    int result = 0;
+    int i = 0;
+    int sign = 1;
+
+    // Manejo del signo
+    if (str[0] == '-') {
+        sign = -1;
+        i = 1;
+    }
+
+    // Convertir cada dígito a un número entero
+    for (; str[i] != '\0'; ++i) {
+        if (str[i] >= '0' && str[i] <= '9') {
+            result = result * 10 + (str[i] - '0');
+        } else {
+            // Si el carácter no es un dígito, salir o manejar el error según sea necesario
+            printf("Error: No es un número válido\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    return result * sign;
+}

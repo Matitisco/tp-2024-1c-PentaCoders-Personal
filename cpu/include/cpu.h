@@ -72,12 +72,12 @@ void levantar_Kernel_Interrupt(void *ptr);
 
 // INSTRUCCIONES
 void exec_set(char *registro, uint32_t valor);
-void exec_mov_in();
-void exec_mov_out();
+void exec_mov_in(char *datos, char *direccion);
+void exec_mov_out(char *direccion, char *datos);
 void exec_sum(char *destino, char *origen);
 void exec_sub(char *destino, char *origen);
 void exec_jnz(char *registro, uint32_t numeroInstruccion);
-void exec_resize();
+void exec_resize(char * tamanio,t_cde *contextoProceso);
 void exec_copy_string();
 void exec_wait();
 void exec_signal();

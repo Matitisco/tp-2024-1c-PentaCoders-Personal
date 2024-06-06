@@ -286,6 +286,15 @@ void *recibirCPU()
             t_escrituraMemoria valores_escritura = leer_escrituraMemoria(buffer);
             destruir_buffer(buffer);
         break;
+        case AMPLIACION_PROCESO:
+            buffer = recibir_buffer(cliente_cpu);
+            uint32_t tamanioResize = leer_buffer_enteroUint32(buffer);
+            //ampliar_proceso()
+            //enviar_cod_enum(cliente_cpu,OK);
+            enviar_cod_enum(cliente_cpu,OUT_OF_MEMORY);
+            
+
+        break;
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             exit(EXIT_FAILURE);

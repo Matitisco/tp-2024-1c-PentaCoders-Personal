@@ -259,7 +259,7 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case RESIZE: // RESIZE 128
-		exec_resize(instruccion[1]);
+		exec_resize(instruccion[1],contextoProceso);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		break;

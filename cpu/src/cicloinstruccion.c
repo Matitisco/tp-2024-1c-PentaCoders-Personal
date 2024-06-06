@@ -138,26 +138,30 @@ RESIZE (Tamaño): Solicitará a la Memoria ajustar el tamaño del proceso al tam
 por parámetro. En caso de que la respuesta de la memoria sea Out of Memory, se deberá
 devolver el contexto de ejecución al Kernel informando de esta situación.
 */
-void exec_resize(char * tamanio) {
+void exec_resize(char * tamanio,t_cde *contextoProceso) {
 //tiene que ser el proceso actual
 //hay que enviarle el tamaño pasado por parametro a Memoria 
 //devolver el cde si la respuesta es ...
-    /*
-    enviar_cod_enum(socket_memoria, RESIZE_EXTEND);
-    uint32_t tamanioValor = string_to_in(tamanio); //hacer string_to_int
+
+    enviar_cod_enum(socket_memoria, AMPLIACION_PROCESO);
+    uint32_t tamanioValor = string_to_int(tamanio);
     
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer,tamanioValor);
     enviar_buffer(buffer,socket_memoria);
+    destruir_buffer(buffer);
 
     op_code resize_memoria = recibir_operacion(socket_memoria);
     if(resize_memoria == OUT_OF_MEMORY){
+        printf("OUT_OF_MEMORY \n");
         //enviar cod_op a kernel
-        //enviar cde a kernel
+        //enviar cde a kernel por dispatch o interrupt?
     }
-    */
+    else if(resize_memoria == OK){
+        
+    }
 
-}
+} 
 /*
 COPY_STRING 8
 COPY_STRING (Tamaño): Toma del string apuntado por el registro SI y copia la cantidad de

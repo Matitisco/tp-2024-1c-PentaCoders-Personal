@@ -69,7 +69,9 @@ typedef enum
 	ERROR_PEDIDO_ESCRITURA,
 	PEDIDO_LECTURA,
 	PEDIDO_LECTURA_CORRECTO,
-	ERROR_PEDIDO_LECTURA
+	ERROR_PEDIDO_LECTURA,
+	OUT_OF_MEMORY,
+	OK
 } op_code;
 typedef enum
 {
@@ -123,6 +125,8 @@ typedef struct
     uint32_t valor;
     uint32_t direccionFisica;
 }t_escrituraMemoria;
+int string_to_int(char *str);
+
 
 extern sem_t *sem_kernel;
 extern sem_t *sem_kernel_io_generica;
