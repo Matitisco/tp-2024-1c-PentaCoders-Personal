@@ -174,24 +174,25 @@ void exec_copy_string(char * tamanio) {// hace lectura y escritura de memoria
     uint32_t direccionLogica2 = registros->DI;
 
     /*
-    direccionFisica1 = direccion_logica_a_fisica(direccionLogica1);
+    uint32_t direccionFisica1 = direccion_logica_a_fisica(direccionLogica1);
     char * string_SI = (char *)leer_memoria(direccionFisica1);
+    */
+    char * string_SI = (char *)malloc(strlen("HOLA MUNDO") + 1);//harcodeado
+    strcpy(string_SI, "HOLA MUNDO");//harcodeado
 
     int bytes_a_copiar = string_to_int(tamanio);
     char *subcadena = (char *)malloc(bytes_a_copiar + 1);
     strncpy(subcadena, string_SI, bytes_a_copiar);
     subcadena[bytes_a_copiar] = '\0'; //por las dudas
-
+    /*
     direccionFisica2 = direccion_logica_a_fisica(direccionLogica2);
     escribir_memoria(direccionFisica2,subcadena);
-
+    */
     free(string_SI);
     free(subcadena);
-    */
+    
     //primero hay que tener todo el valor del string  
 
-
-    //uint32_t longitud = strin_to_int(tamanio);
 //SI tiene una direccion lógica a un string 
 //hay que obtener el string que tiene dicha direccion
 //hay que copiar la cantidad de bytes indicada por tamanio
