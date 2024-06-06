@@ -270,6 +270,17 @@ void *recibirCPU()
             pedido_instruccion_cpu_dispatch(cliente_cpu, lista_contextos);
             break;
             // case ACCESO_ESPACIO_USUARIO:
+        case PEDIDO_LECTURA:
+            tipo_buffer *buffer = recibir_buffer(cliente_cpu);
+            uint32_t direccionFisica = leer_buffer_enteroUint32(buffer);
+            destruir_buffer(buffer);
+
+            buffer = crear_buffer(); 
+            agregar_buffer_para_enterosUint32(buffer,1000);//envio un valor aleatorio
+            enviar_buffer(buffer,cliente_cpu);
+            destruir_buffer(buffer);
+            //enviar_
+        break;
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             exit(EXIT_FAILURE);
