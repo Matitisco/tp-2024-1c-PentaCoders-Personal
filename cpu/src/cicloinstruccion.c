@@ -76,27 +76,30 @@ Dirección Lógica que se encuentra en el Registro Dirección y lo almacena en e
 Datos.
 */
 void exec_mov_in(char *datos, char *direccion) {
-uint32_t direccionLogica = obtener_valor_origen(direccion);
-/*
-    direccionFisica = direccion_logica_a_fisica(direccionLogica);
+    uint32_t direccionLogica = obtener_valor_origen(direccion);
+    
+    //uint32_t direccionFisica = direccion_logica_a_fisica(direccionLogica);//definido en mmu
+    uint32_t direccionFisica = 3000; //invento una direccion fisica hasta tener terminada la conversión
+
     enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_direccionFisica(buffer,direccionFisica);
-    enviar_buffer(buffer, socket_memoria); -> hay que enviar la direccion física
+    agregar_buffer_para_enterosUint32(buffer,direccionFisica);
+    enviar_buffer(buffer, socket_memoria); //-> hay que enviar la direccion física
 
-
-    op_code lectura_memoria = recibir_operacion(socket_memoria);
+    /*
+    op_code lectura_memoria = recibir_operacion(socket_memoria); Implementar control de direccion correcta
     if (lectura_memoria == DIRECCION_CORRECTA){
+    */
         tipo_buffer *bufferValor = recibir_buffer(socket_memoria);
         uint32_t valor = leer_buffer_enteroUint32(bufferValor);
         exec_set(datos, valor);
-        free(bufferValor);
-    }
+        destruir_buffer(bufferValor);
+    /*}
     else{//Informar direccion incorrecta
 
-    }
-    free(buffer);
-*/
+    }*/
+    destruir_buffer(buffer);
+
 }
 
 
@@ -120,7 +123,7 @@ void exec_mov_out(char *direccion, char *datos) {
     uint32_t valor = obtener_valor_origen(datos);
     uint32_t direccionLogica = obtener_valor_origen(direccion);
     /*
-    //direccionFisica = direccion_logica_a_fisica(direccionLogica);
+    //uint32_t direccionFisica = direccion_logica_a_fisica(direccionLogica);
 
     enviar_cod_enum(socket_memoria, PEDIDO_ESCRITURA);
     tipo_buffer *buffer = crear_buffer();
