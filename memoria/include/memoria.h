@@ -8,7 +8,7 @@
 #include <pthread.h>
 
 #include "../../utils/include/serializacion.h"
-#include "../include/conexiones.h"
+#include "../../utils/include/conexiones.h"
 #include "../../utils/include/utils.h"
 #include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
@@ -55,6 +55,7 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
 void crear_y_agregar_tabla_a_lista_global(int pid);
 int *agarro_marco_que_este_libre();
 int consultar_marco(uint32_t pid, t_pagina*pagina);
+void liberar_marco(int nroMarco);
 typedef struct
 {
 	int numero_marco; // numero de marco
@@ -88,5 +89,6 @@ void liberar_registros(t_registros *registros);
 void finalizar_proceso(int kernel, tipo_buffer *buffer);
 
 void *destroy_instruccion(void *element);
+
 
 #endif

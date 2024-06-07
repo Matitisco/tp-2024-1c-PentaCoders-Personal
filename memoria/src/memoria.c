@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     lista_global_marcos = list_create(); // esta seria la tabla de marcos. Todos los marcos componen a la memoria
     lista_global_tablas = list_create();
     cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; // va a ser la cantida de amrcos
-
+// el tam de la pagina es el mismo que el de los marcos 
     
     inicializar_bitmap(cant_marcos);
     int i = 0;
@@ -89,9 +89,9 @@ void *recibirKernel()
         case SOLICITUD_FINALIZAR_PROCESO:
             finalizar_proceso(cliente_fd, buffer);
             break;
-        case ACCESO_ESPACIO_USUARIO:
-            acceso_a_espacio_usuario(cliente_fd, buffer);
-            break;
+        //case ACCESO_ESPACIO_USUARIO:
+           // acceso_a_espacio_usuario(cliente_fd, buffer);
+            //break;
         case -1:
             log_error(logger, " El KERNEL se desconecto. Terminando servidor");
             return (void *)EXIT_FAILURE;
@@ -424,15 +424,15 @@ void ajustar_tamanio_proceso()
         tipo_buffer *buffer_cpu= recibir_buffer(socket_cpu);
         uint32_t nuevo_tamanio=leer_buffer_enteroUint32(buffer_cpu);
         t_cde*cde =leer_cde(buffer_cpu);
-        if(valores_config->tam_memoria>nuevo_tamanio){
+        if(valores_config->tam_memoria >nuevo_tamanio){
         reducir_proceso(cde->pid,nuevo_tamanio);//entonce signfica que hay que reducir
-    }else {
-        ampliar_proceso(cde->pid,nuevo_tamanio);//significa que es mair
+        }else {
+        ampliar_proceso(cde->pid,nuevo_tamanio);//significa que es mayor
         }
     }
 }
 void ampliar_proceso(uint32_t pid, uint32_t tamanio) {
-    // CVemos cuantas paginas tenemos que agregar con este nuevo tamanio
+    // Vemos cuantas paginas tenemos que agregar con este nuevo tamanio
     int paginas_adicionales = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
 
     // Verificar si hay suficientes marcos disponibles
@@ -507,7 +507,7 @@ void eliminar_tabla_paginas(uint32_t pid){
     int cant_paginas = 0;
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista global de  tabla del proceso
     if (tabla_paginas == NULL) {
-       log_info("NO se encontro la tabla de paginas con pid %d", pid);
+       log_info("No se encontro la tabla de paginas con pid %d", pid);
         return;
     }
     int tamanio_tabla_pag = list_size(tabla_paginas->tabla_paginas_proceso);
@@ -517,6 +517,7 @@ void eliminar_tabla_paginas(uint32_t pid){
         t_pagina *pagina= list_get(tabla_paginas->tabla_paginas_proceso,i);
         if (pagina != NULL)
         {
+            liberar_marco(pagina->marco);
             free(pagina);
             cant_paginas++; // voy contando las pag
         }
@@ -568,21 +569,6 @@ int obtener_marco_libre()
     return -1;
 }
 
-/*int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina)
-{ // para obtener el nro del marco que tiene una pagina asociado{
-    int cant_paginas = list_size(tabla->tabla_paginas_proceso);
-
-    for (int i = 0; i < cant_paginas; i++)
-    {
-        if (list_get(tabla->tabla_paginas_proceso, i) == pagina)
-        {
-
-            return pagina->marco;
-        }
-    }
-    log_info(logger, "PID: %d - Pagina: %d- Marco: %d",);
-}
-*/
 int consultar_marco(uint32_t pid, t_pagina*pagina)
 {
 
@@ -598,5 +584,9 @@ int consultar_marco(uint32_t pid, t_pagina*pagina)
     }
    
     log_info(logger, "PID: %d - Pagina: %d- Marco: %d",pid,pagina,pagina->marco);
+}
+void liberar_marco(int nroMarco){
+        list_replace(lista_global_marcos, nroMarco, NULL);
+
 }
 
