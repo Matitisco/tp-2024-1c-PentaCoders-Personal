@@ -15,6 +15,7 @@
 
 extern t_log *logger;
 int socket_cpu;
+int socket_IO;
 int cliente_fd;
 pthread_t hiloCPU, hiloKernel, hiloIO;
 typedef struct
@@ -82,6 +83,9 @@ t_instruccion *crearInstruccion(char *linea);
 bool estaElContextoConCiertoPID(t_cde *contexto);
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde *armarCde(tipo_buffer *buffer);
+
+void * leer_memoria(uint32_t direccion_fisica);
+void * escribir_memoria(uint32_t direccion_fisica);
 
 void obtener_y_eliminar_cde(int pid);
 void eliminar_cde(t_cde *cde);

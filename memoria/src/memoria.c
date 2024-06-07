@@ -103,9 +103,6 @@ void *recibirKernel()
         }
     }
 }
-void acceso_a_espacio_usuario(int cliente, tipo_buffer *buffer)
-{
-}
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
 {
     buffer = recibir_buffer(cliente_fd);
@@ -590,3 +587,71 @@ void liberar_marco(int nroMarco){
 
 }
 
+void acceso_a_espacio_usuario(){
+        op_code mensajeCPU =recibir_operacion(socket_cpu);
+        if(mensajeCPU == PEDIDO_ESCRITURA ){
+            tipo_buffer *buffer_escritura =recibir_buffer(socket_cpu);
+            uint32_t direccionFisica =leer_buffer_enteroUint32(buffer_escritura);
+            void*valor = escritura_memoria(direccionFisica);
+
+            enviar_cod_enum(socket_cpu,OK);
+        
+      }else if(mensajeCPU == PEDIDO_LECTURA){
+            tipo_buffer *buffer_lectura =recibir_buffer(socket_cpu);
+            uint32_t direccionFisica =leer_buffer_enteroUint32(buffer_lectura);
+             void *valor = leer_memoria(direccionFisica); // Leer desde la memoria
+            enviar_cod_enum(socket_cpu,OK);
+      }
+      op_code mensajeIO =recibir_operacion(socket_IO);
+       if(mensajeIO == PEDIDO_ESCRITURA ){
+            tipo_buffer *buffer_escritura =recibir_buffer(socket_IO);
+            uint32_t direccionFisica =leer_buffer_enteroUint32(buffer_escritura);
+           void*valor = escritura_memoria(direccionFisica);
+            enviar_cod_enum(socket_IO,OK);
+        
+      }else if(mensajeIO == PEDIDO_LECTURA){
+            tipo_buffer *buffer_lectura =recibir_buffer(socket_IO);
+            uint32_t direccionFisica =leer_buffer_enteroUint32(buffer_lectura);
+            void *valor = leer_memoria(direccionFisica); // Leer desde la memoria
+
+            enviar_cod_enum(socket_IO,OK);
+      }
+
+}
+void * leer_memoria(uint32_t direccion_fisica){
+    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(PID_buscado);
+    
+    t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
+    
+    int marco = consultar_marco(PID_buscado, pagina);
+
+    void *valor_leido = malloc(sizeof(uint8_t)); 
+    memcpy(valor_leido, marco + offset, sizeof(uint8_t));
+
+    return valor_leido;
+           
+}
+void * escribir_memoria(uint32_t direccion_fisica){
+    void *valor;
+    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+    
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(PID_buscado);
+    if (tabla_paginas == NULL) {
+        log_error(logger, "No se encontró la tabla de páginas para el PID: %d", PID_buscado);
+        return;
+    }
+    t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
+    if (pagina == NULL) {
+        log_error(logger, "No se encontró la página en la dirección física: %d", direccion_fisica);
+        return;
+    }
+    int marco = consultar_marco(PID_buscado, pagina);
+    if (marco == -1) {
+        log_error(logger, "No se encontró el marco para la página en la dirección física: %d", direccion_fisica);
+        return;
+    }
+    memcpy(marco + offset, valor, sizeof(uint8_t));
+}
