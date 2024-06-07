@@ -121,16 +121,19 @@ void finalizar_proceso(uint32_t PID)
 void iniciar_planificacion()
 {
     habilitar_planificadores = 1;
-    sem_post(b_reanudar_largo_plazo);
-    sem_post(b_reanudar_corto_plazo);
+    sem_post(b_detener_planificacion_corto);
+    sem_post(b_detener_planificacion_largo);
+    /* sem_post(b_reanudar_largo_plazo);
+    sem_post(b_reanudar_corto_plazo); */
     estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
 }
 // DETENER PLANIFICACION
 void detener_planificacion()
 {
     habilitar_planificadores = 0;
-    sem_wait(b_reanudar_largo_plazo);
-    sem_wait(b_reanudar_corto_plazo);
+    
+    //sem_wait(b_reanudar_largo_plazo);
+    //sem_wait(b_reanudar_corto_plazo);
     estado_planificacion = PLANIFICACION_PAUSADA;
 }
 

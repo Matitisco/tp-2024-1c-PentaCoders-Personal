@@ -27,6 +27,10 @@ sem_t *sem_agregar_a_estado;
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
 sem_t *b_transicion_blocked_ready;
+
+sem_t *b_detener_planificacion_largo;
+sem_t *b_detener_planificacion_corto;
+
 extern sem_t *sem_kernel_io_generica;
 // HILOS
 pthread_t hiloMEMORIA;
@@ -218,6 +222,8 @@ void iniciar_semaforos()
 	b_transicion_exec_ready = malloc(sizeof(sem_t));
 	b_transicion_exec_blocked = malloc(sizeof(sem_t));
 	b_transicion_blocked_ready = malloc(sizeof(sem_t));
+	b_detener_planificacion_largo = malloc(sizeof(sem_t));
+	b_detener_planificacion_corto = malloc(sizeof(sem_t));
 	sem_quantum = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
@@ -230,6 +236,8 @@ void iniciar_semaforos()
 	sem_init(sem_quantum, 0, 0);
 	sem_init(b_transicion_exec_blocked, 0, 0);
 	sem_init(b_transicion_blocked_ready, 0, 0);
+	sem_init(b_detener_planificacion_largo, 0, 0);
+	sem_init(b_detener_planificacion_corto, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -264,7 +272,7 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 {
 	t_pcb *pcb = malloc(sizeof(pcb));
-	sem_wait(cola_estado->contador);
+	//sem_wait(cola_estado->contador);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
@@ -305,7 +313,8 @@ void *levantar_CPU_Dispatch()
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
 			sem_post(b_transicion_exec_ready);
-			//sem_post(b_reanudar_corto_plazo);
+			sem_post(b_reanudar_largo_plazo);
+			sem_post(b_reanudar_corto_plazo);
 			break;
 
 		case INSTRUCCION_INTERFAZ: // recibimos de cpu ciclo de instruccion // ESTO YA ANDA

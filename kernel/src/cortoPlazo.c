@@ -51,7 +51,9 @@ void planificar_por_fifo()
 {
     while (1)
     {
-        sem_wait(b_reanudar_corto_plazo);
+        //sem_wait(b_reanudar_corto_plazo);
+
+        sem_wait(cola_ready_global->contador);
 
         t_pcb *proceso = malloc(sizeof(t_pcb));
         sem_wait(b_exec_libre);
@@ -81,13 +83,13 @@ void planificar_por_rr()
 
     while (1)
     {
-        
-        sem_wait(b_exec_libre);                // deja de estar libre exec
         //sem_wait(b_reanudar_corto_plazo);
-        //sem_wait(cola_ready_global->contador); // contador de procesos en ready
+        sem_wait(b_exec_libre);                // deja de estar libre exec
+        
+        sem_wait(cola_ready_global->contador); // contador de procesos en ready
 
         //t_queue* aux = cola_ready_global->estado;
-
+        sem_wait(cola_ready_global->contador);
         proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
         agregar_a_estado(proceso, cola_exec_global);
 
@@ -130,6 +132,7 @@ void *transicion_exec_ready()
         proceso->estado = READY;
         agregar_a_estado(proceso, cola_ready_global); // moverlo a la cola de exit, hay un lugar en memoria
         sem_post(b_exec_libre);
+        sem_post(cola_ready_global->contador);
         //sem_post(b_reanudar_corto_plazo);
         log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
         // liberar_proceso(proceso);

@@ -8,11 +8,11 @@ void iniciar_consola_interactiva()
     {
         sleep(1);
         sem_post(binario_menu_lp); // Habilita largo plazo
-        if (habilitar_planificadores)
+        /* if (habilitar_planificadores)
         {
             sem_post(b_reanudar_largo_plazo);
             sem_post(b_reanudar_corto_plazo);
-        }
+        } */
         mostrar_operaciones_realizables();
         ejecutar_operacion(readline("Ingrese un valor para realizar una de las siguientes acciones: "), logger);
         // free(opcion);

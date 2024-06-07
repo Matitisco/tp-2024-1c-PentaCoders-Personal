@@ -69,6 +69,10 @@ extern sem_t *b_exec_libre;
 extern sem_t *b_transicion_exec_blocked;
 extern sem_t *b_reanudar_largo_plazo;
 extern sem_t *b_reanudar_corto_plazo;
+
+extern sem_t *b_detener_planificacion_largo;
+extern sem_t *b_detener_planificacion_corto;
+
 extern sem_t *b_transicion_exec_ready;
 extern sem_t *b_transicion_blocked_ready;
 extern int habilitar_planificadores;
