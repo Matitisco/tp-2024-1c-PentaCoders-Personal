@@ -33,6 +33,8 @@ int main(int argc, char *argv[])
 	logger = iniciar_logger("cpu.log", "CPU");
 	valores_config_cpu = configurar_cpu(); // CONFIG
 
+	iniciar_tlb(valores_config_cpu->algoritmo_tlb, valores_config_cpu->cantidad_entradas_tlb);
+
 	iniciar_registros();
 
 	interrupcion_rr = 0;

@@ -37,10 +37,10 @@ void exec_set(char *registro, uint32_t valor) //
         registros->EDX = valor;
     }
 }
-//auxiliares instrucciones
+// auxiliares instrucciones
 /*
 void* leer_memoria(direccionFisica){
-    
+
     enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_direccionFisica(buffer,direccionFisica);
@@ -54,7 +54,7 @@ void* leer_memoria(direccionFisica){
         free(bufferValor);
     }
     else{//Informar direccion incorrecta
-        
+
     }
     free(buffer);
     return valorLeido;
@@ -63,9 +63,9 @@ void escribir_memoria(direccionFisica2,void * valor){
 
 }
 void solicitar_stdin_kernel(char * interfaz,char * reg_tamanio){
-    //hay que enviar a kernel cod_op 
+    //hay que enviar a kernel cod_op
     //kernel lo recibe y mediante char *line = readline("texto"); (usar otra funcion que lea solo un tamanio) realiza la lectura
-    //kernel devuelve lo leido  
+    //kernel devuelve lo leido
 }
 */
 /*
@@ -75,33 +75,32 @@ MOV_IN (Registro Datos, Registro Dirección): Lee el valor de memoria correspond
 Dirección Lógica que se encuentra en el Registro Dirección y lo almacena en el Registro
 Datos.
 */
-void exec_mov_in(char *datos, char *direccion) {
+void exec_mov_in(char *datos, char *direccion)
+{
     uint32_t direccionLogica = obtener_valor_origen(direccion);
-    
-    //uint32_t direccionFisica = direccion_logica_a_fisica(direccionLogica);//definido en mmu
-    uint32_t direccionFisica = 3000; //invento una direccion fisica hasta tener terminada la conversión
+
+    // uint32_t direccionFisica = direccion_logica_a_fisica(direccionLogica);//definido en mmu
+    uint32_t direccionFisica = 3000; // invento una direccion fisica hasta tener terminada la conversión
 
     enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer,direccionFisica);
+    agregar_buffer_para_enterosUint32(buffer, direccionFisica);
     enviar_buffer(buffer, socket_memoria); //-> hay que enviar la direccion física
 
     /*
     op_code lectura_memoria = recibir_operacion(socket_memoria); Implementar control de direccion correcta
     if (lectura_memoria == DIRECCION_CORRECTA){
     */
-        tipo_buffer *bufferValor = recibir_buffer(socket_memoria);
-        uint32_t valor = leer_buffer_enteroUint32(bufferValor);
-        exec_set(datos, valor);
-        destruir_buffer(bufferValor);
+    tipo_buffer *bufferValor = recibir_buffer(socket_memoria);
+    uint32_t valor = leer_buffer_enteroUint32(bufferValor);
+    exec_set(datos, valor);
+    destruir_buffer(bufferValor);
     /*}
     else{//Informar direccion incorrecta
 
     }*/
     destruir_buffer(buffer);
-
 }
-
 
 /*
 MOV_OUT EDX ECX
@@ -119,7 +118,8 @@ typedef struct
     direccionFisica;
 }t_escrituraMemoria
 */
-void exec_mov_out(char *direccion, char *datos) {
+void exec_mov_out(char *direccion, char *datos)
+{
     uint32_t valor = obtener_valor_origen(datos);
     uint32_t direccionLogica = obtener_valor_origen(direccion);
     /*
@@ -131,13 +131,12 @@ void exec_mov_out(char *direccion, char *datos) {
     agregar_buffer_para_escrituraMemoria(buffer,valores);
     enviar_buffer(buffer, socket_memoria);
     //memoria hace la escritura si está todo ok
-    
+
         op_code escritura_memoria = recibir_operacion(socket_memoria);
         if(escritura_memoria == OK) //escritura correcta
-    
+
    free(buffer);
    */
-    
 }
 
 /*
@@ -146,14 +145,15 @@ RESIZE (Tamaño): Solicitará a la Memoria ajustar el tamaño del proceso al tam
 por parámetro. En caso de que la respuesta de la memoria sea Out of Memory, se deberá
 devolver el contexto de ejecución al Kernel informando de esta situación.
 */
-void exec_resize(char * tamanio) {
-//tiene que ser el proceso actual
-//hay que enviarle el tamaño pasado por parametro a Memoria 
-//devolver el cde si la respuesta es ...
+void exec_resize(char *tamanio)
+{
+    // tiene que ser el proceso actual
+    // hay que enviarle el tamaño pasado por parametro a Memoria
+    // devolver el cde si la respuesta es ...
     /*
     enviar_cod_enum(socket_memoria, RESIZE_EXTEND);
     uint32_t tamanioValor = string_to_in(tamanio); //hacer string_to_int
-    
+
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer,tamanioValor);
     enviar_buffer(buffer,socket_memoria);
@@ -164,7 +164,6 @@ void exec_resize(char * tamanio) {
         //enviar cde a kernel
     }
     */
-
 }
 /*
 COPY_STRING 8
@@ -173,7 +172,8 @@ bytes indicadas en el parámetro tamaño a la posición de memoria apuntada por 
 DI.
 */
 // COPY_STRING
-void exec_copy_string(char * tamanio) {// hace lectura y escritura de memoria
+void exec_copy_string(char *tamanio)
+{ // hace lectura y escritura de memoria
     uint32_t direccionLogica1 = registros->SI;
     uint32_t direccionLogica2 = registros->DI;
 
@@ -192,16 +192,15 @@ void exec_copy_string(char * tamanio) {// hace lectura y escritura de memoria
     free(string_SI);
     free(subcadena);
     */
-    //primero hay que tener todo el valor del string  
+    // primero hay que tener todo el valor del string
 
-
-    //uint32_t longitud = strin_to_int(tamanio);
-//SI tiene una direccion lógica a un string 
-//hay que obtener el string que tiene dicha direccion
-//hay que copiar la cantidad de bytes indicada por tamanio
-//hay que obtener la direccion lógiaca de DI
-//luego hay que asignar lo copiado a dicha direccion
-//usar string to int para tamanio
+    // uint32_t longitud = strin_to_int(tamanio);
+    // SI tiene una direccion lógica a un string
+    // hay que obtener el string que tiene dicha direccion
+    // hay que copiar la cantidad de bytes indicada por tamanio
+    // hay que obtener la direccion lógiaca de DI
+    // luego hay que asignar lo copiado a dicha direccion
+    // usar string to int para tamanio
 }
 
 /*
@@ -212,10 +211,11 @@ tamaño está delimitado por el valor del Registro Tamaño y el mismo se guarde 
 Dirección Lógica almacenada en el Registro Dirección.
 
 -Kernel le manda a CPU algo que leyó por consola, CPU le solicita la escritura de lo recibido de
-kernel en la direccion 
+kernel en la direccion
 */
-//IO_STDIN_READ
-void exec_io_stdin_read(char * interfaz,char * reg_direccion,char * reg_tamanio) {
+// IO_STDIN_READ
+void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio)
+{
     uint32_t direccionLogica1 = obtener_valor_origen(reg_direccion);
     /*
     direccionFisica1 = direccion_logica_a_fisica(direccionLogica1);
@@ -245,7 +245,8 @@ typedef struct
 
 }stdout_kernel
 */
-void exec_io_stdout_write(char * interfaz,char * reg_direccion,char * reg_tamanio) {
+void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio)
+{
     /*
     stdout_kernel enviar = {obtener_valor_origen(reg_direccion),interfaz,string_to_int(reg_tamanio)};
     enviar_cod_enum(socket_kernel_dispatch, STDOUT);
@@ -255,9 +256,7 @@ void exec_io_stdout_write(char * interfaz,char * reg_direccion,char * reg_tamani
     enviar_buffer(buffer,socket_kernel_dispatch);
     free(buffer);
     */
-
 }
-
 
 // SUM
 void exec_sum(char *destino, char *origen)
@@ -428,7 +427,7 @@ void exec_exit(t_cde *cde)
     enviar_cod_enum(socket_kernel_dispatch, FINALIZAR_PROCESO);
 
     tipo_buffer *buffer = crear_buffer();
-    
+
     agregar_cde_buffer(buffer, cde);
     enviar_buffer(buffer, socket_kernel_dispatch);
 }
