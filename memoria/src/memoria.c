@@ -640,6 +640,7 @@ void* leer_memoria(uint32_t direccion_fisica, uint32_t pid){
     memcpy(valor, espacio_usuario + marco * valores_config->tam_pagina + offset, sizeof(int));
 
     return valor;
+    log_info(logger,"PID: %d - Accion: LEER - Direccion fisica: %d - Tamaño <TAMAÑO A LEER ",pid,direccion_fisica, sizeof(int));
 }    
 void  escribir_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t valor_a_escribir){
     usleep(valores_config->retardo_respuesta* 1000);
@@ -652,4 +653,6 @@ void  escribir_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t valor_a
    
     int marco = consultar_marco(pid, pagina);
     memcpy(espacio_usuario + marco * valores_config->tam_pagina + offset,valor_a_escribir, sizeof(int));
+
+    log_info(logger,"PID: %d - Accion: ESCRIBIR - Direccion fisica: %d - Tamaño <TAMAÑO A ESCRIBIR ",pid,direccion_fisica, sizeof(int));
 }
