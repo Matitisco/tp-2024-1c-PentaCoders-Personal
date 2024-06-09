@@ -197,7 +197,7 @@ void *recibirCPU()
             pedido_instruccion_cpu_dispatch(cliente_cpu, lista_contextos);
             break;
         case ACCESO_ESPACIO_USUARIO:
-        
+
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             exit(EXIT_FAILURE);
@@ -628,6 +628,7 @@ void acceso_a_espacio_usuario(){
 
 }
 void* leer_memoria(uint32_t direccion_fisica, uint32_t pid){
+    usleep(valores_config->retardo_respuesta* 1000);
     uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
@@ -641,6 +642,7 @@ void* leer_memoria(uint32_t direccion_fisica, uint32_t pid){
     return valor;
 }    
 void  escribir_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t valor_a_escribir){
+    usleep(valores_config->retardo_respuesta* 1000);
     void *valor;
     uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
