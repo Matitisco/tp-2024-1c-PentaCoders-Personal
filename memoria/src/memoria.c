@@ -89,9 +89,6 @@ void *recibirKernel()
         case SOLICITUD_FINALIZAR_PROCESO:
             finalizar_proceso(cliente_fd, buffer);
             break;
-        //case ACCESO_ESPACIO_USUARIO:
-           // acceso_a_espacio_usuario(cliente_fd, buffer);
-            //break;
         case -1:
             log_error(logger, " El KERNEL se desconecto. Terminando servidor");
             return (void *)EXIT_FAILURE;
@@ -199,7 +196,8 @@ void *recibirCPU()
         case PEDIDO_INSTRUCCION:
             pedido_instruccion_cpu_dispatch(cliente_cpu, lista_contextos);
             break;
-        //case ACCESO_ESPACIO_USUARIO
+        case ACCESO_ESPACIO_USUARIO:
+        
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             exit(EXIT_FAILURE);
@@ -592,66 +590,64 @@ void acceso_a_espacio_usuario(){
         if(mensajeCPU == PEDIDO_ESCRITURA ){
             tipo_buffer *buffer_escritura =recibir_buffer(socket_cpu);
             uint32_t direccionFisica =leer_buffer_enteroUint32(buffer_escritura);
-            void*valor = escritura_memoria(direccionFisica);
-
+            uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_escritura);
+            uint32_t valor_a_escribir = leer_buffer_enteroUint32(buffer_escritura);
+            escritura_memoria(direccionFisica, pid_ejecutando, valor_a_escribir);
             enviar_cod_enum(socket_cpu,OK);
         
       }else if(mensajeCPU == PEDIDO_LECTURA){
             tipo_buffer *buffer_lectura =recibir_buffer(socket_cpu);
             uint32_t direccionFisica =leer_buffer_enteroUint32(buffer_lectura);
-             void *valor = leer_memoria(direccionFisica); // Leer desde la memoria
+            uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
+            void *valor_leido = leer_memoria(direccionFisica, pid_ejecutando); // Leer desde la memoria
             enviar_cod_enum(socket_cpu,OK);
+            tipo_buffer*buffer_lectura_a_enviar =crear_buffer();
+            agregar_buffer_para_enterosUint32(valor_leido, buffer_lectura_a_enviar);
+            enviar_buffer(buffer_lectura_a_enviar,socket_cpu);
       }
       op_code mensajeIO =recibir_operacion(socket_IO);
        if(mensajeIO == PEDIDO_ESCRITURA ){
             tipo_buffer *buffer_escritura =recibir_buffer(socket_IO);
             uint32_t direccionFisica =leer_buffer_enteroUint32(buffer_escritura);
-           void*valor = escritura_memoria(direccionFisica);
+            uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_escritura);
+            uint32_t valor_a_escribir = leer_buffer_enteroUint32(buffer_escritura);
+            escritura_memoria(direccionFisica, pid_ejecutando, valor_a_escribir);
             enviar_cod_enum(socket_IO,OK);
+    
         
       }else if(mensajeIO == PEDIDO_LECTURA){
-            tipo_buffer *buffer_lectura =recibir_buffer(socket_IO);
+             tipo_buffer *buffer_lectura =recibir_buffer(socket_cpu);
             uint32_t direccionFisica =leer_buffer_enteroUint32(buffer_lectura);
-            void *valor = leer_memoria(direccionFisica); // Leer desde la memoria
-
+            uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
+            void *valor_leido = leer_memoria(direccionFisica, pid_ejecutando); // Leer desde la memoria
             enviar_cod_enum(socket_IO,OK);
+            tipo_buffer*buffer_lectura_a_enviar =crear_buffer();
+            agregar_buffer_para_enterosUint32(valor_leido, buffer_lectura_a_enviar);
+            enviar_buffer(buffer_lectura_a_enviar,socket_IO);
       }
 
 }
-void * leer_memoria(uint32_t direccion_fisica){
+void* leer_memoria(uint32_t direccion_fisica, uint32_t pid){
     uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
-    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(PID_buscado);
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     
     t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
     
-    int marco = consultar_marco(PID_buscado, pagina);
+    int marco = consultar_marco(pid, pagina);
+    void* valor = malloc(sizeof(int)); // Supongo que es un entero
+    memcpy(valor, espacio_usuario + marco * valores_config->tam_pagina + offset, sizeof(int));
 
-    void *valor_leido = malloc(sizeof(uint8_t)); 
-    memcpy(valor_leido, marco + offset, sizeof(uint8_t));
-
-    return valor_leido;
-           
-}
-void * escribir_memoria(uint32_t direccion_fisica){
+    return valor;
+}    
+void  escribir_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t valor_a_escribir){
     void *valor;
     uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
     
-    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(PID_buscado);
-    if (tabla_paginas == NULL) {
-        log_error(logger, "No se encontró la tabla de páginas para el PID: %d", PID_buscado);
-        return;
-    }
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
-    if (pagina == NULL) {
-        log_error(logger, "No se encontró la página en la dirección física: %d", direccion_fisica);
-        return;
-    }
-    int marco = consultar_marco(PID_buscado, pagina);
-    if (marco == -1) {
-        log_error(logger, "No se encontró el marco para la página en la dirección física: %d", direccion_fisica);
-        return;
-    }
-    memcpy(marco + offset, valor, sizeof(uint8_t));
+   
+    int marco = consultar_marco(pid, pagina);
+    memcpy(espacio_usuario + marco * valores_config->tam_pagina + offset,valor_a_escribir, sizeof(int));
 }

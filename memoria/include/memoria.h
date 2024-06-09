@@ -35,7 +35,7 @@ typedef struct
 	t_list *tabla_paginas_proceso;
 } t_tabla_paginas;
 
-void *espacio_memoria;
+void *espacio_usuario;
 typedef struct
 {
 	int marco;			// numeor de marco donde esta la pagina
@@ -84,8 +84,13 @@ bool estaElContextoConCiertoPID(t_cde *contexto);
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde *armarCde(tipo_buffer *buffer);
 
-void * leer_memoria(uint32_t direccion_fisica);
-void * escribir_memoria(uint32_t direccion_fisica);
+
+/*ESCRIBIR Y LEER */
+void  escribir_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t valor_a_escribir)
+void * leer_memoria(uint32_t direccion_fisica, uint32_t pid);
+
+
+
 
 void obtener_y_eliminar_cde(int pid);
 void eliminar_cde(t_cde *cde);

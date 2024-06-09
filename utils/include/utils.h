@@ -65,7 +65,8 @@ typedef enum
 	ACCESO_ESPACIO_USUARIO,
 	PEDIDO_ESCRITURA,
 	PEDIDO_LECTURA,
-	OUT_OF_MEMORY
+	OUT_OF_MEMORY,
+	OK
 } op_code;
 typedef enum
 {
