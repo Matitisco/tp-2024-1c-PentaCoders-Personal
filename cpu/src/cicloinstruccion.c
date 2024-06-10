@@ -210,6 +210,8 @@ Dirección Lógica almacenada en el Registro Dirección.
 
 -Kernel le manda a CPU algo que leyó por consola, CPU le solicita la escritura de lo recibido de
 kernel en la direccion 
+
+-Esto sería una petición de I/O por parte de la cpu
 */
 //IO_STDIN_READ
 void exec_io_stdin_read(char * interfaz,char * reg_direccion,char * reg_tamanio) {
