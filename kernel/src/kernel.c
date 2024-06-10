@@ -359,9 +359,13 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		break;
 	case SOLICITUD_INTERFAZ_STDIN:
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
-		// falta que reciba mas cosas
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);//IO_STDIN_READ
+		u_int32_t tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
+		u_int32_t direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+
+		// falta que reciba mas cosas
+		
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
 
 		if (informacion_interfaz == NULL)
@@ -376,9 +380,12 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		break;
 	case SOLICITUD_INTERFAZ_STDOUT:
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);//IO_STDOUT_WRITE
 		// falta que reciba mas cosas
+		u_int32_t tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
+		u_int32_t direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
 
 		if (informacion_interfaz == NULL)

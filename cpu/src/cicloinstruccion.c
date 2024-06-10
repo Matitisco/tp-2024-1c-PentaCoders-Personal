@@ -213,15 +213,28 @@ kernel en la direccion
 
 -Esto sería una petición de I/O por parte de la cpu
 */
+
+
 //IO_STDIN_READ
 void exec_io_stdin_read(char * interfaz,char * reg_direccion,char * reg_tamanio) {
     uint32_t direccionLogica1 = obtener_valor_origen(reg_direccion);
-    /*
-    direccionFisica1 = direccion_logica_a_fisica(direccionLogica1);
+    uint32_t direccion_fisica= 105; //harcodeado
+    uint32_t tamanio = string_to_int(reg_tamanio);
 
-    char * lectura_kernel = solicitar_stdin_kernel(interfaz,reg_tamanio);
-    escribir_memoria(direccionFisica1,(void*)lectura_kernel);
-    */
+    buffer_instruccion_io = crear_buffer();
+    //interrupcion_io = 1; -> preguntar
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
+    agregar_buffer_para_string(buffer_instruccion_io, interfaz); //nombre de la interfaz
+
+    enviar_buffer(buffer_instruccion_io,socket_kernel_dispatch);
+
+    destruir_buffer(buffer_instruccion_io);
+
 }
 
 /*
@@ -245,15 +258,25 @@ typedef struct
 }stdout_kernel
 */
 void exec_io_stdout_write(char * interfaz,char * reg_direccion,char * reg_tamanio) {
-    /*
-    stdout_kernel enviar = {obtener_valor_origen(reg_direccion),interfaz,string_to_int(reg_tamanio)};
-    enviar_cod_enum(socket_kernel_dispatch, STDOUT);
+    uint32_t tamanio = string_to_int(reg_tamanio);
+    uint32_t direccion_fisica= 105; //harcodeado
 
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_stdout(buffer,enviar);
-    enviar_buffer(buffer,socket_kernel_dispatch);
-    free(buffer);
-    */
+    buffer_instruccion_io = crear_buffer();
+    //interrupcion_io = 1; -> preguntar
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDOUT);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDOUT_WRITE);
+    
+
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);//tamaño del registro
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);// registro a leer
+    agregar_buffer_para_string(buffer_instruccion_io, interfaz); //nombre de la interfaz
+    
+
+    enviar_buffer(buffer_instruccion_io,socket_kernel_dispatch);
+
+    destruir_buffer(buffer_instruccion_io);
 
 }
 
