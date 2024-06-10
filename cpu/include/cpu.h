@@ -18,7 +18,7 @@
 extern int socket_kernel_dispatch;
 //  int socket_kernel_interrupt;
 extern t_registros *registros;
-//extern config_cpu *valores_config_cpu;
+// extern config_cpu *valores_config_cpu;
 extern int interrupcion_io;
 extern tipo_buffer *buffer_instruccion_io;
 extern int tamanio_pagina;
@@ -92,5 +92,7 @@ void exec_io_fs_read();
 void exec_exit(t_cde *cde);
 
 void check_interrupt();
+
+void tlb_iniciar(char *algoritmo, int cant_entradas);
 
 #endif
