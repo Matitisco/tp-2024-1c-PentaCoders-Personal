@@ -71,6 +71,8 @@ typedef enum
 	PEDIDO_LECTURA_CORRECTO,
 	ERROR_PEDIDO_LECTURA,
 	OUT_OF_MEMORY,
+	RESIZE_EXTEND,
+	ESCRITURA_CPU,
 	OK
 } op_code;
 typedef enum
@@ -117,16 +119,15 @@ typedef struct
 	t_list *archivosAsignados;
 	t_list *recursosAsignados;
 	int prioridad;
-	//t_list *lista_paginas; // cada proceso tiene su lista de paginas-la tabla de paginas
+	// t_list *lista_paginas; // cada proceso tiene su lista de paginas-la tabla de paginas
 } t_pcb;
 
 typedef struct
 {
-    uint32_t valor;
-    uint32_t direccionFisica;
-}t_escrituraMemoria;
+	uint32_t valor;
+	uint32_t direccionFisica;
+} t_escrituraMemoria;
 int string_to_int(char *str);
-
 
 extern sem_t *sem_kernel_io_generica;
 extern t_log *logger;

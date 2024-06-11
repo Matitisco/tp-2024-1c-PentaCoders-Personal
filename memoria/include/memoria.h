@@ -35,12 +35,11 @@ typedef struct
 	t_list *tabla_paginas_proceso;
 } t_tabla_paginas;
 
-void *espacio_memoria;
+void *espacio_usuario;
 typedef struct
 {
 	int marco;			// numeor de marco donde esta la pagina
-	int bit_presencia;	// si esta en memoroa
-	int bit_modificado; // si la pag fue modifica
+	int bit_validez;	// si esta en memoria
 	int pid;			// la pagina conoce al proceso del cual es parte ?
 } t_pagina;
 
@@ -90,7 +89,28 @@ void liberar_registros(t_registros *registros);
 void finalizar_proceso(int kernel, tipo_buffer *buffer);
 
 void *destroy_instruccion(void *element);
-char *guardar_texto_en(int direccion_fisica, char *texto);
-char *leer_texto_en(int direccion_fisica, int limite);
+
+//espacio de usuario
+void *leer_memoria(uint32_t direccion_fisica, uint32_t pid);
+void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_escribir);
+void *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
+void *acceso_a_espacio_usuario(int cliente_solicitante);
+
+//resize
+void reducir_proceso(uint32_t pid, uint32_t tamanio);
+void ampliar_proceso(uint32_t pid, uint32_t tamanio);
+
+//auxx de paginas
+int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina);
+void enviar_tamanio_pagina(int cpu);
+void liberar_marco(int nroMarco);
+int obtener_marco_libre();
+int *agarro_marco_que_este_libre();
+void colocar_pagina_en_marco(t_pagina *pagina);
+t_tabla_paginas *buscar_en_lista_global(int pid);
+void eliminar_tabla_paginas(uint32_t pid);
+t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
+t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso);
+int tamanio_proceso(int pid);
 
 #endif

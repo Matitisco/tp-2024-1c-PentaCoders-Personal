@@ -302,12 +302,12 @@ void realizar_operacion_stdin()
 		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
 		agregar_buffer_para_string(buffer_a_memoria, texto_ingresado);
 
-		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
+		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
 		enviar_buffer(buffer_a_memoria, conexion_memoria);
 		destruir_buffer(buffer_a_memoria);
 
 		op_code codigo_memoria = recibir_operacion(socket_memoria);
-		if (codigo_memoria == PEDIDO_ESCRITURA_CORRECTO)
+		if (codigo_memoria == OK)
 		{
 			log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
 		}
@@ -393,12 +393,12 @@ void realizar_operacion_stdout()
 		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
 		agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
 
-		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
+		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
 		enviar_buffer(buffer_a_memoria, conexion_memoria);
 		destruir_buffer(buffer_a_memoria);
 
 		op_code codigo_memoria = recibir_operacion(socket_memoria);
-		if (codigo_memoria == PEDIDO_LECTURA_CORRECTO)
+		if (codigo_memoria == OK)
 		{
 			tipo_buffer *lectura = recibir_buffer(socket_memoria);
 			char *valor = leer_buffer_string(lectura);
