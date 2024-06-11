@@ -251,7 +251,7 @@ char *obtener_ruta(char *nombre_archivo)
     }
     // TODO: esto debe tener configurada en realidad el path de config de memoria
     string_append(&ruta_completa, ruta_acceso);
-    string_append(&ruta_completa, "/pruebas/");
+    string_append(&ruta_completa, "/pruebas/checkpoint_3/archivos/");
     string_append(&ruta_completa, nombre_archivo);
 
     return ruta_completa;
@@ -276,25 +276,24 @@ void *recibirCPU()
             uint32_t direccionFisica = leer_buffer_enteroUint32(buffer);
             destruir_buffer(buffer);
 
-            buffer = crear_buffer(); 
-            agregar_buffer_para_enterosUint32(buffer,1000);//envio un valor aleatorio
-            enviar_buffer(buffer,cliente_cpu);
+            buffer = crear_buffer();
+            agregar_buffer_para_enterosUint32(buffer, 1000); // envio un valor aleatorio
+            enviar_buffer(buffer, cliente_cpu);
             destruir_buffer(buffer);
-        break;
+            break;
         case PEDIDO_ESCRITURA:
             buffer = recibir_buffer(cliente_cpu);
             t_escrituraMemoria valores_escritura = leer_escrituraMemoria(buffer);
             destruir_buffer(buffer);
-        break;
+            break;
         case AMPLIACION_PROCESO:
             buffer = recibir_buffer(cliente_cpu);
             uint32_t tamanioResize = leer_buffer_enteroUint32(buffer);
-            //ampliar_proceso()
-            //enviar_cod_enum(cliente_cpu,OK);
-            enviar_cod_enum(cliente_cpu,OUT_OF_MEMORY);
-            
+            // ampliar_proceso()
+            // enviar_cod_enum(cliente_cpu,OK);
+            enviar_cod_enum(cliente_cpu, OUT_OF_MEMORY);
 
-        break;
+            break;
         case -1:
             log_error(logger, "El cliente se desconecto. Terminando servidor");
             exit(EXIT_FAILURE);
