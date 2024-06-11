@@ -16,9 +16,8 @@
 
 extern t_log *logger;
 int socket_cpu;
-pthread_t hiloCPU, hiloKernel, hiloIO;
-extern sem_t *sem_kernel;
 int cliente_fd;
+pthread_t hiloCPU, hiloKernel, hiloIO;
 typedef struct
 {
 	t_config *config;
@@ -30,6 +29,12 @@ typedef struct
 	int retardo_respuesta;
 } config_memoria;
 
+typedef struct
+{
+	int pid;
+	t_list *tabla_paginas_proceso;
+} t_tabla_paginas;
+
 void *espacio_memoria;
 typedef struct
 {
@@ -40,19 +45,22 @@ typedef struct
 } t_pagina;
 
 /*Paginacion */
-t_list *lista_marcos;
-int tam_marco;
-t_list *list_tabla_paginas;
+t_list *list_tabla_paginas; // losta global de paginas y cada nodo tiene una tabla del proceso
+
+int cant_marcos;
 t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso);
-void eliminar_paginas(uint32_t pid);
-uint32_t obtener_marco_libre();
+void eliminar_tabla_paginas(uint32_t pid);
+t_tabla_paginas *buscar_en_lista_global(int pid);
+int obtener_marco_libre();
 uint32_t hay_marco_libre();
 t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
+void crear_y_agregar_tabla_a_lista_global(int pid);
+int *agarro_marco_que_este_libre();
 
 typedef struct
 {
 	int numero_marco; // numero de marco
-	int bit_libre;	  // esta libre o no el marco
+	int bit_ocupado;	  // esta libre o no el marco
 } t_bit_map;
 
 t_args *crearArgumento(char *puerto, char *ip);
@@ -61,6 +69,7 @@ config_memoria *configuracion_memoria();
 void *recibirCPU();
 void *recibirKernel();
 void *recibir_interfaces_io();
+void inicializar_bitmap(int cant_marcos);
 // void iniciar_sem_globales();
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
 void finalizar_proceso(int cliente_fd, tipo_buffer *buffer);
