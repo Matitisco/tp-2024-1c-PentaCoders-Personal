@@ -107,7 +107,10 @@ typedef struct
 	t_list *archivosAsignados;
 	t_list *recursosAsignados;
 	int prioridad;
+	int quantum;
 } t_pcb;
+
+
 extern sem_t *sem_kernel;
 extern sem_t *sem_kernel_io_generica;
 extern t_log *logger;

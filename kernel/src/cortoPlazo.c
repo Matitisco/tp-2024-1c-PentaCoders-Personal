@@ -10,6 +10,9 @@ pthread_mutex_t *mutex_cola_ready;
 pthread_mutex_t *mutex_cola_exec;
 t_temporal *quantum;
 
+t_temporal timer;
+int tiempo_transcurrido;
+
 // CORTO PLAZO
 void *corto_plazo()
 {
@@ -49,33 +52,24 @@ void iniciar_sem_cp()
 
 void planificar_por_fifo()
 {
+    t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
         //sem_wait(b_reanudar_corto_plazo);
-
         
-
-        t_pcb *proceso = malloc(sizeof(t_pcb));
         sem_wait(b_exec_libre);
-        //sem_wait(cola_ready_global->contador);
-        proceso = sacar_procesos_cola(cola_ready_global);
-        agregar_a_estado(proceso, cola_exec_global);
+        
+        proceso = transicion_ready_exec();
 
-        proceso->estado = EXEC;
+        enviar_a_cpu_cde(proceso->cde);
 
-        enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO);
-        enviar_cde(socket_cpu_dispatch, proceso->cde);
         log_info(logger, "Se agrego el proceso %d y PC %d a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
     }
 }
 
-void enviar_cde(int conexion, t_cde *cde)
-{
-    tipo_buffer *buffer = crear_buffer();
-    agregar_cde_buffer(buffer, cde);
-    enviar_buffer(buffer, socket_cpu_dispatch);
-    destruir_buffer(buffer);
-}
+
+
+
 
 void planificar_por_rr()
 {
@@ -85,31 +79,110 @@ void planificar_por_rr()
     {
         //sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);                // deja de estar libre exec
-        int valor_sem = 1;
 
+        proceso = transicion_ready_exec();
 
-        
-        proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-        agregar_a_estado(proceso, cola_exec_global);
-
-        log_info(logger, "Proceso a enviar: %d", proceso->cde->pid);
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
 
+        inicio_quantum();
 
-        log_info(logger, "Inicio de QUANTUM");
-        pthread_create(&hiloQuantum, NULL, hilo_quantum, NULL);
-        pthread_detach(&hiloQuantum);
-        sem_post(sem_quantum);
-
-
+        enviar_a_cpu_cde(proceso->cde);
         
-
-        enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
-        enviar_cde(socket_cpu_dispatch, proceso->cde);
     }
 }
 
 
+void planificar_por_vrr() 
+{
+    t_pcb *proceso = malloc(sizeof(t_pcb));
+
+    while (1)
+    {
+        sem_wait(b_exec_libre);                // deja de estar libre exec
+
+        proceso = transicion_ready_exec();
+
+        log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
+
+        inicio_quantum();
+
+        enviar_a_cpu_cde(proceso->cde);
+
+        //Iniciar temporal
+        timer = temporal_create();
+
+        t_pcb *proceso = recibir_proceso_de_cpu(); //VER COMO GESTIONAMOS EL CAMBIO DE ESTADO, DEBERIA MANDARLO A BLOCKED PERO GUARDAR EL QUANTUM
+
+
+        //Detener temporal
+        temporal_stop(timer);
+        tiempo_transcurrido = temporal_gettime(timer);
+        temporal_destroy(timer);
+        
+        
+        
+    }
+}
+
+void salida_block(){
+    //Cuando llega de block
+
+    
+}
+
+void *transicion_blocked_ready() // BLOCK => READY | READY+, ver como implementar
+{
+    while (1)
+    {
+        sem_wait(b_transicion_blocked_ready);
+        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global);
+
+        if( tiempo_transcurrido < QUANTUM){
+            proceso->quantum = QUANTUM - tiempo_transcurrido;
+            //agregar_a_estado(proceso, cola_ready_extra_global);    //READY+
+            //proceso->estado = READY_EXTRA;
+        }
+        else{
+            agregar_a_estado(proceso,cola_ready_global);    //READY
+            proceso->estado = READY;
+        }
+
+
+        log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
+        
+        
+    }
+}
+
+
+void enviar_cde(int conexion, t_cde *cde)
+{
+    tipo_buffer *buffer = crear_buffer();
+    agregar_cde_buffer(buffer, cde);
+    enviar_buffer(buffer, socket_cpu_dispatch);
+    destruir_buffer(buffer);
+}
+
+void enviar_a_cpu_cde(t_cde* cde){
+    log_info(logger, "Proceso a enviar: %d", cde->pid);
+    enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
+    enviar_cde(socket_cpu_dispatch, cde);
+}
+
+t_pcb *transicion_ready_exec(){
+    t_pcb *proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
+    agregar_a_estado(proceso, cola_exec_global);
+    proceso->estado = EXEC;
+    
+    return proceso;
+}
+
+void inicio_quantum(){
+    log_info(logger, "Inicio de QUANTUM");
+    pthread_create(&hiloQuantum, NULL, hilo_quantum, NULL);
+    pthread_detach(&hiloQuantum);
+    sem_post(sem_quantum);
+}
 
 
 void *hilo_quantum()
@@ -140,7 +213,7 @@ void *transicion_exec_ready()
         proceso->estado = READY;
         agregar_a_estado(proceso, cola_ready_global); // moverlo a la cola de exit, hay un lugar en memoria
         sem_post(b_exec_libre);
-        //sem_post(cola_ready_global->contador);
+        
         //sem_post(b_reanudar_corto_plazo);
         log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
         // liberar_proceso(proceso);
@@ -162,19 +235,6 @@ void *transicion_exec_blocked() // mover a largo plazo
     }
 }
 
-void *transicion_blocked_ready() // mover a largo plazo
-{
-    while (1)
-    {
-        sem_wait(b_transicion_blocked_ready);
-        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global);
-
-        agregar_a_estado(proceso, cola_ready_global);
-        log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
-        //sem_post(cola_ready_global->contador);
-        proceso->estado = READY;
-    }
-}
 
 void replanificar_por_rr(t_pcb *proceso)
 {
@@ -193,4 +253,3 @@ void replanificar_por_rr(t_pcb *proceso)
     agregar_a_estado(otro_proceso, cola_exec_global); */
 }
 // VIRTUAL ROUND ROBIN
-void planificar_por_vrr() {}

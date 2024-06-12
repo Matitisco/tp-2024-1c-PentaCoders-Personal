@@ -33,6 +33,10 @@ void replanificar_por_rr(t_pcb *proceso);
 void planificar_por_vrr();
 void *transicion_exec_ready();
 void *transicion_exit_largo_plazo();
+
 void *hilo_quantum();
+void enviar_a_cpu_cde(t_cde* cde);
+t_pcb *transicion_ready_exec();
+void inicio_quantum();
 
 #endif

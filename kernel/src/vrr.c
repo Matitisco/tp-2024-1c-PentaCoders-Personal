@@ -1,7 +1,7 @@
 /* 
 #include "../include/cortoPlazo.h"
 
-int temporal;
+temporal temporal;
 int tiempo_extra;
 
 //Despues veo si lo muevo a cortoPlazo.c
@@ -19,18 +19,19 @@ void planificar_por_vrr(){
     //...
 
 
-    //send() //a la conexión de dispatch
     enviar_proceso_a_cpu();
     
     //Iniciar temporal
-
-    iniciar_temporal();
+    timer = temporal_create();
 
 
     t_pcb *proceso = recibir_proceso_de_cpu(); //VER COMO GESTIONAMOS EL CAMBIO DE ESTADO, DEBERIA MANDARLO A BLOCKED PERO GUARDAR EL QUANTUM
 
-    detener_temporal();
     //Detener temporal
+    temporal_stop(timer);
+    ms_transcurridos = temporal_gettime(timer);
+    temporal_destroy(timer);
+    
     
 
     if( temporal < QUANTUM){
@@ -41,13 +42,6 @@ void planificar_por_vrr(){
 
 }
 
-void esperar_a_cpu_vritual_round_robin(pcb){
-    timer = temporal_create();
-    esperar_a_cpu_round_robin(pcb);
-    temporal_stop(timer);
-    ms_transcurridos = temporal_gettime(timer);
-    temporal_destroy(timer);
-}
 
 
 void enviar_proceso_a_cpu(){
@@ -55,18 +49,15 @@ void enviar_proceso_a_cpu(){
     enviar_cde(socket_cpu_dispatch, proceso->cde);
 }
 
-void temporizador(){
+
+
+void iniciar_temporizador(){
     timer = temporal_create();
     esperar_a_que_desaloje(pcb); //crea temporizador y desaloja
     temporal_stop(timer);
     ms_transcurridos = temporal_gettime(timer);
     temporal_destroy(timer);
 }
-
-void iniciar_temporal(){
-
-}
-
 
 t_pcb *recibir_proceso_de_cpu(){
     op_code cod = recibir_operacion(socket_cpu_dispatch);
