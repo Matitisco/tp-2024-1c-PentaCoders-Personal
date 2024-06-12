@@ -39,9 +39,6 @@ void *largo_plazo()
         sem_wait(GRADO_MULTIPROGRAMACION);
         //sem_wait(cola_new_global->contador);
         
-        if(habilitar_planificadores == 0) 
-            sem_wait(b_detener_planificacion_largo);
-
         //sem_wait(b_reanudar_largo_plazo);
 
         sem_wait(binario_menu_lp); // Se bloquea esperando al menu
@@ -63,6 +60,10 @@ void *largo_plazo()
 t_pcb *transicion_new_a_ready()
 {
     t_pcb *proceso = sacar_procesos_cola(cola_new_global);
+
+    if(habilitar_planificadores == 0) 
+            sem_wait(b_detener_planificacion_largo);
+
     agregar_a_estado(proceso, cola_ready_global);
     return proceso;
 }

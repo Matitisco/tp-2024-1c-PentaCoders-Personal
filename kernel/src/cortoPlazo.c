@@ -86,13 +86,7 @@ void planificar_por_rr()
         //sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);                // deja de estar libre exec
         int valor_sem = 1;
-        sem_getvalue(cola_ready_global->contador, &valor_sem);
-        log_info(logger,"ESTADO CONTADOR READY:%d", valor_sem);
 
-        //sem_wait(cola_ready_global->contador); // contador de procesos en ready
-
-
-        
 
         
         proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
