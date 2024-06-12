@@ -141,6 +141,7 @@ void *levantarIO()
 			}
 			else
 			{
+				enviar_cod_enum(disp_io, NO_ESTABA_CONECTADO);
 				log_info(logger, "La Interfaz %s no estaba conectada", infoIO->nombre_io);
 				list_add(lista_interfaces, infoIO);
 				log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, infoIO->nombre_io);
@@ -313,8 +314,11 @@ void *levantar_CPU_Dispatch()
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
 			sem_post(b_transicion_exec_ready);
+
 			sem_post(b_reanudar_largo_plazo);
 			sem_post(b_reanudar_corto_plazo);
+
+
 			break;
 
 		case INSTRUCCION_INTERFAZ: // recibimos de cpu ciclo de instruccion // ESTO YA ANDA
@@ -345,6 +349,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	op_code operacion_desde_cpu_dispatch = leer_buffer_enteroUint32(buffer_con_instruccion);
 	t_infoIO *informacion_interfaz;
 	t_tipoDeInstruccion instruccion_a_ejecutar;
+	uint32_t tamanioRegistro;
+	uint32_t direccion_fisica;
 	switch (operacion_desde_cpu_dispatch)
 	{
 	case SOLICITUD_INTERFAZ_GENERICA:
@@ -367,9 +373,13 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		break;
 	case SOLICITUD_INTERFAZ_STDIN:
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
-		// falta que reciba mas cosas
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDIN_READ
+		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
+		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+
+		// falta que reciba mas cosas
+
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
 
 		if (informacion_interfaz == NULL)
@@ -384,9 +394,12 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		break;
 	case SOLICITUD_INTERFAZ_STDOUT:
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDOUT_WRITE
 		// falta que reciba mas cosas
+		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
+		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
 
 		if (informacion_interfaz == NULL)

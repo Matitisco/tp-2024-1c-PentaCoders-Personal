@@ -20,13 +20,12 @@
 #include "sockets.h"
 typedef enum
 {
-	MENSAJE,
-	PAQUETE,
 	SOLICITUD_INICIAR_PROCESO,
 	INICIAR_PROCESO_CORRECTO,
 	ERROR_INICIAR_PROCESO,
 	SOLICITUD_FINALIZAR_PROCESO,
 	FINALIZAR_PROCESO,
+	// MENU
 	EJECUTAR_SCRIPT,
 	INICIAR_PROCESO,
 	INICIAR_PLANIFICACION,
@@ -52,7 +51,7 @@ typedef enum
 	SOLICITUD_INTERFAZ_STDOUT,
 	SOLICITUD_INTERFAZ_DIALFS,
 	ENVIAR_INSTRUCCION_CORRECTO,
-	FIN_DE_QUANTUM,	//cpu, kernel
+	FIN_DE_QUANTUM, // cpu, kernel
 	BLOQUEADO_POR_IO,
 	INTERRUPCION,
 	SOLICITUD_CONEXION_IO,
@@ -60,7 +59,24 @@ typedef enum
 	PROCESO_INTERRUMPIDO_QUANTUM,
 	INSTRUCCION_INTERFAZ,
 	ESTA_CONECTADO,
-	ESTABA_CONECTADO
+	ESTABA_CONECTADO,
+	AMPLIACION_PROCESO,
+	REDUCION_PROCESO,
+	ACCESO_ESPACIO_USUARIO,
+	NO_ESTABA_CONECTADO,
+	PEDIDO_ESCRITURA,
+	PEDIDO_ESCRITURA_CORRECTO,
+	ERROR_PEDIDO_ESCRITURA,
+	PEDIDO_LECTURA,
+	PEDIDO_LECTURA_CORRECTO,
+	ERROR_PEDIDO_LECTURA,
+	OUT_OF_MEMORY,
+	RESIZE_EXTEND,
+	ESCRITURA_CPU,
+	OK,
+	SIGNAL_RECURSO,
+	WAIT_RECURSO,
+	DIRECCION_CORRECTA
 } op_code;
 typedef enum
 {
@@ -82,7 +98,7 @@ typedef struct
 	int block_size;
 	int block_count;
 	int retraso_compactacion;
-	char * nombre_interfaz;
+	char *nombre_interfaz;
 } t_interfaz;
 typedef struct
 {
@@ -103,15 +119,25 @@ typedef struct
 {
 	t_cde *cde;		  // contexto de ejecucion
 	t_estados estado; // estado del proceso
-	// int prioridad no va por ahora
 	t_list *archivosAsignados;
 	t_list *recursosAsignados;
 	int prioridad;
+  / t_list *lista_paginas; // cada proceso tiene su lista de paginas-la tabla de paginas
 	int quantum;
 } t_pcb;
 
 
+typedef struct
+{
+	uint32_t valor;
+	uint32_t direccion_fisica;
+} t_escrituraMemoria;
+int string_to_int(char *str);
+
+
 extern sem_t *sem_kernel;
+
+
 extern sem_t *sem_kernel_io_generica;
 extern t_log *logger;
 void iterator(char *value);

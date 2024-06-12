@@ -19,11 +19,8 @@ void ejecutar_script(char *PATH)
     }
     while (fgets(linea, sizeof(linea), archivo_script) != NULL)
     {
-        log_info(logger, "Linea leida: %s", linea);
         strtok(linea, "\n");
-        log_info(logger, "Linea ahora: %s", linea);
         lineas_script = string_split(linea, " ");
-        log_info(logger, "Linea leida: %s", linea);
 
         if (strcmp(lineas_script[0], "INICIAR_PROCESO") == 0)
         {
@@ -61,9 +58,7 @@ void iniciar_proceso(char *PATH)
 
     tipo_buffer *buffer = crear_buffer();
 
-    op_code codigo = SOLICITUD_INICIAR_PROCESO;
-    enviar_cod_enum(socket_memoria, codigo);
-
+    enviar_cod_enum(socket_memoria, SOLICITUD_INICIAR_PROCESO);
     agregar_buffer_para_enterosUint32(buffer, proceso->cde->pid);
     agregar_buffer_para_string(buffer, proceso->cde->path);
 
@@ -74,11 +69,11 @@ void iniciar_proceso(char *PATH)
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global);
-        log_info(logger, "Se crea el proceso %u en NEW\n", proceso->cde->pid);
+        log_info(logger, "Se crea el proceso <%u> en NEW\n", proceso->cde->pid);
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
     {
-        log_info(logger, "No se pudo crear el proceso %u", proceso->cde->pid);
+        log_info(logger, "No se pudo crear el proceso <%u> en NEW\n", proceso->cde->pid);
         PID_GLOBAL--;
     }
 }
@@ -317,7 +312,9 @@ t_pcb *crear_proceso(char *PATH)
     proceso_nuevo->archivosAsignados = list_create();
     proceso_nuevo->recursosAsignados = list_create();
     proceso_nuevo->cde = iniciar_cde(PATH);
+
     proceso_nuevo->quantum = QUANTUM;
+
     return proceso_nuevo;
 }
 

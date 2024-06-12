@@ -34,10 +34,9 @@ t_list *recibir_paquete(int socket_cliente);
 void *serializar_paquete(t_paquete *paquete, int bytes);
 void paquete(int conexion);
 
-
 void enviar_cod_enum(int socket_servidor, uint32_t cod);
 op_code recibir_operacion(int socket_cliente);
-
+void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde);
 tipo_buffer *crear_buffer();
 
 void agregar_buffer_para_enterosUint32(tipo_buffer *buffer, uint32_t entero);
@@ -51,7 +50,7 @@ tipo_buffer *recibir_buffer(int socket);
 uint32_t leer_buffer_enteroUint32(tipo_buffer *buffer);
 uint8_t leer_buffer_enteroUint8(tipo_buffer *buffer);
 char *leer_buffer_string(tipo_buffer *buffer);
-t_registros* leer_buffer_registros(tipo_buffer *buffer);
+t_registros *leer_buffer_registros(tipo_buffer *buffer);
 
 void destruir_buffer(tipo_buffer *buffer);
 /* ---------CDE ------*/
@@ -61,7 +60,8 @@ t_list *recibir_paquete_cde(int socket_cliente);
 
 t_paquete *crear_paquete_cde(void);
 
-
+void agregar_escrituraMemoria_buffer(tipo_buffer *buffer, t_escrituraMemoria *valores);
+t_escrituraMemoria *leer_escrituraMemoria(tipo_buffer *buffer);
 /* op_code recibir_operacion2(int socket_cliente); */
 
 #endif
