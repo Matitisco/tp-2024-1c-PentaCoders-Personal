@@ -26,21 +26,22 @@ typedef struct
     int cant_entradas;
 } tlb_tabla;
 
-// FUNCIONES
-
 // TLB
 void tlb_iniciar(char *algoritmo, int cant_entradas);
 void tlb_crear(char *algoritmo, int cant_entradas);
 int tlb_consultar_info_pagina(int pagina_buscada);
 void tlb_agregar_entrada(int pid, int pagina, int marco);
+
 // ALGORITMOS TLB
 void tlb_reemplazar(tlb_entrada *entrada);
 void tlb_reemplazo_fifo(tlb_entrada *entrada);
 void tlb_reemplazo_lru(tlb_entrada *entrada);
+
 // ENTRADAS
 entrada_tipo entrada_obtener(int pid, int pagina, int marco);
 tlb_entrada *entrada_crear(int pid, int pagina, int marco);
-// UTILS TLB
+
+// AUXILIARES
 int obtener_tiempo_en_miliSegundos(char *tiempo);
 
 #endif

@@ -35,10 +35,10 @@ void recibir_mensaje(int socket_cliente)
 // CREAR PAQUETE
 t_paquete *crear_paquete(void)
 {
-/*     t_paquete *paquete = malloc(sizeof(t_paquete));
-    paquete->codigo_operacion = PAQUETE;
-    paquete->buffer = crear_buffer();
-    return paquete; */
+    /*     t_paquete *paquete = malloc(sizeof(t_paquete));
+        paquete->codigo_operacion = PAQUETE;
+        paquete->buffer = crear_buffer();
+        return paquete; */
 }
 
 t_paquete *crear_paquete_cde(void)
@@ -227,7 +227,7 @@ void destruir_buffer(tipo_buffer *buffer)
 {
     free(buffer->stream);
     free(buffer);
-} 
+}
 // AGREGAR EN EL BUFFER UN ENTERO UINT32
 void agregar_buffer_para_enterosUint32(tipo_buffer *buffer, uint32_t entero)
 {
@@ -257,10 +257,11 @@ void agregar_buffer_para_string(tipo_buffer *buffer, char *args)
 
     char *string = (char *)args;
 
-    if(args == NULL){
+    if (args == NULL)
+    {
         return;
     }
-    
+
     while (string[tamanio] != NULL)
     {
         tamanio++; // sumo el tamanio
@@ -278,11 +279,11 @@ void agregar_buffer_string_null(tipo_buffer *buffer,char *args)
 {
      uint32_t tamanio = sizeof(char*);
     char * string = NULL;
-    //size es el tamaño total del buffer -> hay que aumentarle 
+    //size es el tamaño total del buffer -> hay que aumentarle
     //offset es el desplazamiento dentro del payload
 
     agregar_buffer_para_enterosUint32(buffer, tamanio);//subo el tamanio del char* al buffer
-    
+
     memcpy(buffer->stream + buffer->size, string, tamanio);//subo el contenido del string
     buffer->size += tamanio;
 
@@ -410,33 +411,32 @@ t_cde *leer_cde(tipo_buffer *buffer)
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
     cde->PC = leer_buffer_enteroUint32(buffer);
-    //scde->path = leer_buffer_string(buffer);
+    // scde->path = leer_buffer_string(buffer);
     cde->registros = malloc(sizeof(t_registros));
     cde->registros = leer_buffer_registros(buffer);
-    
 
     return cde;
 }
 void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
 {
-    //t_list *lista_instrucciones;
-    agregar_buffer_para_enterosUint32(buffer,cde->pid);
-    agregar_buffer_para_enterosUint32(buffer,cde->PC);
-    //agregar_buffer_para_string(buffer, cde->path);
-    agregar_buffer_para_registros(buffer,cde->registros);
-    
+    // t_list *lista_instrucciones;
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);
+    agregar_buffer_para_enterosUint32(buffer, cde->PC);
+    // agregar_buffer_para_string(buffer, cde->path);
+    agregar_buffer_para_registros(buffer, cde->registros);
 }
 
-void agregar_escrituraMemoria_buffer(tipo_buffer * buffer,t_escrituraMemoria valores)
+void agregar_escrituraMemoria_buffer(tipo_buffer *buffer, t_escrituraMemoria *valores)
 {
-    agregar_buffer_para_enterosUint32(buffer,valores.valor);
-    agregar_buffer_para_enterosUint32(buffer,valores.direccionFisica);
+    agregar_buffer_para_enterosUint32(buffer, valores->valor);
+    agregar_buffer_para_enterosUint32(buffer, valores->direccion_fisica);
 }
-t_escrituraMemoria leer_escrituraMemoria(tipo_buffer *buffer)
+
+t_escrituraMemoria *leer_escrituraMemoria(tipo_buffer *buffer)
 {
-    t_escrituraMemoria valores;
-    valores.valor = leer_buffer_enteroUint32(buffer);
-    valores.direccionFisica = leer_buffer_enteroUint32(buffer);
+    t_escrituraMemoria *valores;
+    valores->valor = leer_buffer_enteroUint32(buffer);
+    valores->direccion_fisica = leer_buffer_enteroUint32(buffer);
     return valores;
 }
 // ESCRIBIR EN EL BUFFER UNA LISTA

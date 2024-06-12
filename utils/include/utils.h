@@ -75,7 +75,8 @@ typedef enum
 	ESCRITURA_CPU,
 	OK,
 	SIGNAL_RECURSO,
-	WAIT_RECURSO
+	WAIT_RECURSO,
+	DIRECCION_CORRECTA
 } op_code;
 typedef enum
 {
@@ -127,7 +128,7 @@ typedef struct
 typedef struct
 {
 	uint32_t valor;
-	uint32_t direccionFisica;
+	uint32_t direccion_fisica;
 } t_escrituraMemoria;
 int string_to_int(char *str);
 
