@@ -13,6 +13,8 @@ int socket_memoria;
 int socket_kernel_dispatch;
 int socket_kernel_interrupt;
 int salida_exit;
+int desalojo_wait;
+int desalojo_signal;
 int tamanio_pagina;
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
@@ -61,8 +63,8 @@ void iniciar_hilos_CPU(config_cpu *valores_config_cpu)
 
 void iniciar_semaforos_CPU()
 {
-	mutex_cde_ejecutando = malloc(sizeof(pthread_mutex_t));
-	sem_check_interrupt = malloc(sizeof(sem_t));
+	mutex_cde_ejecutando = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+	sem_check_interrupt = (sem_t *)malloc(sizeof(sem_t));
 	sem_init(mutex_cde_ejecutando, 0, 0);
 	sem_init(sem_check_interrupt, 0, 1);
 }
@@ -124,7 +126,7 @@ void levantar_Kernel_Dispatch(void *ptr)
 			break;
 		case -1:
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
-			return EXIT_FAILURE;
+			return (void *)EXIT_FAILURE;
 		default:
 			log_warning(logger, "Operacion desconocida. No quieras meter la pata");
 			break;
@@ -160,7 +162,7 @@ void levantar_Kernel_Interrupt(void *ptr)
 				break;
 			case -1:
 				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-				return EXIT_FAILURE;
+				return (void *)EXIT_FAILURE;
 			default:
 				// destruir_buffer_nuestro(buffer);
 				log_error(logger, "Codigo de operacion desconocido.");
@@ -180,6 +182,7 @@ void *conexionAMemoria(void *ptr)
 	free(argumento);
 
 	recibir_tamanio_pagina(socket_memoria);
+	return;
 }
 
 void recibir_tamanio_pagina(int socket_memoria)
@@ -261,7 +264,7 @@ void execute(char **instruccion, t_cde *contextoProceso) // recibimos un array
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case RESIZE: // RESIZE 128
-		exec_resize(instruccion[1],contextoProceso);
+		exec_resize(instruccion[1], contextoProceso);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		break;

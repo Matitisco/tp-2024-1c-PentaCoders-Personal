@@ -22,6 +22,8 @@ extern t_registros *registros;
 extern int interrupcion_io;
 extern tipo_buffer *buffer_instruccion_io;
 extern int tamanio_pagina;
+extern int desalojo_wait;
+extern int desalojo_signal;
 // Variable Global
 // extern uint32_t pid_ejecutar;
 
@@ -57,7 +59,7 @@ void iniciar_semaforos_CPU();
 void crearHilos_CPU(t_args *args_memoria, t_args *kernel_int, t_args *kernel_dis);
 void iniciar_hilos_CPU(config_cpu *valores_config_cpu);
 t_cde *buscar_cde(uint32_t pid);
-
+void recibir_tamanio_pagina(int socket_memoria);
 // CICLO DE INSTRUCCION
 char *fetch(t_cde *contexto);
 char **decode(char *linea_de_instrucion);

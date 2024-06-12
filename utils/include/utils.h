@@ -73,7 +73,9 @@ typedef enum
 	OUT_OF_MEMORY,
 	RESIZE_EXTEND,
 	ESCRITURA_CPU,
-	OK
+	OK,
+	SIGNAL_RECURSO,
+	WAIT_RECURSO
 } op_code;
 typedef enum
 {

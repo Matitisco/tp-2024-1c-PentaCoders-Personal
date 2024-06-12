@@ -1,8 +1,10 @@
 #include "../include/cicloinstruccion.h"
 
 t_registros *registros;
-// SET
-void exec_set(char *registro, uint32_t valor) //
+
+// INSTRUCCIONES
+
+void exec_set(char *registro, uint32_t valor)
 {
     if (strcmp(registro, "AX") == 0)
     {
@@ -37,37 +39,6 @@ void exec_set(char *registro, uint32_t valor) //
         registros->EDX = valor;
     }
 }
-// auxiliares instrucciones
-/*
-void* leer_memoria(direccionFisica){
-
-    enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_direccionFisica(buffer,direccionFisica);
-    enviar_buffer(buffer, socket_memoria);
-
-
-    op_code lectura_memoria = recibir_operacion(socket_memoria);
-    if (lectura_memoria == DIRECCION_CORRECTA){
-        tipo_buffer *bufferValor = recibir_buffer(socket_memoria);
-        void * valorLeido;//pensar tipo generico que manda memoria que luego se lo castea
-        free(bufferValor);
-    }
-    else{//Informar direccion incorrecta
-
-    }
-    free(buffer);
-    return valorLeido;
-}
-void escribir_memoria(direccionFisica2,void * valor){
-
-}
-void solicitar_stdin_kernel(char * interfaz,char * reg_tamanio){
-    //hay que enviar a kernel cod_op
-    //kernel lo recibe y mediante char *line = readline("texto"); (usar otra funcion que lea solo un tamanio) realiza la lectura
-    //kernel devuelve lo leido
-}
-*/
 
 void exec_mov_in(char *datos, char *direccion)
 {
@@ -96,12 +67,6 @@ void exec_mov_in(char *datos, char *direccion)
     destruir_buffer(buffer);
 }
 
-/*
-MOV_OUT EDX ECX
-MOV_OUT (Registro Dirección, Registro Datos): Lee el valor del Registro Datos y lo escribe en
-la dirección física de memoria obtenida a partir de la Dirección Lógica almacenada en el
-Registro Dirección.
-*/
 void exec_mov_out(char *direccion, char *datos)
 {
     uint32_t valor = obtener_valor_origen(datos);
@@ -126,12 +91,6 @@ void exec_mov_out(char *direccion, char *datos)
     destruir_buffer(buffer);
 }
 
-/*
-RESIZE 128
-RESIZE (Tamaño): Solicitará a la Memoria ajustar el tamaño del proceso al tamaño pasado
-por parámetro. En caso de que la respuesta de la memoria sea Out of Memory, se deberá
-devolver el contexto de ejecución al Kernel informando de esta situación.
-*/
 void exec_resize(char *tamanio, t_cde *contextoProceso)
 {
     // tiene que ser el proceso actual
@@ -157,13 +116,7 @@ void exec_resize(char *tamanio, t_cde *contextoProceso)
     {
     }
 }
-/*
-COPY_STRING 8
-COPY_STRING (Tamaño): Toma del string apuntado por el registro SI y copia la cantidad de
-bytes indicadas en el parámetro tamaño a la posición de memoria apuntada por el registro
-DI.
-*/
-// COPY_STRING
+
 void exec_copy_string(char *tamanio)
 { // hace lectura y escritura de memoria
     uint32_t direccionLogica1 = registros->SI;
@@ -199,33 +152,23 @@ void exec_copy_string(char *tamanio)
 
 void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio)
 {
+    uint32_t direccionLogica1 = obtener_valor_origen(reg_direccion);
+    uint32_t direccion_fisica = 105; // harcodeado
+    uint32_t tamanio = string_to_int(reg_tamanio);
 
-    -Kernel le manda a CPU algo que leyó por consola, CPU le solicita la escritura de lo recibido de
-                                                              kernel en la direccion
+    buffer_instruccion_io = crear_buffer();
+    // interrupcion_io = 1; -> preguntar
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
-                                                          - Esto sería una petición de I / O por parte de la cpu * /
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
+    agregar_buffer_para_string(buffer_instruccion_io, interfaz); // nombre de la interfaz
 
-                                                                // IO_STDIN_READ
-                                                                void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio)
-    {
-        uint32_t direccionLogica1 = obtener_valor_origen(reg_direccion);
-        uint32_t direccion_fisica = 105; // harcodeado
-        uint32_t tamanio = string_to_int(reg_tamanio);
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
 
-        buffer_instruccion_io = crear_buffer();
-        // interrupcion_io = 1; -> preguntar
-        enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
-
-        agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
-        agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
-        agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
-        agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
-        agregar_buffer_para_string(buffer_instruccion_io, interfaz); // nombre de la interfaz
-
-        enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
-
-        destruir_buffer(buffer_instruccion_io);
-    }
+    destruir_buffer(buffer_instruccion_io);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
@@ -237,22 +180,8 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio)
 
     destruir_buffer(buffer_instruccion_io);
 }
-// VER
+
 void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio)
-{
-    uint32_t tamanio = string_to_int(reg_tamanio);
-    uint32_t direccion_fisica = 105; // harcodeado
-
-    buffer_instruccion_io = crear_buffer();
-    // interrupcion_io = 1; -> preguntar
-    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
-
-    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDOUT);
-    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDOUT_WRITE);
-}
-stdout_kernel
-        * /
-    void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio)
 {
     uint32_t tamanio = string_to_int(reg_tamanio);
     uint32_t direccion_fisica = 105; // harcodeado
@@ -346,7 +275,7 @@ void exec_sub(char *destino, char *origen)
         registros->EDX = registros->EDX - valor_origen;
     }
 }
-// JNZ
+
 void exec_jnz(char *registro, uint32_t numeroInstruccion)
 {
     t_cde *cde = malloc(sizeof(t_cde)); // esto es temporal para poder definir las instuurcciones
@@ -408,10 +337,33 @@ void exec_jnz(char *registro, uint32_t numeroInstruccion)
     }
 }
 
-// WAIT TRAER DE RAMA RECURSOS
-void exec_wait() {}
-// SIGNAL TRAER DE RAMA RECURSOS
-void exec_signal() {}
+void exec_wait(char *recurso, t_cde *cde)
+{
+    enviar_cod_enum(socket_kernel_dispatch, WAIT_RECURSO);
+
+    tipo_buffer *buffer_recurso;
+    buffer_recurso = crear_buffer();
+    desalojo_wait = 1;
+    agregar_cde_buffer(buffer_recurso, cde);
+    agregar_buffer_para_string(buffer_recurso, recurso);
+    enviar_buffer(buffer_recurso, socket_kernel_dispatch);
+
+    destruir_buffer(buffer_recurso);
+}
+
+void exec_signal(char *recurso, t_cde *cde)
+{
+    enviar_cod_enum(socket_kernel_dispatch, SIGNAL_RECURSO);
+
+    tipo_buffer *buffer_recurso;
+    buffer_recurso = crear_buffer();
+    desalojo_signal = 1;
+    agregar_cde_buffer(buffer_recurso, cde);
+    agregar_buffer_para_string(buffer_recurso, recurso);
+    enviar_buffer(buffer_recurso, socket_kernel_dispatch);
+
+    destruir_buffer(buffer_recurso);
+}
 
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
 {
@@ -424,6 +376,8 @@ void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, unidades_trabajo);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
 }
+
+// IMPLEMENTAR PARA ENTREGA FINAL
 
 void exec_io_fs_create() {}
 void exec_io_fs_delete() {}
@@ -441,6 +395,8 @@ void exec_exit(t_cde *cde)
     agregar_cde_buffer(buffer, cde);
     enviar_buffer(buffer, socket_kernel_dispatch);
 }
+
+// FUNCIONES AUXILIARES
 
 uint32_t obtener_valor_origen(char *origen)
 {

@@ -37,7 +37,7 @@ void paquete(int conexion);
 
 void enviar_cod_enum(int socket_servidor, uint32_t cod);
 op_code recibir_operacion(int socket_cliente);
-
+void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde);
 tipo_buffer *crear_buffer();
 
 void agregar_buffer_para_enterosUint32(tipo_buffer *buffer, uint32_t entero);
