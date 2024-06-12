@@ -272,7 +272,11 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 {
 	t_pcb *pcb = malloc(sizeof(pcb));
-	//sem_wait(cola_estado->contador);
+	sem_wait(cola_estado->contador);
+	int valor_contador = 0;
+	sem_getvalue(cola_estado->contador,&valor_contador);
+	log_info(logger, "VALOR ESTADO %s: %d", valor_contador, cola_estado->nombreEstado); 
+	
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
@@ -303,7 +307,7 @@ void *levantar_CPU_Dispatch()
 			log_info(logger, "Se finalizo el proceso: %d", cde_interrumpido->pid);
 			sem_post(b_largo_plazo_exit);
 			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+			//sem_post(b_reanudar_corto_plazo);
 			break;
 
 		case FIN_DE_QUANTUM:

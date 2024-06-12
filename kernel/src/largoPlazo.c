@@ -37,7 +37,7 @@ void *largo_plazo()
     while (1)
     {   
         sem_wait(GRADO_MULTIPROGRAMACION);
-        sem_wait(cola_new_global->contador);
+        //sem_wait(cola_new_global->contador);
         
         if(habilitar_planificadores == 0) 
             sem_wait(b_detener_planificacion_largo);
@@ -53,7 +53,7 @@ void *largo_plazo()
 
         log_info(logger, "PID: %d - Estado Anterior: NEW - Estado Actual: READY \n", proceso->cde->pid); // Log pedido de cambio de estado
 
-        sem_post(cola_ready_global->contador);
+        //sem_post(cola_ready_global->contador);
 
         
         //sem_post(b_reanudar_largo_plazo);

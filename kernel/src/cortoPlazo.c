@@ -53,11 +53,11 @@ void planificar_por_fifo()
     {
         //sem_wait(b_reanudar_corto_plazo);
 
-        sem_wait(cola_ready_global->contador);
+        
 
         t_pcb *proceso = malloc(sizeof(t_pcb));
         sem_wait(b_exec_libre);
-        sem_wait(cola_ready_global->contador);
+        //sem_wait(cola_ready_global->contador);
         proceso = sacar_procesos_cola(cola_ready_global);
         agregar_a_estado(proceso, cola_exec_global);
 
@@ -85,24 +85,38 @@ void planificar_por_rr()
     {
         //sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);                // deja de estar libre exec
-        
-        sem_wait(cola_ready_global->contador); // contador de procesos en ready
+        int valor_sem = 1;
+        sem_getvalue(cola_ready_global->contador, &valor_sem);
+        log_info(logger,"ESTADO CONTADOR READY:%d", valor_sem);
 
-        //t_queue* aux = cola_ready_global->estado;
-        sem_wait(cola_ready_global->contador);
+        //sem_wait(cola_ready_global->contador); // contador de procesos en ready
+
+
+        
+
+        
         proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
         agregar_a_estado(proceso, cola_exec_global);
 
         log_info(logger, "Proceso a enviar: %d", proceso->cde->pid);
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
 
+
         log_info(logger, "Inicio de QUANTUM");
         pthread_create(&hiloQuantum, NULL, hilo_quantum, NULL);
+        pthread_detach(&hiloQuantum);
         sem_post(sem_quantum);
+
+
+        
+
         enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
         enviar_cde(socket_cpu_dispatch, proceso->cde);
     }
 }
+
+
+
 
 void *hilo_quantum()
 {
@@ -132,7 +146,7 @@ void *transicion_exec_ready()
         proceso->estado = READY;
         agregar_a_estado(proceso, cola_ready_global); // moverlo a la cola de exit, hay un lugar en memoria
         sem_post(b_exec_libre);
-        sem_post(cola_ready_global->contador);
+        //sem_post(cola_ready_global->contador);
         //sem_post(b_reanudar_corto_plazo);
         log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
         // liberar_proceso(proceso);
@@ -163,7 +177,7 @@ void *transicion_blocked_ready() // mover a largo plazo
 
         agregar_a_estado(proceso, cola_ready_global);
         log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
-        sem_post(cola_ready_global->contador);
+        //sem_post(cola_ready_global->contador);
         proceso->estado = READY;
     }
 }

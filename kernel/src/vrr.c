@@ -1,4 +1,4 @@
-
+/* 
 #include "../include/cortoPlazo.h"
 
 int temporal;
@@ -7,6 +7,10 @@ int tiempo_extra;
 //Despues veo si lo muevo a cortoPlazo.c
 
 //REPENSAR EL HILO DISPATCH, EL TP NO TE PIDE UN HILO, SOLO QUE TENGAS LA CONEXION, TRANQUILAMENTE PODES HACER EL RECV EN EL LA FUNCION VRR/RR/FIFO.
+
+//Vas a usar hilo dispatch para no complicarte. 
+
+// 
 
 void planificar_por_vrr(){
 
@@ -36,6 +40,15 @@ void planificar_por_vrr(){
     }
 
 }
+
+void esperar_a_cpu_vritual_round_robin(pcb){
+    timer = temporal_create();
+    esperar_a_cpu_round_robin(pcb);
+    temporal_stop(timer);
+    ms_transcurridos = temporal_gettime(timer);
+    temporal_destroy(timer);
+}
+
 
 void enviar_proceso_a_cpu(){
     enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC 
@@ -73,4 +86,4 @@ t_pcb *recibir_proceso_de_cpu(){
     else{
         return NULL;
     }
-}
+} */
