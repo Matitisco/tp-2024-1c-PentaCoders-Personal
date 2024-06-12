@@ -478,7 +478,7 @@ void *destroy_instruccion(void *element)
 
 void liberar_registros(t_registros *registros)
 {
-    free(registros->AX);
+ /*    free(registros->AX);
     free(registros->BX);
     free(registros->CX);
     free(registros->DI);
@@ -487,7 +487,7 @@ void liberar_registros(t_registros *registros)
     free(registros->EBX);
     free(registros->ECX);
     free(registros->EDX);
-    free(registros->SI);
+    free(registros->SI); */
 }
 
 config_memoria *configuracion_memoria()

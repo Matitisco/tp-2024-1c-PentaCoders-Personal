@@ -61,18 +61,15 @@ t_pcb *transicion_new_a_ready()
 
 void *transicion_exit_largo_plazo()
 {
-
     while (1)
     {
         sem_wait(b_largo_plazo_exit);
 
         t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
-        // proceso->cde = cde;
+        agregar_a_estado(proceso, cola_exit_global);
+        // finalizar_proceso(proceso->cde->pid);
 
-        agregar_a_estado(proceso, cola_exit_global); // moverlo a la cola de exit, hay un lugar en memoria
-        sem_post(GRADO_MULTIPROGRAMACION);           // se aumenta el grado
+        sem_post(GRADO_MULTIPROGRAMACION);
         sem_post(b_exec_libre);
-        // sem_post(cola_ready_global->contador);
-        log_info(logger, "Finaliza el proceso %d - Motivo:", proceso->cde->pid);
     }
 }

@@ -20,9 +20,22 @@
 #include "../../utils/include/serializacion.h"
 #include "../../utils/include/instrucciones.h"
 
-extern int QUANTUM;
-extern pthread_t hiloQuantum;
-extern t_cde *cde_interrumpido;
+typedef struct
+{
+	char *nombreEstado;
+	t_queue *estado;
+	pthread_mutex_t *mutex_estado;
+	sem_t *contador;
+
+} colaEstado;
+
+typedef struct
+{
+	char *nombre;
+	sem_t *instancias;
+	colaEstado *cola_bloqueados;
+} t_recurso;
+
 typedef struct
 {
 	t_config *config;
@@ -34,9 +47,9 @@ typedef struct
 	char *puerto_cpu_interrupt;
 	char *algoritmo_planificacion;
 	int quantum;
-	char **listaRecursos;
-	char **instanciasRecursos;
+	t_recurso **recursos;
 	int grado_multiprogramacion;
+
 } config_kernel;
 
 typedef struct
@@ -45,21 +58,16 @@ typedef struct
 	char *nombre_io;
 } t_infoIO;
 
-typedef struct
-{
-	char *nombreEstado;
-	t_queue *estado;
-	pthread_mutex_t *mutex_estado;
-	sem_t *contador;
-
-} colaEstado;
-
 // VARIABLES
 extern uint32_t PID_GLOBAL;
 extern t_log *logger;
 extern sem_t *GRADO_MULTIPROGRAMACION;
 extern sem_t *sem_agregar_a_estado;
 extern sem_t *sem_kernel_io_generica;
+
+extern int QUANTUM;
+extern pthread_t hiloQuantum;
+extern t_cde *cde_interrumpido;
 // Binarios
 extern sem_t *sem_quantum;
 extern sem_t *binario_menu_lp;
@@ -115,7 +123,8 @@ void *corto_plazo();
 void *hilo_quantum();
 void *transicion_exec_blocked();
 void *transicion_blocked_ready();
-
+void eliminar_proceso(t_pcb *proceso);
+t_pcb *buscarProceso(uint32_t pid);
 // FUNCIONES DE ENTRADA/SALIDA
 
 char *obtener_interfaz(enum_interfaz interfaz);
@@ -124,5 +133,6 @@ _Bool interfaz_esta_conectada();
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, int socket_io, int pid);
 void atender_interrupciones();
 int llego_proceso();
+char *buscar_recurso(char *recurso, int *posicion);
 
 #endif

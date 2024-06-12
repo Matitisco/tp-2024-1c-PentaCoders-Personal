@@ -88,28 +88,45 @@ void iniciar_proceso(char *PATH)
 
 void finalizar_proceso(uint32_t PID)
 {
-    // buscamos el proceso en la cola de exec
     t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado);
 
-    if (proceso == NULL)
-    {                                                                 // puede estar en new, ready, blocked
-        enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO); // enviamos solicitud a la memoria
-    } // para que finalice el proceso
-    else
+    if (proceso == NULL) // NEW, READY, BLOCKED
     {
-        enviar_cod_enum(socket_cpu_interrupt, SOLICITUD_EXIT); // pero si el proceso esta ejecutandose en la cpu
-        tipo_buffer *buffer_cpu_interrupt = crear_buffer();
-        agregar_buffer_para_enterosUint32(buffer_cpu_interrupt, PID);
-        enviar_buffer(buffer_cpu_interrupt, socket_cpu_interrupt);
-        destruir_buffer(buffer_cpu_interrupt);
+        proceso = buscarProceso(PID);
     }
-    // si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
-    // pidiendo que desaloje el proceso de la cpu y retorne el cde
+    else // EXEC
+    {
+        enviar_cod_enum(socket_cpu_interrupt, SOLICITUD_EXIT);
+    }
+
+    enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
 
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, PID);
-    enviar_buffer(buffer, socket_memoria); //    le solicito a MEMORIA que ELIMINE el proceso
+    agregar_buffer_para_registros(buffer, proceso->cde->registros);
+    enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
+
+    agregar_a_estado(proceso, cola_exit_global);
+
+    op_code codigo = recibir_operacion(socket_memoria);
+    if (codigo == FINALIZAR_PROCESO)
+    {
+        eliminar_proceso(proceso);
+
+        log_info(logger, "Finaliza el proceso %d - Motivo:", proceso->cde->pid);
+    }
+    else
+    {
+        log_info(logger, "ERROR Finalizar proceso %d ", proceso->cde->pid);
+    }
+}
+
+void eliminar_proceso(t_pcb *proceso)
+{
+    // liberar_archivos(proceso->archivosAsignados); PARA CUANDO HAGAMOS EL FILE SYSTEM
+    liberar_recursos(proceso);
+    proceso->estado = EXIT;
 }
 
 // INICIAR PLANIFICACION
@@ -147,9 +164,9 @@ void proceso_estado()
 t_pcb *buscarProceso(uint32_t pid)
 {
     t_pcb *pcb_buscada = NULL;
-    colaEstado *colas[] = {cola_new_global, cola_ready_global, cola_exec_global, cola_exit_global}; // Hace vector de colas
+    colaEstado *colas[] = {cola_new_global, cola_ready_global, cola_bloqueado_global, cola_exec_global, cola_exit_global}; // Hace vector de colas
 
-    for (int i = 0; i < sizeof(colas) / sizeof(colas[0]); i++) // va fijandose si en cada posicion del vector esta ese pid
+    for (int i = 0; i < 4; i++) // va fijandose si en cada posicion del vector esta ese pid
     {
 
         if ((pcb_buscada = buscarPCBEnColaPorPid(pid, colas[i]->estado, colas[i]->nombreEstado)) != NULL) // busqueda
@@ -184,34 +201,69 @@ t_pcb *buscarProceso(uint32_t pid)
     }
 } */
 
-/* void liberar_proceso(t_pcb *proceso)
+void liberar_recursos(t_pcb *proceso)
 {
-    liberar_recursos(proceso);
-    liberar_archivos(proceso);
-    proceso->estado = EXIT;
+    int tamanio = list_size(proceso->recursosAsignados);
+    // se le asignan mal los recursos al proceso
+    log_info(logger, "CANTIDAD DE RECURSOS ASIGNADOS QUE TIENE EL PROCESO: %d: %d", proceso->cde->pid, tamanio);
+    for (int i = 0; i < tamanio; i++)
+    {
+        // liberamos los recursos que tenia el proceso
+        t_recurso *recurso_pcb = list_get(proceso->recursosAsignados, i);
+        char *nombre_rec = recurso_pcb->nombre;
+        log_info(logger, "RECURSO A LIBERAR DEL PROCESO %d : %s", proceso->cde->pid, nombre_rec);
+
+        int cant_instancias;
+        sem_getvalue(&(recurso_pcb->instancias), &cant_instancias);
+
+        log_info(logger, "INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO: %d : %d", nombre_rec, proceso->cde->pid, cant_instancias);
+        for (int i = 0; i < cant_instancias; i++)
+        {
+            sem_wait(&(recurso_pcb->instancias));
+            int recursos_SO = cant_recursos_SO(valores_config->recursos);
+            log_info(logger, "RECURSOS SO: %d", recursos_SO);
+            for (int i = 0; i < (recursos_SO - 1); i++)
+            {
+                t_recurso *recurso_SO = valores_config->recursos[i];
+                if (strcmp(recurso_SO->nombre, nombre_rec) == 0)
+                {
+                    sem_post(&(recurso_SO->instancias));
+                }
+            }
+        }
+        free(recurso_pcb->nombre);
+        sem_destroy(recurso_pcb->instancias);
+    }
+    list_destroy(proceso->recursosAsignados);
+}
+
+int cant_recursos_SO(t_recurso **recursos)
+{
+    int i = 0;
+    while (recursos[i] != NULL)
+    {
+        i++;
+    }
+    return i;
+}
+// t_recurso **recursos;
+
+/* void liberar_archivos(t_pcb *proceso) ESTO ES PARA EL FILE SYSTEM DEBEMOS HACELRO A MANO LA ELIMINACION
+{
+    int tamanio=list_size(proceso->archivosAsignados);
+    for (int i = 0; i < tamanio; i++)
+    {
+        tlist_get(proceso->archivosAsignados,i);
+    }
+
+    list_destroy_and_destroy_elements(proceso->archivosAsignados, destroy_archivos);
 } */
 
-/* void liberar_recursos(t_pcb *proceso)
-{
-    list_destroy_and_destroy_elements(proceso->recursosAsignados, destroy_recursos);
-}
-
-void* destroy_recursos(void* element) {
-    void* recurso = (void*)element;
-    free(recurso);
-}
- */
-
-void liberar_archivos(t_pcb *proceso)
-{
-    list_destroy_and_destroy_elements(proceso->archivosAsignados, destroy_archivos);
-}
-
-void *destroy_archivos(void *element)
+/* void destroy_archivos(void *element)
 {
     char *archivo = (char *)element;
     free(archivo);
-}
+} */
 
 void modificar_grado_multiprogramacion(int valor)
 {
@@ -245,6 +297,8 @@ void mostrar_procesos(colaEstado *cola)
 
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
+
+    printf("\033[1;32m \n Buscando el proceso %d en la cola %s \n \033[0m", pid_buscado, nombreCola); //
 
     t_pcb *pcb_buscada;
 
