@@ -372,14 +372,14 @@ void *levantar_CPU_Dispatch()
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
 			}
-			else
+			/*else
 			{
 				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
-			}
+			}*/
 			break;
 		case SIGNAL_RECURSO: // un proceso libera un recurso
 
@@ -394,9 +394,7 @@ void *levantar_CPU_Dispatch()
 			if (recurso == 0) // encontro al recurso y existe
 			{
 				signal_instancia_recurso(posicion);
-				// t_pcb *proceso = buscarProceso(cde_interrumpido->pid);
-				// t_recurso *recurso_buscado = list_find(proceso->recursosAsignados, ya_tiene_instancias_del_recurso);
-
+				
 				// sem_wait(recurso_buscado->instancias);
 
 				int valor_instancias;
@@ -407,16 +405,7 @@ void *levantar_CPU_Dispatch()
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
 			}
-			else
-			{
-				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
-
-				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
-				sem_post(b_largo_plazo_exit);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
-			}
-
+		
 			break;
 		default:
 			log_warning(logger, "La operacion enviada por CPU Dispatch no la Puedo ejecutar");
@@ -617,8 +606,12 @@ int existe_recurso(int *posicion)
 
 	if (recurso_encontrado == NULL)
 	{
-		log_info(logger, "NO EXISTE RECURSO \n Envio proceso a EXIT");
-		sem_post(b_largo_plazo_exit); // El enunciado pide enviarlo a exit si no existe recurso
+		log_info(logger, "El Recurso Pedido No Existe En El Sistema \n Envio proceso a EXIT");
+
+		finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
+		sem_post(b_largo_plazo_exit);
+		sem_post(b_reanudar_largo_plazo);
+		sem_post(b_reanudar_corto_plazo);
 		return -1;
 	}
 	return 0;
@@ -648,12 +641,12 @@ void wait_instancia_recurso(int i)
 {
 	int valor;
 	sem_getvalue(&(valores_config->recursos[i]->instancias), &valor);
+	proceso_interrumpido = buscarProceso(cde_interrumpido->pid);
 	if (valor > 0) // Si hay instancias del recurso, puedo restar y asignar a un proceso
 	{
 		sem_wait(&(valores_config->recursos[i]->instancias)); // le doy una instancia al proceso, y le quito una a la lista de recursos que tiene el SO
 		// De aca para abajo asigna al proceso los recursos retenidos
 
-		proceso_interrumpido = buscarProceso(cde_interrumpido->pid);
 		t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
 		if (recurso_buscado == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
 		{
@@ -679,6 +672,10 @@ void wait_instancia_recurso(int i)
 		// mandar proceso a cola de bloqueados correspondiente al recurso
 		sem_post(b_transicion_exec_blocked); //!!!!!!!!!!!
 	}
+}
+
+void bloquear_proceso_segun_recurso(){
+	proceso_interrumpido
 }
 
 void signal_instancia_recurso(int i)

@@ -309,7 +309,7 @@ char *obtener_ruta(char *nombre_archivo)
     }
     // TODO: esto debe tener configurada en realidad el path de config de memoria
     string_append(&ruta_completa, ruta_acceso);
-    string_append(&ruta_completa, "/pruebas/checkpoint_3/archivos/");
+    string_append(&ruta_completa, "/pruebas/"/*checkpoint_3/archivos/*/);//cambiar para memoria.config
     string_append(&ruta_completa, nombre_archivo);
 
     return ruta_completa;
