@@ -334,7 +334,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
 
     buffer_instruccion_io = crear_buffer();
     interrupcion_io = 1;
-    
+
     enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDOUT);

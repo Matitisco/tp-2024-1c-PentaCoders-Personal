@@ -98,3 +98,7 @@ int string_to_int(char *str) {
 
     return result * sign;
 }
+
+void sleep_ms(int milliseconds) {
+    usleep(milliseconds * 1000);
+}

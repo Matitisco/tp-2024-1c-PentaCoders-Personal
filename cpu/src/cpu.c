@@ -315,10 +315,20 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		interrupcion_rr = 0;
-		enviar_cod_enum(socket_kernel_dispatch, FIN_DE_QUANTUM);
-		agregar_cde_buffer(buffer_cde, cde_recibido);
-		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		log_info(logger, "\nINTERRUPCION - FIN DE QUANTUM - \n");
+		if (interrupcion_io)
+		{
+			interrupcion_io = 0;
+			agregar_cde_buffer(buffer_cde, cde_recibido);
+			enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
+			enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
+		}
+		else
+		{
+			enviar_cod_enum(socket_kernel_dispatch, FIN_DE_QUANTUM);
+			agregar_cde_buffer(buffer_cde, cde_recibido);
+			enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		}
 	}
 	else if (interrrupcion_fifo)
 	{
@@ -341,15 +351,11 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		desalojo_signal = 0;
-		// agregar_cde_buffer(buffer_cde, cde_recibido);
-		// enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
 	}
 	else if (desalojo_wait)
 	{
 		salida_exit = 0;
 		desalojo_wait = 0;
-		// agregar_cde_buffer(buffer_cde, cde_recibido);
-		// enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
 	}
 	else
 	{

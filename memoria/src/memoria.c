@@ -328,7 +328,7 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
     // Ante cada petición se deberá esperar un tiempo determinado a modo de
     // retardo en la obtención de la instrucción, y este tiempo,
     // estará indicado en el archivo de configuración.
-    usleep(valores_config->retardo_respuesta);
+    sleep_ms(valores_config->retardo_respuesta); // cambiado a ms
 
     tipo_buffer *buffer = recibir_buffer(cliente_fd);
     uint32_t PID = leer_buffer_enteroUint32(buffer);

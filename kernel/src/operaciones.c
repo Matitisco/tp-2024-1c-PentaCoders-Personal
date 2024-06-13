@@ -309,7 +309,7 @@ void mostrar_procesos(colaEstado *cola)
 
     while (!queue_is_empty(cola->estado))
     {
-        t_pcb *pcb = queue_pop(cola->estado);
+        t_pcb *pcb = queue_pop(cola->estado);   //seg fault
         log_info(logger, "PID: <%d>", pcb->cde->pid);
 
         queue_push(cola_aux, pcb);
@@ -327,7 +327,7 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 
     log_info(logger, "\033[1;32m \n Buscando el proceso <%d> en la cola %s \n \033[0m", pid_buscado, nombreCola); //
 
-    t_pcb *pcb_buscada;
+    t_pcb *pcb_buscada = NULL;
 
     // Verificar si la lista está vacía
     if (queue_is_empty(cola))
@@ -345,6 +345,7 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
         if (pcb->cde->pid == pid_buscado)
         {
             pcb_buscada = pcb;
+            log_info(logger, "PID PCB ENCONTRADA : %d  PC PCB ENCONTRADA: %d", pcb_buscada->cde->pid, pcb_buscada->cde->PC);
         }
 
         queue_push(colaAux, pcb_buscada);
@@ -376,7 +377,7 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
     }
     else
     {
-        log_info(logger, "PID: <%d> No Encontrado - Cola: <%s>", pcb_buscada->cde->pid, nombreCola);
+        log_info(logger, "PID: <%d> No Encontrado - Cola: <%s>", pid_buscado, nombreCola);
     }
 
     return pcb_buscada;

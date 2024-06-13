@@ -80,7 +80,6 @@ void iniciar_kernel()
 	lista_interfaces = list_create();
 	valores_config = inicializar_config_kernel();
 	QUANTUM = valores_config->quantum;
-
 	iniciar_semaforos();
 	levantar_servidores();
 	crear_hilos();
@@ -233,6 +232,8 @@ void iniciar_semaforos()
 	sem_init(sem_quantum, 0, 0);
 	sem_init(b_transicion_exec_blocked, 0, 0);
 	sem_init(b_transicion_blocked_ready, 0, 0);
+	// sem_init(b_detener_planificacion_largo, 0, 0);//agregado de lo que hizo Mati
+	// sem_init(b_detener_planificacion_corto, 0, 0);//agregado de lo que hizo Mati
 }
 
 config_kernel *inicializar_config_kernel()
@@ -281,7 +282,7 @@ config_kernel *inicializar_config_kernel()
 	return configuracion;
 }
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso a la cola New //MONITOR DE QUEUE_PUSH
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 {
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	queue_push(cola_estado->estado, pcb);
@@ -291,7 +292,7 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado) // Añade un proceso 
 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 {
-	t_pcb *pcb = malloc(sizeof(pcb));
+	t_pcb *pcb = malloc(sizeof(t_pcb));
 	sem_wait(cola_estado->contador);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	pcb = queue_pop(cola_estado->estado);
@@ -319,6 +320,7 @@ void *levantar_CPU_Dispatch()
 
 			tipo_buffer *buffer_cpu_fin = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
+
 			finalizar_proceso(cde_interrumpido->pid, SUCCESS);
 
 			sem_post(b_largo_plazo_exit);
@@ -333,8 +335,13 @@ void *levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_cpu);
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
+			// IO_GEN_SLEEP INTERFAZ TIEMPO
+			// DIN DE QUANTUM Y OCURRE LA INTERRUPCION
 			sem_post(b_transicion_exec_ready);
-			// sem_post(b_reanudar_corto_plazo);
+
+			sem_post(b_reanudar_largo_plazo); // está en el código de Mati
+			sem_post(b_reanudar_corto_plazo); // está en el código de Mati
+
 			break;
 
 		case INSTRUCCION_INTERFAZ:
@@ -351,7 +358,6 @@ void *levantar_CPU_Dispatch()
 
 		case WAIT_RECURSO: // asignamos un recurso a un proceso
 
-			// recibir_recurso(); // Para usarlo en wait y signal LUEGO VEMOS SI ANDA WAIT
 			tipo_buffer *buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
 
@@ -618,7 +624,7 @@ int existe_recurso(int *posicion)
 	if (recurso_encontrado == NULL)
 	{
 		log_info(logger, "NO EXISTE RECURSO \n Envio proceso a EXIT");
-		sem_post(b_largo_plazo_exit); // El enunciado pide enviarlo a exit si no existe recurso
+		sem_post(b_largo_plazo_exit);
 		return -1;
 	}
 	return 0;
@@ -629,7 +635,6 @@ char *buscar_recurso(char *recurso, int *posicion)
 	char *recurso_encontrado = NULL;
 
 	int i = 0;
-	// while (valores_config->listaRecursos[i]!=NULL) FUNKA
 	while (valores_config->recursos[i]->nombre != NULL)
 	{
 		if (strcmp(recurso, valores_config->recursos[i]->nombre) == 0)
@@ -674,14 +679,14 @@ void wait_instancia_recurso(int i)
 	}
 	else
 	{
-		log_info(logger, "NO HAY INSTANCIAS DISPONIBLES DEL RECURSO PEDIDO");
-		log_info(logger, "TRANSICION EXEC A BLOCKED");
+		log_info(logger, "No Hay Instancias Disponibles del Recurso");
 		// mandar proceso a cola de bloqueados correspondiente al recurso
-		sem_post(b_transicion_exec_blocked); //!!!!!!!!!!!
+		sem_post(b_transicion_exec_blocked);
 	}
 }
 
 void signal_instancia_recurso(int i)
 {
 	sem_post(&(valores_config->recursos[i]->instancias));
+	// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
 }

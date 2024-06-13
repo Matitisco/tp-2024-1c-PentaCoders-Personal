@@ -153,4 +153,8 @@ void destruirLog(t_log *logger);
 void destruirConfig(t_config *config);
 void liberarConexion(int conexion);
 t_args *crearArgumento(char *puerto, char *ip);
+
+void sleep_ms(int milliseconds);
+
+
 #endif
