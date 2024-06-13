@@ -35,6 +35,19 @@ typedef struct
 	int cantidad_entradas_tlb;
 } config_cpu;
 
+// INICIALIZACION
+void iniciar_modulo_cpu();
+void tlb_iniciar(char *algoritmo, int cant_entradas);
+void iniciar_semaforos_CPU();
+void iniciar_registros_sistema();
+void recibir_tamanio_pagina(int socket_memoria);
+config_cpu *configurar_cpu();
+
+// CONEXIONES Y SERVIDORES
+void levantar_conexion_a_memoria();
+void *levantar_kernel_dispatch();
+void *levantar_kernel_interrupt();
+
 // HILOS
 void crear_hilos_CPU();
 
@@ -45,11 +58,6 @@ t_tipoDeInstruccion obtener_instruccion(char *instruccion);
 void execute(char **instruccion, t_cde *contextoProceso);
 void actualizar_cde(t_cde *contexto);
 void check_interrupt();
-
-// CONEXIONES Y SERVIDORES
-void *conexionAMemoria();
-void *levantar_Kernel_Dispatch();
-void *levantar_Kernel_Interrupt();
 
 // INSTRUCCIONES
 void exec_set(char *registro, uint32_t valor);
@@ -71,20 +79,5 @@ void exec_io_fs_truncate();
 void exec_io_fs_write();
 void exec_io_fs_read();
 void exec_exit(t_cde *cde);
-
-// AUXILIARES
-t_cde *buscar_cde(uint32_t pid);
-void recibir_tamanio_pagina(int socket_memoria);
-void tlb_iniciar(char *algoritmo, int cant_entradas);
-void ejecutarCicloInstruccion(int instruccion, uint32_t PC);
-void tipoInstruccion(int instruccion);
-void servidorDeKernel(config_cpu *valores_config_cpu);
-void proceso_dispatch(int socket_servidor_dispatch);
-t_cde *leer_payload_PCB(tipo_buffer *buffer);
-void ejecutar_proceso(t_cde *cde);
-void solicitar_instruccion();
-void iniciar_registros();
-config_cpu *configurar_cpu();
-void iniciar_semaforos_CPU();
 
 #endif

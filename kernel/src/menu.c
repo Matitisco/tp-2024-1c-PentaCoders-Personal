@@ -3,7 +3,6 @@
 void iniciar_consola_interactiva()
 {
     habilitar_planificadores = 0;
-    char *opcion = string_new();
     while (1)
     {
         sleep(1);
@@ -15,7 +14,6 @@ void iniciar_consola_interactiva()
         }
         mostrar_operaciones_realizables();
         ejecutar_operacion(readline("Ingrese un valor para realizar una de las siguientes acciones: "), logger);
-        // free(opcion);
     }
 }
 
@@ -49,20 +47,19 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         break;
     case FINALIZAR_PROCESO:
         char *PID = readline("Ingrese el PID del Proceso a Finalizar: ");
-        finalizar_proceso(atoi(PID));
+        finalizar_proceso(atoi(PID), INTERRUPTED_BY_USER);
         free(PID);
         break;
     case INICIAR_PLANIFICACION:
         iniciar_planificacion();
-        // exit(1);
         break;
     case DETENER_PLANIFICACION:
         detener_planificacion();
-        // exit(1);
         break;
     case MULTIPROGRAMACION:
         char *valor = readline("Ingrese el PID del Proceso a Finalizar: ");
         grado_multiprogramacion(atoi(valor));
+        free(valor);
         break;
     case LISTAR_ESTADOS:
         proceso_estado();

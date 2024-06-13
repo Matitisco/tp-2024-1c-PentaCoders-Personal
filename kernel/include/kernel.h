@@ -125,6 +125,7 @@ void *transicion_exec_blocked();
 void *transicion_blocked_ready();
 void eliminar_proceso(t_pcb *proceso);
 t_pcb *buscarProceso(uint32_t pid);
+void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
 // FUNCIONES DE ENTRADA/SALIDA
 
 char *obtener_interfaz(enum_interfaz interfaz);

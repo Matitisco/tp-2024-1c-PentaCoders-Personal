@@ -19,7 +19,6 @@ t_bit_map *array_bitmap;
 int main(int argc, char *argv[])
 {
     logger = iniciar_logger("memoria.log", "MEMORIA");
-    log_info(logger, "JOLA");
     valores_config = configuracion_memoria();
 
     lista_global_marcos = list_create(); // esta seria la tabla de marcos. Todos los marcos componen a la memoria
@@ -452,33 +451,42 @@ void finalizar_proceso(int kernel, tipo_buffer *buffer)
 {
     buffer = recibir_buffer(kernel);
     uint32_t pid = leer_buffer_enteroUint32(buffer);
-    obtener_y_eliminar_cde(pid);
-    enviar_cod_enum(kernel, FINALIZAR_PROCESO);
+    t_registros *registros = leer_buffer_registros(buffer);
+    obtener_y_eliminar_cde(pid, registros);
     eliminar_tabla_paginas(pid);
+    enviar_cod_enum(kernel, FINALIZAR_PROCESO);
 }
 
-void obtener_y_eliminar_cde(int pid)
+void obtener_y_eliminar_cde(int pid, t_registros *reg)
 {
     t_cde *cde = obtener_contexto_en_ejecucion(pid, lista_contextos);
+    cde->registros = reg;
     eliminar_cde(cde);
 }
 
 void eliminar_cde(t_cde *cde)
 {
-    list_clean_and_destroy_elements(cde->lista_instrucciones, destroy_instruccion);
-    free(cde->path);
-    liberar_registros(cde->registros);
-}
-
-void *destroy_instruccion(void *element)
-{
-    char *instruccion = (char *)element;
-    free(instruccion);
+    // VOLVER PARA LA ENTREGA FINAL
+    /*     int instrucciones = list_size(cde->lista_instrucciones);
+        for (int i = 0; i < instrucciones; i++)
+        {
+            t_instruccion *instruccion = list_get(cde->lista_instrucciones, i);
+            int tamanio_lista = list_size(instruccion->parametros);
+            for (int i = 0; i < tamanio_lista; i++)
+            {
+                char *par = list_get(instruccion->parametros, i);
+                log_info(logger, "PARAMETRO A LIBERAR: %s", par);
+                free(par);
+            }
+            list_destroy(instruccion->parametros);
+        }
+        free(cde->path);
+        liberar_registros(cde->registros); */
 }
 
 void liberar_registros(t_registros *registros)
 {
- /*    free(registros->AX);
+    free(registros->AX);
     free(registros->BX);
     free(registros->CX);
     free(registros->DI);
@@ -487,7 +495,7 @@ void liberar_registros(t_registros *registros)
     free(registros->EBX);
     free(registros->ECX);
     free(registros->EDX);
-    free(registros->SI); */
+    free(registros->SI);
 }
 
 config_memoria *configuracion_memoria()

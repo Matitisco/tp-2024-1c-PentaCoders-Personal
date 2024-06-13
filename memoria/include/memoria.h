@@ -83,7 +83,7 @@ _Bool estaElContextoConCiertoPID(t_cde *contexto);
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde *armarCde(tipo_buffer *buffer);
 
-void obtener_y_eliminar_cde(int pid);
+void obtener_y_eliminar_cde(int pid, t_registros *reg);
 void eliminar_cde(t_cde *cde);
 void liberar_registros(t_registros *registros);
 void finalizar_proceso(int kernel, tipo_buffer *buffer);

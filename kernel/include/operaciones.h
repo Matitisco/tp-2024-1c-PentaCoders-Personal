@@ -5,23 +5,17 @@
 #include "kernel.h"
 #include "../include/cortoPlazo.h"
 
-/* typedef enum motivoFinalizar
-{
-    SUCCESS,
-    INVALID_RESOURCE,
-    INVALID_WRITE
-}; */
-// extern uint32_t PID_GLOBAL;
-
 void ejecutar_script(char *PATH);
 void iniciar_proceso(char *PATH);
-void finalizar_proceso(uint32_t PID);
+void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
+char *mostrar_motivo(motivoFinalizar motivo);
 void iniciar_planificacion();
 void detener_planificacion();
 void grado_multiprogramacion(int valor);
 void proceso_estado();
 void renaudar_corto_plazo();
 void renaudar_largo_plazo();
+int cant_recursos_SO(t_recurso **recursos);
 void pausar_corto_plazo();
 void pausar_largo_plazo();
 void modificar_grado_multiprogramacion(int valor);
@@ -43,6 +37,6 @@ void liberar_cde(t_pcb *proceso);
 void liberar_recursos(t_pcb *proceso);
 void liberar_archivos(t_pcb *proceso);
 
-void* destroy_archivos(void* element);
+void *destroy_archivos(void *element);
 
 #endif

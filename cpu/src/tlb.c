@@ -20,7 +20,7 @@ void tlb_crear(char *algoritmo, int cant_entradas)
 {
     tlb = malloc(sizeof(tlb_tabla));
 
-    tlb->algoritmo = *algoritmo;
+    tlb->algoritmo = algoritmo;
     tlb->entradas = malloc(sizeof(tlb_entrada) * cant_entradas);
     tlb->cant_entradas = cant_entradas;
 
@@ -40,11 +40,11 @@ int tlb_consultar_info_pagina(int pagina_buscada)
 
     for (int i = 0; i < tlb->cant_entradas; i++)
     {
-        int pagina_tlb = tlb->entradas[i].pagina;
+        int pagina_tlb = *tlb->entradas[i].pagina;
 
-        if (pagina_buscada = pagina_tlb)
+        if (pagina_buscada == pagina_tlb)
         {
-            return tlb->entradas[i].marco; // TLB HIT
+            return *tlb->entradas[i].marco; // TLB HIT
         }
     }
 
@@ -83,12 +83,12 @@ void tlb_agregar_entrada(int pid, int pagina, int marco)
 
 void tlb_reemplazar(tlb_entrada *entrada)
 {
-    if (tlb->algoritmo == "FIFO")
+    if (strcmp(tlb->algoritmo, "FIFO") == 0)
     {
         log_info(logger, "TLB - REEMPLAZO POR FIFO");
         tlb_reemplazo_fifo(entrada);
     }
-    else if (tlb->algoritmo == "LRU")
+    else if (strcmp(tlb->algoritmo, "LRU") == 0)
     {
         log_info(logger, "TLB - REEMPLAZO POR LRU");
         tlb_reemplazo_lru(entrada);
@@ -157,9 +157,9 @@ int obtener_tiempo_en_miliSegundos(char *tiempo)
 tlb_entrada *entrada_crear(int pid, int pagina, int marco)
 {
     tlb_entrada *entrada_nueva = malloc(sizeof(tlb_entrada));
-    entrada_nueva->pid = pid;
-    entrada_nueva->pagina = pagina;
-    entrada_nueva->marco = marco;
+    entrada_nueva->pid = &pid;
+    entrada_nueva->pagina = &pagina;
+    entrada_nueva->marco = &marco;
     entrada_nueva->ultima_referencia = temporal_get_string_time("%H:%M:%S:%MS");
     return entrada_nueva;
 }
@@ -175,7 +175,7 @@ entrada_tipo entrada_obtener(int pid, int pagina, int marco)
             tipo.estaba_cargada = 0;
             return tipo; // retornamos la posicion que esta libre
         }
-        else if (tlb->entradas[i].pid == pid && tlb->entradas[i].pagina == pagina && tlb->entradas[i].marco == marco) // consultiamos si hay una pagina que esta cargada
+        else if (*tlb->entradas[i].pid == pid && *tlb->entradas[i].pagina == pagina && *tlb->entradas[i].marco == marco) // consultiamos si hay una pagina que esta cargada
         {
             log_info(logger, "PID: <%d> - PAGINA: <%d> - MARCO: <%d> - ESTABA CARGADA EN TLB", pid, pagina, marco);
             tlb->entradas[i].ultima_referencia = temporal_get_string_time("%H:%M:%S:%MS"); // actualizamos la entrada con la hora actual

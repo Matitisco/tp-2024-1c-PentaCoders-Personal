@@ -2,8 +2,6 @@
 
 uint32_t PID_GLOBAL = 0;
 op_code estado_planificacion = PLANIFICACION_PAUSADA;
-// int socket_memoria;
-// sem_t * sem_kernel;
 
 void ejecutar_script(char *PATH)
 {
@@ -28,7 +26,7 @@ void ejecutar_script(char *PATH)
         }
         if (strcmp(lineas_script[0], "FINALIZAR_PROCESO") == 0)
         {
-            finalizar_proceso(atoi(lineas_script[1]));
+            finalizar_proceso(atoi(lineas_script[1]), INTERRUPTED_BY_USER);
         }
         if (strcmp(lineas_script[0], "DETENER_PLANIFICACION") == 0)
         {
@@ -86,39 +84,64 @@ void iniciar_proceso(char *PATH)
 // pidiendo que desaloje el proceso de la cpu y retorne el cde
 // al eliminar se habilita +1 grado multiprogramacion
 
-void finalizar_proceso(uint32_t PID)
+void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
 {
-    t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado);
-
-    if (proceso == NULL) // NEW, READY, BLOCKED
+    if (motivo == SUCCESS)
     {
-        proceso = buscarProceso(PID);
-    }
-    else // EXEC
-    {
-        enviar_cod_enum(socket_cpu_interrupt, SOLICITUD_EXIT);
-    }
+        enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO); // termine el proceso de la cpu
 
-    enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
-
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, PID);
-    agregar_buffer_para_registros(buffer, proceso->cde->registros);
-    enviar_buffer(buffer, socket_memoria);
-    destruir_buffer(buffer);
-
-    agregar_a_estado(proceso, cola_exit_global);
-
-    op_code codigo = recibir_operacion(socket_memoria);
-    if (codigo == FINALIZAR_PROCESO)
-    {
-        eliminar_proceso(proceso);
-
-        log_info(logger, "Finaliza el proceso %d - Motivo:", proceso->cde->pid);
+        tipo_buffer *buffer = crear_buffer();
+        agregar_buffer_para_enterosUint32(buffer, PID);
+        agregar_buffer_para_registros(buffer, cde_interrumpido->registros);
+        enviar_buffer(buffer, socket_memoria);
+        destruir_buffer(buffer);
+        op_code codigo = recibir_operacion(socket_memoria);
+        t_pcb *proceso;
+        if (codigo == FINALIZAR_PROCESO)
+        {
+            proceso = buscarProceso(PID);
+            eliminar_proceso(proceso);
+            log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
+        }
+        else
+        {
+            log_error(logger, "PID <%d> - ERROR Finalizar", proceso->cde->pid);
+        }
     }
     else
     {
-        log_info(logger, "ERROR Finalizar proceso %d ", proceso->cde->pid);
+        t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado);
+
+        if (proceso == NULL) // NEW, READY, BLOCKED
+        {
+            proceso = buscarProceso(PID);
+        }
+        else // EXEC
+        {
+            enviar_cod_enum(socket_cpu_interrupt, SOLICITUD_EXIT);
+        }
+
+        enviar_cod_enum(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
+
+        tipo_buffer *buffer = crear_buffer();
+        agregar_buffer_para_enterosUint32(buffer, PID);
+        agregar_buffer_para_registros(buffer, proceso->cde->registros);
+        enviar_buffer(buffer, socket_memoria);
+        destruir_buffer(buffer);
+
+        agregar_a_estado(proceso, cola_exit_global);
+
+        op_code codigo = recibir_operacion(socket_memoria);
+        if (codigo == FINALIZAR_PROCESO)
+        {
+            eliminar_proceso(proceso);
+
+            log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
+        }
+        else
+        {
+            log_error(logger, "PID <%d> - ERROR Finalizar", proceso->cde->pid);
+        }
     }
 }
 
@@ -129,7 +152,6 @@ void eliminar_proceso(t_pcb *proceso)
     proceso->estado = EXIT;
 }
 
-// INICIAR PLANIFICACION
 void iniciar_planificacion()
 {
     habilitar_planificadores = 1;
@@ -137,6 +159,7 @@ void iniciar_planificacion()
     sem_post(b_reanudar_corto_plazo);
     estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
 }
+
 // DETENER PLANIFICACION
 void detener_planificacion()
 {
@@ -146,12 +169,11 @@ void detener_planificacion()
     estado_planificacion = PLANIFICACION_PAUSADA;
 }
 
-// MODIFICAR GRADO DE MULTIPROGRAMACION
 void grado_multiprogramacion(int valor)
 {
     modificar_grado_multiprogramacion(valor);
 }
-// LISTAR PROCESOS POR ESTADO
+
 void proceso_estado()
 {
     mostrar_procesos(cola_new_global);
@@ -164,14 +186,12 @@ void proceso_estado()
 t_pcb *buscarProceso(uint32_t pid)
 {
     t_pcb *pcb_buscada = NULL;
-    colaEstado *colas[] = {cola_new_global, cola_ready_global, cola_bloqueado_global, cola_exec_global, cola_exit_global}; // Hace vector de colas
+    colaEstado *colas[] = {cola_new_global, cola_ready_global, cola_bloqueado_global, cola_exec_global, cola_exit_global};
 
-    for (int i = 0; i < 4; i++) // va fijandose si en cada posicion del vector esta ese pid
+    for (int i = 0; i < 4; i++)
     {
-
-        if ((pcb_buscada = buscarPCBEnColaPorPid(pid, colas[i]->estado, colas[i]->nombreEstado)) != NULL) // busqueda
+        if ((pcb_buscada = buscarPCBEnColaPorPid(pid, colas[i]->estado, colas[i]->nombreEstado)) != NULL)
         {
-            // pcb_buscada = buscarPCBEnColaPorPid(pid, colas[i]->estado, colas[i]->nombreEstado);
             return pcb_buscada;
             break;
         }
@@ -184,22 +204,30 @@ t_pcb *buscarProceso(uint32_t pid)
     return pcb_buscada;
 }
 
-// FUNCION MOSTRAR MOTIVO
-/* char *mostrarMotivo(enum motivoFinalizar motivo)
+char *mostrar_motivo(motivoFinalizar motivo)
 {
-    if (motivo == SUCCESS)
+    if (motivo == SUCCESS) // FUNCION EXIT DE CPU
     {
         return "SUCCESS";
     }
-    else if (motivo == INVALID_RESOURCE)
+    else if (motivo == INVALID_RESOURCE) // SE PIDIO UN RECURSO INVALIDO
     {
         return "INVALID_RESOURCE";
     }
-    else if (motivo == INVALID_WRITE)
+    else if (motivo == INVALID_INTERFACE) // NO SE PUDO CONECTAR A UNA INTERFAZ
     {
         return "INVALID_WRITE";
     }
-} */
+    else if (motivo == OUT_OF_MEMORY_END) // OUT OF MEMORY DE MEMORIA
+    {
+        return "OUT_OF_MEMORY";
+    }
+    else if (motivo == INTERRUPTED_BY_USER) // DESDE CONSOLA
+    {
+        return "INTERRUPTED_BY_USER";
+    }
+    return NULL;
+}
 
 void liberar_recursos(t_pcb *proceso)
 {
@@ -246,7 +274,6 @@ int cant_recursos_SO(t_recurso **recursos)
     }
     return i;
 }
-// t_recurso **recursos;
 
 /* void liberar_archivos(t_pcb *proceso) ESTO ES PARA EL FILE SYSTEM DEBEMOS HACELRO A MANO LA ELIMINACION
 {
@@ -276,14 +303,14 @@ void modificar_grado_multiprogramacion(int valor)
 
 void mostrar_procesos(colaEstado *cola)
 {
-    log_info(logger, "Hay en total %d procesos en la cola %s", queue_size(cola->estado), cola->nombreEstado);
+    log_info(logger, "PROCESOS: <%d> - COLA: <%s>", queue_size(cola->estado), cola->nombreEstado);
 
     t_queue *cola_aux = queue_create();
 
     while (!queue_is_empty(cola->estado))
     {
         t_pcb *pcb = queue_pop(cola->estado);
-        log_info(logger, "Proceso PID: %d", pcb->cde->pid);
+        log_info(logger, "PID: <%d>", pcb->cde->pid);
 
         queue_push(cola_aux, pcb);
     }
@@ -298,14 +325,13 @@ void mostrar_procesos(colaEstado *cola)
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
 
-    printf("\033[1;32m \n Buscando el proceso %d en la cola %s \n \033[0m", pid_buscado, nombreCola); //
+    log_info(logger, "\033[1;32m \n Buscando el proceso <%d> en la cola %s \n \033[0m", pid_buscado, nombreCola); //
 
     t_pcb *pcb_buscada;
 
     // Verificar si la lista está vacía
     if (queue_is_empty(cola))
     {
-        printf("El estado %s está vacío.\n", nombreCola);
         return NULL;
     }
 
@@ -341,16 +367,16 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
     {
         if (pcb_buscada->cde != NULL)
         {
-            printf("Se encontró el proceso PID: %i en %s \n", pcb_buscada->cde->pid, nombreCola);
+            log_info(logger, "PID: <%d> Encontrado - Cola: <%s> \n", pcb_buscada->cde->pid, nombreCola);
         }
         else
         {
-            printf("El PCB encontrado no tiene un puntero válido a cde.\n");
+            log_info(logger, "El PCB encontrado no tiene un puntero válido a cde");
         }
     }
     else
     {
-        printf("No se encontró el proceso en %s.\n", nombreCola);
+        log_info(logger, "PID: <%d> No Encontrado - Cola: <%s>", pcb_buscada->cde->pid, nombreCola);
     }
 
     return pcb_buscada;

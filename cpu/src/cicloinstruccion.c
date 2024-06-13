@@ -371,11 +371,10 @@ void exec_exit(t_cde *cde)
 {
     salida_exit = 0;
     enviar_cod_enum(socket_kernel_dispatch, FINALIZAR_PROCESO);
-
     tipo_buffer *buffer = crear_buffer();
-
     agregar_cde_buffer(buffer, cde);
     enviar_buffer(buffer, socket_kernel_dispatch);
+    destruir_buffer(buffer);
 }
 
 // FUNCIONES AUXILIARES

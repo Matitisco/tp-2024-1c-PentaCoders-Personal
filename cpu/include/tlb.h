@@ -6,9 +6,9 @@
 // ESTRUCTURAS
 typedef struct
 {
-    int pid;
-    int pagina;
-    int marco;
+    int *pid;
+    int *pagina;
+    int *marco;
     char *ultima_referencia;
 
 } tlb_entrada;

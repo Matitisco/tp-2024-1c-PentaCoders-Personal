@@ -1,7 +1,7 @@
 #include "../include/cpu.h"
 
+// VARIABLES GLOBALES
 config_cpu *valores_config_cpu;
-
 int interrupcion_rr;
 int interrrupcion_fifo;
 int interrupcion_entrada_salida;
@@ -18,21 +18,29 @@ pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
 pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
 tipo_buffer *buffer_instruccion_io;
-t_args *args_memoria;
-t_args *kernel_ds;
-t_args *kernel_int;
 pthread_mutex_t *mutex_cde_ejecutando;
 sem_t *sem_check_interrupt;
 t_cde *cde_recibido;
 
 int main(int argc, char *argv[])
 {
+	iniciar_modulo_cpu();
+
+	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
+	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
+	pthread_join(hilo_CPU_CLIENTE, NULL);
+
+	// terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
+}
+
+void iniciar_modulo_cpu()
+{
 	logger = iniciar_logger("cpu.log", "CPU");
 	valores_config_cpu = configurar_cpu();
 
 	tlb_iniciar(valores_config_cpu->algoritmo_tlb, valores_config_cpu->cantidad_entradas_tlb);
 
-	iniciar_registros();
+	iniciar_registros_sistema();
 
 	interrupcion_rr = 0;
 	interrrupcion_fifo = 0;
@@ -40,12 +48,6 @@ int main(int argc, char *argv[])
 
 	crear_hilos_CPU();
 	iniciar_semaforos_CPU();
-
-	// pthread_join(hilo_CPU_CLIENTE, NULL);
-	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
-	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
-
-	// terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
 }
 
 void iniciar_semaforos_CPU()
@@ -58,12 +60,12 @@ void iniciar_semaforos_CPU()
 
 void crear_hilos_CPU()
 {
-	pthread_create(&hilo_CPU_CLIENTE, NULL, conexionAMemoria, NULL);
-	pthread_create(&hilo_CPU_SERVIDOR_DISPATCH, NULL, levantar_Kernel_Dispatch, NULL);
-	pthread_create(&hilo_CPU_SERVIDOR_INTERRUPT, NULL, levantar_Kernel_Interrupt, NULL);
+	pthread_create(&hilo_CPU_CLIENTE, NULL, (void *(*)(void *))levantar_conexion_a_memoria, NULL);
+	pthread_create(&hilo_CPU_SERVIDOR_DISPATCH, NULL, levantar_kernel_dispatch, NULL);
+	pthread_create(&hilo_CPU_SERVIDOR_INTERRUPT, NULL, levantar_kernel_interrupt, NULL);
 }
 
-void iniciar_registros()
+void iniciar_registros_sistema()
 {
 	registros = malloc(sizeof(t_registros));
 	registros->AX = 0;
@@ -78,13 +80,20 @@ void iniciar_registros()
 	registros->SI = 0;
 }
 
-void *levantar_Kernel_Dispatch()
+void *levantar_kernel_dispatch()
 {
 	int server_fd = iniciar_servidor(logger, "CPU Dispatch", valores_config_cpu->ip, valores_config_cpu->puerto_escucha_dispatch);
 	socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
 		op_code codigo = recibir_operacion(socket_kernel_dispatch);
+
+		if (codigo == -1)
+		{
+			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
+			return (void *)EXIT_FAILURE;
+		}
+
 		switch (codigo)
 		{
 		case EJECUTAR_PROCESO:
@@ -105,9 +114,6 @@ void *levantar_Kernel_Dispatch()
 
 			destruir_buffer(buffer_cde);
 			break;
-		case -1:
-			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
-			return (void *)EXIT_FAILURE;
 		default:
 			log_warning(logger, "Operacion desconocida. No quieras meter la pata");
 			break;
@@ -115,7 +121,7 @@ void *levantar_Kernel_Dispatch()
 	}
 }
 
-void *levantar_Kernel_Interrupt()
+void *levantar_kernel_interrupt()
 {
 	int server_fd = iniciar_servidor(logger, "CPU Interrupt", valores_config_cpu->ip, valores_config_cpu->puerto_escucha_interrupt);
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
@@ -125,6 +131,13 @@ void *levantar_Kernel_Interrupt()
 		{
 			op_code codigo = recibir_operacion(socket_kernel_interrupt);
 			log_info(logger, "Me llego una interrupcion");
+
+			if (codigo == -1)
+			{
+				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
+				return (void *)EXIT_FAILURE;
+			}
+
 			switch (codigo)
 			{
 			case PROCESO_INTERRUMPIDO_QUANTUM:
@@ -139,9 +152,6 @@ void *levantar_Kernel_Interrupt()
 
 				// guardamos en una lista las interrupciones que luego va a ser leida por check_interrupt aplicar semaforos mutex
 				break;
-			case -1:
-				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-				return (void *)EXIT_FAILURE;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
 				log_error(logger, "Finalizando modulo.");
@@ -152,17 +162,16 @@ void *levantar_Kernel_Interrupt()
 	}
 }
 
-void *conexionAMemoria()
+void levantar_conexion_a_memoria()
 {
 	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, valores_config_cpu->puerto_memoria);
 	recibir_tamanio_pagina(socket_memoria);
-	return;
 }
 
 void recibir_tamanio_pagina(int socket_memoria)
 {
 	tipo_buffer *buffer_tamanio = recibir_buffer(socket_memoria);
-	tamanio_pagina = leer_buffer_enteroUint32(buffer_tamanio); // La hacemos global para que la use MMU
+	tamanio_pagina = leer_buffer_enteroUint32(buffer_tamanio); // lo tiene que usar la mmu en teoria
 	log_info(logger, "MEMORIA - TAMANIO PAGINA: <%d> ", tamanio_pagina);
 	destruir_buffer(buffer_tamanio);
 }
@@ -191,7 +200,7 @@ char *fetch(t_cde *contexto)
 	}
 	else
 	{
-		log_error(logger, "No entiendo la operacion enviada por la memoria");
+		log_error(logger, "CPU: <ENVIO_INSTRUCCION_INCORRECTO>");
 		return NULL;
 	}
 }
@@ -327,6 +336,20 @@ void check_interrupt()
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
 		enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
+	}
+	else if (desalojo_signal)
+	{
+		salida_exit = 0;
+		desalojo_signal = 0;
+		// agregar_cde_buffer(buffer_cde, cde_recibido);
+		// enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
+	}
+	else if (desalojo_wait)
+	{
+		salida_exit = 0;
+		desalojo_wait = 0;
+		// agregar_cde_buffer(buffer_cde, cde_recibido);
+		// enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
 	}
 	else
 	{

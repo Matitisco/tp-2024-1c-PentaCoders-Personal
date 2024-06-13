@@ -18,6 +18,15 @@
 #include <assert.h>
 #include "registros.h"
 #include "sockets.h"
+
+typedef enum
+{
+	SUCCESS,
+	INVALID_RESOURCE,
+	INVALID_INTERFACE,
+	OUT_OF_MEMORY_END,
+	INTERRUPTED_BY_USER
+} motivoFinalizar;
 typedef enum
 {
 	SOLICITUD_INICIAR_PROCESO,
