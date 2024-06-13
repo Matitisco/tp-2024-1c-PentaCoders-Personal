@@ -85,7 +85,8 @@ typedef enum
 	OK,
 	SIGNAL_RECURSO,
 	WAIT_RECURSO,
-	DIRECCION_CORRECTA
+	DIRECCION_CORRECTA,
+	RESIZE_EXITOSO
 } op_code;
 typedef enum
 {

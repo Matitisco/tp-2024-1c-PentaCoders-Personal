@@ -233,18 +233,27 @@ void exec_resize(char *tamanio, t_cde *cde)
 {
     enviar_cod_enum(socket_memoria, RESIZE_EXTEND);
     uint32_t tamanioValor = atoi(tamanio);
+    log_info(logger, "TAMANIO RESIZE: %d", tamanioValor);
     tipo_buffer *buffer = crear_buffer();
+
     agregar_buffer_para_enterosUint32(buffer, tamanioValor);
     agregar_cde_buffer(buffer, cde);
+
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
     op_code resize_memoria = recibir_operacion(socket_memoria);
     if (resize_memoria == OUT_OF_MEMORY)
     {
+        salida_exit = 0;
         enviar_cod_enum(socket_kernel_dispatch, OUT_OF_MEMORY);
         tipo_buffer *buffer_out_memory = crear_buffer();
         agregar_cde_buffer(buffer_out_memory, cde);
         enviar_buffer(buffer, socket_kernel_dispatch);
+        destruir_buffer(buffer_out_memory);
+    }
+    else if (resize_memoria == RESIZE_EXITOSO)
+    {
+        return;
     }
 }
 

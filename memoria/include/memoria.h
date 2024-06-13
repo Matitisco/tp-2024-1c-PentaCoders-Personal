@@ -13,7 +13,6 @@
 #include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
 
-
 extern t_log *logger;
 int socket_cpu;
 int cliente_fd;
@@ -38,9 +37,9 @@ typedef struct
 void *espacio_usuario;
 typedef struct
 {
-	int marco;			// numeor de marco donde esta la pagina
-	int bit_validez;	// si esta en memoria
-	int pid;			// la pagina conoce al proceso del cual es parte ?
+	int marco;		 // numeor de marco donde esta la pagina
+	int bit_validez; // si esta en memoria
+	int pid;		 // la pagina conoce al proceso del cual es parte ?
 } t_pagina;
 
 /*Paginacion */
@@ -59,7 +58,7 @@ int *agarro_marco_que_este_libre();
 typedef struct
 {
 	int numero_marco; // numero de marco
-	int bit_ocupado;	  // esta libre o no el marco
+	int bit_ocupado;  // esta libre o no el marco
 } t_bit_map;
 
 t_args *crearArgumento(char *puerto, char *ip);
@@ -90,17 +89,17 @@ void finalizar_proceso(int kernel, tipo_buffer *buffer);
 
 void *destroy_instruccion(void *element);
 
-//espacio de usuario
+// espacio de usuario
 void *leer_memoria(uint32_t direccion_fisica, uint32_t pid);
 void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_escribir);
 void *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario(int cliente_solicitante);
 
-//resize
-void reducir_proceso(uint32_t pid, uint32_t tamanio);
-void ampliar_proceso(uint32_t pid, uint32_t tamanio);
+// resize
+void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
+void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
 
-//auxx de paginas
+// auxx de paginas
 int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina);
 void enviar_tamanio_pagina(int cpu);
 void liberar_marco(int nroMarco);
