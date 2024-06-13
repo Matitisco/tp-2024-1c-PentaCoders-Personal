@@ -317,14 +317,14 @@ void *levantar_CPU_Dispatch()
 		{
 		case FINALIZAR_PROCESO:
 
-			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
-			cde_interrumpido = leer_cde(buffer_cpu);
+			tipo_buffer *buffer_cpu_fin = recibir_buffer(socket_cpu_dispatch);
+			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			finalizar_proceso(cde_interrumpido->pid, SUCCESS);
 
 			sem_post(b_largo_plazo_exit);
 			sem_post(b_reanudar_largo_plazo);
 			sem_post(b_reanudar_corto_plazo);
-
+			destruir_buffer(buffer_cpu_fin);
 			break;
 
 		case FIN_DE_QUANTUM:
@@ -337,15 +337,18 @@ void *levantar_CPU_Dispatch()
 			// sem_post(b_reanudar_corto_plazo);
 			break;
 
-		case INSTRUCCION_INTERFAZ: // recibimos de cpu ciclo de instruccion // ESTO YA ANDA
+		case INSTRUCCION_INTERFAZ:
 
-			tipo_buffer *buffer_cde = recibir_buffer(socket_cpu_dispatch); // recibimos CDE
-			buffer_cpu = recibir_buffer(socket_cpu_dispatch);			   // recibimos datos de la instruccion
+			tipo_buffer *buffer_cde = recibir_buffer(socket_cpu_dispatch);
+			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cde);
-			sem_post(b_transicion_exec_blocked); // bloqueamos el proceso interrumpido
+
+			sem_post(b_transicion_exec_blocked);
 			sem_post(b_reanudar_largo_plazo);
+
 			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_cpu);
 			break;
+
 		case WAIT_RECURSO: // asignamos un recurso a un proceso
 
 			// recibir_recurso(); // Para usarlo en wait y signal LUEGO VEMOS SI ANDA WAIT
@@ -353,7 +356,6 @@ void *levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_cpu);
 
 			recurso_recibido = leer_buffer_string(buffer_cpu);
-			log_info(logger, "RECURSO RECIBIDO ENVIADO POR CPU : %s", recurso_recibido);
 			destruir_buffer(buffer_cpu);
 
 			sem_post(b_transicion_exec_blocked);
@@ -443,7 +445,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	{
 	case SOLICITUD_INTERFAZ_GENERICA:
 
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_GEN_SLEEP
 		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 
@@ -455,19 +457,19 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		}
 		else
 		{
+			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada_generica(unidades_trabajo, instruccion_a_ejecutar, informacion_interfaz->cliente_io, pid);
 			destruir_buffer(buffer_con_instruccion);
 		}
-
 		break;
+
 	case SOLICITUD_INTERFAZ_STDIN:
+
 		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDIN_READ
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 
-		// falta que reciba mas cosas
-
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
 
 		if (informacion_interfaz == NULL)
@@ -476,14 +478,15 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		}
 		else
 		{
-			interfaz_conectada_stdin(pid);
+			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+			interfaz_conectada_stdin(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
 			destruir_buffer(buffer_con_instruccion);
 		}
-
 		break;
+
 	case SOLICITUD_INTERFAZ_STDOUT:
+
 		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDOUT_WRITE
-		// falta que reciba mas cosas
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
@@ -496,14 +499,17 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		}
 		else
 		{
-			interfaz_conectada_stdout(pid);
+			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+			interfaz_conectada_stdout(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
 			destruir_buffer(buffer_con_instruccion);
 		}
 		break;
+
 	case SOLICITUD_INTERFAZ_DIALFS:
 		break;
+
 	default:
-		log_error(logger, "No comprendo la solicitud enviada");
+		log_error(logger, "ERROR - Solicitud Interfaz Enviada Por CPU");
 		break;
 	}
 }
@@ -519,7 +525,6 @@ void interfaz_no_conectada(int pid)
 
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, int socket_io, int pid)
 {
-	log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 	enviar_cod_enum(socket_io, CONSULTAR_DISPONIBILDAD);
 
 	op_code operacion_io = recibir_operacion(socket_io);
@@ -535,24 +540,19 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 		if (operacion_io == CONCLUI_OPERACION)
 		{
 			sem_post(b_transicion_blocked_ready);
+			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
 			sem_post(b_reanudar_largo_plazo);
 			sem_post(b_reanudar_corto_plazo);
 		}
 	}
 	else
 	{
-		operacion_io = recibir_operacion(socket_io);
-		if (operacion_io == CONCLUI_OPERACION)
-		{
-			interfaz_conectada_generica(unidades_trabajo, instruccion_a_ejecutar, socket_io, pid);
-		}
+		// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
 	}
 }
 
-void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int socket_io, int pid) // IMPLMEEMNTAR
+void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid)
 {
-	log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-
 	enviar_cod_enum(socket_io, CONSULTAR_DISPONIBILDAD);
 
 	op_code operacion_io = recibir_operacion(socket_io);
@@ -560,28 +560,55 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int so
 
 	if (operacion_io == ESTOY_LIBRE)
 	{
-		/* agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_reg);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
 		enviar_buffer(buffer_interfaz, socket_io);
-		operacion_io = recibir_operacion(socket_io); */
+		operacion_io = recibir_operacion(socket_io);
+
 		if (operacion_io == CONCLUI_OPERACION)
 		{
 			sem_post(b_transicion_blocked_ready);
+			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+			sem_post(b_reanudar_largo_plazo);
+			sem_post(b_reanudar_corto_plazo);
 		}
 	}
 	else
 	{
-		operacion_io = recibir_operacion(socket_io);
-		if (operacion_io == CONCLUI_OPERACION)
-		{
-			interfaz_conectada_stdin(instruccion_a_ejecutar, socket_io, pid);
-		}
+		// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
 	}
 }
 
-void interfaz_conectada_stdout(int pid) // IMPLEMENTAR
+void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid)
 {
+	enviar_cod_enum(socket_io, CONSULTAR_DISPONIBILDAD);
+
+	op_code operacion_io = recibir_operacion(socket_io);
+	tipo_buffer *buffer_interfaz = crear_buffer();
+
+	if (operacion_io == ESTOY_LIBRE)
+	{
+		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_reg);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
+		enviar_buffer(buffer_interfaz, socket_io);
+		operacion_io = recibir_operacion(socket_io);
+
+		if (operacion_io == CONCLUI_OPERACION)
+		{
+			sem_post(b_transicion_blocked_ready);
+			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+			sem_post(b_reanudar_largo_plazo);
+			sem_post(b_reanudar_corto_plazo);
+		}
+	}
+	else
+	{
+		// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
+	}
 }
 
 int existe_recurso(int *posicion)

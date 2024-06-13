@@ -105,7 +105,7 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
         }
         else
         {
-            log_error(logger, "PID <%d> - ERROR Finalizar", proceso->cde->pid);
+            log_error(logger, "PID <%d> - ERROR Finalizar", PID);
         }
     }
     else
@@ -140,7 +140,7 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
         }
         else
         {
-            log_error(logger, "PID <%d> - ERROR Finalizar", proceso->cde->pid);
+            log_error(logger, "PID <%d> - ERROR Finalizar", PID);
         }
     }
 }
