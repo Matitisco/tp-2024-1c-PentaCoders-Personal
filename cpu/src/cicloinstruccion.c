@@ -336,10 +336,6 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
     agregar_buffer_para_string(buffer_instruccion_io, interfaz);
-
-    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
-
-    destruir_buffer(buffer_instruccion_io);
 }
 
 void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
@@ -358,10 +354,6 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
     agregar_buffer_para_string(buffer_instruccion_io, interfaz);
-
-    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
-
-    destruir_buffer(buffer_instruccion_io);
 }
 
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)

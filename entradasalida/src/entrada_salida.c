@@ -294,19 +294,22 @@ void realizar_operacion_stdin()
 	if (sol_operacion == IO_STDIN_READ)
 	{
 		char *texto_ingresado = readline("Ingrese un texto por teclado: ");
-		strncpy(texto_ingresado, texto_ingresado, limitante_cadena); // obtuve la cadena "limitada" //
 
 		tipo_buffer *buffer_a_memoria = crear_buffer();
 
-		agregar_buffer_para_enterosUint32(buffer_a_memoria, PEDIDO_ESCRITURA);
 		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, pid);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
 		agregar_buffer_para_string(buffer_a_memoria, texto_ingresado);
 
 		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
+		enviar_cod_enum(conexion_memoria, PEDIDO_ESCRITURA);
+		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
 		enviar_buffer(buffer_a_memoria, conexion_memoria);
+
 		destruir_buffer(buffer_a_memoria);
 
-		op_code codigo_memoria = recibir_operacion(socket_memoria);
+		op_code codigo_memoria = recibir_operacion(conexion_memoria);
 		if (codigo_memoria == OK)
 		{
 			log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
@@ -389,12 +392,15 @@ void realizar_operacion_stdout()
 	{
 		tipo_buffer *buffer_a_memoria = crear_buffer();
 
-		agregar_buffer_para_enterosUint32(buffer_a_memoria, PEDIDO_LECTURA);
 		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, pid);
 		agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
 
 		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
+		enviar_cod_enum(conexion_memoria, PEDIDO_LECTURA);
+		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
 		enviar_buffer(buffer_a_memoria, conexion_memoria);
+
 		destruir_buffer(buffer_a_memoria);
 
 		op_code codigo_memoria = recibir_operacion(socket_memoria);
@@ -452,7 +458,7 @@ void realizar_operacion_dialfs() // IMPLEMENTAR
 		break;
 	case IO_FS_WRITE:
 		log_info(logger, "PID: <%d> - Operacion: <IO_FS_WRITE>", pid);
-		log_info(logger, "PID: <%d> - EScribir Archivo: <%s> - Tamaño a EScribir: <%s> - Puntero Archivo: <%s>", pid, "NOMBRE ARCHIVO", "TAMAÑO", "PUNTERO_ARCHIVO");
+		log_info(logger, "PID: <%d> - Escribir Archivo: <%s> - Tamaño a Escribir: <%s> - Puntero Archivo: <%s>", pid, "NOMBRE ARCHIVO", "TAMAÑO", "PUNTERO_ARCHIVO");
 		break;
 	default:
 		break;

@@ -346,6 +346,7 @@ void check_interrupt()
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
 		enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
+		//destruir_buffer(buffer_instruccion_io);
 	}
 	else if (desalojo_signal)
 	{

@@ -174,8 +174,8 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
 
             uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_escritura);
             uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_escritura); // LA INTERFAZ DEBE ENVIAR EL PID
-            char *valor_a_escribir = leer_buffer_string(buffer_escritura);
             uint32_t tamanio = leer_buffer_enteroUint32(buffer_escritura);
+            char *valor_a_escribir = leer_buffer_string(buffer_escritura);
 
             int resultado = escribir_memoria(direccionFisica, pid_ejecutando, valor_a_escribir, tamanio);
 
@@ -217,12 +217,12 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
         if (solicitud == SOLICITUD_INTERFAZ_STDOUT)
         {
             tipo_buffer *buffer_lectura = recibir_buffer(cliente_solicitante);
+
             uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_lectura);
             uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
-            uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
-            void *valor_leido = leer_memoria(direccionFisica, pid_ejecutando, tamanio);
-            int limite = leer_buffer_enteroUint32(buffer_lectura); // CADE
-            char *texto_encontrado = leer_memoria_stdout(direccionFisica, pid_ejecutando, limite);
+            uint32_t limite = leer_buffer_enteroUint32(buffer_lectura);
+
+            char *texto_encontrado = leer_memoria(direccionFisica, pid_ejecutando, limite);
             if (texto_encontrado != NULL)
             {
                 enviar_cod_enum(cliente_solicitante, OK);
@@ -244,7 +244,7 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
                 enviar_cod_enum(cliente_solicitante, OK);
                 tipo_buffer *buffer = crear_buffer();
                 agregar_buffer_para_enterosUint32(buffer, valor_leido);
-                enviar_buffer(buffer,cliente_solicitante);
+                enviar_buffer(buffer, cliente_solicitante);
                 destruir_buffer(buffer);
             }
             else
