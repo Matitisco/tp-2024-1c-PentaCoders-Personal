@@ -144,4 +144,5 @@ void atender_interrupciones();
 int llego_proceso();
 char *buscar_recurso(char *recurso, int *posicion);
 
+
 #endif

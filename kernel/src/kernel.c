@@ -654,6 +654,7 @@ void wait_instancia_recurso(int i)
 			t_recurso *recurso_asignado = malloc(sizeof(t_recurso));
 			recurso_asignado->nombre = recurso_recibido;
 			recurso_asignado->instancias = malloc(sizeof(sem_t));
+			recurso_asignado->cola_bloqueados = constructorColaEstado(recurso_recibido);
 			sem_init(&(recurso_asignado->instancias), 0, 1);
 			list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
 			log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", recurso_asignado->nombre, proceso_interrumpido->cde->pid);
@@ -670,15 +671,120 @@ void wait_instancia_recurso(int i)
 		log_info(logger, "NO HAY INSTANCIAS DISPONIBLES DEL RECURSO PEDIDO");
 		log_info(logger, "TRANSICION EXEC A BLOCKED");
 		// mandar proceso a cola de bloqueados correspondiente al recurso
-		sem_post(b_transicion_exec_blocked); //!!!!!!!!!!!
+		
+
+		//agregar_a_estado(proceso_interrumpido, &recurso_buscado->cola_bloqueados);
+		sem_post(b_transicion_exec_blocked);
+		//log_info(logger, "Se bloqueo el proceso: %d por el recurso %s", proceso_interrumpido->cde->pid, recurso_recibido);
 	}
 }
 
-void bloquear_proceso_segun_recurso(){
-	proceso_interrumpido
+/*
+
+void wait_instancia_recurso(int i, char* recurso_recibido)
+{
+	int valor;
+	sem_getvalue(&(valores_config->recursos[i]->instancias), &valor);
+	if (valor > 0)//Si hay instancias, puedo restar
+	{
+		sem_wait(&(valores_config->recursos[i]->instancias)); // le doy una instancia al proceso, y le quito una a la lista de recursos que tiene el SO
+		//De aca para abajo asigna al proceso los recursos retenidos
+		
+		t_pcb *proceso = buscarProceso(cde_interrumpido->pid);
+		t_recurso *recurso_buscado = list_find(proceso->recursosAsignados, ya_tiene_instancias_del_recurso);
+		if (recurso_buscado == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
+		{
+			t_recurso *recurso_asignado = malloc(sizeof(t_recurso));
+			recurso_asignado->nombre = recurso_recibido;
+			recurso_asignado->instancias = malloc(sizeof(sem_t));
+			sem_init(recurso_asignado->instancias, 0, 0);
+			sem_post(recurso_asignado->instancias);
+			list_add(proceso->recursosAsignados, recurso_asignado);
+		}
+		else // ya tiene el recurso cargado el proceso
+		{
+			sem_post(recurso_buscado->instancias);
+		}
+	}
+	else
+	{
+		log_info(logger, "NO HAY INSTANCIAS DISPONIBLES DEL RECURSO PEDIDO");
+		log_info(logger, "TRANSICION EXEC A BLOCKED");
+		// mandar proceso a cola de bloqueados correspondiente al recurso
+		sem_post(b_transicion_exec_blocked); //!!!!!!!!!!!
+	}
 }
+*/
 
 void signal_instancia_recurso(int i)
 {
 	sem_post(&(valores_config->recursos[i]->instancias));
+	
+	//aca tengo que ver si tengo un proceso bloqueado por un recurso, si ESTE signal se esta haciendo a ESE recurso
+	//bloqueante, verifico si ya se puede desbloquear el proceso 
 }
+
+/**
+
+Manejo de Recursos
+1) 	Los recursos del sistema vendrán indicados por medio del archivo de configuración, 
+	donde se encontrarán 2 variables con la información inicial de los mismos:
+	La primera llamada RECURSOS, la cual listará los nombres de los recursos disponibles en el sistema.
+
+	La segunda llamada INSTANCIAS_RECURSOS será la cantidad de instancias de cada recurso del sistema, 
+	y estarán ordenadas de acuerdo a la lista anterior (ver ejemplo)
+
+RECURSOS=[RA,RB,RC]
+INSTANCIAS_RECURSOS=[1,2,1]
+
+2)	A la hora de recibir de la CPU un Contexto de Ejecución desalojado por WAIT, el Kernel deberá verificar
+	primero que exista el recurso solicitado y en caso de que exista restarle 1 a la cantidad de instancias 
+	del mismo. En caso de que el número sea estrictamente menor a 0, el proceso que realizó WAIT se bloqueará 
+	en la cola de bloqueados correspondiente al recurso.
+
+3)	A la hora de recibir de la CPU un Contexto de Ejecución desalojado por SIGNAL, el Kernel deberá verificar 
+	primero que exista el recurso solicitado, luego sumarle 1 a la cantidad de instancias del mismo. En caso de 
+	que corresponda, desbloquea al primer proceso de la cola de bloqueados de ese recurso. Una vez hecho esto, 
+	se devuelve la ejecución al proceso que peticiona el SIGNAL.
+	Para las operaciones de WAIT y SIGNAL donde no se cumpla que el recurso exista, se deberá enviar el proceso a EXIT.
+
+consumidor:
+WAIT RB
+WAIT RA
+WAIT RB
+WAIT RB
+WAIT RB
+EXIT
+
+WAIT (Recurso): Esta instrucción solicita al Kernel que se asigne una instancia del recurso indicado por parámetro.
+
+productor:
+SIGNAL RC
+SIGNAL RC
+EXIT
+
+SIGNAL (Recurso): Esta instrucción solicita al Kernel que se libere una instancia del recurso indicado por parámetro.
+
+
+
+Diagrama de estados
+El kernel utilizará un diagrama de 5 estados para la planificación de los procesos. Dentro del estado
+BLOCK, se tendrán múltiples colas, las cuales pueden ser correspondientes a operaciones de I/O,
+teniendo una por cada interfaz de I/O conectada y correspondientes a los recursos que administra el
+Kernel, teniendo una por cada recur
+
+
+Eliminación de Procesos
+Ante la llegada de un proceso al estado de EXIT (ya sea por solicitud de la CPU, por un error, o por
+ejecución desde la consola del Kernel), el Kernel deberá solicitar a la memoria que libere todas las
+estructuras asociadas al proceso y marque como libre todo el espacio que este ocupaba.
+En caso de que el proceso se encuentre ejecutando en CPU, se deberá enviar una señal de
+interrupción a través de la conexión de interrupt con el mismo y aguardar a que éste retorne el
+Contexto de Ejecución antes de iniciar la liberación de recursos.
+
+
+Finalizar proceso: Se encargará de finalizar un proceso que se encuentre dentro del sistema.
+Este mensaje se encargará de realizar las mismas operaciones como si el proceso llegara a
+EXIT por sus caminos habituales (deberá liberar recursos, archivos y memoria).
+
+*/

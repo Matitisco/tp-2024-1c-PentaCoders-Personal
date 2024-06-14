@@ -183,7 +183,7 @@ void proceso_estado()
     mostrar_procesos(cola_exit_global);
 }
 
-t_pcb *buscarProceso(uint32_t pid)
+t_pcb *buscarProceso(uint32_t pid) 
 {
     t_pcb *pcb_buscada = NULL;
     colaEstado *colas[] = {cola_new_global, cola_ready_global, cola_bloqueado_global, cola_exec_global, cola_exit_global};
@@ -322,14 +322,14 @@ void mostrar_procesos(colaEstado *cola)
     }
 }
 
-t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
+t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola) //
 {
 
     log_info(logger, "\033[1;32m \n Buscando el proceso <%d> en la cola %s \n \033[0m", pid_buscado, nombreCola); //
 
     t_pcb *pcb_buscada;
 
-    // Verificar si la lista está vacía
+    // Verifica si la cola está vacía -> si es así no tiene sentido seguir buscando
     if (queue_is_empty(cola))
     {
         return NULL;
