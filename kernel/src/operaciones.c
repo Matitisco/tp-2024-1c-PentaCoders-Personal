@@ -196,7 +196,7 @@ t_pcb *buscarProceso(uint32_t pid)
             break;
         }
     }
-    if (pcb_buscada == NULL)
+    if (pcb_buscada == NULL) // si no la encontró en ninguna cola queda NULL
     {
         printf("No se pudo encontrar ningun PCB asociado al PID %u\n", pid);
     }
