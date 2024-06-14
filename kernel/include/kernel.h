@@ -144,5 +144,5 @@ void atender_interrupciones();
 int llego_proceso();
 char *buscar_recurso(char *recurso, int *posicion);
 
-
+_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso);
 #endif

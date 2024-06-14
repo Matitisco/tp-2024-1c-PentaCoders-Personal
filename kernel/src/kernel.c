@@ -401,9 +401,16 @@ void *levantar_CPU_Dispatch()
 
 				sem_getvalue(&(valores_config->recursos[posicion]->instancias), &valor_instancias);
 				log_info(logger, "Recurso: %s Instancias Restantes: %d", valores_config->recursos[posicion]->nombre, valor_instancias);
-				sem_post(b_transicion_blocked_ready);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+
+				t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
+
+				if (recurso_buscado->cola_bloqueados->contador == 0)//si el proceso NO se bloqueo x falta de recurso
+				{
+					sem_post(b_transicion_blocked_ready);
+					sem_post(b_reanudar_largo_plazo);
+					sem_post(b_reanudar_corto_plazo);	
+				} //si se bloqueo, queda esperando			
+				
 			}
 		
 			break;
@@ -638,16 +645,17 @@ char *buscar_recurso(char *recurso, int *posicion)
 }
 
 void wait_instancia_recurso(int i)
-{
+{	
+	//cde_interrumpido es global
 	int valor;
 	sem_getvalue(&(valores_config->recursos[i]->instancias), &valor);
 	proceso_interrumpido = buscarProceso(cde_interrumpido->pid);
+	t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
 	if (valor > 0) // Si hay instancias del recurso, puedo restar y asignar a un proceso
 	{
 		sem_wait(&(valores_config->recursos[i]->instancias)); // le doy una instancia al proceso, y le quito una a la lista de recursos que tiene el SO
 		// De aca para abajo asigna al proceso los recursos retenidos
 
-		t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
 		if (recurso_buscado == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
 		{
 			log_info(logger, "Recurso: <%s> No estaba cargado - PID: <%d>", recurso_recibido, proceso_interrumpido->cde->pid);
@@ -670,14 +678,16 @@ void wait_instancia_recurso(int i)
 	{
 		log_info(logger, "NO HAY INSTANCIAS DISPONIBLES DEL RECURSO PEDIDO");
 		log_info(logger, "TRANSICION EXEC A BLOCKED");
-		// mandar proceso a cola de bloqueados correspondiente al recurso
 		
 
-		//agregar_a_estado(proceso_interrumpido, &recurso_buscado->cola_bloqueados);
-		sem_post(b_transicion_exec_blocked);
-		//log_info(logger, "Se bloqueo el proceso: %d por el recurso %s", proceso_interrumpido->cde->pid, recurso_recibido);
+		// mandar proceso a cola de bloqueados correspondiente al recurso
+		//sem_post(b_transicion_exec_blocked);
+		agregar_a_estado(proceso_interrumpido, recurso_buscado->cola_bloqueados);
+		log_info(logger, "Se bloqueo el proceso: %d por el recurso %s", proceso_interrumpido->cde->pid, recurso_recibido);
 	}
 }
+//t_pcb *proceso_interrumpido;
+//void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 
 /*
 
@@ -722,6 +732,7 @@ void signal_instancia_recurso(int i)
 	
 	//aca tengo que ver si tengo un proceso bloqueado por un recurso, si ESTE signal se esta haciendo a ESE recurso
 	//bloqueante, verifico si ya se puede desbloquear el proceso 
+	//sacar_procesos_cola()
 }
 
 /**

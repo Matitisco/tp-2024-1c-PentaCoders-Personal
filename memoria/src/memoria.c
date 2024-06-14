@@ -349,6 +349,8 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
     destruir_buffer(buffer_instruccion);
     destruir_buffer(buffer);
     log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
+
+    
     free(instruccion);
 }
 
