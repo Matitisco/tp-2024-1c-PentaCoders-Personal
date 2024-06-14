@@ -106,8 +106,8 @@ void inicializarEstados();
 colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado );
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char*  planificador);
 
 void iniciar_semaforos();
 

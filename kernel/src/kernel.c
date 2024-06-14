@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
 
 void iniciar_kernel()
 {
+	habilitar_planificadores = 0;
 	inicializarEstados();
 	logger = iniciar_logger("kernel.log", "KERNEL");
 	nombre_IO = string_new();
@@ -236,8 +237,7 @@ void iniciar_semaforos()
 	sem_init(b_transicion_exec_blocked, 0, 0);
 	sem_init(b_transicion_blocked_ready, 0, 0);
 	sem_init(b_detener_planificacion, 0, 0);
-	/* sem_init(b_detener_planificacion_largo, 0, 0);//agregado de lo que hizo Mati
-	sem_init(b_detener_planificacion_corto, 0, 0);//agregado de lo que hizo Mati*/
+
 } 
 
 config_kernel *inicializar_config_kernel()
@@ -288,25 +288,37 @@ config_kernel *inicializar_config_kernel()
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 {
-	/* if(habilitar_planificadores == 0 && cola_estado->nombreEstado != "NEW") 
-            sem_wait(b_reanudar_corto_plazo); */
+	
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	queue_push(cola_estado->estado, pcb);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
 	sem_post(cola_estado->contador);
 }
 
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char*  planificador)
 {
+	log_info(logger, "HABILITAR PLANI %d", habilitar_planificadores);
+	if(habilitar_planificadores==0)
+	{
+		if(strcmp(planificador, "largo"))
+		{
+			sem_wait(b_reanudar_largo_plazo);
+		}
+		else if(strcmp(planificador, "corto"))
+		{
+			sem_wait(b_reanudar_corto_plazo);
+		}
+	}
 	
+	
+			
 	t_pcb *pcb = malloc(sizeof(t_pcb));
 	sem_wait(cola_estado->contador);
-	if(habilitar_planificadores == 0) 
-            sem_wait(b_detener_planificacion);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
 	return pcb;
+	
 }
 
 void *levantar_CPU_Interrupt()
@@ -333,8 +345,7 @@ void *levantar_CPU_Dispatch()
 			finalizar_proceso(cde_interrumpido->pid, SUCCESS);
 
 			sem_post(b_largo_plazo_exit);
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 			destruir_buffer(buffer_cpu_fin);
 			break;
 
@@ -348,8 +359,7 @@ void *levantar_CPU_Dispatch()
 			// DIN DE QUANTUM Y OCURRE LA INTERRUPCION
 			sem_post(b_transicion_exec_ready);
 
-			sem_post(b_reanudar_largo_plazo); // está en el código de Mati
-			sem_post(b_reanudar_corto_plazo); // está en el código de Mati
+
 
 			break;
 
@@ -360,7 +370,7 @@ void *levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_cde);
 
 			sem_post(b_transicion_exec_blocked);
-			sem_post(b_reanudar_largo_plazo);
+
 
 			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_cpu);
 			break;
@@ -384,16 +394,14 @@ void *levantar_CPU_Dispatch()
 				sem_getvalue(&(valores_config->recursos[posicion]->instancias), &valor_instancias);
 				log_info(logger, "Recurso: %s Instancias Restantes: %d", valores_config->recursos[posicion]->nombre, valor_instancias);
 				sem_post(b_transicion_blocked_ready);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+
 			}
 			else
 			{
 				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+
 			}
 			break;
 		case SIGNAL_RECURSO: // un proceso libera un recurso
@@ -419,8 +427,7 @@ void *levantar_CPU_Dispatch()
 				sem_getvalue(&(valores_config->recursos[posicion]->instancias), &valor_instancias);
 				log_info(logger, "Recurso: %s Instancias Restantes: %d", valores_config->recursos[posicion]->nombre, valor_instancias);
 				sem_post(b_transicion_blocked_ready);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+
 			}
 			else
 			{
@@ -428,8 +435,7 @@ void *levantar_CPU_Dispatch()
 
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+
 			}
 
 			break;
@@ -440,8 +446,7 @@ void *levantar_CPU_Dispatch()
 			finalizar_proceso(cde_interrumpido->pid, OUT_OF_MEMORY_END);
 
 			sem_post(b_largo_plazo_exit);
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 
 			break;
 		default:
@@ -545,8 +550,7 @@ void interfaz_no_conectada(int pid)
 	log_error(logger, "La interfaz %s no se encuentra conectada", nombre_IO);
 	finalizar_proceso(pid, INVALID_RESOURCE);
 	sem_post(b_largo_plazo_exit);
-	sem_post(b_reanudar_largo_plazo);
-	sem_post(b_reanudar_corto_plazo);
+
 }
 
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, int socket_io, int pid)
@@ -567,8 +571,7 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 		{
 			sem_post(b_transicion_blocked_ready);
 			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 		}
 	}
 	else
@@ -597,8 +600,7 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 		{
 			sem_post(b_transicion_blocked_ready);
 			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 		}
 	}
 	else
@@ -627,8 +629,7 @@ void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int t
 		{
 			sem_post(b_transicion_blocked_ready);
 			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 		}
 	}
 	else

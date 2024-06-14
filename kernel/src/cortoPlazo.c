@@ -7,6 +7,7 @@ pthread_mutex_t *mutex_cola_exec;
 t_temporal *quantum;
 t_temporal *timer;
 int tiempo_transcurrido;
+char* plani = "corto";
 
 // CORTO PLAZO
 void *corto_plazo()
@@ -49,11 +50,11 @@ void planificar_por_fifo()
 {
     while (1)
     {
-        //sem_wait(b_reanudar_corto_plazo);
+      
 
         t_pcb *proceso = malloc(sizeof(t_pcb));
         sem_wait(b_exec_libre);
-        proceso = sacar_procesos_cola(cola_ready_global); // esto luego cambiar a transicion_exec_ready
+        proceso = sacar_procesos_cola(cola_ready_global, plani); // esto luego cambiar a transicion_exec_ready
 
         agregar_a_estado(proceso, cola_exec_global);
         proceso->estado = EXEC;
@@ -73,7 +74,7 @@ void planificar_por_rr()
     while (1)
     {
        
-        //sem_wait(b_reanudar_corto_plazo);
+
         sem_wait(b_exec_libre);
         
 
@@ -139,7 +140,7 @@ t_pcb *transicion_ready_exec()
 {
 
 
-    t_pcb *proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
+    t_pcb *proceso = sacar_procesos_cola(cola_ready_global, plani); // SALE DE READY
     
     log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
 
@@ -172,13 +173,13 @@ void *transicion_exec_ready()
     while (1)
     {
         sem_wait(b_transicion_exec_ready);
-        t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
+        t_pcb *proceso = sacar_procesos_cola(cola_exec_global, plani);
         proceso->cde = cde_interrumpido;
         proceso->estado = READY;
         agregar_a_estado(proceso, cola_ready_global);
         sem_post(b_exec_libre);
 
-        // sem_post(b_reanudar_corto_plazo);
+
         log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
     }
 }
@@ -189,7 +190,7 @@ void *transicion_exec_blocked() // mover a largo plazo
     {
         sem_wait(b_transicion_exec_blocked);
         sem_post(b_exec_libre);
-        t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
+        t_pcb *proceso = sacar_procesos_cola(cola_exec_global, plani);
         proceso->cde = cde_interrumpido;
         agregar_a_estado(proceso, cola_bloqueado_global);
         log_info(logger, "Se bloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
@@ -202,7 +203,7 @@ void *transicion_blocked_ready() // mover a largo plazo
     while (1)
     {
         sem_wait(b_transicion_blocked_ready);
-        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global);
+        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global, plani);
 
         agregar_a_estado(proceso, cola_ready_global);
         log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
@@ -217,15 +218,15 @@ void *transicion_blocked_ready() // BLOCK => READY | READY+, ver como implementa
     while (1)
     {
         sem_wait(b_transicion_blocked_ready);
-        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global);
+        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global, plani);
 
         if( tiempo_transcurrido < QUANTUM){
             proceso->quantum = QUANTUM - tiempo_transcurrido;
-            //agregar_a_estado(proceso, cola_ready_extra_global);    //READY+
+            //agregar_a_estado(proceso, cola_ready_extra_global, plani);    //READY+
             //proceso->estado = READY_EXTRA;
         }
         else{
-            agregar_a_estado(proceso,cola_ready_global);    //READY
+            agregar_a_estado(proceso,cola_ready_global, plani);    //READY
             proceso->estado = READY;
         }
 
@@ -233,19 +234,3 @@ void *transicion_blocked_ready() // BLOCK => READY | READY+, ver como implementa
     }
 }
 */
-void replanificar_por_rr(t_pcb *proceso)
-{
-
-    // enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO);
-    // enviar_cde(socket_cpu_dispatch, proceso->cde); // Envio que se pare el proceso a la conexion de interrupt
-
-    // Hay que hacer que un hilo reciba el retorno de la interrupcion de CPU y que habilite con un binario el hilo exec=>ready
-
-    /* proceso = sacar_procesos_cola(cola_ready_global); // lo saco de running
-    agregar_a_estado(proceso, cola_exec_global); // lo meto en ready */
-
-    /* t_pcb *otro_proceso = malloc(sizeof(t_pcb));
-
-    otro_proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-    agregar_a_estado(otro_proceso, cola_exec_global); */
-}
