@@ -66,7 +66,6 @@ void crearHilos()
 
 void *recibir_interfaces_io()
 {
-    // va a recibir interfaces que le van a pedir acceso al espacio del usuario (stdin,stdout y dialfs) :D
     while (1)
     {
         int dispositivo_io = esperar_cliente(logger, "Memoria", "Interfaz IO", server_fd);
@@ -150,11 +149,11 @@ void *recibirCPU()
         }
     }
 }
+
 int tamanio_proceso(int pid)
 {
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // devuelve mi tabla de proceso
     int cant_paginas_proceso = list_size(tabla_paginas->tabla_paginas_proceso);
-    log_info(logger, "CANT_PAGINAS : %d", cant_paginas_proceso);
     return cant_paginas_proceso * valores_config->tam_pagina;
 }
 
@@ -226,6 +225,10 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
             if (texto_encontrado != NULL)
             {
                 enviar_cod_enum(cliente_solicitante, OK);
+                tipo_buffer *buffer = crear_buffer();
+                agregar_buffer_para_string(buffer, texto_encontrado);
+                enviar_buffer(buffer, cliente_solicitante);
+                destruir_buffer(buffer);
             }
             else
             {

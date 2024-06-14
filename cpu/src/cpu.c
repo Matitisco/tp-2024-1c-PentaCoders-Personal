@@ -277,7 +277,7 @@ void execute(char **instruccion, t_cde *contextoProceso)
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
 	case IO_STDOUT_WRITE:
-		exec_io_stdin_read(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
+		exec_io_stdout_write(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
@@ -346,7 +346,7 @@ void check_interrupt()
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
 		enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
-		//destruir_buffer(buffer_instruccion_io);
+		destruir_buffer(buffer_instruccion_io);
 	}
 	else if (desalojo_signal)
 	{

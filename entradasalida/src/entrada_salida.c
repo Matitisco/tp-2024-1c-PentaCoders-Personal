@@ -403,10 +403,10 @@ void realizar_operacion_stdout()
 
 		destruir_buffer(buffer_a_memoria);
 
-		op_code codigo_memoria = recibir_operacion(socket_memoria);
+		op_code codigo_memoria = recibir_operacion(conexion_memoria);
 		if (codigo_memoria == OK)
 		{
-			tipo_buffer *lectura = recibir_buffer(socket_memoria);
+			tipo_buffer *lectura = recibir_buffer(conexion_memoria);
 			char *valor = leer_buffer_string(lectura);
 			destruir_buffer(lectura);
 

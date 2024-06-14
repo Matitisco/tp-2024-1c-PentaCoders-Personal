@@ -425,7 +425,7 @@ void *levantar_CPU_Dispatch()
 
 			break;
 		case OUT_OF_MEMORY:
-		
+
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
 			finalizar_proceso(cde_interrumpido->pid, OUT_OF_MEMORY_END);
@@ -476,7 +476,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada_generica(unidades_trabajo, instruccion_a_ejecutar, informacion_interfaz->cliente_io, pid);
-			destruir_buffer(buffer_con_instruccion);
+			// destruir_buffer(buffer_con_instruccion);
 		}
 		break;
 
@@ -497,13 +497,14 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada_stdin(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
-			destruir_buffer(buffer_con_instruccion);
+			// destruir_buffer(buffer_con_instruccion);
 		}
 		break;
 
 	case SOLICITUD_INTERFAZ_STDOUT:
 
 		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDOUT_WRITE
+		log_info(logger, "INSTURCCION A EJECUTAR STDOUT: %d", instruccion_a_ejecutar);
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
@@ -518,7 +519,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada_stdout(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
-			destruir_buffer(buffer_con_instruccion);
+			// destruir_buffer(buffer_con_instruccion);
 		}
 		break;
 
