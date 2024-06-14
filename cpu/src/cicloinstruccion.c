@@ -45,13 +45,19 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
     enviar_cod_enum(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
+    enviar_cod_enum(socket_memoria, LECTURA_CPU);
+    uint32_t tamanio = sizeof(direccion);
 
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, direccion_fisica); // direccion que se envia a la memoria y con la cual esta debe buscar el valor y guardarlo
+    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);
+    agregar_buffer_para_enterosUint32(buffer, tamanio);
+
+    // direccion que se envia a la memoria y con la cual esta debe buscar el valor y guardarlo
     enviar_buffer(buffer, socket_memoria);
 
     op_code lectura_memoria = recibir_operacion(socket_memoria);
-    if (lectura_memoria == DIRECCION_CORRECTA)
+    if (lectura_memoria == OK)
     {
         tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
         uint32_t valor = leer_buffer_enteroUint32(buffer_valor);
@@ -69,24 +75,25 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
-    uint32_t valor = obtener_valor_origen(datos, cde);
+    uint32_t reg_valor = obtener_valor_origen(datos, cde);
     uint32_t direccion_logica = obtener_valor_origen(direccion, cde);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
 
-    t_escrituraMemoria *valores_a_memoria = malloc(sizeof(t_escrituraMemoria));
-    valores_a_memoria->direccion_fisica = direccion_fisica;
-    valores_a_memoria->valor = valor;
-
+    enviar_cod_enum(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_cod_enum(socket_memoria, PEDIDO_ESCRITURA);
+    enviar_cod_enum(socket_memoria, SOLICITUD_ESCRITURA_CPU);
 
     tipo_buffer *buffer = crear_buffer();
-    agregar_escrituraMemoria_buffer(buffer, valores_a_memoria);
+    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer, reg_valor);
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);
+    agregar_buffer_para_enterosUint32(buffer, sizeof(reg_valor));
     enviar_buffer(buffer, socket_memoria);
 
     op_code escritura_memoria = recibir_operacion(socket_memoria);
     if (escritura_memoria == OK)
     {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor);
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
     }
     else
     {

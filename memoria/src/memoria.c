@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     lista_global_marcos = list_create(); // esta seria la tabla de marcos. Todos los marcos componen a la memoria
     lista_global_tablas = list_create();
     cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; // va a ser la cantida de amrcos
-
+    espacio_usuario = malloc(sizeof(valores_config->tam_memoria));
     inicializar_bitmap(cant_marcos);
     int i = 0;
     while (i < cant_marcos)
@@ -175,8 +175,30 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
             uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_escritura);
             uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_escritura); // LA INTERFAZ DEBE ENVIAR EL PID
             char *valor_a_escribir = leer_buffer_string(buffer_escritura);
+            uint32_t tamanio = leer_buffer_enteroUint32(buffer_escritura);
 
-            int resultado = escribir_memoria(direccionFisica, pid_ejecutando, valor_a_escribir);
+            int resultado = escribir_memoria(direccionFisica, pid_ejecutando, valor_a_escribir, tamanio);
+
+            if (resultado != -1)
+            {
+                enviar_cod_enum(cliente_solicitante, OK);
+            }
+            else
+            {
+                enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
+            }
+            destruir_buffer(buffer_escritura);
+        }
+        else if (solicitud == SOLICITUD_ESCRITURA_CPU)
+        {
+            tipo_buffer *buffer_escritura = recibir_buffer(cliente_solicitante);
+
+            uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_escritura);
+            uint32_t valor_a_escribir = leer_buffer_enteroUint32(buffer_escritura);
+            uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_escritura); // LA INTERFAZ DEBE ENVIAR EL PID
+            uint32_t tamanio = leer_buffer_enteroUint32(buffer_escritura);
+
+            int resultado = escribir_memoria(direccionFisica, pid_ejecutando, valor_a_escribir, tamanio);
 
             if (resultado != -1)
             {
@@ -194,11 +216,11 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
         solicitud = recibir_operacion(cliente_solicitante);
         if (solicitud == SOLICITUD_INTERFAZ_STDOUT)
         {
-
             tipo_buffer *buffer_lectura = recibir_buffer(cliente_solicitante);
             uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_lectura);
             uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
-            void *valor_leido = leer_memoria(direccionFisica, pid_ejecutando);
+            uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
+            void *valor_leido = leer_memoria(direccionFisica, pid_ejecutando, tamanio);
             int limite = leer_buffer_enteroUint32(buffer_lectura); // CADE
             char *texto_encontrado = leer_memoria_stdout(direccionFisica, pid_ejecutando, limite);
             if (texto_encontrado != NULL)
@@ -210,15 +232,20 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
                 enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_LECTURA);
             }
         }
-        else if (solicitud == ESCRITURA_CPU) // caso de cpu
+        else if (solicitud == LECTURA_CPU) // caso de cpu
         {
             tipo_buffer *buffer_lectura = recibir_buffer(cliente_solicitante);
             uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_lectura);
             uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
-            void *valor_leido = leer_memoria(direccionFisica, pid_ejecutando);
+            uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
+            void *valor_leido = leer_memoria(direccionFisica, pid_ejecutando, tamanio);
             if (valor_leido != NULL)
             {
                 enviar_cod_enum(cliente_solicitante, OK);
+                tipo_buffer *buffer = crear_buffer();
+                agregar_buffer_para_enterosUint32(buffer, valor_leido);
+                enviar_buffer(buffer,cliente_solicitante);
+                destruir_buffer(buffer);
             }
             else
             {
@@ -616,6 +643,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
     // Vemos cuantas paginas tenemos que agregar con este nuevo tamanio
     int paginas_adicionales = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
+    int tamanio_anterior = tamanio_proceso(pid);
     // 30
     //  Verificar si hay suficientes marcos disponibles
     int marcos_disponibles = 0;
@@ -661,7 +689,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         list_add(paginas, nueva_pagina);
     }
 
-    log_info(logger, "PID: %d - Tamaño Actual: %d - Tamaño a Ampliar: %d", pid, tamanio_proceso(pid), tamanio);
+    log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
     enviar_cod_enum(cliente_cpu, RESIZE_EXITOSO);
 }
 
@@ -669,7 +697,7 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
 
     int paginas_requeridas = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina; // cant de paginas que tiene que tener con este nuevo tamanio
-
+    int tamanio_anterior = tamanio_proceso(pid);
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista de listaa
     if (tabla_paginas == NULL)
     {
@@ -687,11 +715,11 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         paginas_actuales--;
     }
 
-    log_info(logger, "PID: %d - Tamaño Actual: %d - Tamaño a Reducir: %d", pid, tamanio_proceso(pid), tamanio);
+    log_info(logger, "PID: %d - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", pid, tamanio_anterior, tamanio);
     enviar_cod_enum(cliente_cpu, RESIZE_EXITOSO);
 }
 
-void *leer_memoria(uint32_t direccion_fisica, uint32_t pid)
+void *leer_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t tamanio)
 {
     usleep(valores_config->retardo_respuesta * 1000);
     uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
@@ -701,9 +729,9 @@ void *leer_memoria(uint32_t direccion_fisica, uint32_t pid)
     t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
     int marco = pagina->marco;
 
-    void *valor = malloc(sizeof(int)); // Supongo que es un entero
-    memcpy(valor, espacio_usuario + marco * valores_config->tam_pagina + offset, sizeof(int));
-    log_info(logger, "PID: %d - Accion: LEER - Direccion fisica: %d - Tamaño <TAMAÑO A LEER ", pid, direccion_fisica);
+    void *valor = malloc(sizeof(tamanio)); // Supongo que es un entero
+    memcpy(valor, espacio_usuario + marco * valores_config->tam_pagina + offset, tamanio);
+    log_info(logger, "PID: <%d> - Accion: LEER - Direccion fisica: <%d> - Tamaño <%d>", pid, direccion_fisica, tamanio);
 
     return valor;
 }
@@ -733,11 +761,13 @@ void *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_byt
     return valor;
 }
 
-void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_escribir)
+void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_escribir, uint32_t tamanio)
 {
     usleep(valores_config->retardo_respuesta * 1000);
     uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+
+    valor_a_escribir = malloc(tamanio);
 
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     if (tabla_paginas == NULL)
@@ -745,7 +775,6 @@ void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_es
         return (void *)-1;
     }
     t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
-
     if (pagina == NULL)
     {
         return (void *)-1;
@@ -753,15 +782,15 @@ void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_es
     int marco = pagina->marco;
     if (marco < 0)
     {
-        return (void *)-1;
+        return -1;
     }
-    if (memcpy(espacio_usuario + marco * valores_config->tam_pagina + offset, valor_a_escribir, sizeof(valor_a_escribir)) == NULL)
+    if (memcpy(espacio_usuario + marco * valores_config->tam_pagina + offset, valor_a_escribir, tamanio) == NULL)
     {
-        return (void *)-1;
+        return -1;
     }
     else
     {
-        log_info(logger, "PID: %d - Accion: ESCRIBIR - Direccion fisica: %d - Tamaño <TAMAÑO A ESCRIBIR ", pid, direccion_fisica);
+        log_info(logger, "PID: %d - Accion: ESCRIBIR - Direccion fisica: %d - Tamaño <%d> ", pid, direccion_fisica, tamanio);
         return (void *)1; // se escribio
     }
 }

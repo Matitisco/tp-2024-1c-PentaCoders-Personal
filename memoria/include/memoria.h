@@ -90,8 +90,8 @@ void finalizar_proceso(int kernel, tipo_buffer *buffer);
 void *destroy_instruccion(void *element);
 
 // espacio de usuario
-void *leer_memoria(uint32_t direccion_fisica, uint32_t pid);
-void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_escribir);
+void *leer_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t tamanio);
+void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_escribir, uint32_t tamanio);
 void *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario(int cliente_solicitante);
 
