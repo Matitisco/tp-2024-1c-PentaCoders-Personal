@@ -368,7 +368,6 @@ void *levantar_CPU_Dispatch()
 			if (recurso == 0) // encontro al recurso y existe
 			{
 				wait_instancia_recurso(posicion); // el SO pierde uno del recurso llamado
-
 				int valor_instancias;
 				sem_getvalue(&(valores_config->recursos[posicion]->instancias), &valor_instancias);
 				log_info(logger, "Recurso: %s Instancias Restantes: %d", valores_config->recursos[posicion]->nombre, valor_instancias);
@@ -377,9 +376,12 @@ void *levantar_CPU_Dispatch()
 				//sem_post(b_reanudar_corto_plazo);
 			}
 			proceso_interrumpido = buscarProceso(cde_interrumpido->pid);
-			t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
-			
-			if (recurso_buscado->cola_bloqueados->contador == 0)//si el proceso NO se bloqueo x falta de recurso
+			t_recurso *recurso_del_proceso = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
+
+			int recursos_en_espera;
+			sem_getvalue((recurso_del_proceso->cola_bloqueados->contador), &recursos_en_espera);
+			//log_info(logger, "recursos esperando %d", recurso_del_proceso->cola_bloqueados->contador);
+			if (recursos_en_espera == 0)//si el proceso NO se bloqueo x falta de recurso
 				{
 					sem_post(b_transicion_blocked_ready);
 					sem_post(b_reanudar_largo_plazo);
@@ -418,10 +420,10 @@ void *levantar_CPU_Dispatch()
 
 				//recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
 
-					sem_post(b_transicion_blocked_ready);
-					sem_post(b_reanudar_largo_plazo);
-					sem_post(b_reanudar_corto_plazo);	
-				//si se bloqueo, queda esperando			
+				sem_post(b_transicion_blocked_ready);
+				sem_post(b_reanudar_largo_plazo);
+				sem_post(b_reanudar_corto_plazo);	
+				
 				
 			}
 		
@@ -664,7 +666,6 @@ char *buscar_recurso(char *recurso, int *posicion)
 	char *recurso_encontrado = NULL;
 
 	int i = 0;
-	// while (valores_config->listaRecursos[i]!=NULL) FUNKA
 	while (valores_config->recursos[i]->nombre != NULL)
 	{
 		if (strcmp(recurso, valores_config->recursos[i]->nombre) == 0)
@@ -675,7 +676,6 @@ char *buscar_recurso(char *recurso, int *posicion)
 		}
 		i++;
 	}
-
 	return recurso_encontrado;
 }
 
@@ -683,56 +683,55 @@ void wait_instancia_recurso(int i) // acá entra si encuentra el recurso
 {	
 	//cde_interrumpido es global
 	int valor;
-	//sem_t *instancias;
-	//int instacias;
 
 	sem_getvalue(&(valores_config->recursos[i]->instancias), &valor);
 	proceso_interrumpido = buscarProceso(cde_interrumpido->pid); //devuelve el pcb del proceso
 	t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
 	
+	if (recurso_buscado == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
+	{
+		log_info(logger, "Recurso: <%s> No estaba cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
+		t_recurso *recurso_asignado = malloc(sizeof(t_recurso));
+		recurso_asignado->nombre = nombre_recurso_recibido;
+		recurso_asignado->instancias = malloc(sizeof(sem_t));
+		sem_init(&(recurso_asignado->instancias), 0, 1);
+		recurso_asignado->cola_bloqueados = constructorColaEstado(nombre_recurso_recibido);
+		log_info(logger, "Se creo la cola bloqueados de %s",recurso_asignado->cola_bloqueados->nombreEstado);
+
+		list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
+		log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", recurso_asignado->nombre, proceso_interrumpido->cde->pid);
+	}
+	else // ya tiene el recurso cargado el proceso
+	{
+		log_info(logger, "Recurso: <%s> Estaba cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
+		sem_post(&recurso_buscado->instancias);
+		log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
+	}
+
 	if (valor > 0) // Si hay instancias del recurso, puedo restar y asignar a un proceso
 	{
 		sem_wait(&(valores_config->recursos[i]->instancias)); // le doy una instancia al proceso, y le quito una a la lista de recursos que tiene el SO
 		// De aca para abajo asigna al proceso los recursos retenidos
 
-		if (recurso_buscado == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
-		{
-			log_info(logger, "Recurso: <%s> No estaba cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
-			t_recurso *recurso_asignado = malloc(sizeof(t_recurso));
-			recurso_asignado->nombre = nombre_recurso_recibido;
-			recurso_asignado->instancias = malloc(sizeof(sem_t));
-			sem_init(&(recurso_asignado->instancias), 0, 1);
-			recurso_asignado->cola_bloqueados = constructorColaEstado(nombre_recurso_recibido);
-			log_info(logger, "Se creo la cola bloqueados de %s",recurso_asignado->cola_bloqueados->nombreEstado);
-
-			list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
-			log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", recurso_asignado->nombre, proceso_interrumpido->cde->pid);
-		}
-		else // ya tiene el recurso cargado el proceso
-		{
-			log_info(logger, "Recurso: <%s> Estaba cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
-			sem_post(&recurso_buscado->instancias);
-			log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
-		}
 	}
-	else // si no hay instancias del recurso
-	{
+	else if(valor == 0) // si no hay instancias del recurso
+	{//
 		log_info(logger, "NO HAY INSTANCIAS DISPONIBLES DEL RECURSO PEDIDO");
-		log_info(logger, "TRANSICION EXEC A BLOCKED");
+		
+		log_info(logger, "PID: <%d> - Bloqueado por: <%s>",cde_interrumpido->pid,nombre_recurso_recibido);
 		
 	/*¡¡¡¡ OJO !!!! 
 	si nos dan un archivo config donde un recurso arranca con 0 instancias, no inicializa nada*/
+	
 
-
-		// mandar proceso a cola de bloqueados correspondiente al recurso
-		//sem_post(b_transicion_exec_blocked);
 		agregar_a_estado(proceso_interrumpido, recurso_buscado->cola_bloqueados);
-		log_info(logger, "Se bloqueo el proceso: %d", proceso_interrumpido->cde->pid);
-		log_info(logger, "Cant. cola de bloqueados por %s: %d",nombre_recurso_recibido,recurso_buscado->cola_bloqueados->contador);
+		int recursos_en_espera;
+		sem_getvalue((recurso_buscado->cola_bloqueados->contador), &recursos_en_espera);
+		log_info(logger, "Cant. cola de bloqueados por %s: %d",nombre_recurso_recibido,recursos_en_espera);
+
+
 	}
 }
-//t_pcb *proceso_interrumpido;
-//void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 
 /*
 
