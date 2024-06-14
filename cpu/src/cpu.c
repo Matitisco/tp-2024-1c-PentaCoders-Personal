@@ -321,13 +321,17 @@ void check_interrupt()
 			interrupcion_io = 0;
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
-			enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
+			enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // esto esta raro, cuando le llega este buffer
+			
+
+			// enviamos info de interfaz y su instruccion a ejecutar
 		}
 		else
 		{
 			enviar_cod_enum(socket_kernel_dispatch, FIN_DE_QUANTUM);
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
+			
 		}
 	}
 	else if (interrrupcion_fifo)
@@ -337,6 +341,7 @@ void check_interrupt()
 		// enviar_cod_enum(socket_kernel_dispatch, BLOQUEADO_POR_IO);
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		
 		log_info(logger, "\nINTERRUPCION - BLOCK - \n");
 	}
 	else if (interrupcion_io)

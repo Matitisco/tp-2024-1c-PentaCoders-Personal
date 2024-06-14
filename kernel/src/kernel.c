@@ -554,6 +554,7 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 		agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
 		enviar_buffer(buffer_interfaz, socket_io);
+		destruir_buffer(buffer_interfaz);
 		operacion_io = recibir_operacion(socket_io);
 		if (operacion_io == CONCLUI_OPERACION)
 		{
@@ -583,6 +584,7 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
 		enviar_buffer(buffer_interfaz, socket_io);
+		destruir_buffer(buffer_interfaz);
 		operacion_io = recibir_operacion(socket_io);
 
 		if (operacion_io == CONCLUI_OPERACION)
@@ -613,6 +615,7 @@ void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int t
 		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
 		enviar_buffer(buffer_interfaz, socket_io);
+		destruir_buffer(buffer_interfaz);
 		operacion_io = recibir_operacion(socket_io);
 
 		if (operacion_io == CONCLUI_OPERACION)
