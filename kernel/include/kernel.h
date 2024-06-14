@@ -78,12 +78,15 @@ extern sem_t *b_reanudar_largo_plazo;
 extern sem_t *b_reanudar_corto_plazo;
 extern sem_t *b_transicion_exec_ready;
 extern sem_t *b_transicion_blocked_ready;
+extern sem_t *b_detener_planificacion;
+
 extern int habilitar_planificadores;
 extern config_kernel *valores_config;
 extern int socket_memoria;
 extern int socket_cpu_dispatch;
 extern int socket_cpu_interrupt;
 // DECLARACION VARIABLES GLOBALES
+
 
 extern colaEstado *cola_new_global;
 extern colaEstado *cola_ready_global;

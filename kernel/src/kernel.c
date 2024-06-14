@@ -55,6 +55,8 @@ char *nombre_IO;
 int servidor_para_io;
 config_kernel *valores_config;
 
+sem_t *b_detener_planificacion;
+
 int main(int argc, char *argv[])
 {
 
@@ -221,6 +223,7 @@ void iniciar_semaforos()
 	b_transicion_exec_blocked = malloc(sizeof(sem_t));
 	b_transicion_blocked_ready = malloc(sizeof(sem_t));
 	sem_quantum = malloc(sizeof(sem_t));
+	b_detener_planificacion = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
@@ -232,9 +235,10 @@ void iniciar_semaforos()
 	sem_init(sem_quantum, 0, 0);
 	sem_init(b_transicion_exec_blocked, 0, 0);
 	sem_init(b_transicion_blocked_ready, 0, 0);
-	// sem_init(b_detener_planificacion_largo, 0, 0);//agregado de lo que hizo Mati
-	// sem_init(b_detener_planificacion_corto, 0, 0);//agregado de lo que hizo Mati
-}
+	sem_init(b_detener_planificacion, 0, 0);
+	/* sem_init(b_detener_planificacion_largo, 0, 0);//agregado de lo que hizo Mati
+	sem_init(b_detener_planificacion_corto, 0, 0);//agregado de lo que hizo Mati*/
+} 
 
 config_kernel *inicializar_config_kernel()
 {
@@ -284,6 +288,8 @@ config_kernel *inicializar_config_kernel()
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 {
+	/* if(habilitar_planificadores == 0 && cola_estado->nombreEstado != "NEW") 
+            sem_wait(b_reanudar_corto_plazo); */
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	queue_push(cola_estado->estado, pcb);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
@@ -292,8 +298,11 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 {
+	
 	t_pcb *pcb = malloc(sizeof(t_pcb));
 	sem_wait(cola_estado->contador);
+	if(habilitar_planificadores == 0) 
+            sem_wait(b_detener_planificacion);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);

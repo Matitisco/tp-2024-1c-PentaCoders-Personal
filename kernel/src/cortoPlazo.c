@@ -49,11 +49,10 @@ void planificar_por_fifo()
 {
     while (1)
     {
-        sem_wait(b_reanudar_corto_plazo);
+        //sem_wait(b_reanudar_corto_plazo);
 
         t_pcb *proceso = malloc(sizeof(t_pcb));
         sem_wait(b_exec_libre);
-        //sem_wait(cola_ready_global->contador);
         proceso = sacar_procesos_cola(cola_ready_global); // esto luego cambiar a transicion_exec_ready
 
         agregar_a_estado(proceso, cola_exec_global);
@@ -74,10 +73,10 @@ void planificar_por_rr()
     while (1)
     {
        
-        sem_wait(b_reanudar_corto_plazo);
+        //sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
         
-        //sem_wait(cola_ready_global->contador); // contador de procesos en ready
+
 
         proceso = transicion_ready_exec();
 
@@ -207,7 +206,7 @@ void *transicion_blocked_ready() // mover a largo plazo
 
         agregar_a_estado(proceso, cola_ready_global);
         log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
-        //sem_post(cola_ready_global->contador);
+        
         proceso->estado = READY;
     }
 }

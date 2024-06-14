@@ -157,8 +157,9 @@ void eliminar_proceso(t_pcb *proceso)
 void iniciar_planificacion()
 {
     habilitar_planificadores = 1;
-    sem_post(b_reanudar_largo_plazo);
-    sem_post(b_reanudar_corto_plazo);
+    
+    sem_post(b_detener_planificacion);
+    
     estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
 }
 
@@ -166,8 +167,8 @@ void iniciar_planificacion()
 void detener_planificacion()
 {
     habilitar_planificadores = 0;
-    sem_wait(b_reanudar_largo_plazo);
-    sem_wait(b_reanudar_corto_plazo);
+    /* sem_wait(b_reanudar_largo_plazo);
+    sem_wait(b_reanudar_corto_plazo); */
     estado_planificacion = PLANIFICACION_PAUSADA;
 }
 
