@@ -240,7 +240,6 @@ void exec_resize(char *tamanio, t_cde *cde)
 {
     enviar_cod_enum(socket_memoria, RESIZE_EXTEND);
     uint32_t tamanioValor = atoi(tamanio);
-    log_info(logger, "TAMANIO RESIZE: %d", tamanioValor);
     tipo_buffer *buffer = crear_buffer();
 
     agregar_buffer_para_enterosUint32(buffer, tamanioValor);
@@ -279,7 +278,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
 
     tipo_buffer *buffer_lectura = recibir_buffer(socket_memoria);
     char *unString = leer_buffer_string(buffer_lectura);
-    uint32_t tamanio_string = atoi(tamanio);
+    uint32_t tamanio_string = sizeof(atoi(tamanio));
     uint32_t direccion_logica_DI = cde->registros->DI;
     uint32_t direccion_fisica_DI = direccion_logica_a_fisica(direccion_logica_DI);
     enviar_cod_enum(socket_memoria, PEDIDO_ESCRITURA);
@@ -325,7 +324,7 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
 {
     uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
-    uint32_t tamanio = atoi(reg_tamanio);
+    uint32_t tamanio = sizeof(atoi(reg_tamanio));
 
     buffer_instruccion_io = crear_buffer();
     interrupcion_io = 1;
@@ -342,7 +341,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
 {
     uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
-    uint32_t tamanio = atoi(reg_tamanio);
+    uint32_t tamanio = sizeof(atoi(reg_tamanio));
 
     buffer_instruccion_io = crear_buffer();
     interrupcion_io = 1;

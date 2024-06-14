@@ -13,10 +13,7 @@
 #include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
 
-extern t_log *logger;
-int socket_cpu;
-int cliente_fd;
-pthread_t hiloCPU, hiloKernel, hiloIO;
+
 typedef struct
 {
 	t_config *config;
@@ -42,6 +39,19 @@ typedef struct
 	int pid;		 // la pagina conoce al proceso del cual es parte ?
 } t_pagina;
 
+typedef struct
+{
+	int numero_marco; // numero de marco
+	int bit_ocupado;  // esta libre o no el marco
+} t_bit_map;
+
+extern t_log *logger;
+
+int socket_cpu;
+int cliente_fd;
+pthread_t hiloCPU, hiloKernel, hiloIO;
+
+
 /*Paginacion */
 t_list *list_tabla_paginas; // losta global de paginas y cada nodo tiene una tabla del proceso
 
@@ -55,11 +65,7 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
 void crear_y_agregar_tabla_a_lista_global(int pid);
 int *agarro_marco_que_este_libre();
 
-typedef struct
-{
-	int numero_marco; // numero de marco
-	int bit_ocupado;  // esta libre o no el marco
-} t_bit_map;
+
 
 t_args *crearArgumento(char *puerto, char *ip);
 void crearHilos();
@@ -92,7 +98,7 @@ void *destroy_instruccion(void *element);
 // espacio de usuario
 void *leer_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t tamanio);
 void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_escribir, uint32_t tamanio);
-void *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
+char *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario(int cliente_solicitante);
 
 // resize

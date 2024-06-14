@@ -127,19 +127,21 @@ void *levantarIO()
 			nombre_IO = leer_buffer_string(buffer_io);
 			char *tipo_io = obtener_interfaz(cod_io);
 
-			t_infoIO *infoIO = malloc(sizeof(t_infoIO));
-			infoIO->cliente_io = disp_io;
-			infoIO->nombre_io = nombre_IO;
-
 			if (list_find(lista_interfaces, interfaz_esta_conectada) != NULL)
 			{
-				log_info(logger, "La Interfaz %s ya esta conectada", infoIO->nombre_io);
+				log_info(logger, "La Interfaz %s ya esta conectada", nombre_IO);
 				enviar_cod_enum(disp_io, ESTABA_CONECTADO);
 			}
 			else
 			{
 				enviar_cod_enum(disp_io, NO_ESTABA_CONECTADO);
-				log_info(logger, "La Interfaz %s no estaba conectada", infoIO->nombre_io);
+				log_info(logger, "La Interfaz %s no estaba conectada", nombre_IO);
+
+				t_infoIO *infoIO = malloc(sizeof(t_infoIO));
+				infoIO->cliente_io = disp_io;
+				infoIO->nombre_io = nombre_IO;
+				infoIO->procesos_espera = list_create(); // lista de procesos
+
 				list_add(lista_interfaces, infoIO);
 				log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, infoIO->nombre_io);
 			}
@@ -475,8 +477,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		else
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_generica(unidades_trabajo, instruccion_a_ejecutar, informacion_interfaz->cliente_io, pid);
-			// destruir_buffer(buffer_con_instruccion);
+			interfaz_conectada_generica(unidades_trabajo, instruccion_a_ejecutar, informacion_interfaz, pid);
 		}
 		break;
 
@@ -497,7 +498,6 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada_stdin(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
-			// destruir_buffer(buffer_con_instruccion);
 		}
 		break;
 
@@ -519,7 +519,6 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada_stdout(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
-			// destruir_buffer(buffer_con_instruccion);
 		}
 		break;
 
@@ -541,11 +540,11 @@ void interfaz_no_conectada(int pid)
 	sem_post(b_reanudar_corto_plazo);
 }
 
-void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, int socket_io, int pid)
+void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid)
 {
-	enviar_cod_enum(socket_io, CONSULTAR_DISPONIBILDAD);
+	enviar_cod_enum(io->cliente_io, CONSULTAR_DISPONIBILDAD);
 
-	op_code operacion_io = recibir_operacion(socket_io);
+	op_code operacion_io = recibir_operacion(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
 	if (operacion_io == ESTOY_LIBRE)
@@ -553,12 +552,21 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
-		enviar_buffer(buffer_interfaz, socket_io);
-		operacion_io = recibir_operacion(socket_io);
+		enviar_buffer(buffer_interfaz, io->cliente_io);
+		operacion_io = recibir_operacion(io->cliente_io);
 		if (operacion_io == CONCLUI_OPERACION)
 		{
 			sem_post(b_transicion_blocked_ready);
 			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+			/* 			if (list_is_empty(io->procesos_espera))
+						{
+							sem_post(b_reanudar_largo_plazo);
+							sem_post(b_reanudar_corto_plazo);
+						}
+						else
+						{
+
+						} */
 			sem_post(b_reanudar_largo_plazo);
 			sem_post(b_reanudar_corto_plazo);
 		}
@@ -566,6 +574,9 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 	else
 	{
 		// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
+		log_info(logger, "Interfaz Ocupada");
+		list_add(io->procesos_espera, cde_interrumpido);
+		log_info(logger, "Se agrego el proceso: %d a la lista de pendientes de la interfaz %s", pid, io->nombre_io);
 	}
 }
 

@@ -52,5 +52,5 @@ void realizar_operacion_dialfs();
 
 // AUXILIARES
 enum_interfaz asignar_interfaz(char *nombre_Interfaz);
-
+t_list *convertir_a_numeros(char *texto);
 #endif

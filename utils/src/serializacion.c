@@ -365,11 +365,6 @@ char *leer_buffer_string(tipo_buffer *buffer)
     char *cadena;
     uint32_t tamanio;
 
-    // void *stream = buffer->stream;
-    /* // Deserializamos los campos que tenemos en el buffer
-    memcpy(tamanio, stream, sizeof(uint32_t)); // Recibe tamanio
-    stream += sizeof(uint32_t); */
-
     tamanio = leer_buffer_enteroUint32(buffer);
     cadena = malloc((tamanio) + 1);                             // Reserva lugar para el string con el tamanio recibido
     memcpy(cadena, buffer->stream + buffer->offset, (tamanio)); // Recibe string

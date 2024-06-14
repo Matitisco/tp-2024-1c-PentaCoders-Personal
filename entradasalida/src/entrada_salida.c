@@ -295,16 +295,29 @@ void realizar_operacion_stdin()
 	{
 		char *texto_ingresado = readline("Ingrese un texto por teclado: ");
 
-		tipo_buffer *buffer_a_memoria = crear_buffer();
+		char *nuevo_texto;
+		truncar_valor(&nuevo_texto, texto_ingresado, limitante_cadena);
+		log_info(logger, "TEXTO YA LIMITADO: %s", nuevo_texto);
+		t_list *lista_enteros = convertir_a_numeros(nuevo_texto);
 
-		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
-		agregar_buffer_para_enterosUint32(buffer_a_memoria, pid);
-		agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
-		agregar_buffer_para_string(buffer_a_memoria, texto_ingresado);
+		log_info(logger, "PRIMERA LETRA CONVERTIDA: %d", list_get(lista_enteros, 0));
 
 		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
 		enviar_cod_enum(conexion_memoria, PEDIDO_ESCRITURA);
 		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
+
+		tipo_buffer *buffer_a_memoria = crear_buffer();
+
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, pid);
+		// agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, list_size(lista_enteros)); // cant de caracteres que vamos a escribir
+		// agregar_buffer_para_string(buffer_a_memoria, nuevo_texto);
+		for (int i = 0; i < list_size(lista_enteros); i++)
+		{
+			int valor = list_get(lista_enteros, i);
+			agregar_buffer_para_enterosUint32(buffer_a_memoria, valor);
+		}
 		enviar_buffer(buffer_a_memoria, conexion_memoria);
 
 		destruir_buffer(buffer_a_memoria);
@@ -325,6 +338,41 @@ void realizar_operacion_stdin()
 	}
 	estoy_libre = 1;
 	destruir_buffer(buffer_sol_operacion);
+}
+
+// WAR NEVER CHANGES/0
+
+t_list *convertir_a_numeros(char *texto)
+{
+	int i;
+	t_list *lista = list_create();
+	for (i = 0; texto[i] != '\0'; i++)
+	{
+		// Convertir el caracter a su valor ASCII
+		int numero = (int)texto[i];
+		list_add(lista, numero);
+	}
+	return lista;
+}
+
+void truncar_valor(char **valor_nuevo, char *valor_viejo, int limitante)
+{
+	*valor_nuevo = malloc(limitante * sizeof(char));
+
+	if (*valor_nuevo == NULL)
+	{
+		return;
+	}
+
+	for (int i = 0; i < limitante; i++)
+	{
+		(*valor_nuevo)[i] = valor_viejo[i];
+	}
+	(*valor_nuevo)[limitante] = '\0';
+	if (valor_viejo != NULL && valor_viejo[0] != '\0')
+	{
+		free(valor_viejo);
+	}
 }
 
 void arrancar_interfaz_stdout(t_interfaz *interfaz_io)
@@ -385,20 +433,21 @@ void realizar_operacion_stdout()
 	tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
 	int limitante_cadena = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, se lo envio a la memoria para que
+	log_info(logger, "TAMANIO A LEER %d", limitante_cadena);
 	// solo lea una cierta cantidad
 	int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a pedirle a memoria que busque el dato
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_STDOUT_WRITE)
+
 	{
-		tipo_buffer *buffer_a_memoria = crear_buffer();
-
-		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
-		agregar_buffer_para_enterosUint32(buffer_a_memoria, pid);
-		agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
-
 		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
 		enviar_cod_enum(conexion_memoria, PEDIDO_LECTURA);
 		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
+
+		tipo_buffer *buffer_a_memoria = crear_buffer();
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, pid);
+		agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
 		enviar_buffer(buffer_a_memoria, conexion_memoria);
 
 		destruir_buffer(buffer_a_memoria);
