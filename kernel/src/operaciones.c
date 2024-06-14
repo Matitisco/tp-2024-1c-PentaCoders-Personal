@@ -100,7 +100,9 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
         if (codigo == FINALIZAR_PROCESO)
         {
             proceso = buscarProceso(PID);
+            //sacar_procesos_cola()
             eliminar_proceso(proceso);
+            
             log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
         }
         else
@@ -382,6 +384,7 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 
     return pcb_buscada;
 }
+
 
 t_pcb *crear_proceso(char *PATH)
 {

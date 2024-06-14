@@ -14,7 +14,7 @@ void *largo_plazo()
 
         log_info(logger, "PID: %d - Estado Anterior: NEW - Estado Actual: READY \n", proceso->cde->pid); // Log pedido de cambio de estado
 
-        sem_post(cola_ready_global->contador);
+        //sem_post(cola_ready_global->contador);
         sem_post(b_reanudar_largo_plazo);
     }
 }

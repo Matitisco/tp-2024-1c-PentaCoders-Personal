@@ -53,7 +53,7 @@ void planificar_por_fifo()
 
         t_pcb *proceso = malloc(sizeof(t_pcb));
         sem_wait(b_exec_libre);
-        sem_wait(cola_ready_global->contador);
+        //sem_wait(cola_ready_global->contador);
         proceso = sacar_procesos_cola(cola_ready_global); // esto luego cambiar a transicion_exec_ready
 
         agregar_a_estado(proceso, cola_exec_global);
@@ -73,9 +73,11 @@ void planificar_por_rr()
 
     while (1)
     {
-        sem_wait(b_exec_libre);
+       
         sem_wait(b_reanudar_corto_plazo);
-        // ssem_wait(cola_ready_global->contador); // contador de procesos en ready
+        sem_wait(b_exec_libre);
+        
+        //sem_wait(cola_ready_global->contador); // contador de procesos en ready
 
         proceso = transicion_ready_exec();
 
@@ -137,22 +139,14 @@ void enviar_a_cpu_cde(t_cde *cde)
 t_pcb *transicion_ready_exec()
 {
 
-    log_info(logger, "\033[1;34m \n Tamanio de cola antes:%d\n \033[0m", queue_size(cola_ready_global->estado));
 
     t_pcb *proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-    proceso->cde = cde_interrumpido;
-    log_info(logger, "\033[1;34m \n Tamanio de cola despues:%d\n \033[0m", queue_size(cola_ready_global->estado));
-    /*     if (proceso == NULL)
-        {
-            return NULL;
-        }
-        else
-        { */
+    
     log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
-    /*
-            proceso->estado = EXEC;
-            agregar_a_estado(proceso, cola_exec_global);
-        } */
+
+    proceso->estado = EXEC;
+    agregar_a_estado(proceso, cola_exec_global);
+
     return proceso;
 }
 
@@ -213,7 +207,7 @@ void *transicion_blocked_ready() // mover a largo plazo
 
         agregar_a_estado(proceso, cola_ready_global);
         log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
-        sem_post(cola_ready_global->contador);
+        //sem_post(cola_ready_global->contador);
         proceso->estado = READY;
     }
 }
