@@ -222,6 +222,8 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
             uint32_t limite = leer_buffer_enteroUint32(buffer_lectura);
 
             char *texto_encontrado = leer_memoria(direccionFisica, pid_ejecutando, limite);
+            // ejecutnado la prueba IO_A el texto encontrado es -335540720 deberia ser texto
+            log_info(logger, "TEXTO ENCONTRADO: %d", texto_encontrado);
             if (texto_encontrado != NULL)
             {
                 enviar_cod_enum(cliente_solicitante, OK);
