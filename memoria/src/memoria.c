@@ -789,7 +789,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     {
         // Encontrar el próximo marco libre en el bitmap
         marco_libre = -1;
-        while (j < paginas_adicionales)
+        while (j < paginas_adicionales && )
         {
             if (array_bitmap[i].bit_ocupado == 0)
             {

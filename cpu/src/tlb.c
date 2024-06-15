@@ -20,18 +20,21 @@ void tlb_crear(char *algoritmo, int cant_entradas)
 {
     tlb = malloc(sizeof(tlb_tabla));
 
-    tlb->algoritmo = algoritmo;
     tlb->entradas = malloc(sizeof(tlb_entrada) * cant_entradas);
+    tlb->algoritmo = algoritmo;
     tlb->cant_entradas = cant_entradas;
 
     for (int i = 0; i < cant_entradas; i++)
     {
-        tlb->entradas[i].pid = NULL;
-        tlb->entradas[i].pagina = NULL;
-        tlb->entradas[i].marco = NULL;
+        tlb->entradas[i].pid = -1;
+        tlb->entradas[i].pagina = -1;
+        tlb->entradas[i].marco = -1;
         tlb->entradas[i].ultima_referencia = (char *)NULL;
     }
-
+    log_info(logger, "PRIMERA ENTRADA: %d", tlb->entradas[0].marco);
+    log_info(logger, "SEGUNDA ENTRADA: %d", tlb->entradas[1].marco);
+    log_info(logger, "TERCERA ENTRADA: %d", tlb->entradas[2].marco);
+    log_info(logger, "CUARTA ENTRADA: %d", tlb->entradas[3].marco);
     iterador_fifo = 0;
 }
 
@@ -40,11 +43,13 @@ int tlb_consultar_df_pagina(int pagina_buscada, int desplazamiento)
 
     for (int i = 0; i < tlb->cant_entradas; i++)
     {
-        int pagina_tlb = *tlb->entradas[i].pagina;
+        int pagina_tlb = tlb->entradas[i].pagina;
+        int marco_tlb = tlb->entradas[i].marco;
+        int tamanio_frame = tamanio_pagina;
 
         if (pagina_buscada == pagina_tlb)
         {
-            int direccion_fisica = *tlb->entradas[i].marco * tamanio_pagina + desplazamiento;
+            int direccion_fisica = marco_tlb * tamanio_frame + desplazamiento;
             return direccion_fisica; // TLB HIT
         }
     }
@@ -158,9 +163,9 @@ int obtener_tiempo_en_miliSegundos(char *tiempo)
 tlb_entrada *entrada_crear(int pid, int pagina, int marco)
 {
     tlb_entrada *entrada_nueva = malloc(sizeof(tlb_entrada));
-    entrada_nueva->pid = &pid;
-    entrada_nueva->pagina = &pagina;
-    entrada_nueva->marco = &marco;
+    entrada_nueva->pid = pid;
+    entrada_nueva->pagina = pagina;
+    entrada_nueva->marco = marco;
     entrada_nueva->ultima_referencia = temporal_get_string_time("%H:%M:%S:%MS");
     return entrada_nueva;
 }
@@ -170,13 +175,13 @@ entrada_tipo entrada_obtener(int pid, int pagina, int marco)
     entrada_tipo tipo;
     for (int i = 0; i < tlb->cant_entradas; i++)
     {
-        if (tlb->entradas[i].pid == NULL && tlb->entradas[i].marco == NULL && tlb->entradas[i].marco == NULL && tlb->entradas[i].ultima_referencia == NULL) // hay lugar libre
+        if (tlb->entradas[i].pid == -1 && tlb->entradas[i].marco == -1 && tlb->entradas[i].marco == -1 && tlb->entradas[i].ultima_referencia == NULL) // hay lugar libre
         {
             tipo.pos_entrada = i;
             tipo.estaba_cargada = 0;
             return tipo; // retornamos la posicion que esta libre
         }
-        else if (*tlb->entradas[i].pid == pid && *tlb->entradas[i].pagina == pagina && *tlb->entradas[i].marco == marco) // consultiamos si hay una pagina que esta cargada
+        else if (tlb->entradas[i].pid == pid && tlb->entradas[i].pagina == pagina && tlb->entradas[i].marco == marco) // consultiamos si hay una pagina que esta cargada
         {
             log_info(logger, "PID: <%d> - PAGINA: <%d> - MARCO: <%d> - ESTABA CARGADA EN TLB", pid, pagina, marco);
             tlb->entradas[i].ultima_referencia = temporal_get_string_time("%H:%M:%S:%MS"); // actualizamos la entrada con la hora actual
