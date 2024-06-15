@@ -396,6 +396,7 @@ t_pcb *crear_proceso(char *PATH)
     proceso_nuevo->cde = iniciar_cde(PATH);
 
     return proceso_nuevo;
+   
 }
 
 t_cde *iniciar_cde(char *PATH)
