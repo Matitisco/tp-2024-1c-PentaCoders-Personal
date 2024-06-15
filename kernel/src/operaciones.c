@@ -133,9 +133,10 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
 
         op_code codigo = recibir_operacion(socket_memoria);
         if (codigo == FINALIZAR_PROCESO)
-        {
-            eliminar_proceso(proceso);
 
+        {   
+            sacar_procesos_cola(obtener_cola(proceso->estado));
+            eliminar_proceso(proceso);
             log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
         }
         else

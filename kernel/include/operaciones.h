@@ -21,6 +21,8 @@ void pausar_largo_plazo();
 void modificar_grado_multiprogramacion(int valor);
 void mostrar_procesos(colaEstado *cola);
 
+colaEstado* obtener_cola(t_estados estado);
+
 // Funciones de busuqeda del proceso
 
 uint32_t mostrarPID(t_pcb *proceso);

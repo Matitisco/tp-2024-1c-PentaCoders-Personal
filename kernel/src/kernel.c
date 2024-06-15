@@ -323,6 +323,31 @@ t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 	return pcb;
 }
 
+colaEstado* obtener_cola(t_estados estado){
+	switch (estado)
+	{
+	case NEW:
+		return cola_new_global;
+		break;
+	case READY:
+		return cola_ready_global;
+		break;
+	case EXEC:
+		return cola_exec_global;
+		break;
+	case BLOCKED:
+		return cola_bloqueado_global;
+		break;
+	case FINISHED:
+		return cola_exit_global;
+		break;
+	default:
+		break;
+	}
+log_error(logger, "No se encontro la cola");
+return NULL;
+}
+
 void *levantar_CPU_Interrupt()
 {
 	socket_cpu_interrupt = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_interrupt);
@@ -345,7 +370,7 @@ void *levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 
 			finalizar_proceso(cde_interrumpido->pid, SUCCESS);
-
+			
 			sem_post(b_largo_plazo_exit);
 			sem_post(b_reanudar_largo_plazo);
 			sem_post(b_reanudar_corto_plazo);
@@ -419,8 +444,8 @@ void *levantar_CPU_Dispatch()
 			
 		
 			else{	
-				printf("\033[38;2;255;105;180m \n No existe el recurso: %s \n \033[0m",nombre_recurso_recibido);
-				
+				printf("\033[38;2;255;105;180m \n No existe el recurso: %s \n \033[0m",nombre_recurso_recibido);				
+
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 				sem_post(b_reanudar_largo_plazo);
