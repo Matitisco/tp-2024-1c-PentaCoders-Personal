@@ -292,16 +292,6 @@ config_kernel *inicializar_config_kernel()
 	free(instancias_recursos_str);
 	free(lista_recursos);
 
-
-	for (int a = 0; a < tamanio; a++) {
-		
-		t_recurso *recurso = list_get(configuracion->recursos,a);
-		printf("\033[0;33m\n Nombre del recurso: %s \n \033[0m",recurso->nombre);
-		int valor_instancias;
-		sem_getvalue(recurso->instancias, &valor_instancias);
-		printf("\033[0;33m\n Instancias: %d \n \033[0m",valor_instancias);
-	}
-
 	return configuracion;
 }
 
@@ -444,7 +434,8 @@ void *levantar_CPU_Dispatch()
 			
 		
 			else{	
-				printf("\033[38;2;255;105;180m \n No existe el recurso: %s \n \033[0m",nombre_recurso_recibido);				
+				printf("\033[38;2;255;105;180m \n No existe el recurso: %s a continuacion se muestra en donde esta el proceso: \n \033[0m",nombre_recurso_recibido);
+				proceso_estado();				
 
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
@@ -454,7 +445,8 @@ void *levantar_CPU_Dispatch()
 		
 			break;
 		case SIGNAL_RECURSO: // un proceso libera un recurso
-			/*
+			printf("\033[0;33m\n SIGNAL_RECURSO \n \033[0m");
+
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
 			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
@@ -462,28 +454,30 @@ void *levantar_CPU_Dispatch()
 			
 			sem_post(b_transicion_exec_blocked);
 
-			*/
-			//posicion;
-			//recurso = existe_recurso(&posicion);
-			/*
-			if (recurso == 0) // encontro al recurso y existe
-			{
-				signal_instancia_recurso(posicion);
-				// t_pcb *proceso = buscarProceso(cde_interrumpido->pid);
-				// t_recurso *recurso_buscado = list_find(proceso->recursosAsignados, ya_tiene_instancias_del_recurso);
+			
+			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
+			{	
+				printf("\033[0;33m\n Existe el recurso: %s \n \033[0m",nombre_recurso_recibido);
 
-				// sem_wait(recurso_buscado->instancias);
+				t_recurso * recurso = obtener_recurso(nombre_recurso_recibido);
+
+				signal_instancia_recurso(recurso);
+				
+				//sem_wait(recurso_buscado->instancias);
 
 				int valor_instancias;
 
-				sem_getvalue(&(valores_config->recursos[posicion]->instancias), &valor_instancias);
-				log_info(logger, "Recurso: %s Instancias Restantes: %d", valores_config->recursos[posicion]->nombre, valor_instancias);
+				sem_getvalue(recurso->instancias, &valor_instancias);
+				log_info(logger, "Recurso: %s Instancias Restantes: %d", recurso->nombre, valor_instancias);
+
+				//recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
+
 				sem_post(b_transicion_blocked_ready);
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
-
+			
 			}
-			else
+			else //el recurso no existe
 			{
 				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
 
@@ -492,7 +486,6 @@ void *levantar_CPU_Dispatch()
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
 			}
-			*/
 			break;
 		case OUT_OF_MEMORY:
 
@@ -511,16 +504,7 @@ void *levantar_CPU_Dispatch()
 		}
 	}
 }
-/*
-_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
-{
-	if (strcmp(recurso_recibido, recurso_proceso->nombre) == 0)
-	{
-		return 1;
-	}
-	return 0;
-}
-*/
+
 
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion)
 {
@@ -753,7 +737,24 @@ _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 	return 0;
 }
 
+void signal_instancia_recurso(t_recurso * recurso)
+{
+	sem_post(recurso->instancias);
 
+	/*
+	aca tengo que ver si tengo un proceso bloqueado por un recurso, si ESTE signal se esta haciendo a ESE recurso
+	bloqueante, verifico si ya se puede desbloquear el proceso 
+	sacar_procesos_cola()
+	*/
+
+// aca hay que sacarle un recursos al proceso que lo tiene e incrementar las intancias del mismo
+
+/*
+ Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo. 
+ En caso de que corresponda, desbloquea al primer proceso de la cola de bloqueados de ese recurso. 
+ Una vez hecho esto, se devuelve la ejecución al proceso que peticiona el SIGNAL.
+*/
+}
 	
 
 
