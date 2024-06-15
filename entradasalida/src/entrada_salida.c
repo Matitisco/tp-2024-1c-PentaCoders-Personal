@@ -297,10 +297,8 @@ void realizar_operacion_stdin()
 
 		char *nuevo_texto;
 		truncar_valor(&nuevo_texto, texto_ingresado, limitante_cadena);
-		log_info(logger, "TEXTO YA LIMITADO: %s", nuevo_texto);
+		log_info(logger, "TEXTO YA LIMITADO: '%s'", nuevo_texto);
 		t_list *lista_enteros = convertir_a_numeros(nuevo_texto);
-
-		log_info(logger, "PRIMERA LETRA CONVERTIDA: %d", list_get(lista_enteros, 0));
 
 		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
 		enviar_cod_enum(conexion_memoria, PEDIDO_ESCRITURA);
@@ -434,7 +432,6 @@ void realizar_operacion_stdout()
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
 	int limitante_cadena = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, se lo envio a la memoria para que
 	log_info(logger, "TAMANIO A LEER %d", limitante_cadena);
-	// solo lea una cierta cantidad
 	int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a pedirle a memoria que busque el dato
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_STDOUT_WRITE)
@@ -455,11 +452,17 @@ void realizar_operacion_stdout()
 		op_code codigo_memoria = recibir_operacion(conexion_memoria);
 		if (codigo_memoria == OK)
 		{
+			char *texto_reconstruido = malloc(limitante_cadena);
 			tipo_buffer *lectura = recibir_buffer(conexion_memoria);
-			char *valor = leer_buffer_string(lectura);
+			for (int i = 0; i < limitante_cadena; i++)
+			{
+				int entero_valor = leer_buffer_enteroUint32(lectura);
+				int_a_char_y_concatenar_a_string(entero_valor, texto_reconstruido);
+				log_info(logger, "Valor hallado en Direccion Fisica <%d> : %s", direccion_fisica, string_itoa(entero_valor));
+			}
+			log_info(logger, "VALOR: %s", texto_reconstruido);
 			destruir_buffer(lectura);
 
-			log_info(logger, "Valor hallado en Direccion Fisica <%d> : %s", direccion_fisica, valor);
 			log_info(logger, "PID: <%d> - Operacion: <IO_STDOUT_WRITE>", pid);
 		}
 		else if (codigo_memoria == ERROR_PEDIDO_LECTURA)
@@ -473,6 +476,16 @@ void realizar_operacion_stdout()
 	}
 	estoy_libre = 1;
 	destruir_buffer(buffer_sol_operacion);
+}
+
+void int_a_char_y_concatenar_a_string(int valor, char *cadena)
+{
+
+	char caracter = (char)valor;
+
+	int longitud_cadena = strlen(cadena);
+	cadena[longitud_cadena] = caracter;
+	cadena[longitud_cadena + 1] = '\0';
 }
 
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) // IMPLEMENTAR

@@ -212,10 +212,13 @@ void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer);
     uint32_t cant_caracteres = leer_buffer_enteroUint32(buffer);
 
+    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+
     for (int i = 0; i < cant_caracteres; i++)
     {
         uint32_t valor = leer_buffer_enteroUint32(buffer);
-        resultado = escribir_memoria(direccion_fisica, pid_ejecutando, valor, sizeof(valor));
+        resultado = escribir_memoria(numero_pagina, offset, pid_ejecutando, valor, sizeof(valor));
         if (resultado == -1)
         {
             log_error(logger, "ERROR AL ESCRIBIR EL VALOR %d", valor);
@@ -224,7 +227,7 @@ void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
         {
             log_info(logger, "Se escribio el valor: %d", valor);
         }
-        // offset += sizeof(valor);
+        offset += sizeof(valor);
     }
     if (resultado != -1)
     {
@@ -244,7 +247,10 @@ void escritura_cpu(tipo_buffer *buffer, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer);
 
-    int resultado = escribir_memoria(direccion_fisica, pid_ejecutando, valor_a_escribir, tamanio);
+    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+
+    int resultado = escribir_memoria(numero_pagina, offset, pid_ejecutando, valor_a_escribir, tamanio);
 
     if (resultado != -1)
     {
@@ -264,12 +270,15 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t limite = leer_buffer_enteroUint32(buffer_lectura); // cant de veces que vamos a leer
 
+    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+
     tipo_buffer *buffer_stdout = crear_buffer();
     uint32_t valor;
 
     for (int i = 0; i < limite; i++)
     {
-        int *valor_void = (int *)leer_memoria(direccion_fisica, pid_ejecutando, sizeof(limite));
+        int *valor_void = (int *)leer_memoria(numero_pagina,offset, pid_ejecutando, sizeof(limite));
         int valor = *valor_void;
         if ((&valor) != NULL)
         {
@@ -280,14 +289,10 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
         {
             log_error(logger, "ERROR AL TRAER EL VALOR");
         }
-        // offset += (sizeof(uint32_t));
+        offset += (sizeof(limite));
     }
 
-    // void *valor = leer_memoria(direccionFisica, pid_ejecutando, limite);
-    // char *texto = (char *)valor;
-    //   WAR NEVER CHANGES...
-    // log_info(logger, "TEXTO ENCONTRADO: %s", texto);
-    if (valor != NULL) // el ulitmo valor agregado
+    if (valor != NULL)
     {
         enviar_cod_enum(cliente_solicitante, OK);
         log_info(logger, "PID: <%d> - Accion: LEER - Direccion fisica: <%d> - Tamaño <%d>", pid_ejecutando, direccion_fisica, limite);
@@ -306,11 +311,14 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
 
 void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante)
 {
-    uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_lectura);
+    uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
 
-    void *valor_leido = leer_memoria(direccionFisica, pid_ejecutando, tamanio);
+    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+
+    void *valor_leido = leer_memoria(numero_pagina, offset, pid_ejecutando, tamanio);
 
     if (valor_leido != NULL)
     {
@@ -786,12 +794,9 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     enviar_cod_enum(cliente_cpu, RESIZE_EXITOSO);
 }
 
-void *leer_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t tamanio)
+void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio)
 {
     usleep(valores_config->retardo_respuesta * 1000);
-
-    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
-    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
@@ -804,12 +809,10 @@ void *leer_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t tamanio)
     return valor;
 }
 
-void *escribir_memoria(uint32_t direccion_fisica, uint32_t pid, void *valor_a_escribir, uint32_t tamanio)
+void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio)
 {
-    usleep(valores_config->retardo_respuesta * 1000);
 
-    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
-    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+    usleep(valores_config->retardo_respuesta * 1000);
 
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     if (tabla_paginas == NULL)
