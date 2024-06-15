@@ -15,6 +15,7 @@ t_list *lista_contextos;
 t_list *lista_instrucciones;
 t_list *lista_global_tablas;
 t_list *lista_global_marcos;
+t_tabla_paginas *tabla_actual;
 t_bit_map *array_bitmap;
 
 int main(int argc, char *argv[])
@@ -26,6 +27,7 @@ int main(int argc, char *argv[])
     lista_global_tablas = list_create();
     cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; // va a ser la cantida de amrcos
     espacio_usuario = malloc(sizeof(valores_config->tam_memoria));
+    tabla_actual = malloc(sizeof(t_tabla_paginas));
     if (espacio_usuario == NULL)
     {
         log_error(logger, "ERROR ESPACIO USUARIO");
@@ -134,35 +136,28 @@ void *recibirCPU()
         switch (cod_op)
         {
         case PEDIDO_INSTRUCCION:
-            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             pedido_instruccion_cpu_dispatch(cliente_cpu, lista_contextos);
-            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             break;
         case ACCESO_ESPACIO_USUARIO:
             acceso_a_espacio_usuario(cliente_cpu);
             break;
         case RESIZE_EXTEND:
-            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             tipo_buffer *buffer_cpu = recibir_buffer(cliente_cpu);
             uint32_t nuevo_tamanio = leer_buffer_enteroUint32(buffer_cpu);
             t_cde *cde = leer_cde(buffer_cpu);
             int tamanio = tamanio_proceso(cde->pid);
             if (tamanio > nuevo_tamanio)
             {
-                reducir_proceso(cde->pid, nuevo_tamanio, cliente_cpu); // entonce signfica que hay que reducir
+                reducir_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
             else
             {
-                ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu); // significa que es mayor
+                ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
-            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             break;
         case PEDIDO_FRAME:
-            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             pedido_frame_mmu(cliente_cpu);
-            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             break;
-
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
             break;
@@ -651,13 +646,12 @@ config_memoria *configuracion_memoria()
     return valores_config;
 }
 
-t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso)
+t_pagina *crear_pagina(int bit_validez, int marco, int pidProceso)
 {
     t_pagina *pagina = malloc(sizeof(t_pagina));
     pagina->marco = marco;
     pagina->bit_validez = 1;
     pagina->pid = pidProceso;
-    list_add(list_tabla_paginas, NULL); // la lista de paginas seria la tabla
     return pagina;
 }
 
@@ -691,16 +685,18 @@ t_tabla_paginas *buscar_en_lista_global(int pid)
 {
     int cantidad_tablas = list_size(lista_global_tablas); // 1
 
-    for (int i = 0; i <= cantidad_tablas; i++)
+    for (int i = 0; i < cantidad_tablas; i++)
     {
-
-        t_tabla_paginas *tabla = list_remove(lista_global_tablas, i);
-        if (tabla->pid == pid)
+        if (i > list_size(lista_global_tablas))
         {
-            list_add(lista_global_tablas, tabla);
-            return tabla;
+            break;
         }
-        list_add(lista_global_tablas, tabla);
+
+        tabla_actual = list_get(lista_global_tablas, i);
+        if (tabla_actual->pid == pid)
+        {
+            return tabla_actual;
+        }
     }
     return NULL;
 }
@@ -760,10 +756,62 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     // Vemos cuantas paginas tenemos que agregar con este nuevo tamanio
     int paginas_adicionales = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
     log_info(logger, "CANTIDAD MARCOS A ASIGNAR: %d", paginas_adicionales);
-    int tamanio_anterior = tamanio_proceso(pid); // 128
+    int tamanio_anterior = tamanio_proceso(pid);
     int paginas_actuales = (tamanio_anterior + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
-    // 30
+
     //  Verificar si hay suficientes marcos disponibles
+    hay_marcos_suficientes(paginas_adicionales, cliente_cpu);
+
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
+
+    if (tabla_paginas == NULL)
+    {
+        log_error(logger, "PID: <%d> - NO SE ENCONTRO TABLA PAGINAS", pid);
+        return;
+    }
+
+    int marco_libre, j = 0;
+
+    t_list *tp_paginas_proceso = tabla_paginas->tabla_paginas_proceso;
+
+    for (int i = 0; i < cant_marcos; i++)
+    {
+        marco_libre = -1;
+        if (j == paginas_adicionales)
+        {
+            break;
+        }
+        while (j < (paginas_adicionales))
+        {
+            if (array_bitmap[i].bit_ocupado == 0)
+            {
+                marco_libre = i;
+
+                agregar_pagina(crear_pagina(1, marco_libre, pid), tp_paginas_proceso);
+                array_bitmap[i].bit_ocupado = 1;
+                j++;
+                break;
+            }
+            else
+            {
+                j++;
+                break;
+            }
+        }
+    }
+
+    for (int i = 0; i < list_size(tp_paginas_proceso); i++)
+    {
+        t_pagina *pagina = list_get(tp_paginas_proceso, i);
+        log_info(logger, "PAGINA: %d, PID:%d, MARCO:%d, VALIDEZ:%d ", i, pagina->pid, pagina->marco, pagina->bit_validez);
+    }
+
+    log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
+    enviar_cod_enum(cliente_cpu, RESIZE_EXITOSO);
+}
+
+void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu)
+{
     int marcos_disponibles = 0;
     for (int i = 0; i < cant_marcos; i++)
     {
@@ -781,46 +829,6 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         return;
     }
     // Buscar la tabla de páginas del proceso correspondiente
-    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
-    if (tabla_paginas == NULL)
-    {
-        log_info(logger, "NO se encontro la tabla de paginas con pid %d", pid);
-        return;
-    }
-    int marco_libre;
-    // Agrego las paginas
-    t_list *paginas = tabla_paginas->tabla_paginas_proceso; // obtenemos list d epag del proceso
-    int j = 0;
-    for (int i = 0; i < cant_marcos; i++) // desde 0 hasta la cant de marcos totoales 32
-    {
-        // Encontrar el próximo marco libre en el bitmap
-        marco_libre = -1;
-        while (j < (paginas_adicionales))
-        {
-            if (array_bitmap[i].bit_ocupado == 0) // 0 1 2 3 4
-            {
-                marco_libre = i; // 5
-                // Crear una nueva página y agregarla al proceso
-                t_pagina *nueva_pagina = malloc(sizeof(t_pagina));
-                nueva_pagina->marco = marco_libre; // Pongo el marco libre que encontre//5
-                nueva_pagina->pid = pid;
-                nueva_pagina->bit_validez = 1;
-                list_add(paginas, nueva_pagina);
-                log_info(logger, "PAGINA : %d MARCO %d", j, nueva_pagina->marco);
-                array_bitmap[i].bit_ocupado = 1; // Marcar el marco como ocupado en el bitmap
-                j++;
-                break;
-            }
-            else
-            {
-                j++;
-                break;
-            }
-        }
-    }
-
-    log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
-    enviar_cod_enum(cliente_cpu, RESIZE_EXITOSO);
 }
 
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)

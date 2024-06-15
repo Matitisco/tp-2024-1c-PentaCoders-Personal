@@ -31,10 +31,6 @@ void tlb_crear(char *algoritmo, int cant_entradas)
         tlb->entradas[i].marco = -1;
         tlb->entradas[i].ultima_referencia = (char *)NULL;
     }
-    log_info(logger, "PRIMERA ENTRADA: %d", tlb->entradas[0].marco);
-    log_info(logger, "SEGUNDA ENTRADA: %d", tlb->entradas[1].marco);
-    log_info(logger, "TERCERA ENTRADA: %d", tlb->entradas[2].marco);
-    log_info(logger, "CUARTA ENTRADA: %d", tlb->entradas[3].marco);
     iterador_fifo = 0;
 }
 

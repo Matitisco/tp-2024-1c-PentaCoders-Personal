@@ -171,8 +171,7 @@ void levantar_conexion_a_memoria()
 void recibir_tamanio_pagina(int socket_memoria)
 {
 	tipo_buffer *buffer_tamanio = recibir_buffer(socket_memoria);
-	tamanio_pagina = leer_buffer_enteroUint32(buffer_tamanio); // lo tiene que usar la mmu en teoria
-	log_info(logger, "MEMORIA - TAMANIO PAGINA: <%d> ", tamanio_pagina);
+	tamanio_pagina = leer_buffer_enteroUint32(buffer_tamanio);
 	destruir_buffer(buffer_tamanio);
 }
 

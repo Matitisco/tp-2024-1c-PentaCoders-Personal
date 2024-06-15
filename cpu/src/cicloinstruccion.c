@@ -75,8 +75,8 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
-    uint32_t reg_valor = obtener_valor_origen(datos, cde);
-    uint32_t direccion_logica = obtener_valor_origen(direccion, cde);
+    uint32_t reg_valor = obtener_valor(datos);
+    uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
 
     enviar_cod_enum(socket_memoria, ACCESO_ESPACIO_USUARIO);
