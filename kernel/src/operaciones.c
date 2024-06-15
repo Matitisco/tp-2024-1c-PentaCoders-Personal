@@ -100,7 +100,9 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
         if (codigo == FINALIZAR_PROCESO)
         {
             proceso = buscarProceso(PID);
+            //sacar_procesos_cola()
             eliminar_proceso(proceso);
+            
             log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
         }
         else
@@ -155,8 +157,10 @@ void eliminar_proceso(t_pcb *proceso)
 void iniciar_planificacion()
 {
     habilitar_planificadores = 1;
+    
     sem_post(b_reanudar_largo_plazo);
     sem_post(b_reanudar_corto_plazo);
+    
     estado_planificacion = PLANIFICACION_EN_FUNCIONAMIENTO;
 }
 
@@ -164,8 +168,7 @@ void iniciar_planificacion()
 void detener_planificacion()
 {
     habilitar_planificadores = 0;
-    sem_wait(b_reanudar_largo_plazo);
-    sem_wait(b_reanudar_corto_plazo);
+
     estado_planificacion = PLANIFICACION_PAUSADA;
 }
 
@@ -178,6 +181,7 @@ void proceso_estado()
 {
     mostrar_procesos(cola_new_global);
     mostrar_procesos(cola_ready_global);
+    mostrar_procesos(cola_ready_plus);
     mostrar_procesos(cola_exec_global);
     mostrar_procesos(cola_bloqueado_global);
     mostrar_procesos(cola_exit_global);
@@ -386,6 +390,7 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 
     return pcb_buscada;
 }
+
 
 t_pcb *crear_proceso(char *PATH)
 {

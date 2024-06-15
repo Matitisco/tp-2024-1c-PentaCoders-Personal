@@ -82,6 +82,8 @@ extern sem_t *b_reanudar_largo_plazo;
 extern sem_t *b_reanudar_corto_plazo;
 extern sem_t *b_transicion_exec_ready;
 extern sem_t *b_transicion_blocked_ready;
+extern sem_t *b_detener_planificacion;
+
 extern int habilitar_planificadores;
 extern config_kernel *valores_config;
 extern int socket_memoria;
@@ -89,11 +91,22 @@ extern int socket_cpu_dispatch;
 extern int socket_cpu_interrupt;
 // DECLARACION VARIABLES GLOBALES
 
+// INTERRUPTORES
+extern sem_t *b_switch_readys;
+extern int interruptor_switch_readys;
+
+extern sem_t *contador_readys;
+
+
 extern colaEstado *cola_new_global;
 extern colaEstado *cola_ready_global;
+extern colaEstado *cola_ready_plus;
 extern colaEstado *cola_exec_global;
 extern colaEstado *cola_bloqueado_global;
 extern colaEstado *cola_exit_global;
+
+extern sem_t *bloquearReady;
+extern sem_t *bloquearReadyPlus;
 
 // FUNCIONES
 void crear_hilos();
@@ -107,8 +120,12 @@ void inicializarEstados();
 colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado );
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
+
+t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char* planificacion);
+void evaluar_planificacion(char* planificador);
+
 
 void iniciar_semaforos();
 
@@ -155,6 +172,20 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 void atender_interrupciones();
 int llego_proceso();
 char *buscar_recurso(char *recurso, int *posicion);
+
+int hayProcesosEnEstado(colaEstado* cola_estado);
+
+void bloquearSiReadysVacios();
+void desbloquearSiReadysVacios();
+
+void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);
+
+void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);//no se usa
+
+void valorSemaforo(sem_t *semaforo);
+
+
+
 
 bool existe_recurso2(char *nombre_recurso);
 

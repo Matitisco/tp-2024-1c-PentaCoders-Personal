@@ -598,22 +598,21 @@ void obtener_y_eliminar_cde(int pid, t_registros *reg)
 
 void eliminar_cde(t_cde *cde)
 {
-    // VOLVER PARA LA ENTREGA FINAL
-    /*     int instrucciones = list_size(cde->lista_instrucciones);
-        for (int i = 0; i < instrucciones; i++)
+    int instrucciones = list_size(cde->lista_instrucciones);
+    for (int i = 0; i < instrucciones; i++)
+    {
+        t_instruccion *instruccion = list_get(cde->lista_instrucciones, i);
+        int tamanio_lista = list_size(instruccion->parametros);
+        for (int i = 0; i < tamanio_lista; i++)
         {
-            t_instruccion *instruccion = list_get(cde->lista_instrucciones, i);
-            int tamanio_lista = list_size(instruccion->parametros);
-            for (int i = 0; i < tamanio_lista; i++)
-            {
-                char *par = list_get(instruccion->parametros, i);
-                log_info(logger, "PARAMETRO A LIBERAR: %s", par);
-                free(par);
-            }
-            list_destroy(instruccion->parametros);
+            char *par = list_get(instruccion->parametros, i);
+            log_info(logger, "PARAMETRO A LIBERAR: %s", par);
+            free(par);
         }
-        free(cde->path);
-        liberar_registros(cde->registros); */
+        list_destroy(instruccion->parametros);
+    }
+    free(cde->path);
+    liberar_registros(cde->registros);
 }
 
 void liberar_registros(t_registros *registros)

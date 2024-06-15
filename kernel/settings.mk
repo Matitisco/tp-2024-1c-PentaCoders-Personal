@@ -13,4 +13,4 @@ ARGS=
 
 # Valgrind flags
 MEMCHECK_FLAGS=--track-origins=yes
-HELGRIND_FLAGS=
+HELGRIND_FLAGS=--tool=helgrind

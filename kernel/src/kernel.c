@@ -3,6 +3,7 @@
 // COLAS
 colaEstado *cola_new_global;
 colaEstado *cola_ready_global;
+colaEstado *cola_ready_plus; 
 colaEstado *cola_exec_global;
 colaEstado *cola_bloqueado_global;
 colaEstado *cola_exit_global;
@@ -29,6 +30,11 @@ sem_t *sem_agregar_a_estado;
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
 sem_t *b_transicion_blocked_ready;
+
+sem_t *bloquearReady;
+sem_t *bloquearReadyPlus;
+
+
 extern sem_t *sem_kernel_io_generica;
 // HILOS
 pthread_t hiloMEMORIA;
@@ -55,9 +61,17 @@ char *nombre_IO;
 int servidor_para_io;
 config_kernel *valores_config;
 
+sem_t *b_detener_planificacion;
+
+int interruptor_switch_readys;
+sem_t *b_switch_readys;
+
+sem_t *contador_readys;
+
+
 int main(int argc, char *argv[])
 {
-
+	
 	iniciar_kernel();
 
 	pthread_join(hiloMEMORIA, NULL);
@@ -74,6 +88,7 @@ int main(int argc, char *argv[])
 
 void iniciar_kernel()
 {
+	habilitar_planificadores = 0;
 	inicializarEstados();
 	logger = iniciar_logger("kernel.log", "KERNEL");
 	nombre_IO = string_new();
@@ -203,8 +218,9 @@ void inicializarEstados()
 {
 	cola_new_global = constructorColaEstado("NEW");
 	cola_ready_global = constructorColaEstado("READY");
-	cola_ready_global->contador = malloc(sizeof(sem_t));
-	sem_init(cola_ready_global->contador, 0, 0);
+	//cola_ready_global->contador = malloc(sizeof(sem_t));
+	cola_ready_plus = constructorColaEstado("READY+");
+	//sem_init(cola_ready_global->contador, 0, 0);
 	cola_exec_global = constructorColaEstado("EXEC");
 	cola_bloqueado_global = constructorColaEstado("BLOCK");
 	cola_exit_global = constructorColaEstado("EXIT");
@@ -223,6 +239,12 @@ void iniciar_semaforos()
 	b_transicion_exec_blocked = malloc(sizeof(sem_t));
 	b_transicion_blocked_ready = malloc(sizeof(sem_t));
 	sem_quantum = malloc(sizeof(sem_t));
+	b_detener_planificacion = malloc(sizeof(sem_t));
+	bloquearReady = malloc(sizeof(sem_t));
+	bloquearReadyPlus = malloc(sizeof(sem_t));
+	b_switch_readys = malloc(sizeof(sem_t)); 
+	contador_readys = malloc(sizeof(sem_t));
+
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
@@ -234,9 +256,12 @@ void iniciar_semaforos()
 	sem_init(sem_quantum, 0, 0);
 	sem_init(b_transicion_exec_blocked, 0, 0);
 	sem_init(b_transicion_blocked_ready, 0, 0);
-	// sem_init(b_detener_planificacion_largo, 0, 0);//agregado de lo que hizo Mati
-	// sem_init(b_detener_planificacion_corto, 0, 0);//agregado de lo que hizo Mati
-}
+	sem_init(b_detener_planificacion, 0, 0);
+	sem_init(bloquearReady, 0, 0);
+	sem_init(bloquearReadyPlus, 0, 0);
+	sem_init(b_switch_readys, 0, 0);
+	sem_init(contador_readys, 0, 0);
+} 
 
 config_kernel *inicializar_config_kernel()
 {
@@ -295,8 +320,38 @@ config_kernel *inicializar_config_kernel()
 	return configuracion;
 }
 
+
+
+
+void evaluar_planificacion(char* planificador)
+{
+	if(habilitar_planificadores==0)
+	{
+		if(strcmp(planificador, "largo"))
+		{
+			sem_wait(b_reanudar_largo_plazo);
+		}
+		else if(strcmp(planificador, "corto"))
+		{
+			sem_wait(b_reanudar_corto_plazo);
+		}
+	}
+}
+
+t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char* planificacion)
+{
+	evaluar_planificacion(planificacion);
+	t_pcb * proceso = sacar_procesos_cola(colaEstadoInicio);
+
+	evaluar_planificacion(planificacion);
+	agregar_a_estado(proceso, colaEstadoFinal);
+
+	return proceso;
+}
+
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 {
+	
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	queue_push(cola_estado->estado, pcb);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
@@ -311,6 +366,7 @@ t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 	pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
 	return pcb;
+	
 }
 
 colaEstado* obtener_cola(t_estados estado){
@@ -362,8 +418,7 @@ void *levantar_CPU_Dispatch()
 			finalizar_proceso(cde_interrumpido->pid, SUCCESS);
 			
 			sem_post(b_largo_plazo_exit);
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 			destruir_buffer(buffer_cpu_fin);
 			break;
 
@@ -374,12 +429,7 @@ void *levantar_CPU_Dispatch()
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
 			// IO_GEN_SLEEP INTERFAZ TIEMPO
-			// DIN DE QUANTUM Y OCURRE LA INTERRUPCION
 			sem_post(b_transicion_exec_ready);
-
-			sem_post(b_reanudar_largo_plazo); // está en el código de Mati
-			sem_post(b_reanudar_corto_plazo); // está en el código de Mati
-
 			break;
 
 		case INSTRUCCION_INTERFAZ:
@@ -388,8 +438,9 @@ void *levantar_CPU_Dispatch()
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cde);
 
+			pthread_cancel(hiloQuantum);
 			sem_post(b_transicion_exec_blocked);
-			sem_post(b_reanudar_largo_plazo);
+
 
 			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_cpu);
 			break;
@@ -427,8 +478,6 @@ void *levantar_CPU_Dispatch()
 				if (recursos_en_espera == 0)//si el proceso NO se bloqueo x falta de recurso
 					{
 						sem_post(b_transicion_blocked_ready);
-						sem_post(b_reanudar_largo_plazo);
-						sem_post(b_reanudar_corto_plazo);
 					} // si se bloqueo, queda esperando
 			}
 			
@@ -439,8 +488,7 @@ void *levantar_CPU_Dispatch()
 
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+
 			}
 		
 			break;
@@ -483,8 +531,7 @@ void *levantar_CPU_Dispatch()
 
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+
 			}
 			break;
 		case OUT_OF_MEMORY:
@@ -494,8 +541,7 @@ void *levantar_CPU_Dispatch()
 			finalizar_proceso(cde_interrumpido->pid, OUT_OF_MEMORY_END);
 
 			sem_post(b_largo_plazo_exit);
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 
 			break;
 		default:
@@ -589,8 +635,7 @@ void interfaz_no_conectada(int pid)
 	log_error(logger, "La interfaz %s no se encuentra conectada", nombre_IO);
 	finalizar_proceso(pid, INVALID_RESOURCE);
 	sem_post(b_largo_plazo_exit);
-	sem_post(b_reanudar_largo_plazo);
-	sem_post(b_reanudar_corto_plazo);
+
 }
 
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid)
@@ -611,17 +656,7 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 		{
 			sem_post(b_transicion_blocked_ready);
 			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-			/* 			if (list_is_empty(io->procesos_espera))
-						{
-							sem_post(b_reanudar_largo_plazo);
-							sem_post(b_reanudar_corto_plazo);
-						}
-						else
-						{
 
-						} */
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
 		}
 	}
 	else
@@ -653,8 +688,7 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 		{
 			sem_post(b_transicion_blocked_ready);
 			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 		}
 	}
 	else
@@ -684,8 +718,7 @@ void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int t
 		{
 			sem_post(b_transicion_blocked_ready);
 			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+
 		}
 	}
 	else

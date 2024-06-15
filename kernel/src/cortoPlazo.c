@@ -4,9 +4,19 @@ pthread_mutex_t *mutex_pcb_ejecutando;
 pthread_mutex_t *mutex_estado_ejecutando;
 pthread_mutex_t *mutex_cola_ready;
 pthread_mutex_t *mutex_cola_exec;
-t_temporal *quantum;
+//t_temporal *quantum;
 t_temporal *timer;
 int tiempo_transcurrido;
+char* plani = "corto";
+
+int quantum_usable;
+
+
+
+
+
+
+
 
 // CORTO PLAZO
 void *corto_plazo()
@@ -23,7 +33,6 @@ void *corto_plazo()
     }
     else if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
     {
-        quantum = temporal_create();
         planificar_por_vrr();
     }
     else
@@ -47,16 +56,15 @@ void iniciar_sem_cp()
 
 void planificar_por_fifo()
 {
+    t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
-        sem_wait(b_reanudar_corto_plazo);
 
-        t_pcb *proceso = malloc(sizeof(t_pcb));
         sem_wait(b_exec_libre);
-        sem_wait(cola_ready_global->contador);
-        proceso = sacar_procesos_cola(cola_ready_global); // esto luego cambiar a transicion_exec_ready
+        
 
-        agregar_a_estado(proceso, cola_exec_global);
+        proceso = transicion_ready_exec();
+
         proceso->estado = EXEC;
 
         enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO);
@@ -73,21 +81,29 @@ void planificar_por_rr()
 
     while (1)
     {
-        sem_wait(b_exec_libre);
-        sem_wait(b_reanudar_corto_plazo);
-        // ssem_wait(cola_ready_global->contador); // contador de procesos en ready
+       
 
+        sem_wait(b_exec_libre);
+        
         proceso = transicion_ready_exec();
+
+        
 
         log_info(logger, "Proceso a enviar: %d", proceso->cde->pid);
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
 
-        inicio_quantum();
 
-        enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
-        enviar_cde(socket_cpu_dispatch, proceso->cde);
+        inicio_quantum();
+        
+        enviar_a_cpu_cde(proceso->cde);
+
     }
 }
+
+
+
+
+
 
 void planificar_por_vrr()
 {
@@ -97,27 +113,76 @@ void planificar_por_vrr()
     {
         sem_wait(b_exec_libre); // deja de estar libre exec
 
-        proceso = transicion_ready_exec();
+        //bloquearSiReadysVacios();
+        sem_wait(contador_readys);
 
-        log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por VIRTUAL ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
-
-        inicio_quantum();
-
+        if(hayProcesosEnEstado(cola_ready_plus))
+        {
+            proceso = transicion_generica(cola_ready_plus,cola_exec_global,"corto");
+            inicio_quantum(proceso->quantum);
+            log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por VIRTUAL ROUND ROBIN con quantum: %d\n", proceso->cde->pid, proceso->quantum);
+        }
+        else
+        {
+            proceso = transicion_ready_exec();
+            inicio_quantum(QUANTUM);
+            log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por VIRTUAL ROUND ROBIN con quantum NORMAL: %d\n", proceso->cde->pid, QUANTUM);
+        }
+        
         enviar_a_cpu_cde(proceso->cde);
+
+        
 
         // Iniciar temporal
         timer = temporal_create();
-
-        // t_pcb *proceso = recibir_proceso_de_cpu(); //VER COMO GESTIONAMOS EL CAMBIO DE ESTADO, DEBERIA MANDARLO A BLOCKED PERO GUARDAR EL QUANTUM
-
-        // HABILITA EL DISPATCH
-
-        // Detener temporal
-        temporal_stop(timer);
-        tiempo_transcurrido = temporal_gettime(timer);
-        temporal_destroy(timer);
+    
+        
     }
 }
+
+
+
+void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo)
+{
+    int *valorSem = malloc(sizeof(int));
+    sem_getvalue(interruptorSemaforo, valorSem);
+    if(valor_interruptor == 0 &&  valorSem == -1)
+    {
+        valor_interruptor = 1;
+        sem_post(interruptorSemaforo);
+    }
+}
+
+void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo)
+{
+    int *valorSem = malloc(sizeof(int));
+    sem_getvalue(interruptorSemaforo, valorSem);
+    if(valor_interruptor == 1 && valorSem == 0 )
+    {
+        valor_interruptor = 0;
+        sem_wait(interruptorSemaforo);
+    }
+}
+
+
+void valorSemaforo(sem_t *semaforo)
+{
+    int *valor = malloc(sizeof(int));
+    sem_getvalue(semaforo, valor);
+    log_info(logger, "El valor del semaforo es: %d ",*valor);
+}
+
+int hayProcesosEnEstado(colaEstado* cola_estado)
+{
+    int *valor = malloc(sizeof(int));
+    sem_getvalue(cola_estado->contador, valor);
+    log_info(logger, "Hay %d procesos en el Estado %s",*valor, cola_estado->nombreEstado);
+    if(*valor > 0)
+        return 1;
+    else
+        return 0;
+}
+
 
 void enviar_cde(int conexion, t_cde *cde)
 {
@@ -136,28 +201,18 @@ void enviar_a_cpu_cde(t_cde *cde)
 
 t_pcb *transicion_ready_exec()
 {
-
-    log_info(logger, "\033[1;34m \n Tamanio de cola antes:%d\n \033[0m", queue_size(cola_ready_global->estado));
-
-    t_pcb *proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-    proceso->cde = cde_interrumpido;
-    log_info(logger, "\033[1;34m \n Tamanio de cola despues:%d\n \033[0m", queue_size(cola_ready_global->estado));
-    /*     if (proceso == NULL)
-        {
-            return NULL;
-        }
-        else
-        { */
+    //sem_wait(contador_readys);
+    t_pcb *proceso = transicion_generica(cola_ready_global,cola_exec_global,"corto");
+    proceso->estado = EXEC;
+    
     log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
-    /*
-            proceso->estado = EXEC;
-            agregar_a_estado(proceso, cola_exec_global);
-        } */
+
     return proceso;
 }
 
-void inicio_quantum()
+void inicio_quantum(int quantum)
 {
+    quantum_usable = quantum;
     log_info(logger, "Inicio de QUANTUM");
     pthread_create(&hiloQuantum, NULL, hilo_quantum, NULL);
     pthread_detach(&hiloQuantum);
@@ -169,7 +224,7 @@ void *hilo_quantum()
     while (1)
     {
         sem_wait(sem_quantum);
-        sleep_ms(QUANTUM);
+        sleep_ms(quantum_usable);
         enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
     }
 }
@@ -179,13 +234,16 @@ void *transicion_exec_ready()
     while (1)
     {
         sem_wait(b_transicion_exec_ready);
-        t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
+       
+        //desbloquearSiReadysVacios();
+        t_pcb* proceso = transicion_generica(cola_exec_global,cola_ready_global,"corto");
         proceso->cde = cde_interrumpido;
-        proceso->estado = READY;
-        agregar_a_estado(proceso, cola_ready_global);
+        proceso->estado = READY;    // es un puntero y puedo cambiar sus cosas desde aca
+        
+        sem_post(contador_readys);
         sem_post(b_exec_libre);
 
-        // sem_post(b_reanudar_corto_plazo);
+
         log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
     }
 }
@@ -196,9 +254,14 @@ void *transicion_exec_blocked() // mover a largo plazo
     {
         sem_wait(b_transicion_exec_blocked);
         sem_post(b_exec_libre);
-        t_pcb *proceso = sacar_procesos_cola(cola_exec_global);
+    
+        t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "corto");
         proceso->cde = cde_interrumpido;
-        agregar_a_estado(proceso, cola_bloqueado_global);
+        
+        temporal_stop(timer);
+        tiempo_transcurrido = temporal_gettime(timer);
+        temporal_destroy(timer);
+
         log_info(logger, "Se bloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         proceso->estado = BLOCKED;
     }
@@ -208,51 +271,30 @@ void *transicion_blocked_ready() // mover a largo plazo
 {
     while (1)
     {
+        valorSemaforo(b_transicion_blocked_ready);
         sem_wait(b_transicion_blocked_ready);
-        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global);
+        
+        t_pcb *proceso;
+        //desbloquearSiReadysVacios();
+        if( tiempo_transcurrido < QUANTUM ){    //&& tiempo_transcurrido > 500 ??
 
-        agregar_a_estado(proceso, cola_ready_global);
-        log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
-        sem_post(cola_ready_global->contador);
-        proceso->estado = READY;
-    }
-}
-
-/* Está en el código de Mati
-void *transicion_blocked_ready() // BLOCK => READY | READY+, ver como implementar
-{
-    while (1)
-    {
-        sem_wait(b_transicion_blocked_ready);
-        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global);
-
-        if( tiempo_transcurrido < QUANTUM){
+            proceso = transicion_generica(cola_bloqueado_global,cola_ready_plus, "corto"); //READY+
+            proceso->estado = READY_PLUS;
             proceso->quantum = QUANTUM - tiempo_transcurrido;
-            //agregar_a_estado(proceso, cola_ready_extra_global);    //READY+
-            //proceso->estado = READY_EXTRA;
+            log_info(logger, "El proceso tiene un quantum restante de %d", proceso->quantum);
         }
         else{
-            agregar_a_estado(proceso,cola_ready_global);    //READY
+            proceso = transicion_generica(cola_bloqueado_global,cola_ready_global, "corto"); //READY+
             proceso->estado = READY;
         }
+        
+        
+        proceso->cde = cde_interrumpido;
+
+        sem_post(contador_readys);
 
         log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
+        
     }
 }
-*/
-void replanificar_por_rr(t_pcb *proceso)
-{
 
-    // enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO);
-    // enviar_cde(socket_cpu_dispatch, proceso->cde); // Envio que se pare el proceso a la conexion de interrupt
-
-    // Hay que hacer que un hilo reciba el retorno de la interrupcion de CPU y que habilite con un binario el hilo exec=>ready
-
-    /* proceso = sacar_procesos_cola(cola_ready_global); // lo saco de running
-    agregar_a_estado(proceso, cola_exec_global); // lo meto en ready */
-
-    /* t_pcb *otro_proceso = malloc(sizeof(t_pcb));
-
-    otro_proceso = sacar_procesos_cola(cola_ready_global); // SALE DE READY
-    agregar_a_estado(otro_proceso, cola_exec_global); */
-}
