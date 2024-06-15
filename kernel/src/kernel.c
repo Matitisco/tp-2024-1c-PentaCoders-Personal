@@ -401,13 +401,11 @@ void *levantar_CPU_Dispatch()
 				sem_getvalue(recurso->instancias, &valor_instancias);
 				log_info(logger, "Recurso: %s Instancias Restantes: %d", recurso->nombre, valor_instancias);
 				
-
 				proceso_interrumpido = buscarProceso(cde_interrumpido->pid);
-				t_recurso *recurso_del_proceso = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
-
+				t_recurso *recurso_del_proceso = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso); 
+				//se supone que si llega acá o bien el recurso ya estaba cargado o se cargó por primera vez -> t_recurso *recurso_del_proceso no debería ser NULL
+				
 				int recursos_en_espera;
-				//sem_wait(cola_estado->contador);
-				//colaEstado *cola_bloqueados; //colaEstado *constructorColaEstado(char *nombre)
 
 				sem_getvalue(recurso_del_proceso->cola_bloqueados->contador, &recursos_en_espera);
 				log_info(logger, "recursos esperando %d", recursos_en_espera);
@@ -421,16 +419,12 @@ void *levantar_CPU_Dispatch()
 			
 		
 			else{	
-				printf("\033[0;33m\n No existe el recurso: %s \n \033[0m",nombre_recurso_recibido);
-				//TODO: acá hay terminar la ejecución del proceso
-				/*
-				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
+				printf("\033[38;2;255;105;180m \n No existe el recurso: %s \n \033[0m",nombre_recurso_recibido);
+				
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
-				*/
-
 			}
 		
 			break;
@@ -703,9 +697,6 @@ bool existe_recurso2(char *nombre_recurso){
 		}
 		//TODO: hacer free para recurso
 	}
-	
-	log_error(logger, "NO EXISTE RECURSO \n Envio proceso a EXIT");
-	sem_post(b_largo_plazo_exit);
 	return false;
 }
 
@@ -761,6 +752,7 @@ void wait_instancia_recurso2(t_recurso * recurso) // si entra acá es porque el 
 			t_recurso *recurso_asignado = malloc(sizeof(t_recurso));
 			recurso_asignado->nombre = nombre_recurso_recibido;
 			recurso_asignado->instancias = malloc(sizeof(sem_t));
+			recurso_asignado->cola_bloqueados = constructorColaEstado("BLOCK");
 			sem_init(recurso_asignado->instancias, 0, 1);
 
 			list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
