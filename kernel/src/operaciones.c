@@ -181,6 +181,7 @@ void proceso_estado()
 {
     mostrar_procesos(cola_new_global);
     mostrar_procesos(cola_ready_global);
+    mostrar_procesos(cola_ready_plus);
     mostrar_procesos(cola_exec_global);
     mostrar_procesos(cola_bloqueado_global);
     mostrar_procesos(cola_exit_global);

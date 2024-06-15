@@ -120,6 +120,7 @@ typedef enum
 {
 	NEW,
 	READY,
+	READY_PLUS,
 	EXEC,
 	BLOCKED,
 	FINISHED
@@ -132,6 +133,7 @@ typedef struct
 	t_list *archivosAsignados;
 	t_list *recursosAsignados;
 	int prioridad;
+	int quantum;
 	// t_list *lista_paginas; // cada proceso tiene su lista de paginas-la tabla de paginas
 } t_pcb;
 

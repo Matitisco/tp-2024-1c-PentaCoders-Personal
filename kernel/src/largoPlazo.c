@@ -26,15 +26,10 @@ void *largo_plazo()
 
 
 t_pcb *transicion_new_a_ready()
-{
-    /* t_pcb *proceso = sacar_procesos_cola(cola_new_global, plani_l);
-     if(habilitar_planificadores==0)
-	{
-			sem_wait(b_reanudar_largo_plazo);
-	} 
-    agregar_a_estado(proceso, cola_ready_global); */
-
+{   
+    desbloquearSiReadysVacios(); //Desbloquea Corto Plazo
     t_pcb *proceso = transicion_generica(cola_new_global,cola_ready_global,"largo");
+    
 
     return proceso;
 }

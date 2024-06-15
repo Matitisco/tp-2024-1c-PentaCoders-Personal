@@ -87,12 +87,20 @@ extern int socket_cpu_dispatch;
 extern int socket_cpu_interrupt;
 // DECLARACION VARIABLES GLOBALES
 
+// INTERRUPTORES
+extern sem_t *b_switch_readys;
+extern int interruptor_switch_readys;
+
 
 extern colaEstado *cola_new_global;
 extern colaEstado *cola_ready_global;
+extern colaEstado *cola_ready_plus;
 extern colaEstado *cola_exec_global;
 extern colaEstado *cola_bloqueado_global;
 extern colaEstado *cola_exit_global;
+
+extern sem_t *bloquearReady;
+extern sem_t *bloquearReadyPlus;
 
 // FUNCIONES
 void crear_hilos();
@@ -151,6 +159,15 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 void atender_interrupciones();
 int llego_proceso();
 char *buscar_recurso(char *recurso, int *posicion);
+
+int hayProcesosEnEstado(colaEstado* cola_estado);
+
+void bloquearSiReadysVacios();
+void desbloquearSiReadysVacios();
+
+void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);
+
+void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);//no se usa
 
 
 

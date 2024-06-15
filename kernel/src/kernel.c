@@ -3,6 +3,7 @@
 // COLAS
 colaEstado *cola_new_global;
 colaEstado *cola_ready_global;
+colaEstado *cola_ready_plus; 
 colaEstado *cola_exec_global;
 colaEstado *cola_bloqueado_global;
 colaEstado *cola_exit_global;
@@ -29,6 +30,11 @@ sem_t *sem_agregar_a_estado;
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
 sem_t *b_transicion_blocked_ready;
+
+sem_t *bloquearReady;
+sem_t *bloquearReadyPlus;
+
+
 extern sem_t *sem_kernel_io_generica;
 // HILOS
 pthread_t hiloMEMORIA;
@@ -57,9 +63,14 @@ config_kernel *valores_config;
 
 sem_t *b_detener_planificacion;
 
+int interruptor_switch_readys;
+sem_t *b_switch_readys;
+
+
+
 int main(int argc, char *argv[])
 {
-
+	
 	iniciar_kernel();
 
 	pthread_join(hiloMEMORIA, NULL);
@@ -204,8 +215,9 @@ void inicializarEstados()
 {
 	cola_new_global = constructorColaEstado("NEW");
 	cola_ready_global = constructorColaEstado("READY");
-	cola_ready_global->contador = malloc(sizeof(sem_t));
-	sem_init(cola_ready_global->contador, 0, 0);
+	//cola_ready_global->contador = malloc(sizeof(sem_t));
+	cola_ready_plus = constructorColaEstado("READY+");
+	//sem_init(cola_ready_global->contador, 0, 0);
 	cola_exec_global = constructorColaEstado("EXEC");
 	cola_bloqueado_global = constructorColaEstado("BLOCK");
 	cola_exit_global = constructorColaEstado("EXIT");
@@ -225,6 +237,10 @@ void iniciar_semaforos()
 	b_transicion_blocked_ready = malloc(sizeof(sem_t));
 	sem_quantum = malloc(sizeof(sem_t));
 	b_detener_planificacion = malloc(sizeof(sem_t));
+	bloquearReady = malloc(sizeof(sem_t));
+	bloquearReadyPlus = malloc(sizeof(sem_t));
+	b_switch_readys = malloc(sizeof(sem_t)); 
+
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
@@ -237,7 +253,9 @@ void iniciar_semaforos()
 	sem_init(b_transicion_exec_blocked, 0, 0);
 	sem_init(b_transicion_blocked_ready, 0, 0);
 	sem_init(b_detener_planificacion, 0, 0);
-
+	sem_init(bloquearReady, 0, 0);
+	sem_init(bloquearReadyPlus, 0, 0);
+	sem_init(b_switch_readys, 0, 0);
 } 
 
 config_kernel *inicializar_config_kernel()
@@ -308,12 +326,10 @@ t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoF
 {
 	evaluar_planificacion(planificacion);
 	t_pcb * proceso = sacar_procesos_cola(colaEstadoInicio);
-	/* if(cde_interrumpido->pid == proceso->cde->pid){
-		proceso->cde=cde_interrumpido;
-	} */
 
 	evaluar_planificacion(planificacion);
 	agregar_a_estado(proceso, colaEstadoFinal);
+
 	return proceso;
 }
 
@@ -372,11 +388,7 @@ void *levantar_CPU_Dispatch()
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
 			// IO_GEN_SLEEP INTERFAZ TIEMPO
-			// DIN DE QUANTUM Y OCURRE LA INTERRUPCION
 			sem_post(b_transicion_exec_ready);
-
-
-
 			break;
 
 		case INSTRUCCION_INTERFAZ:
@@ -385,6 +397,7 @@ void *levantar_CPU_Dispatch()
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cde);
 
+			pthread_cancel(hiloQuantum);
 			sem_post(b_transicion_exec_blocked);
 
 
