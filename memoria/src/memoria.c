@@ -250,13 +250,13 @@ void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer);
     uint32_t cant_caracteres = leer_buffer_enteroUint32(buffer);
 
-    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t numero_marco = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
     for (int i = 0; i < cant_caracteres; i++)
     {
         uint32_t valor = leer_buffer_enteroUint32(buffer);
-        resultado = escribir_memoria(numero_pagina, offset, pid_ejecutando, valor, sizeof(valor));
+        resultado = escribir_memoria(numero_marco, offset, pid_ejecutando, valor, sizeof(valor));
         if (resultado == -1)
         {
             log_error(logger, "ERROR AL ESCRIBIR EL VALOR %d", valor);
@@ -286,10 +286,10 @@ void escritura_cpu(tipo_buffer *buffer, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer);
 
-    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t numero_marco = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
-    int resultado = escribir_memoria(numero_pagina, offset, pid_ejecutando, valor_a_escribir, tamanio);
+    int resultado = escribir_memoria(numero_marco, offset, pid_ejecutando, valor_a_escribir, tamanio);
 
     if (resultado != -1)
     {
@@ -309,7 +309,7 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t limite = leer_buffer_enteroUint32(buffer_lectura);
 
-    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t numero_marco = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
     tipo_buffer *buffer_stdout = crear_buffer();
@@ -318,7 +318,7 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
 
     for (int i = 0; i < limite; i++)
     {
-        valor_void = (int *)leer_memoria(numero_pagina, offset, pid_ejecutando, sizeof(limite));
+        valor_void = (int *)leer_memoria(numero_marco, offset, pid_ejecutando, sizeof(limite));
         valor = *valor_void;
         if (valor_void != NULL) //(&valor)
         {
@@ -797,10 +797,15 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
                 // Crear una nueva página y agregarla al proceso
                 t_pagina *nueva_pagina = malloc(sizeof(t_pagina));
                 nueva_pagina->marco = marco_libre; // Pongo el marco libre que encontre
+                nueva_pagina->marco_relativo = j;
                 nueva_pagina->bit_validez = 1;
                 list_add(paginas, nueva_pagina);
                 array_bitmap[i].bit_ocupado = 1; // Marcar el marco como ocupado
                 j++;
+                break;
+            }
+            else
+            {
                 break;
             }
         }

@@ -33,7 +33,8 @@ typedef struct
 void *espacio_usuario;
 typedef struct
 {
-	int marco;		 // numeor de marco donde esta la pagina
+	int marco; // numeor de marco donde esta la pagina
+	int marco_relativo;
 	int bit_validez; // si esta en memoria
 	int pid;		 // la pagina conoce al proceso del cual es parte ?
 } t_pagina;
