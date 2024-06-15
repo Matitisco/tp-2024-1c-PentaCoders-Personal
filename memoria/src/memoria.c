@@ -315,12 +315,11 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
 
     for (int i = 0; i < limite; i++)
     {
-        valor_void = (int *)leer_memoria(numero_marco, offset, pid_ejecutando, sizeof(limite));
-        valor = *valor_void;
+        valor_void = leer_memoria(numero_marco, offset, pid_ejecutando, sizeof(limite));
         if (valor_void != NULL)
         {
-            agregar_buffer_para_enterosUint32(buffer_stdout, valor);
-            log_info(logger, "SE LEYO EL VALOR : %d", valor);
+            agregar_buffer_para_enterosUint32(buffer_stdout, valor_void);
+            log_info(logger, "SE LEYO EL VALOR : %d", (int *)valor_void);
         }
         else
         {
@@ -459,10 +458,7 @@ void enviar_tamanio_pagina(int cpu)
 
 void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
 {
-    // Ante cada petición se deberá esperar un tiempo determinado a modo de
-    // retardo en la obtención de la instrucción, y este tiempo,
-    // estará indicado en el archivo de configuración.
-    sleep_ms(valores_config->retardo_respuesta); // cambiado a ms
+    sleep_ms(valores_config->retardo_respuesta);
 
     tipo_buffer *buffer = recibir_buffer(cliente_fd);
     uint32_t PID = leer_buffer_enteroUint32(buffer);

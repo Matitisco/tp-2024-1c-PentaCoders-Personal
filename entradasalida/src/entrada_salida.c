@@ -218,7 +218,7 @@ void realizar_operacion_gen()
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_GEN_SLEEP)
 	{
-		sleep(unidades_tiempo);
+		sleep_ms(unidades_tiempo * valores_config->tiempo_unidad_trabajo);
 		log_info(logger, "PID: <%d> - Operacion: <IO_GEN_SLEEP>", pid);
 	}
 	else
@@ -293,6 +293,7 @@ void realizar_operacion_stdin()
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_STDIN_READ)
 	{
+
 		char *texto_ingresado = readline("Ingrese un texto por teclado: ");
 
 		char *nuevo_texto;
@@ -323,6 +324,7 @@ void realizar_operacion_stdin()
 		op_code codigo_memoria = recibir_operacion(conexion_memoria);
 		if (codigo_memoria == OK)
 		{
+			sleep_ms(valores_config->tiempo_unidad_trabajo);
 			log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
 		}
 		else if (codigo_memoria == ERROR_PEDIDO_ESCRITURA)
@@ -435,7 +437,6 @@ void realizar_operacion_stdout()
 	int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a pedirle a memoria que busque el dato
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_STDOUT_WRITE)
-
 	{
 		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
 		enviar_cod_enum(conexion_memoria, PEDIDO_LECTURA);
@@ -463,6 +464,7 @@ void realizar_operacion_stdout()
 			log_info(logger, "VALOR: %s", texto_reconstruido);
 			destruir_buffer(lectura);
 
+			sleep_ms(valores_config->tiempo_unidad_trabajo);
 			log_info(logger, "PID: <%d> - Operacion: <IO_STDOUT_WRITE>", pid);
 		}
 		else if (codigo_memoria == ERROR_PEDIDO_LECTURA)
@@ -499,6 +501,7 @@ void realizar_operacion_dialfs() // IMPLEMENTAR
 	// log_info(logger, "PID: <%d> - FIn Compactacion");
 	tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
+	sleep(valores_config->tiempo_unidad_trabajo);
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	switch (sol_operacion)
 	{

@@ -322,12 +322,12 @@ void exec_signal(char *recurso, t_cde *cde)
 
 void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
 {
+    interrupcion_io = 1;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
     uint32_t tamanio = sizeof(atoi(reg_tamanio));
 
     buffer_instruccion_io = crear_buffer();
-    interrupcion_io = 1;
     enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
@@ -339,12 +339,12 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
 
 void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
 {
+    interrupcion_io = 1;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
     uint32_t tamanio = sizeof(atoi(reg_tamanio));
 
     buffer_instruccion_io = crear_buffer();
-    interrupcion_io = 1;
 
     enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
@@ -357,8 +357,9 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
 
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
 {
-    buffer_instruccion_io = crear_buffer();
     interrupcion_io = 1;
+    buffer_instruccion_io = crear_buffer();
+
     enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_GENERICA);
