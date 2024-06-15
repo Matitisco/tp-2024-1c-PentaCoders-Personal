@@ -428,6 +428,7 @@ void realizar_operacion_stdout()
 
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) // IMPLEMENTAR
 {
+	
 }
 
 void realizar_operacion_dialfs() // IMPLEMENTAR

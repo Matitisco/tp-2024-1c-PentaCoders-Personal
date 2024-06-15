@@ -336,6 +336,7 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
     agregar_buffer_para_string(buffer_instruccion_io, interfaz);
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
 }
 
 void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
@@ -366,15 +367,70 @@ void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_GEN_SLEEP);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, unidades_trabajo);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+}
+void exec_io_fs_create(char *nombre_interfaz, char *nombre_archivo)
+{
+    buffer_instruccion_io = crear_buffer();
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_CREATE);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+
 }
 
-// IMPLEMENTAR PARA ENTREGA FINAL
+void exec_io_fs_delete(char *nombre_interfaz, char *nombre_archivo)
+{
+    buffer_instruccion_io = crear_buffer();
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_DELETE);
+     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+}
 
-void exec_io_fs_create() {}
-void exec_io_fs_delete() {}
-void exec_io_fs_truncate() {}
-void exec_io_fs_write() {}
-void exec_io_fs_read() {}
+void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char*reg_tamanio)
+{
+    buffer_instruccion_io = crear_buffer();
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_TRUNCATE);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
+    uint32_t tamanio = atoi(reg_tamanio);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
+
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+}
+void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char*reg_direccion, char*puntero_archivo)
+{
+    buffer_instruccion_io = crear_buffer();
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_WRITE);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
+    uint32_t tamanio = atoi(reg_direccion);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
+    agregar_buffer_para_string(buffer_instruccion_io, puntero_archivo);
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+}
+
+void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char*reg_direccion, char*puntero_archivo) {
+     buffer_instruccion_io = crear_buffer();
+    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_WRITE);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
+    agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
+    uint32_t tamanio = atoi(reg_direccion);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
+    agregar_buffer_para_string(buffer_instruccion_io, puntero_archivo);
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+}
 
 void exec_exit(t_cde *cde)
 {
