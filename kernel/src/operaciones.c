@@ -230,7 +230,8 @@ char *mostrar_motivo(motivoFinalizar motivo)
 }
 
 void liberar_recursos(t_pcb *proceso)
-{
+{   //TODO
+    /*
     int tamanio = list_size(proceso->recursosAsignados);
     // se le asignan mal los recursos al proceso
     log_info(logger, "CANTIDAD DE RECURSOS ASIGNADOS QUE TIENE EL PROCESO: %d: %d", proceso->cde->pid, tamanio);
@@ -247,6 +248,7 @@ void liberar_recursos(t_pcb *proceso)
         log_info(logger, "INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO: %d : %d", nombre_rec, proceso->cde->pid, cant_instancias);
         for (int i = 0; i < cant_instancias; i++)
         {
+        
             sem_wait(&(recurso_pcb->instancias));
             int recursos_SO = cant_recursos_SO(valores_config->recursos);
             log_info(logger, "RECURSOS SO: %d", recursos_SO);
@@ -258,11 +260,13 @@ void liberar_recursos(t_pcb *proceso)
                     sem_post(&(recurso_SO->instancias));
                 }
             }
+        
         }
         free(recurso_pcb->nombre);
         sem_destroy(recurso_pcb->instancias);
     }
     list_destroy(proceso->recursosAsignados);
+    */
 }
 
 int cant_recursos_SO(t_recurso **recursos)

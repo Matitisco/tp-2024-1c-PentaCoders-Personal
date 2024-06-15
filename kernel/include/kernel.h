@@ -128,6 +128,8 @@ void *transicion_blocked_ready();
 void iniciar_kernel();
 void levantar_servidores();
 int existe_recurso(int *posicion);
+bool existe_recurso2(char *nombre_recurso);
+
 void wait_instancia_recurso(int i);
 void signal_instancia_recurso(int i);
 void interfaz_no_conectada(int pid);

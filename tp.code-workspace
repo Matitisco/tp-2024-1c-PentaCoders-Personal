@@ -8,7 +8,9 @@
 			"initializer_list": "c",
 			"utility": "c",
 			"string": "c",
-			"random": "c"
+			"random": "c",
+			"hash_map": "c",
+			"algorithm": "c"
 		},
 		"C_Cpp.errorSquiggles": "disabled",
 	},

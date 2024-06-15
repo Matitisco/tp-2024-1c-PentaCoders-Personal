@@ -10,7 +10,7 @@ colaEstado *cola_exit_global;
 int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
-char *recurso_recibido;
+char *nombre_recurso_recibido;
 int socket_interfaz;
 int disp_io;
 t_pcb *proceso_interrumpido;
@@ -381,46 +381,77 @@ void *levantar_CPU_Dispatch()
 
 		case WAIT_RECURSO: // asignamos un recurso a un proceso
 
+			printf("\033[0;33m\n WAIT_RECURSO \n \033[0m");
+			// recibir_recurso(); // Para usarlo en wait y signal LUEGO VEMOS SI ANDA WAIT
 			tipo_buffer *buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
 
-			recurso_recibido = leer_buffer_string(buffer_cpu);
+			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
 			destruir_buffer(buffer_cpu);
-			/*
-			sem_post(b_transicion_exec_blocked);
-			int posicion;
-			int recurso = existe_recurso(&posicion);
-			if (recurso == 0) // encontro al recurso y existe
-			{
-				wait_instancia_recurso(posicion); // el SO pierde uno del recurso llamado
 
+			sem_post(b_transicion_exec_blocked);
+			//int posicion;
+			//int recurso = existe_recurso2(&posicion); //el Kernel deberá verificar primero que exista el recurso solicitado
+			
+			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
+			{	printf("\033[0;33m\n Existe el recurso: %s \n \033[0m",nombre_recurso_recibido);
+				/*
+				wait_instancia_recurso(posicion); // el SO pierde uno del recurso llamado
 				int valor_instancias;
 				sem_getvalue(&(valores_config->recursos[posicion]->instancias), &valor_instancias);
 				log_info(logger, "Recurso: %s Instancias Restantes: %d", valores_config->recursos[posicion]->nombre, valor_instancias);
-				sem_post(b_transicion_blocked_ready);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+				*/
+
+
+				//sem_post(b_transicion_blocked_ready);
+				//sem_post(b_reanudar_largo_plazo);
+				//sem_post(b_reanudar_corto_plazo);
 			}
-			else
+			else{	
+				printf("\033[0;33m\n No existe el recurso: %s \n \033[0m",nombre_recurso_recibido);
+
+			}
+			/*
+			proceso_interrumpido = buscarProceso(cde_interrumpido->pid);
+			t_recurso *recurso_del_proceso = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
+
+			int recursos_en_espera;
+			sem_getvalue((recurso_del_proceso->cola_bloqueados->contador), &recursos_en_espera);
+			//log_info(logger, "recursos esperando %d", recurso_del_proceso->cola_bloqueados->contador);
+			if (recursos_en_espera == 0)//si el proceso NO se bloqueo x falta de recurso
+				{
+					sem_post(b_transicion_blocked_ready);
+					sem_post(b_reanudar_largo_plazo);
+					sem_post(b_reanudar_corto_plazo);	
+				} //si se bloqueo, queda esperando	
+			*/
+
+
+			/*else
 			{
 				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
-			}
-			*/
+			}*/
+
+			sem_post(b_transicion_blocked_ready);
+			sem_post(b_reanudar_largo_plazo);
+			sem_post(b_reanudar_corto_plazo);
+
 			break;
 		case SIGNAL_RECURSO: // un proceso libera un recurso
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
-			recurso_recibido = leer_buffer_string(buffer_cpu);
+			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
 			destruir_buffer(buffer_cpu);
-			/*
+			
 			sem_post(b_transicion_exec_blocked);
-			posicion;
-			recurso = existe_recurso(&posicion);
+			//posicion;
+			//recurso = existe_recurso(&posicion);
+			/*
 			if (recurso == 0) // encontro al recurso y existe
 			{
 				signal_instancia_recurso(posicion);
@@ -466,7 +497,7 @@ void *levantar_CPU_Dispatch()
 		}
 	}
 }
-
+/*
 _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 {
 	if (strcmp(recurso_recibido, recurso_proceso->nombre) == 0)
@@ -475,6 +506,7 @@ _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 	}
 	return 0;
 }
+*/
 
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion)
 {
@@ -676,6 +708,46 @@ int existe_recurso(int *posicion)
 	return 0;
 }
 */
+bool existe_recurso2(char *nombre_recurso){
+
+	for (size_t i = 0; i < list_size(valores_config->recursos); i++)
+	{
+		t_recurso * recurso = list_get(valores_config->recursos,i);
+
+		if(strcmp(recurso->nombre,nombre_recurso) == 0){
+			return true;
+			break;
+		}
+		//TODO: hacer free para recurso
+	}
+	
+	log_error(logger, "NO EXISTE RECURSO \n Envio proceso a EXIT");
+	sem_post(b_largo_plazo_exit);
+	return false;
+}
+
+
+/*
+char *buscar_recurso2(char *recurso, int *posicion)
+{
+	char *recurso_encontrado = NULL;
+
+	int i = 0;
+	while (valores_config->recursos[i]->nombre != NULL)
+	{
+		if (strcmp(recurso, valores_config->recursos[i]->nombre) == 0)
+		{
+			recurso_encontrado = recurso;
+			*posicion = i;
+			break;
+		}
+		i++;
+	}
+
+	return recurso_encontrado;
+}
+*/
+
 /*
 char *buscar_recurso(char *recurso, int *posicion)
 {

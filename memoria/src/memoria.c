@@ -1,3 +1,4 @@
+
 #include "../include/memoria.h"
 // CRAER HILOS COMO VARIABLES GLOBALES
 
@@ -92,6 +93,13 @@ void *recibirKernel()
     while (1)
     {
         op_code cod_op = recibir_operacion(cliente_fd);
+
+        if (cod_op == -1)
+        {
+            log_error(logger, " El KERNEL se desconecto. Terminando servidor");
+            return (void *)EXIT_FAILURE;
+        }
+
         switch (cod_op)
         {
         case SOLICITUD_INICIAR_PROCESO:
@@ -99,10 +107,6 @@ void *recibirKernel()
             break;
         case SOLICITUD_FINALIZAR_PROCESO:
             finalizar_proceso(cliente_fd, buffer);
-            break;
-        case -1:
-            log_error(logger, " El KERNEL se desconecto. Terminando servidor");
-            return (void *)EXIT_FAILURE;
             break;
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
@@ -119,7 +123,14 @@ void *recibirCPU()
     while (1)
     {
         op_code cod_op = recibir_operacion(cliente_cpu);
-        tipo_buffer *buffer;
+
+        if (cod_op == -1)
+        {
+            log_error(logger, "El cliente se desconecto. Terminando servidor");
+            exit(EXIT_FAILURE);
+            return (void *)EXIT_FAILURE;
+        }
+
         switch (cod_op)
         {
         case PEDIDO_INSTRUCCION:
@@ -142,16 +153,35 @@ void *recibirCPU()
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu); // significa que es mayor
             }
             break;
-        case -1:
-            log_error(logger, "El cliente se desconecto. Terminando servidor");
-            exit(EXIT_FAILURE);
-            return (void *)EXIT_FAILURE;
+        case PEDIDO_FRAME:
+
+            pedido_frame_mmu(cliente_cpu);
+
             break;
+
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
             break;
         }
     }
+}
+
+void pedido_frame_mmu(int cliente_cpu)
+{
+
+    tipo_buffer *buffer_mmu_cpu = recibir_buffer(cliente_cpu);
+    int pagina = leer_buffer_enteroUint32(buffer_mmu_cpu);
+    int pid = leer_buffer_enteroUint32(buffer_mmu_cpu);
+    destruir_buffer(buffer_mmu_cpu);
+
+    t_tabla_paginas *tabla_proceso = buscar_en_lista_global(pid);
+    t_pagina *pagina_buscada = list_get(tabla_proceso->tabla_paginas_proceso, pagina);
+    int marco = consultar_marco_de_una_pagina(tabla_proceso, pagina_buscada);
+
+    tipo_buffer *buffer_memoria_mmu = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer_memoria_mmu, marco);
+    enviar_buffer(buffer_memoria_mmu, cliente_cpu);
+    destruir_buffer(buffer_memoria_mmu);
 }
 
 int tamanio_proceso(int pid)
@@ -203,6 +233,7 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
         log_error(logger, "ERROR - ACCESO ESPACIO USUARIO");
         break;
     }
+    return (void *)1;
 }
 
 void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
@@ -226,7 +257,7 @@ void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
         else
         {
             log_info(logger, "Se escribio el valor: %d", valor);
-            log_info(logger, "PID: %d - Accion: ESCRIBIR - Direccion fisica: %d - Tamaño <%d> ", pid_ejecutando, direccion_fisica, tamanio);
+            log_info(logger, "PID: %d - Accion: ESCRIBIR - Direccion fisica: %d - Tamaño <%d> ", pid_ejecutando, direccion_fisica, cant_caracteres);
         }
         offset += sizeof(valor);
     }
@@ -275,13 +306,14 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
     tipo_buffer *buffer_stdout = crear_buffer();
-    uint32_t valor;
+    int valor;
+    int *valor_void;
 
     for (int i = 0; i < limite; i++)
     {
-        int *valor_void = (int *)leer_memoria(numero_pagina, offset, pid_ejecutando, sizeof(limite));
-        int valor = *valor_void;
-        if ((&valor) != NULL)
+        valor_void = (int *)leer_memoria(numero_pagina, offset, pid_ejecutando, sizeof(limite));
+        valor = *valor_void;
+        if (valor_void != NULL) //(&valor)
         {
             agregar_buffer_para_enterosUint32(buffer_stdout, valor);
             log_info(logger, "SE LEYO EL VALOR : %d", valor);
@@ -293,7 +325,7 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
         offset += (sizeof(limite));
     }
 
-    if (valor != NULL)
+    if ((valor_void) != NULL) // (&valor)
     {
         enviar_cod_enum(cliente_solicitante, OK);
         log_info(logger, "PID: <%d> - Accion: LEER - Direccion fisica: <%d> - Tamaño <%d>", pid_ejecutando, direccion_fisica, limite);
@@ -387,7 +419,7 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
     while (fgets(linea_instruccion, sizeof(linea_instruccion), archivo) != NULL)
     {
         char *token = strdup(strtok(linea_instruccion, "\n"));
-        char *token_copia = token;
+        // char *token_copia = token; sin esto tambien anda
 
         list_add(list_instrucciones, token);
     }
@@ -538,7 +570,7 @@ char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code)
     {
         return "EXIT";
     }
-    return -1;
+    return NULL;
 }
 
 _Bool estaElContextoConCiertoPID(t_cde *contexto)
@@ -670,7 +702,7 @@ void colocar_pagina_en_marco(t_pagina *pagina)
         // puede ser que debamos finalizar el proceso
     }
     pagina->bit_validez = 1; // esta en memoria ffisica , o sea tiene un marco
-    pagina->marco = marco_libre;
+    pagina->marco = *marco_libre;
 }
 
 int *agarro_marco_que_este_libre()
@@ -738,7 +770,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     if (tabla_paginas == NULL)
     {
-        log_info("NO se encontro la tabla de paginas con pid %d", pid);
+        log_info(logger, "NO se encontro la tabla de paginas con pid %d", pid);
         return;
     }
     int marco_libre;
@@ -773,7 +805,7 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista de listaa
     if (tabla_paginas == NULL)
     {
-        log_info("NO se encontro la tabla de paginas con pid %d", pid);
+        log_info(logger, "NO se encontro la tabla de paginas con pid %d", pid);
         return;
     }
     int paginas_actuales = list_size(tabla_paginas->tabla_paginas_proceso); // cantida de paginas que hay jasta el momento
@@ -827,7 +859,6 @@ void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, vo
         return (void *)-1;
     }
     void *destino = espacio_usuario + marco * valores_config->tam_pagina + offset;
-    log_info(logger, "DESTINO: %d", destino);
     if (memcpy(destino, &valor_a_escribir, tamanio) == NULL)
     {
         return (void *)-1;
