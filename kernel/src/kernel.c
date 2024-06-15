@@ -737,26 +737,33 @@ _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 	return 0;
 }
 
-void signal_instancia_recurso(t_recurso * recurso)
+void signal_instancia_recurso(t_recurso * recurso) //Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo. 
 {
-	sem_post(recurso->instancias);
+	int valor;
 
-	/*
-	aca tengo que ver si tengo un proceso bloqueado por un recurso, si ESTE signal se esta haciendo a ESE recurso
-	bloqueante, verifico si ya se puede desbloquear el proceso 
-	sacar_procesos_cola()
-	*/
+	sem_getvalue(recurso->instancias, &valor);
+	
+	if(valor > 0){ // si hay instancias del recurso
+		sem_post(recurso->instancias);// sumo 1 al contador de las instancias global
+	}
+	else if(valor == 0){ // hay que sacar de bloqueado el proceso
+		//t_pcb * proceso_bloqueado = sacar_procesos_cola(recurso->cola_bloqueados);
+		//agregar_a_estado(proceso_bloqueado, cola_ready_global);
+		/*
+		 En caso de que corresponda, desbloquea al primer proceso de la cola de bloqueados de ese recurso. 
+ 		Una vez hecho esto, se devuelve la ejecución al proceso que peticiona el SIGNAL.
+
+		-aca tengo que ver si tengo un proceso bloqueado por un recurso,si ESTE signal se esta haciendo a ESE recurso
+		bloqueante, verifico si ya se puede desbloquear el proceso 
+		sacar_procesos_cola()
+		*/
+
+		//list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
+	}
 
 // aca hay que sacarle un recursos al proceso que lo tiene e incrementar las intancias del mismo
-
-/*
- Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo. 
- En caso de que corresponda, desbloquea al primer proceso de la cola de bloqueados de ese recurso. 
- Una vez hecho esto, se devuelve la ejecución al proceso que peticiona el SIGNAL.
-*/
 }
-	
-
+//no se puede liberar un recurso que no se está consumiendo
 
 void wait_instancia_recurso2(t_recurso * recurso) // si entra acá es porque el recurso existe
 {
@@ -793,8 +800,9 @@ void wait_instancia_recurso2(t_recurso * recurso) // si entra acá es porque el 
 	}// recurso_del_proceso->cola_bloqueados->contador
 	else
 	{
-		log_info(logger, "No Hay Instancias Disponibles del Recurso");
+		log_info(logger, "PID: <%d> - Bloqueado por: <%s>",proceso_interrumpido->cde->pid,nombre_recurso_recibido);
 		// mandar proceso a cola de bloqueados correspondiente al recurso
-		sem_post(b_transicion_exec_blocked);
+		//agregar_a_estado(proceso_interrumpido, recurso->cola_bloqueados);
+		//sem_post(b_transicion_exec_blocked);
 	}
 }
