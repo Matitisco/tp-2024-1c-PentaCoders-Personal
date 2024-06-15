@@ -286,18 +286,11 @@ config_kernel *inicializar_config_kernel()
 	return configuracion;
 }
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
-{
-	
-	pthread_mutex_lock(cola_estado->mutex_estado);
-	queue_push(cola_estado->estado, pcb);
-	pthread_mutex_unlock(cola_estado->mutex_estado);
-	sem_post(cola_estado->contador);
-}
 
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char*  planificador)
+
+
+void evaluar_planificacion(char* planificador)
 {
-	log_info(logger, "HABILITAR PLANI %d", habilitar_planificadores);
 	if(habilitar_planificadores==0)
 	{
 		if(strcmp(planificador, "largo"))
@@ -309,9 +302,32 @@ t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char*  planificador)
 			sem_wait(b_reanudar_corto_plazo);
 		}
 	}
+}
+
+t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char* planificacion)
+{
+	evaluar_planificacion(planificacion);
+	t_pcb * proceso = sacar_procesos_cola(colaEstadoInicio);
+	/* if(cde_interrumpido->pid == proceso->cde->pid){
+		proceso->cde=cde_interrumpido;
+	} */
+
+	evaluar_planificacion(planificacion);
+	agregar_a_estado(proceso, colaEstadoFinal);
+	return proceso;
+}
+
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
+{
 	
-	
-			
+	pthread_mutex_lock(cola_estado->mutex_estado);
+	queue_push(cola_estado->estado, pcb);
+	pthread_mutex_unlock(cola_estado->mutex_estado);
+	sem_post(cola_estado->contador);
+}
+
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
+{
 	t_pcb *pcb = malloc(sizeof(t_pcb));
 	sem_wait(cola_estado->contador);
 	pthread_mutex_lock(cola_estado->mutex_estado);

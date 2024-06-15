@@ -107,7 +107,11 @@ colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado );
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char*  planificador);
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
+
+t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char* planificacion);
+void evaluar_planificacion(char* planificador);
+
 
 void iniciar_semaforos();
 
@@ -147,5 +151,9 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 void atender_interrupciones();
 int llego_proceso();
 char *buscar_recurso(char *recurso, int *posicion);
+
+
+
+
 
 #endif

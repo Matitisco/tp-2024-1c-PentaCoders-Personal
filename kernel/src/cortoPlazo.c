@@ -48,15 +48,15 @@ void iniciar_sem_cp()
 
 void planificar_por_fifo()
 {
+    t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
-      
 
-        t_pcb *proceso = malloc(sizeof(t_pcb));
         sem_wait(b_exec_libre);
-        proceso = sacar_procesos_cola(cola_ready_global, plani); // esto luego cambiar a transicion_exec_ready
+        
 
-        agregar_a_estado(proceso, cola_exec_global);
+        proceso = transicion_ready_exec();
+
         proceso->estado = EXEC;
 
         enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO);
@@ -139,13 +139,13 @@ void enviar_a_cpu_cde(t_cde *cde)
 t_pcb *transicion_ready_exec()
 {
 
-
-    t_pcb *proceso = sacar_procesos_cola(cola_ready_global, plani); // SALE DE READY
+    
+/*     t_pcb *proceso = sacar_procesos_cola(cola_ready_global, plani); // SALE DE READY
+    agregar_a_estado(proceso, cola_exec_global); */
+    t_pcb *proceso = transicion_generica(cola_ready_global,cola_exec_global,"corto");
+    proceso->estado = EXEC;
     
     log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
-
-    proceso->estado = EXEC;
-    agregar_a_estado(proceso, cola_exec_global);
 
     return proceso;
 }
@@ -173,10 +173,16 @@ void *transicion_exec_ready()
     while (1)
     {
         sem_wait(b_transicion_exec_ready);
+       
+
+        /* 
         t_pcb *proceso = sacar_procesos_cola(cola_exec_global, plani);
+        agregar_a_estado(proceso, cola_ready_global); */
+
+        t_pcb* proceso = transicion_generica(cola_exec_global,cola_ready_global,"corto");
         proceso->cde = cde_interrumpido;
-        proceso->estado = READY;
-        agregar_a_estado(proceso, cola_ready_global);
+        proceso->estado = READY;    // es un puntero y puedo cambiar sus cosas desde aca
+
         sem_post(b_exec_libre);
 
 
@@ -190,9 +196,15 @@ void *transicion_exec_blocked() // mover a largo plazo
     {
         sem_wait(b_transicion_exec_blocked);
         sem_post(b_exec_libre);
-        t_pcb *proceso = sacar_procesos_cola(cola_exec_global, plani);
+        
+
+/*      t_pcb *proceso = sacar_procesos_cola(cola_exec_global, plani);
+        agregar_a_estado(proceso, cola_bloqueado_global); */
+        
+        t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "corto");
         proceso->cde = cde_interrumpido;
-        agregar_a_estado(proceso, cola_bloqueado_global);
+
+
         log_info(logger, "Se bloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         proceso->estado = BLOCKED;
     }
@@ -203,9 +215,12 @@ void *transicion_blocked_ready() // mover a largo plazo
     while (1)
     {
         sem_wait(b_transicion_blocked_ready);
-        t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global, plani);
+        /* t_pcb *proceso = sacar_procesos_cola(cola_bloqueado_global, plani);
+        agregar_a_estado(proceso, cola_ready_global); */
+        
+        t_pcb *proceso = transicion_generica(cola_bloqueado_global, cola_ready_global , "corto");
+        proceso->cde = cde_interrumpido;
 
-        agregar_a_estado(proceso, cola_ready_global);
         log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         
         proceso->estado = READY;
