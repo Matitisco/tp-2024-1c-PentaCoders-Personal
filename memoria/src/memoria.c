@@ -1,4 +1,5 @@
 #include "../include/memoria.h"
+
 // CRAER HILOS COMO VARIABLES GLOBALES
 
 pthread_t hiloCpu;
@@ -133,12 +134,15 @@ void *recibirCPU()
         switch (cod_op)
         {
         case PEDIDO_INSTRUCCION:
+            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             pedido_instruccion_cpu_dispatch(cliente_cpu, lista_contextos);
+            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             break;
         case ACCESO_ESPACIO_USUARIO:
             acceso_a_espacio_usuario(cliente_cpu);
             break;
         case RESIZE_EXTEND:
+            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             tipo_buffer *buffer_cpu = recibir_buffer(cliente_cpu);
             uint32_t nuevo_tamanio = leer_buffer_enteroUint32(buffer_cpu);
             t_cde *cde = leer_cde(buffer_cpu);
@@ -151,11 +155,12 @@ void *recibirCPU()
             {
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu); // significa que es mayor
             }
+            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             break;
         case PEDIDO_FRAME:
-
+            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             pedido_frame_mmu(cliente_cpu);
-
+            log_info(logger, "LISTA GLOBAL : %d", list_size(lista_global_tablas));
             break;
 
         default:
@@ -169,13 +174,13 @@ void pedido_frame_mmu(int cliente_cpu)
 {
 
     tipo_buffer *buffer_mmu_cpu = recibir_buffer(cliente_cpu);
-    int pagina = leer_buffer_enteroUint32(buffer_mmu_cpu);
     int pid = leer_buffer_enteroUint32(buffer_mmu_cpu);
+    int pagina = leer_buffer_enteroUint32(buffer_mmu_cpu);
     destruir_buffer(buffer_mmu_cpu);
 
-    t_tabla_paginas *tabla_proceso = buscar_en_lista_global(pid);
-    t_pagina *pagina_buscada = list_get(tabla_proceso->tabla_paginas_proceso, pagina);
-    int marco = consultar_marco_de_una_pagina(tabla_proceso, pagina_buscada);
+    t_tabla_paginas *tabla = buscar_en_lista_global(pid);
+    t_pagina *pagina_buscada = list_get(tabla->tabla_paginas_proceso, pagina);
+    int marco = pagina_buscada->marco;
 
     if (marco < 0)
     {
@@ -205,7 +210,6 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
     switch (codigo)
     {
     case PEDIDO_ESCRITURA:
-
         solicitud = recibir_operacion(cliente_solicitante);
 
         if (solicitud == SOLICITUD_INTERFAZ_STDIN)
@@ -221,7 +225,6 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
         break;
 
     case PEDIDO_LECTURA:
-
         solicitud = recibir_operacion(cliente_solicitante);
 
         if (solicitud == SOLICITUD_INTERFAZ_STDOUT)
@@ -290,7 +293,6 @@ void escritura_cpu(tipo_buffer *buffer, int cliente_solicitante)
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
     int resultado = escribir_memoria(numero_marco, offset, pid_ejecutando, valor_a_escribir, tamanio);
-
     if (resultado != -1)
     {
         enviar_cod_enum(cliente_solicitante, OK);
@@ -320,7 +322,7 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
     {
         valor_void = (int *)leer_memoria(numero_marco, offset, pid_ejecutando, sizeof(limite));
         valor = *valor_void;
-        if (valor_void != NULL) //(&valor)
+        if (valor_void != NULL)
         {
             agregar_buffer_para_enterosUint32(buffer_stdout, valor);
             log_info(logger, "SE LEYO EL VALOR : %d", valor);
@@ -332,7 +334,7 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
         offset += (sizeof(limite));
     }
 
-    if ((valor_void) != NULL) // (&valor)
+    if ((valor_void) != NULL)
     {
         enviar_cod_enum(cliente_solicitante, OK);
         log_info(logger, "PID: <%d> - Accion: LEER - Direccion fisica: <%d> - Tamaño <%d>", pid_ejecutando, direccion_fisica, limite);
@@ -355,7 +357,6 @@ void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
     void *valor_leido = leer_memoria(numero_pagina, offset, pid_ejecutando, tamanio);
-
     if (valor_leido != NULL)
     {
         enviar_cod_enum(cliente_solicitante, OK);
@@ -688,14 +689,18 @@ void eliminar_tabla_paginas(uint32_t pid)
 
 t_tabla_paginas *buscar_en_lista_global(int pid)
 {
-    int cantidad_tablas = list_size(lista_global_tablas);
-    for (int i = 0; i < cantidad_tablas; i++)
+    int cantidad_tablas = list_size(lista_global_tablas); // 1
+
+    for (int i = 0; i <= cantidad_tablas; i++)
     {
-        t_tabla_paginas *tabla = list_get(lista_global_tablas, i);
+
+        t_tabla_paginas *tabla = list_remove(lista_global_tablas, i);
         if (tabla->pid == pid)
         {
+            list_add(lista_global_tablas, tabla);
             return tabla;
         }
+        list_add(lista_global_tablas, tabla);
     }
     return NULL;
 }
@@ -730,16 +735,16 @@ int obtener_marco_libre()
     return -1;
 }
 
-int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina)
+int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina_buscada)
 { // para obtener el nro del marco que tiene una pagina asociado{
     int cant_paginas = list_size(tabla->tabla_paginas_proceso);
 
     for (int i = 0; i < cant_paginas; i++)
     {
-        if (list_get(tabla->tabla_paginas_proceso, i) == pagina)
+        if (list_get(tabla->tabla_paginas_proceso, i) == pagina_buscada)
         {
 
-            return pagina->marco;
+            return pagina_buscada->marco;
         }
     }
     return -1;
@@ -755,7 +760,8 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     // Vemos cuantas paginas tenemos que agregar con este nuevo tamanio
     int paginas_adicionales = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
     log_info(logger, "CANTIDAD MARCOS A ASIGNAR: %d", paginas_adicionales);
-    int tamanio_anterior = tamanio_proceso(pid);
+    int tamanio_anterior = tamanio_proceso(pid); // 128
+    int paginas_actuales = (tamanio_anterior + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
     // 30
     //  Verificar si hay suficientes marcos disponibles
     int marcos_disponibles = 0;
@@ -783,29 +789,31 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     }
     int marco_libre;
     // Agrego las paginas
-    t_list *paginas = tabla_paginas->tabla_paginas_proceso;
+    t_list *paginas = tabla_paginas->tabla_paginas_proceso; // obtenemos list d epag del proceso
     int j = 0;
-    for (int i = 0; i < cant_marcos; i++)
+    for (int i = 0; i < cant_marcos; i++) // desde 0 hasta la cant de marcos totoales 32
     {
         // Encontrar el próximo marco libre en el bitmap
         marco_libre = -1;
-        while (j < paginas_adicionales && )
+        while (j < (paginas_adicionales))
         {
-            if (array_bitmap[i].bit_ocupado == 0)
+            if (array_bitmap[i].bit_ocupado == 0) // 0 1 2 3 4
             {
-                marco_libre = i;
+                marco_libre = i; // 5
                 // Crear una nueva página y agregarla al proceso
                 t_pagina *nueva_pagina = malloc(sizeof(t_pagina));
-                nueva_pagina->marco = marco_libre; // Pongo el marco libre que encontre
-                nueva_pagina->marco_relativo = j;
+                nueva_pagina->marco = marco_libre; // Pongo el marco libre que encontre//5
+                nueva_pagina->pid = pid;
                 nueva_pagina->bit_validez = 1;
                 list_add(paginas, nueva_pagina);
-                array_bitmap[i].bit_ocupado = 1; // Marcar el marco como ocupado
+                log_info(logger, "PAGINA : %d MARCO %d", j, nueva_pagina->marco);
+                array_bitmap[i].bit_ocupado = 1; // Marcar el marco como ocupado en el bitmap
                 j++;
                 break;
             }
             else
             {
+                j++;
                 break;
             }
         }
@@ -851,7 +859,7 @@ void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32
 
     void *valor = malloc(tamanio);
 
-    memcpy(valor, espacio_usuario + marco * valores_config->tam_pagina + offset, tamanio);
+    memcpy(&valor, espacio_usuario + marco * valores_config->tam_pagina + offset, tamanio);
 
     return valor;
 }

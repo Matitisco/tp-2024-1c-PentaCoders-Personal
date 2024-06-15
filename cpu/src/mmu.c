@@ -44,8 +44,8 @@ int enviar_peticion_frame(int pagina)
     enviar_cod_enum(socket_memoria, PEDIDO_FRAME);
 
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, pagina);
     agregar_buffer_para_enterosUint32(buffer, cde_recibido->pid);
+    agregar_buffer_para_enterosUint32(buffer, pagina);
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
 
