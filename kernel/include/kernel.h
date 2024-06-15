@@ -20,6 +20,9 @@
 #include "../../utils/include/serializacion.h"
 #include "../../utils/include/instrucciones.h"
 
+typedef t_list t_lista_recursos;
+
+
 typedef struct
 {
 	char *nombreEstado;
@@ -47,7 +50,7 @@ typedef struct
 	char *puerto_cpu_interrupt;
 	char *algoritmo_planificacion;
 	int quantum;
-	t_recurso **recursos;
+	t_lista_recursos *recursos;
 	int grado_multiprogramacion;
 
 } config_kernel;
@@ -127,8 +130,15 @@ void *transicion_blocked_ready();
 void iniciar_kernel();
 void levantar_servidores();
 int existe_recurso(int *posicion);
+bool existe_recurso2(char *nombre_recurso);
+
 void wait_instancia_recurso(int i);
-void signal_instancia_recurso(int i);
+
+void wait_instancia_recurso2(t_recurso * recurso);
+_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso);
+
+
+void signal_instancia_recurso(t_recurso * recurso);
 void interfaz_no_conectada(int pid);
 void eliminar_proceso(t_pcb *proceso);
 t_pcb *buscarProceso(uint32_t pid);
@@ -145,5 +155,9 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 void atender_interrupciones();
 int llego_proceso();
 char *buscar_recurso(char *recurso, int *posicion);
+
+bool existe_recurso2(char *nombre_recurso);
+
+t_recurso * obtener_recurso(char *nombre_recurso);
 
 #endif

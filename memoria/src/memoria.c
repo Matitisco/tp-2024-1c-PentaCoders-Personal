@@ -1,3 +1,4 @@
+
 #include "../include/memoria.h"
 
 // CRAER HILOS COMO VARIABLES GLOBALES
@@ -158,6 +159,7 @@ void *recibirCPU()
         case PEDIDO_FRAME:
             pedido_frame_mmu(cliente_cpu);
             break;
+
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
             break;
