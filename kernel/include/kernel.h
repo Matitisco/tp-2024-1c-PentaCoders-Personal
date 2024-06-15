@@ -91,6 +91,8 @@ extern int socket_cpu_interrupt;
 extern sem_t *b_switch_readys;
 extern int interruptor_switch_readys;
 
+extern sem_t *contador_readys;
+
 
 extern colaEstado *cola_new_global;
 extern colaEstado *cola_ready_global;
@@ -169,6 +171,7 @@ void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);
 
 void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);//no se usa
 
+void valorSemaforo(sem_t *semaforo);
 
 
 

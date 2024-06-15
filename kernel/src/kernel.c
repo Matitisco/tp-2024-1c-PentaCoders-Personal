@@ -66,6 +66,7 @@ sem_t *b_detener_planificacion;
 int interruptor_switch_readys;
 sem_t *b_switch_readys;
 
+sem_t *contador_readys;
 
 
 int main(int argc, char *argv[])
@@ -240,6 +241,7 @@ void iniciar_semaforos()
 	bloquearReady = malloc(sizeof(sem_t));
 	bloquearReadyPlus = malloc(sizeof(sem_t));
 	b_switch_readys = malloc(sizeof(sem_t)); 
+	contador_readys = malloc(sizeof(sem_t));
 
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
@@ -256,6 +258,7 @@ void iniciar_semaforos()
 	sem_init(bloquearReady, 0, 0);
 	sem_init(bloquearReadyPlus, 0, 0);
 	sem_init(b_switch_readys, 0, 0);
+	sem_init(contador_readys, 0, 0);
 } 
 
 config_kernel *inicializar_config_kernel()

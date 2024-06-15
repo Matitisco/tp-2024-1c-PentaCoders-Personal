@@ -84,7 +84,10 @@ void planificar_por_rr()
        
 
         sem_wait(b_exec_libre);
+        
+        proceso = transicion_ready_exec();
 
+        
 
         log_info(logger, "Proceso a enviar: %d", proceso->cde->pid);
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
@@ -93,8 +96,7 @@ void planificar_por_rr()
         inicio_quantum();
         
         enviar_a_cpu_cde(proceso->cde);
-        /* enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO); // PASA A ESTADO EXEC
-        enviar_cde(socket_cpu_dispatch, proceso->cde); */
+
     }
 }
 
@@ -111,7 +113,8 @@ void planificar_por_vrr()
     {
         sem_wait(b_exec_libre); // deja de estar libre exec
 
-        bloquearSiReadysVacios();
+        //bloquearSiReadysVacios();
+        sem_wait(contador_readys);
 
         if(hayProcesosEnEstado(cola_ready_plus))
         {
@@ -138,21 +141,6 @@ void planificar_por_vrr()
 }
 
 
-void bloquearSiReadysVacios()
-{
-    if(hayProcesosEnEstado(cola_ready_global) == 0 && hayProcesosEnEstado(cola_ready_plus) == 0) 
-    {
-        sem_wait(b_switch_readys);  //Si hay procesos en la cola avanza
-    }
-}
-
-void desbloquearSiReadysVacios(){   //SIEMPRE PONER ANTES DE LA TRANSICION
-    if(hayProcesosEnEstado(cola_ready_global) == 0 && hayProcesosEnEstado(cola_ready_plus) == 0)
-    {
-        sem_post(b_switch_readys);
-    }
-}
-
 
 void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo)
 {
@@ -177,6 +165,12 @@ void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo)
 }
 
 
+void valorSemaforo(sem_t *semaforo)
+{
+    int *valor = malloc(sizeof(int));
+    sem_getvalue(semaforo, valor);
+    log_info(logger, "El valor del semaforo es: %d ",*valor);
+}
 
 int hayProcesosEnEstado(colaEstado* cola_estado)
 {
@@ -207,6 +201,7 @@ void enviar_a_cpu_cde(t_cde *cde)
 
 t_pcb *transicion_ready_exec()
 {
+    //sem_wait(contador_readys);
     t_pcb *proceso = transicion_generica(cola_ready_global,cola_exec_global,"corto");
     proceso->estado = EXEC;
     
@@ -240,15 +235,12 @@ void *transicion_exec_ready()
     {
         sem_wait(b_transicion_exec_ready);
        
-
-        /* 
-        t_pcb *proceso = sacar_procesos_cola(cola_exec_global, plani);
-        agregar_a_estado(proceso, cola_ready_global); */
-        desbloquearSiReadysVacios();
+        //desbloquearSiReadysVacios();
         t_pcb* proceso = transicion_generica(cola_exec_global,cola_ready_global,"corto");
         proceso->cde = cde_interrumpido;
         proceso->estado = READY;    // es un puntero y puedo cambiar sus cosas desde aca
         
+        sem_post(contador_readys);
         sem_post(b_exec_libre);
 
 
@@ -279,9 +271,11 @@ void *transicion_blocked_ready() // mover a largo plazo
 {
     while (1)
     {
+        valorSemaforo(b_transicion_blocked_ready);
         sem_wait(b_transicion_blocked_ready);
+        
         t_pcb *proceso;
-        desbloquearSiReadysVacios();
+        //desbloquearSiReadysVacios();
         if( tiempo_transcurrido < QUANTUM ){    //&& tiempo_transcurrido > 500 ??
 
             proceso = transicion_generica(cola_bloqueado_global,cola_ready_plus, "corto"); //READY+
@@ -290,7 +284,6 @@ void *transicion_blocked_ready() // mover a largo plazo
             log_info(logger, "El proceso tiene un quantum restante de %d", proceso->quantum);
         }
         else{
-            
             proceso = transicion_generica(cola_bloqueado_global,cola_ready_global, "corto"); //READY+
             proceso->estado = READY;
         }
@@ -298,21 +291,10 @@ void *transicion_blocked_ready() // mover a largo plazo
         
         proceso->cde = cde_interrumpido;
 
+        sem_post(contador_readys);
+
         log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         
     }
 }
-
-/* void *vrr_transicion_readyplus_exec()
-{
-    sem_wait(b_transicion_readyplus_exec);
-    t_pcb *proceso = transicion_generica(cola_ready_plus,cola_exec_global,"corto");
-    proceso->estado = EXEC;
-    
-    log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
-
-    return proceso;
-
-} */
-
 
