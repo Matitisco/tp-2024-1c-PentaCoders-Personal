@@ -18,6 +18,7 @@
 #include <assert.h>
 #include "registros.h"
 #include "sockets.h"
+typedef t_list t_lista_recursos;
 
 typedef enum
 {
@@ -134,7 +135,7 @@ typedef struct
 	t_cde *cde;		  // contexto de ejecucion
 	t_estados estado; // estado del proceso
 	t_list *archivosAsignados;
-	t_list *recursosAsignados;
+	t_lista_recursos *recursosAsignados;
 	int prioridad;
 	// t_list *lista_paginas; // cada proceso tiene su lista de paginas-la tabla de paginas
 } t_pcb;
