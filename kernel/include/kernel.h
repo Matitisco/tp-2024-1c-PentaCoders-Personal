@@ -19,6 +19,7 @@
 #include "../../utils/include/conexiones.h"
 #include "../../utils/include/serializacion.h"
 #include "../../utils/include/instrucciones.h"
+typedef t_list t_lista_recursos;
 
 typedef struct
 {
@@ -47,7 +48,7 @@ typedef struct
 	char *puerto_cpu_interrupt;
 	char *algoritmo_planificacion;
 	int quantum;
-	t_recurso **recursos;
+	t_lista_recursos *recursos;
 	int grado_multiprogramacion;
 
 } config_kernel;

@@ -254,8 +254,15 @@ config_kernel *inicializar_config_kernel()
 	configuracion->quantum = config_get_int_value(configuracion->config, "QUANTUM");
 	configuracion->grado_multiprogramacion = config_get_int_value(configuracion->config, "GRADO_MULTIPROGRAMACION");
 
-	char **lista_recursos = config_get_array_value(configuracion->config, "RECURSOS");
-	char **instancias_recursos_str = config_get_array_value(configuracion->config, "INSTANCIAS_RECURSOS");
+	//t_recurso **recursos;
+	//t_lista_recursos *recursos;
+
+
+
+
+	char **lista_recursos = config_get_array_value(configuracion->config, "RECURSOS"); //{"RA", "RB", "RC", NULL }
+	char **instancias_recursos_str = config_get_array_value(configuracion->config, "INSTANCIAS_RECURSOS");// {"1", "2", "1", NULL }
+
 
 	int tamanio = 0;
 	while (instancias_recursos_str[tamanio] != NULL)
@@ -263,15 +270,19 @@ config_kernel *inicializar_config_kernel()
 		tamanio++;
 	}
 
-	configuracion->recursos = malloc(tamanio * sizeof(t_recurso *));
+	t_lista_recursos *recursos = list_create();// lista con elementos de tipo t_recurso
 
-	for (int i = 0; i < tamanio; i++)
-	{ // Con este for armo el struct de los recursos
-		configuracion->recursos[i] = (t_recurso *)malloc(sizeof(t_recurso));
-		configuracion->recursos[i]->nombre = strdup(lista_recursos[i]);
-		int instancias = atoi(instancias_recursos_str[i]);
-		sem_init(&(configuracion->recursos[i]->instancias), 0, instancias);
+	for (int i = 0; i < tamanio; i++) {// voy creando tantos recursos según hayan en el config->  [RA,RB,RC] -> {"RA", "RB", "RC", NULL }
+		t_recurso* recurso = malloc(sizeof(t_recurso));
+		recurso->nombre = strdup(lista_recursos[i]);
+		//recurso.cola_bloqueados =  //colaEstado *cola_bloqueados;
+		recurso->instancias = malloc(sizeof(sem_t));
+
+		int instancias = atoi(instancias_recursos_str[i]); // cant de instancias del recurso
+		sem_init(recurso->instancias, 0, instancias);
+		list_add(recursos,recurso);
 	}
+	configuracion->recursos = recursos;
 	// Libero los arrays
 	for (int i = 0; instancias_recursos_str[i] != NULL; i++)
 	{
@@ -280,6 +291,16 @@ config_kernel *inicializar_config_kernel()
 	}
 	free(instancias_recursos_str);
 	free(lista_recursos);
+
+
+	for (int a = 0; a < tamanio; a++) {
+		
+		t_recurso *recurso = list_get(configuracion->recursos,a);
+		printf("\033[0;33m\n Nombre del recurso: %s \n \033[0m",recurso->nombre);
+		int valor_instancias;
+		sem_getvalue(recurso->instancias, &valor_instancias);
+		printf("\033[0;33m\n Instancias: %d \n \033[0m",valor_instancias);
+	}
 
 	return configuracion;
 }
@@ -365,7 +386,7 @@ void *levantar_CPU_Dispatch()
 
 			recurso_recibido = leer_buffer_string(buffer_cpu);
 			destruir_buffer(buffer_cpu);
-
+			/*
 			sem_post(b_transicion_exec_blocked);
 			int posicion;
 			int recurso = existe_recurso(&posicion);
@@ -388,6 +409,7 @@ void *levantar_CPU_Dispatch()
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
 			}
+			*/
 			break;
 		case SIGNAL_RECURSO: // un proceso libera un recurso
 
@@ -395,7 +417,7 @@ void *levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_cpu);
 			recurso_recibido = leer_buffer_string(buffer_cpu);
 			destruir_buffer(buffer_cpu);
-
+			/*
 			sem_post(b_transicion_exec_blocked);
 			posicion;
 			recurso = existe_recurso(&posicion);
@@ -414,6 +436,7 @@ void *levantar_CPU_Dispatch()
 				sem_post(b_transicion_blocked_ready);
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
+
 			}
 			else
 			{
@@ -424,7 +447,7 @@ void *levantar_CPU_Dispatch()
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
 			}
-
+			*/
 			break;
 		case OUT_OF_MEMORY:
 
@@ -639,7 +662,7 @@ void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int t
 		// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
 	}
 }
-
+/*
 int existe_recurso(int *posicion)
 {
 	char *recurso_encontrado = buscar_recurso(recurso_recibido, posicion);
@@ -652,7 +675,8 @@ int existe_recurso(int *posicion)
 	}
 	return 0;
 }
-
+*/
+/*
 char *buscar_recurso(char *recurso, int *posicion)
 {
 	char *recurso_encontrado = NULL;
@@ -671,7 +695,8 @@ char *buscar_recurso(char *recurso, int *posicion)
 
 	return recurso_encontrado;
 }
-
+*/
+/*
 void wait_instancia_recurso(int i)
 {
 	int valor;
@@ -713,3 +738,4 @@ void signal_instancia_recurso(int i)
 	sem_post(&(valores_config->recursos[i]->instancias));
 	// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
 }
+*/
