@@ -226,6 +226,7 @@ void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
         else
         {
             log_info(logger, "Se escribio el valor: %d", valor);
+            log_info(logger, "PID: %d - Accion: ESCRIBIR - Direccion fisica: %d - Tamaño <%d> ", pid_ejecutando, direccion_fisica, tamanio);
         }
         offset += sizeof(valor);
     }
@@ -268,7 +269,7 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
 {
     uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
-    uint32_t limite = leer_buffer_enteroUint32(buffer_lectura); // cant de veces que vamos a leer
+    uint32_t limite = leer_buffer_enteroUint32(buffer_lectura);
 
     uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
@@ -278,7 +279,7 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
 
     for (int i = 0; i < limite; i++)
     {
-        int *valor_void = (int *)leer_memoria(numero_pagina,offset, pid_ejecutando, sizeof(limite));
+        int *valor_void = (int *)leer_memoria(numero_pagina, offset, pid_ejecutando, sizeof(limite));
         int valor = *valor_void;
         if ((&valor) != NULL)
         {
@@ -296,10 +297,6 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
     {
         enviar_cod_enum(cliente_solicitante, OK);
         log_info(logger, "PID: <%d> - Accion: LEER - Direccion fisica: <%d> - Tamaño <%d>", pid_ejecutando, direccion_fisica, limite);
-        // tipo_buffer *buffer = crear_buffer();
-        // agregar_buffer_para_string(buffer, valor);
-        // enviar_buffer(buffer, cliente_solicitante);
-        // destruir_buffer(buffer);
         enviar_buffer(buffer_stdout, cliente_solicitante);
         destruir_buffer(buffer_stdout);
     }

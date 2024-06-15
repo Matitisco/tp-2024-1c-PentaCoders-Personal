@@ -7,12 +7,12 @@ void tlb_iniciar(char *algoritmo, int cant_entradas)
 {
     if (cant_entradas <= 0)
     {
-        log_info(logger, "TLB - DESHABILITADA");
+        TLB_HABILITADA = 0;
     }
     else
     {
         tlb_crear(algoritmo, cant_entradas);
-        log_info(logger, "TLB - ENTRADAS: <%d> ", tlb->cant_entradas);
+        TLB_HABILITADA = 1;
     }
 }
 
@@ -35,7 +35,7 @@ void tlb_crear(char *algoritmo, int cant_entradas)
     iterador_fifo = 0;
 }
 
-int tlb_consultar_info_pagina(int pagina_buscada)
+int tlb_consultar_df_pagina(int pagina_buscada, int desplazamiento)
 {
 
     for (int i = 0; i < tlb->cant_entradas; i++)
@@ -44,7 +44,8 @@ int tlb_consultar_info_pagina(int pagina_buscada)
 
         if (pagina_buscada == pagina_tlb)
         {
-            return *tlb->entradas[i].marco; // TLB HIT
+            int direccion_fisica = *tlb->entradas[i].marco * tamanio_pagina + desplazamiento;
+            return direccion_fisica; // TLB HIT
         }
     }
 

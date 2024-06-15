@@ -20,6 +20,8 @@ extern int desalojo_wait;
 extern int desalojo_signal;
 extern int interrupcion_io;
 extern int salida_exit;
+extern int TLB_HABILITADA;
+extern t_cde *cde_recibido;
 extern t_registros *registros;
 extern tipo_buffer *buffer_instruccion_io;
 

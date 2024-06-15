@@ -29,7 +29,7 @@ typedef struct
 // TLB
 void tlb_iniciar(char *algoritmo, int cant_entradas);
 void tlb_crear(char *algoritmo, int cant_entradas);
-int tlb_consultar_info_pagina(int pagina_buscada);
+int tlb_consultar_df_pagina(int pagina_buscada, int desplazamiento);
 void tlb_agregar_entrada(int pid, int pagina, int marco);
 
 // ALGORITMOS TLB

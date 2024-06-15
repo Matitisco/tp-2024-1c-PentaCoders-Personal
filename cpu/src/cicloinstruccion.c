@@ -322,7 +322,7 @@ void exec_signal(char *recurso, t_cde *cde)
 
 void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
 {
-    uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);
+    uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
     uint32_t tamanio = sizeof(atoi(reg_tamanio));
 
@@ -339,7 +339,7 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
 
 void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
 {
-    uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);
+    uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
     uint32_t tamanio = sizeof(atoi(reg_tamanio));
 
