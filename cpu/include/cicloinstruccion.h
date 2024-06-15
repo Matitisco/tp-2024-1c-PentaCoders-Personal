@@ -18,11 +18,13 @@ void exec_signal(char *recurso, t_cde *cde);
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo);
 void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde);
 void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde);
-void exec_io_fs_create();
-void exec_io_fs_delete();
-void exec_io_fs_truncate();
-void exec_io_fs_write();
-void exec_io_fs_read();
+void exec_io_fs_create(char *nombre_interfaz, char *nombre_archivo);
+void exec_io_fs_delete(char *nombre_interfaz, char *nombre_archivo);
+void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char*reg_tamanio);
+void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char* reg_tamanio,char*reg_direccion, char*puntero_archivo);
+void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo,char *reg_tamanio, char*reg_direccion, char*puntero_archivo);
+
+
 void exec_exit(t_cde *cde);
 
 // AUXILIARES

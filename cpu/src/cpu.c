@@ -282,19 +282,31 @@ void execute(char **instruccion, t_cde *contextoProceso)
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
 	case IO_FS_CREATE:
+	    exec_io_fs_create(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case IO_FS_DELETE:
+	     exec_io_fs_delete(instruccion[1], instruccion[2]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case IO_FS_TRUNCATE:
+	    exec_io_fs_truncate(instruccion[1], instruccion[2],instruccion[3]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s ", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
 	case IO_FS_WRITE:
+	    exec_io_fs_write(instruccion[1],instruccion[2],instruccion[3],instruccion[4],instruccion[5]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
+		
 		break;
 	case IO_FS_READ:
+	    exec_io_fs_read(instruccion[1],instruccion[2],instruccion[3],instruccion[4],instruccion[5]);
 		actualizar_cde(contextoProceso);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
+		
 		break;
 	case EXIT:
 		interrupcion_rr = 0;
