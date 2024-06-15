@@ -13,7 +13,6 @@
 #include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
 
-
 typedef struct
 {
 	t_config *config;
@@ -51,7 +50,6 @@ int socket_cpu;
 int cliente_fd;
 pthread_t hiloCPU, hiloKernel, hiloIO;
 
-
 /*Paginacion */
 t_list *list_tabla_paginas; // losta global de paginas y cada nodo tiene una tabla del proceso
 
@@ -64,8 +62,6 @@ uint32_t hay_marco_libre();
 t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
 void crear_y_agregar_tabla_a_lista_global(int pid);
 int *agarro_marco_que_este_libre();
-
-
 
 t_args *crearArgumento(char *puerto, char *ip);
 void crearHilos();
@@ -97,10 +93,15 @@ void *destroy_instruccion(void *element);
 
 // espacio de usuario
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio);
-void *escribir_memoria(uint32_t numero_pagina,uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio);
+void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio);
 char *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario(int cliente_solicitante);
-
+void pedido_frame_mmu(int cliente_cpu);
+void *acceso_a_espacio_usuario(int cliente_solicitante);
+void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante);
+void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante);
+void escritura_cpu(tipo_buffer *buffer, int cliente_solicitante);
+void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante);
 // resize
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
 void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);

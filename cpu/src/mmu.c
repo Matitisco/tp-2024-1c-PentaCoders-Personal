@@ -39,14 +39,32 @@ int calcular_pagina(int direccion_logica)
 
 int enviar_peticion_frame(int pagina)
 {
+    int frame_buscado;
+
     enviar_cod_enum(socket_memoria, PEDIDO_FRAME);
-    tipo_buffer *buffer_memoria_tlb = recibir_buffer(socket_memoria);
-    int frame_buscado = leer_buffer_enteroUint32(buffer_memoria_tlb);
-    destruir_buffer(buffer_memoria_tlb);
-    if (TLB_HABILITADA)
+
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, pagina);
+    agregar_buffer_para_enterosUint32(buffer, cde_recibido->pid);
+    enviar_buffer(buffer, socket_memoria);
+    destruir_buffer(buffer);
+
+    op_code respuesta_mmu = recibir_operacion(socket_memoria);
+    if (respuesta_mmu == PEDIDO_FRAME_CORRECTO)
     {
-        tlb_agregar_entrada(cde_recibido->pid, pagina, frame_buscado);
+        tipo_buffer *buffer_memoria_tlb = recibir_buffer(socket_memoria);
+        frame_buscado = leer_buffer_enteroUint32(buffer_memoria_tlb);
+        destruir_buffer(buffer_memoria_tlb);
+        if (TLB_HABILITADA)
+        {
+            tlb_agregar_entrada(cde_recibido->pid, pagina, frame_buscado);
+        }
+        log_info(logger, "PID: <%d> - OBTENER MARCO - Pagina: <%d> - Marco: <%d>", cde_recibido->pid, pagina, frame_buscado);
     }
-    log_info(logger, "PID: <%d> - OBTENER MARCO - Pagina: <%d> - Marco: <%d>", cde_recibido->pid, pagina, frame_buscado);
+    else if (respuesta_mmu == PEDIDO_FRAME_INCORRECTO)
+    {
+        log_info(logger, "PID: <%d> - ERROR OBTENER MARCO - Paguna: <%d>", cde_recibido->pid, pagina);
+    }
+
     return frame_buscado;
 }
