@@ -177,10 +177,18 @@ void pedido_frame_mmu(int cliente_cpu)
     t_pagina *pagina_buscada = list_get(tabla_proceso->tabla_paginas_proceso, pagina);
     int marco = consultar_marco_de_una_pagina(tabla_proceso, pagina_buscada);
 
-    tipo_buffer *buffer_memoria_mmu = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer_memoria_mmu, marco);
-    enviar_buffer(buffer_memoria_mmu, cliente_cpu);
-    destruir_buffer(buffer_memoria_mmu);
+    if (marco < 0)
+    {
+        enviar_cod_enum(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
+    }
+    else
+    {
+        tipo_buffer *buffer_memoria_mmu = crear_buffer();
+        agregar_buffer_para_enterosUint32(buffer_memoria_mmu, marco);
+        enviar_cod_enum(cliente_cpu, PEDIDO_FRAME_CORRECTO);
+        enviar_buffer(buffer_memoria_mmu, cliente_cpu);
+        destruir_buffer(buffer_memoria_mmu);
+    }
 }
 
 int tamanio_proceso(int pid)
@@ -746,6 +754,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
     // Vemos cuantas paginas tenemos que agregar con este nuevo tamanio
     int paginas_adicionales = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
+    log_info(logger, "CANTIDAD MARCOS A ASIGNAR: %d", paginas_adicionales);
     int tamanio_anterior = tamanio_proceso(pid);
     // 30
     //  Verificar si hay suficientes marcos disponibles
@@ -758,7 +767,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         }
     }
     // 32
-
+    log_info(logger, "MARCOS DISPONIBLES: <%d>", marcos_disponibles);
     if (paginas_adicionales > marcos_disponibles)
     { // si hay mas paginas que  cant marcos le avisamos a cpu
         enviar_cod_enum(cliente_cpu, OUT_OF_MEMORY);
@@ -775,21 +784,26 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     int marco_libre;
     // Agrego las paginas
     t_list *paginas = tabla_paginas->tabla_paginas_proceso;
-    for (int i = 0; i < paginas_adicionales; i++)
+    int j = 0;
+    for (int i = 0; i < cant_marcos; i++)
     {
         // Encontrar el próximo marco libre en el bitmap
         marco_libre = -1;
-        for (int j = 0; j < cant_marcos; j++)
+        while (j < paginas_adicionales)
         {
-            if (array_bitmap[j].bit_ocupado == 0)
-                marco_libre = j;
-            array_bitmap[j].bit_ocupado = 1; // Marcar el marco como ocupado
+            if (array_bitmap[i].bit_ocupado == 0)
+            {
+                marco_libre = i;
+                // Crear una nueva página y agregarla al proceso
+                t_pagina *nueva_pagina = malloc(sizeof(t_pagina));
+                nueva_pagina->marco = marco_libre; // Pongo el marco libre que encontre
+                nueva_pagina->bit_validez = 1;
+                list_add(paginas, nueva_pagina);
+                array_bitmap[i].bit_ocupado = 1; // Marcar el marco como ocupado
+                j++;
+                break;
+            }
         }
-        // Crear una nueva página y agregarla al proceso
-        t_pagina *nueva_pagina = malloc(sizeof(t_pagina));
-        nueva_pagina->marco = marco_libre; // Pongo el marco libre que encontre
-        nueva_pagina->bit_validez = 1;
-        list_add(paginas, nueva_pagina);
     }
 
     log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
