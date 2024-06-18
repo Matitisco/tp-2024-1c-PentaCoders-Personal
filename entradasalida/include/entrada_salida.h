@@ -10,7 +10,7 @@
 
 // VARIABLES
 extern t_log *logger;
-int conexion_kernel, conexion_memoria, estoy_libre;
+extern int conexion_kernel, conexion_memoria, estoy_libre;
 // ESTRUCTURAS
 typedef struct
 {
@@ -27,6 +27,7 @@ typedef struct
 	int retraso_compactacion;
 } config_io;
 
+// INICIAR
 void iniciar_modulo_io();
 void liberar_modulo_io();
 void levantar_interfaz(char *nombre, char *PATH);
@@ -34,15 +35,23 @@ t_interfaz *crear_interfaz(config_io *config, char *nombre);
 enum_interfaz asignar_interfaz(char *nombre_Interfaz);
 config_io *inicializar_config_IO(char *PATH);
 void arrancar_interfaz(t_interfaz *interfaz);
+
+// CONEXIONES
 void conectarse_kernel(t_interfaz *interfaz);
 void conectarse_memoria(t_interfaz *interfaz);
+
+// OPERACIONES
 void realizar_operacion(t_interfaz *interfaz);
 void realizar_operacion_gen(t_interfaz *interfaz);
-void realizar_operacion_stdin();
-void realizar_operacion_stdout();
-void realizar_operacion_dialfs();
+void realizar_operacion_stdin(t_interfaz *interfaz);
+void realizar_operacion_stdout(t_interfaz *interfaz);
+void realizar_operacion_dialfs(t_interfaz *interfaz);
+
+// AUXILIARES
 t_list *convertir_a_numeros(char *texto);
 void truncar_valor(char **valor_nuevo, char *valor_viejo, int limitante);
 void int_a_char_y_concatenar_a_string(int valor, char *cadena);
+t_list *truncar_y_convertir(char *texto_ingresado, int pid, int tamanio);
+void enviar_buffer_stdin_memoria(int direccion_fisica, int pid, int cant_enteros, t_list *lista_enteros);
 
 #endif
