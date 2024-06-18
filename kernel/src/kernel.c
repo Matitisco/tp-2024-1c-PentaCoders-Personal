@@ -108,7 +108,7 @@ void crear_hilos()
 	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, NULL);
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
-	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
+	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva2, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);

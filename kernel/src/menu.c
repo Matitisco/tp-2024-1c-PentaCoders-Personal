@@ -1,5 +1,115 @@
 #include "../include/menu.h"
 
+char * obtener_comando(char *entrada){
+    return strtok(entrada, " ");
+}
+//hacer funcion controlar argumentos
+int cantidad_argumentos_correcta(char *entrada){
+
+}
+int contar_tokens(char *cadena) {
+    int contador = 0;
+    char *token;
+
+    // Hacer una copia de la cadena, ya que strtok modifica la cadena original
+    char *cadena_copia = strdup(cadena);
+
+    token = strtok(cadena_copia, " ");
+    while (token != NULL) {
+        contador++;
+        token = strtok(NULL, " ");
+    }
+
+    free(cadena_copia);
+
+    return contador;
+}
+
+void ejecutar_comando(char *comando, int tokens)
+{   
+    bool argumentros_incorrectos = false;
+    //comando y un contador de parametros
+    if(strcmp(comando, "EJECUTAR_SCRIPT") == 0)
+    {   if(tokens == 2){
+            ejecutar_script(strtok(NULL, "\0"));}
+        else 
+        {   
+            argumentros_incorrectos = true;
+        }
+	}
+	else if(strcmp(comando, "INICIAR_PROCESO") == 0){
+        if (tokens == 2){
+            iniciar_proceso(strtok(NULL, "\0"));
+        }
+        else{
+            argumentros_incorrectos = true;
+        }
+	}
+	else if(strcmp(comando, "FINALIZAR_PROCESO") == 0){
+        if(tokens == 2){
+            finalizar_proceso(atoi(strtok(NULL, "\0")),INTERRUPTED_BY_USER);
+        }
+        else{
+            argumentros_incorrectos = true;
+        }
+	}
+	else if(strcmp(comando, "DETENER_PLANIFICACION") == 0){
+        if (tokens == 1){
+            detener_planificacion();
+        }
+        else{
+            argumentros_incorrectos = true;
+        }
+	}
+	else if(strcmp(comando, "INICIAR_PLANIFICACION") == 0){
+        if(tokens == 1){
+            iniciar_planificacion();
+        }
+        else{
+            argumentros_incorrectos = true;
+        }
+	}
+	else if(strcmp(comando, "MULTIPROGRAMACION") == 0 && tokens == 2){
+        if(tokens == 2){
+            grado_multiprogramacion(atoi( strtok(NULL, "\0") ));
+        }
+        else{
+            argumentros_incorrectos = true;
+        }
+	}
+	else if(strcmp(comando, "PROCESO_ESTADO") == 0 && tokens == 1){
+        if(tokens == 1){
+            proceso_estado();
+        }
+        else{
+            argumentros_incorrectos = true;
+        }
+	}
+    else if(argumentros_incorrectos){
+        printf("Invalid arguments\n\n");
+    }
+    else{
+        printf("%s: command not found \n",comando);
+    }
+}
+
+void iniciar_consola_interactiva2()
+{
+    while (1)
+    {
+        sleep(1);
+        sem_post(binario_menu_lp); // Habilita largo plazo
+
+        // hacer tokens y contar la cantidad de argumentos
+        char *entrada = readline("\033[1;32mkernel\033[0m:\033[1;34m~\033[0m$ ");
+        int tokens = contar_tokens(entrada);
+        char *comando =  obtener_comando(entrada); // palabra reservada
+        ejecutar_comando(comando, tokens);
+        free(entrada);
+    }
+}
+
+
 void iniciar_consola_interactiva()
 {
     while (1)
