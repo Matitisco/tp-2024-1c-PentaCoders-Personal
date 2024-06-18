@@ -88,8 +88,10 @@ typedef enum
 	DIRECCION_CORRECTA,
 	RESIZE_EXITOSO,
 	SOLICITUD_ESCRITURA_CPU,
-	LECTURA_CPU
+	LECTURA_CPU,
+	SOLICITUD_DIALFS
 } op_code;
+
 typedef enum
 {
 	GENERICA,
@@ -98,6 +100,13 @@ typedef enum
 	DIALFS,
 } enum_interfaz;
 
+typedef enum {
+	F_CREATE,
+	F_DELETE,
+	F_TRUNCATE,
+	F_READ,
+	F_WRITE
+} operacion_dialfs;
 typedef struct
 {
 	enum_interfaz tipo_interfaz;

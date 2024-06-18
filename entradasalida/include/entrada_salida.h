@@ -29,6 +29,24 @@ typedef struct
 } config_io;
 
 // INICIAR INTERFAZ
+typedef struct {
+	t_list 
+}tabla_archivos_abierto;
+
+typedef struct {
+	//permisos
+	//fecha de creacion
+	//tam archivo
+	//bloques
+
+}t_fcb;
+
+typedef struct {
+	int contadorAPerturas;
+	int descriptor;
+	t_fcb*fcb:
+
+}arch;
 config_io *inicializar_config_IO(char *PATH);
 void levantar_interfaz(char *nombre, char *PATH);
 
