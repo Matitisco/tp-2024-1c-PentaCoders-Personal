@@ -67,7 +67,7 @@ int interruptor_switch_readys;
 sem_t *b_switch_readys;
 
 sem_t *contador_readys;
-
+char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO"}; 
 
 int main(int argc, char *argv[])
 {
@@ -87,7 +87,8 @@ int main(int argc, char *argv[])
 }
 
 void iniciar_kernel()
-{
+{	
+	
 	habilitar_planificadores = 0;
 	inicializarEstados();
 	logger = iniciar_logger("kernel.log", "KERNEL");

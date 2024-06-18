@@ -1,37 +1,62 @@
 #include "../include/menu.h"
 
+char *generator(const char *text, int state) {
+    static int list_index, len;
+    char *name;
+
+    if (!state) {
+        list_index = 0;
+        len = strlen(text);
+    }
+
+    while ((name = comandos[list_index++])) {
+        if (strncmp(name, text, len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    return NULL;
+}
+
+char **autocompletado(const char *text, int start, int end) {
+    rl_attempted_completion_over = 1;
+
+    char **matches = NULL;
+    if (start == 0) {
+        matches = rl_completion_matches(text, generator);
+    }
+
+    return matches;
+}
+
 char * obtener_comando(char *entrada){
     return strtok(entrada, " ");
 }
-//hacer funcion controlar argumentos
-int cantidad_argumentos_correcta(char *entrada){
 
-}
 int contar_tokens(char *cadena) {
     int contador = 0;
     char *token;
 
-    // Hacer una copia de la cadena, ya que strtok modifica la cadena original
     char *cadena_copia = strdup(cadena);
 
     token = strtok(cadena_copia, " ");
-    while (token != NULL) {
+    while (token != NULL) { //copia de la cadena, ya que strtok modifica la cadena original
         contador++;
         token = strtok(NULL, " ");
     }
 
     free(cadena_copia);
-
     return contador;
 }
 
 void ejecutar_comando(char *comando, int tokens)
 {   
     bool argumentros_incorrectos = false;
-    //comando y un contador de parametros
+
     if(strcmp(comando, "EJECUTAR_SCRIPT") == 0)
     {   if(tokens == 2){
-            ejecutar_script(strtok(NULL, "\0"));}
+            ejecutar_script(strtok(NULL, "\0"));
+        }
         else 
         {   
             argumentros_incorrectos = true;
@@ -85,26 +110,31 @@ void ejecutar_comando(char *comando, int tokens)
             argumentros_incorrectos = true;
         }
 	}
-    else if(argumentros_incorrectos){
-        printf("Invalid arguments\n\n");
-    }
     else{
         printf("%s: command not found \n",comando);
+    }
+
+    if(argumentros_incorrectos){
+        printf("Invalid arguments\n\n");
     }
 }
 
 void iniciar_consola_interactiva2()
 {
+    using_history();
+    rl_attempted_completion_function = autocompletado;
     while (1)
     {
         sleep(1);
         sem_post(binario_menu_lp); // Habilita largo plazo
 
-        // hacer tokens y contar la cantidad de argumentos
         char *entrada = readline("\033[1;32mkernel\033[0m:\033[1;34m~\033[0m$ ");
+        add_history(entrada);
+
         int tokens = contar_tokens(entrada);
         char *comando =  obtener_comando(entrada); // palabra reservada
         ejecutar_comando(comando, tokens);
+        
         free(entrada);
     }
 }
