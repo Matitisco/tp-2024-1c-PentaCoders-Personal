@@ -110,6 +110,19 @@ void ejecutar_comando(char *comando, int tokens)
             argumentros_incorrectos = true;
         }
 	}
+    else if(strcmp(comando, "HELP") == 0 && tokens == 1){
+        if(tokens == 1){
+            printf("EJECUTAR_SCRIPT [PATH]\n");
+            printf("INICIAR_PROCESO [PATH]\n");
+            printf("FINALIZAR_PROCESO [PID]\n");
+            printf("DETENER_PLANIFICACION\n");
+            printf("INICIAR_PLANIFICACION\n");
+            printf("MULTIPROGRAMACION [VALOR]\n");
+        }
+        else{
+            argumentros_incorrectos = true;
+        }
+	}
     else{
         printf("%s: command not found \n",comando);
     }
