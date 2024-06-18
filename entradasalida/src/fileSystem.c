@@ -4,8 +4,36 @@
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) // IMPLEMENTAR
 {
 }
-void instrucciones_dialfs()
 
+// de metaData con BLOQUE_INICIAL=25
+//TAMANIO_ARCHIVO=1024
+
+void levantar_meta_data(){
+    t_config *config_meta_data;
+    config_meta_data = iniciar_config(path_meta_data);
+    bloque_inicial  = config_get_int_value(config_meta_data, "BLOQUE_INICIAL");
+    tamanio_meta_data= config_get_int_value(config_meta_data, "TAMANIO_META_DATA");
+
+    config_destroy(config_meta_data);
+}
+
+void levantar_bitmap(){//tiene que ser contiguo
+    verificarYCrearArchivo(path_bitmap);
+    bitmap = fopen(path_bitmap,"r+");
+  
+    int fd = fileno(bitmap);
+
+    
+}
+void levantar_arch_bloques(){
+     verificarYCrearArchivo(path_arch_bloques);
+    arch_bloque = fopen(path_arch_bloques, "r+");
+    uint32_t tamanio_arch_bloque = valores_config->block_size *valores_config->block_count;
+    int fd = fileno(arch_bloque);
+    ftruncate(fd,tamanio_arch_Bloque);
+    //memoriaMapeadaBloques = mmap(NULL,tamanio_archivoBloque,PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+}
+void instrucciones_dialfs()
 {
     while (1)
     {
@@ -38,7 +66,7 @@ void instrucciones_dialfs()
             break;
 
         default:
-            log_error("Error, la operacion no existe");
+            log_error(logger, "Error, la operacion no existe");
             break;
         }
     }
@@ -49,6 +77,7 @@ void crear_archivo(char *nombre_archivo, uint32_t pid)
 
     t_config *fcb_buscado = crear_fcb_archivo(nombre_archivo);
     config_destroy(fcb_buscado);
+    uint32_t tamanio = 0;
 
     // enviar_codigo(conexion_kernel, CREAR_ARCHIVO_OK);
     log_info(logger, "PID: %d - Crear Archivo: %s", pid, nombre_archivo);
@@ -73,17 +102,17 @@ void eliminar_archivo(char *nombre_archivo, uint32_t pid)
 void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
 {
     char *direccion_fisica = leer_buffer_string(buffer);
-    char *tamanio = leer_buffer_string(buffer);
-    char *reg_direccion = leer_buffer_string(buffer);
+    uint32_t tamanio = leer_buffer_para_enterosUint32(buffer);
+    uint32_t direccion_fisica = leer_buffer_string(buffer);
     char *puntero_archivo = leer_buffer_string(buffer);
     enviar_cod_enum(conexion_memoria, PEDIDO_ESCRITURA);
     enviar_cod_enum(conexion_memoria, SOLICITUD_DIALFS);
     tipo_buffer *buffer_memoria = crear_buffer();
     agregar_buffer_para_string(buffer_memoria, nombre_archivo);
     agregar_buffer_para_string(buffer_memoria, direccion_fisica);
-    agregar_buffer_para_string(buffer_memoria, tamanio);
+    agregar_buffer_para_enterosUint32(buffer_memoria, tamanio);
     agregar_buffer_para_string(buffer_memoria, puntero_archivo);
-    agregar_buffer_para_string(buffer_memoria, reg_direccion);
+    agregar_buffer_para_enterosUint32(buffer_memoria, direccion_fisica);
     destruir_buffer(buffer);
     // free(nombre_archivo); este no estoy segura
     // tendria que enviarle el pid de alguna forma
@@ -92,10 +121,9 @@ void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
 void leer_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
 {
     char *direccion_fisica = leer_buffer_string(buffer);
-    char *tamanio = leer_buffer_string(buffer);
-    char *reg_direccion = leer_buffer_string(buffer);
+    uint32_t tamanio = leer_buffer_enteroUint32(buffer);
+    uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
     char *puntero_archivo = leer_buffer_string(buffer);
-    
 
     char* rutaArchivo = obtener_ruta_archivo(nombre_archivo);
     t_config* fcb = config_create(rutaArchivo);
@@ -105,12 +133,12 @@ void leer_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
     enviar_cod_enum(conexion_memoria, SOLICITUD_DIALFS);
     
 
-    void* bloqueLeido = leer_en_archivo_bloques(fcb, puntero);
+    void* bloqueLeido = leer_en_archivo_bloques(fcb, puntero_archivo);
     agregar_buffer_para_string(buffer_memoria, nombre_archivo);
     agregar_buffer_para_string(buffer_memoria, direccion_fisica);
-    agregar_buffer_para_string(buffer_memoria, tamanio);
+    agregar_buffer_para_enterosUint32(buffer_memoria, tamanio);
     agregar_buffer_para_string(buffer_memoria, puntero_archivo);
-    agregar_buffer_para_string(buffer_memoria, reg_direccion);
+    agregar_buffer_para_enterosUint32(buffer_memoria, direccion_fisica);
     destruir_buffer(buffer);
     log_info(logger, "PID: %d - Leer Archivo:  %s - Tamanio a Leer: %d - Puntero Archivo: %d", pid, nombre_archivo,tamanio, puntero_archivo);
     // free(nombre_archivo); este no estoy segura

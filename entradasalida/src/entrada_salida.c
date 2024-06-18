@@ -425,11 +425,13 @@ void realizar_operacion_stdout()
 	estoy_libre = 1;
 	destruir_buffer(buffer_sol_operacion);
 }
-
+/*
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) // IMPLEMENTAR
 {
-	
-}
+	uint32_t tamanio_arch_bloques =valores_config->block_size *valores_config->block_count; 
+	crear_archivo_bloques("bloques.dat",tamanio_arch_bloques);
+}*/
+
 
 void realizar_operacion_dialfs() // IMPLEMENTAR
 {

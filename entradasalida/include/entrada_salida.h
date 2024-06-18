@@ -30,7 +30,7 @@ typedef struct
 
 // INICIAR INTERFAZ
 typedef struct {
-	t_list 
+	//t_list 
 }tabla_archivos_abierto;
 
 typedef struct {
@@ -44,7 +44,7 @@ typedef struct {
 typedef struct {
 	int contadorAPerturas;
 	int descriptor;
-	t_fcb*fcb:
+	//t_fcb*fcb:
 
 }arch;
 config_io *inicializar_config_IO(char *PATH);

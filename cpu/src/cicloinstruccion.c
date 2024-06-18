@@ -410,6 +410,8 @@ void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char*reg_t
 }
 void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo,char*reg_tamanio, char*reg_direccion, char*puntero_archivo,t_cde*cde)
 {
+    uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);
+    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
     buffer_instruccion_io = crear_buffer();
     enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
@@ -418,14 +420,16 @@ void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo,char*reg_taman
     agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
     uint32_t tamanio = atoi(reg_tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
-    agregar_buffer_para_string(buffer_instruccion_io,reg_direccion);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io,direccion_fisica);
     agregar_buffer_para_string(buffer_instruccion_io, puntero_archivo);
     agregar_buffer_para_string(buffer_instruccion_io, cde->pid);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
 }
 
 void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char*reg_tamanio,char*reg_direccion, char*puntero_archivo, t_cde*cde) {
-     buffer_instruccion_io = crear_buffer();
+    uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);
+    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica); 
+    buffer_instruccion_io = crear_buffer();
     enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_WRITE);
@@ -433,7 +437,7 @@ void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char*reg_taman
     agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
     uint32_t tamanio = atoi(reg_tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
-    agregar_buffer_para_string(buffer_instruccion_io,reg_direccion);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io,direccion_fisica);
     agregar_buffer_para_string(buffer_instruccion_io, puntero_archivo);
     agregar_buffer_para_string(buffer_instruccion_io, cde->pid);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
