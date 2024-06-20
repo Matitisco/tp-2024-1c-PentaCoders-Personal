@@ -113,6 +113,7 @@ void crear_hilos();
 void proceso_estado();
 void *conexionAMemoria();
 void iniciar_consola_interactiva();
+void iniciar_consola_interactiva2();
 void gestionar_peticiones_memoria();
 void gestionar_peticiones_interfaces();
 void planificar_ejecucion_procesos();

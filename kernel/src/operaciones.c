@@ -13,7 +13,7 @@ void ejecutar_script(char *PATH)
     if (archivo_script == NULL)
     {
         log_info(logger, "No se pudo leer el script con PATH: %s", PATH);
-        iniciar_consola_interactiva();
+        iniciar_consola_interactiva2();
     }
     while (fgets(linea, sizeof(linea), archivo_script) != NULL)
     {

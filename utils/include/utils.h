@@ -12,6 +12,8 @@
 #include <commons/string.h>
 #include <commons/config.h>
 #include <readline/readline.h>
+#include <readline/history.h>
+
 #include <semaphore.h>
 // #include <sys/socket.h>
 #include <commons/collections/list.h>
@@ -19,6 +21,7 @@
 #include "registros.h"
 #include "sockets.h"
 typedef t_list t_lista_recursos;
+
 
 typedef enum
 {
