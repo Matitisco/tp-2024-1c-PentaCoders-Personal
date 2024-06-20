@@ -529,8 +529,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		char *nombre_archivo = leer_buffer_string(buffer_con_instruccion);
 		uint32_t tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
-		char*reg_direccion = leer_buffer_string(buffer_con_instruccion);
-		char*puntero_archivo = leer_buffer_string(buffer_con_instruccion);
+		char *reg_direccion = leer_buffer_string(buffer_con_instruccion);
+		uint32_t puntero_archivo = leer_buffer_enteroUint32(buffer_con_instruccion);
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
 
 		if (informacion_interfaz == NULL)
@@ -539,6 +539,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		}
 		else
 		{
+
+			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+			interfaz_conectada_dialfs(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
+			// destruir_buffer(buffer_con_instruccion);
 			op_code codigo_cpu = recibir_operacion(socket_cpu_dispatch);
 			switch (codigo_cpu)
 			{
@@ -566,129 +570,131 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 					// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
 				}
-			}
-			break;
+				break;
 
-		case IO_FS_DELETE:
-			enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
-			op_code operacion_io = recibir_operacion(socket_interfaz);
-			tipo_buffer *buffer_interfaz = crear_buffer();
+			case IO_FS_DELETE:
+				enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
+				op_code operacion_io = recibir_operacion(socket_interfaz);
+				tipo_buffer *buffer_interfaz = crear_buffer();
 
-			if (operacion_io == ESTOY_LIBRE)
-			{
-				agregar_buffer_para_string(buffer_interfaz, nombre_IO);
-				agregar_buffer_para_string(buffer_interfaz, nombre_archivo);
-				enviar_buffer(buffer_interfaz, socket_interfaz);
-
-				if (operacion_io == CONCLUI_OPERACION)
+				if (operacion_io == ESTOY_LIBRE)
 				{
-					sem_post(b_transicion_blocked_ready);
-					// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-					sem_post(b_reanudar_largo_plazo);
-					sem_post(b_reanudar_corto_plazo);
+					agregar_buffer_para_string(buffer_interfaz, nombre_IO);
+					agregar_buffer_para_string(buffer_interfaz, nombre_archivo);
+					enviar_buffer(buffer_interfaz, socket_interfaz);
+
+					if (operacion_io == CONCLUI_OPERACION)
+					{
+						sem_post(b_transicion_blocked_ready);
+						// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+						sem_post(b_reanudar_largo_plazo);
+						sem_post(b_reanudar_corto_plazo);
+					}
 				}
-			}
-			else
-			{
-
-				// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
-			}
-
-			break;
-
-		case IO_FS_TRUNCATE:
-			enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
-			op_code operacion_io = recibir_operacion(socket_interfaz);
-			tipo_buffer *buffer_interfaz = crear_buffer();
-
-			if (operacion_io == ESTOY_LIBRE)
-			{
-				agregar_buffer_para_string(buffer_interfaz, nombre_IO);
-				agregar_buffer_para_string(buffer_interfaz, nombre_archivo);
-				agregar_buffer_para_enterosUint32(buffer_interfaz,tamanio );
-				enviar_buffer(buffer_interfaz, socket_interfaz);
-
-				if (operacion_io == CONCLUI_OPERACION)
+				else
 				{
-					sem_post(b_transicion_blocked_ready);
-					// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-					sem_post(b_reanudar_largo_plazo);
-					sem_post(b_reanudar_corto_plazo);
+
+					// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
 				}
-			}
-			else
-			{
 
-				// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
-			}
+				break;
 
-			break;
-		case IO_FS_WRITE:
-			enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
-			op_code operacion_io = recibir_operacion(socket_interfaz);
-			tipo_buffer *buffer_interfaz = crear_buffer();
+			case IO_FS_TRUNCATE:
+				enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
+				op_code operacion_io = recibir_operacion(socket_interfaz);
+				tipo_buffer *buffer_interfaz = crear_buffer();
 
-			if (operacion_io == ESTOY_LIBRE)
-			{
-				agregar_buffer_para_string(buffer_interfaz, nombre_IO);
-				agregar_buffer_para_string(buffer_interfaz, nombre_archivo);
-				agregar_buffer_para_enterosUint32(buffer_interfaz,tamanio );
-				agregar_buffer_para_string(buffer_interfaz, reg_direccion);
-				agregar_buffer_para_string(buffer_interfaz,puntero_archivo);
-				enviar_buffer(buffer_interfaz, socket_interfaz);
-
-				if (operacion_io == CONCLUI_OPERACION)
+				if (operacion_io == ESTOY_LIBRE)
 				{
-					sem_post(b_transicion_blocked_ready);
-					// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-					sem_post(b_reanudar_largo_plazo);
-					sem_post(b_reanudar_corto_plazo);
+					agregar_buffer_para_string(buffer_interfaz, nombre_IO);
+					agregar_buffer_para_string(buffer_interfaz, nombre_archivo);
+					agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio);
+					enviar_buffer(buffer_interfaz, socket_interfaz);
+
+					if (operacion_io == CONCLUI_OPERACION)
+					{
+						sem_post(b_transicion_blocked_ready);
+						// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+						sem_post(b_reanudar_largo_plazo);
+						sem_post(b_reanudar_corto_plazo);
+					}
 				}
-			}
-			else
-			{
-
-				// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
-			}
-
-			break;
-		case IO_FS_READ:
-			enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
-			op_code operacion_io = recibir_operacion(socket_interfaz);
-			tipo_buffer *buffer_interfaz = crear_buffer();
-
-			if (operacion_io == ESTOY_LIBRE)
-			{
-				agregar_buffer_para_string(buffer_interfaz, nombre_IO);
-				agregar_buffer_para_string(buffer_interfaz, nombre_archivo);
-				agregar_buffer_para_enterosUint32(buffer_interfaz,tamanio );
-				agregar_buffer_para_string(buffer_interfaz, reg_direccion);
-				agregar_buffer_para_string(buffer_interfaz,puntero_archivo);
-				enviar_buffer(buffer_interfaz, socket_interfaz);
-
-				if (operacion_io == CONCLUI_OPERACION)
+				else
 				{
-					sem_post(b_transicion_blocked_ready);
-					// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
-					sem_post(b_reanudar_largo_plazo);
-					sem_post(b_reanudar_corto_plazo);
+
+					// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
 				}
-			}
-			else
-			{
 
-				// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
-			}
-			break;
-		default:
-			log_error(logger, "ERROR - No se encontro la instruccion de la interfaz dialfs");
+				break;
 
-			break;
+			case IO_FS_WRITE:
+				enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
+				op_code operacion_io = recibir_operacion(socket_interfaz);
+				tipo_buffer *buffer_interfaz = crear_buffer();
+
+				if (operacion_io == ESTOY_LIBRE)
+				{
+					agregar_buffer_para_string(buffer_interfaz, nombre_IO);
+					agregar_buffer_para_string(buffer_interfaz, nombre_archivo);
+					agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio);
+					agregar_buffer_para_enterosUint32(buffer_interfaz, reg_direccion);
+					agregar_buffer_para_enterosUint32(buffer_interfaz, puntero_archivo);
+					enviar_buffer(buffer_interfaz, socket_interfaz);
+
+					if (operacion_io == CONCLUI_OPERACION)
+					{
+						sem_post(b_transicion_blocked_ready);
+						// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+						sem_post(b_reanudar_largo_plazo);
+						sem_post(b_reanudar_corto_plazo);
+					}
+				}
+				else
+				{
+
+					// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
+				}
+
+				break;
+
+			case IO_FS_READ:
+				enviar_cod_enum(socket_interfaz, CONSULTAR_DISPONIBILDAD);
+				op_code operacion_io = recibir_operacion(socket_interfaz);
+				tipo_buffer *buffer_interfaz = crear_buffer();
+
+				if (operacion_io == ESTOY_LIBRE)
+				{
+					agregar_buffer_para_string(buffer_interfaz, nombre_IO);
+					agregar_buffer_para_string(buffer_interfaz, nombre_archivo);
+					agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio);
+					agregar_buffer_para_enterosUint32(buffer_interfaz, reg_direccion);
+					agregar_buffer_para_enterosUint32(buffer_interfaz, puntero_archivo);
+					enviar_buffer(buffer_interfaz, socket_interfaz);
+
+					if (operacion_io == CONCLUI_OPERACION)
+					{
+						sem_post(b_transicion_blocked_ready);
+						// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+						sem_post(b_reanudar_largo_plazo);
+						sem_post(b_reanudar_corto_plazo);
+					}
+				}
+				else
+				{
+
+					// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
+				}
+				break;
+			default:
+				log_error(logger, "ERROR - No se encontro la instruccion de la interfaz dialfs");
+
+				break;
+			}
 		}
 	}
 	break;
 
-    default:
+default:
 	log_error(logger, "ERROR - Solicitud Interfaz Enviada Por CPU");
 	break;
 }
