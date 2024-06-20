@@ -595,10 +595,10 @@ void obtener_y_eliminar_cde(int pid, t_registros *reg)
     cde->registros = reg;
     eliminar_cde(cde);
 }
-
+// NO ANDA TODAVIA
 void eliminar_cde(t_cde *cde)
 {
-    int instrucciones = list_size(cde->lista_instrucciones);
+/*     int instrucciones = list_size(cde->lista_instrucciones);
     for (int i = 0; i < instrucciones; i++)
     {
         t_instruccion *instruccion = list_get(cde->lista_instrucciones, i);
@@ -609,10 +609,10 @@ void eliminar_cde(t_cde *cde)
             log_info(logger, "PARAMETRO A LIBERAR: %s", par);
             free(par);
         }
-        list_destroy(instruccion->parametros);
+        //list_destroy(instruccion->parametros);
     }
     free(cde->path);
-    liberar_registros(cde->registros);
+    liberar_registros(cde->registros); */
 }
 
 void liberar_registros(t_registros *registros)

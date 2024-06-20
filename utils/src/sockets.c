@@ -21,6 +21,8 @@ int iniciar_servidor(t_log *logger, const char *name, char *ip, char *puerto)
     for (struct addrinfo *p = servinfo; p != NULL; p = p->ai_next)
     {
         socket_servidor = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+            perror("setsockopt(SO_REUSEADDR) failed");
         if (socket_servidor == -1) // fallo de crear socket
             continue;
 
@@ -56,6 +58,9 @@ int esperar_cliente(t_log *logger, const char *name_server, const char *name_cli
 {
     struct sockaddr_in dir_cliente;
     socklen_t tam_direccion = sizeof(struct sockaddr_in);
+
+    if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+        perror("setsockopt(SO_REUSEADDR) failed");
 
     int socket_cliente = accept(socket_servidor, (void *)&dir_cliente, &tam_direccion);
 
