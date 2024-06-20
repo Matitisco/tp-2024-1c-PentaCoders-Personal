@@ -2,22 +2,7 @@
 #include "../include/fileSystem.h"
 config_io *valores_config;
 t_list *tabla_archivos_abierto;
-void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) // IMPLEMENTAR
-{
-}
-
-// de metaData con BLOQUE_INICIAL=25
-// TAMANIO_ARCHIVO=1024
-
-void levantar_meta_data(char *path) // uno por cada archivo
-{
-    t_config *config_meta_data;
-    config_meta_data = iniciar_config(path);
-    bloque_inicial = config_get_int_value(config_meta_data, "BLOQUE_INICIAL");
-    tamanio_meta_data = config_get_int_value(config_meta_data, "TAMANIO_META_DATA");
-
-    config_destroy(config_meta_data);
-}
+t_list *lista_metadata; // FALTA INICIALIZAR
 
 void levantar_bitmap()
 {
@@ -98,70 +83,16 @@ uint32_t obtener_nro_bloque_libre()
     }
 }
 
-void escribir_en_bitmap(uint32_t nroBloque, uint8_t valor)
+void escribir_en_bitmap(uint32_t nroBloque, uint8_t valor) // VER SI LAS NECESITAMOS
 {
     memcpy(bitmapBloquesSwap + nroBloque, &valor, sizeof(uint8_t));
 }
 
-uint8_t leer_de_bitmap(uint32_t nroBloque)
+uint8_t leer_de_bitmap(uint32_t nroBloque) // VER SI LAS NECESITAMOS
 {
     uint8_t estadoBloque;
     memcpy(&estadoBloque, bitmapBloquesSwap + nroBloque, sizeof(uint8_t));
     return estadoBloque;
-}
-
-void levantar_arch_bloques() // La cantida dde bloques que tiene el fileSystem
-{
-    FILE *arch_bloque = fopen(path_arch_bloques, "r+"); // escritura y lectura de archivos ya creados
-    if (arch_bloque == NULL)
-    {
-        arch_bloque = fopen(path_arch_bloques, "w+"); // si no lo encuntra lo crea
-        if (arch_bloque != NULL)
-        {
-            log_info(logger, "El archivo de Bloques %s se creo", path_arch_bloques);
-        }
-        else
-        {
-            log_info(logger, "No se pudo crear el archivo");
-        }
-    }
-    uint32_t tamanio_arch_bloque = valores_config->block_size * valores_config->block_count;
-    ftruncate(fileno(arch_bloque), tamanio_arch_bloque); // le asigno el tamanio al archivo de bloques
-}
-
-void crear_arch(const char *nombre_archivo)
-{
-    FILE *archivo = fopen(nombre_archivo, "r");
-
-    if (archivo == NULL)
-    {
-        // El archivo no existe, lo creamos en modo escritura
-        archivo = fopen(nombre_archivo, "w");
-
-        if (archivo != NULL)
-        {
-            log_info(logger, "El archivo %s se creo", nombre_archivo);
-            // fclose(archivo); tengo que cerrarlo?
-        }
-        else
-        {
-            log_info(logger, "No se pudo crear el archivo");
-        }
-    }
-    else
-    {
-        log_info(logger, "El archivo %s existe", nombre_archivo);
-
-        // fclose(archivo);
-    }
-
-    // t_archivo *archivo = malloc(sizeof(t_archivo));
-    // archivo->tamanio = 0;
-    //  agregar una lista de pids
-    // archivo->puntero_archivo = archivo;
-    // strcpy(archivo->nombre_archivo, nombre_archivo);
-    // list_add(tabla_archivos_abierto, archivo); // la lista de paginas seria la tabla
-    return archivo;
 }
 
 void instrucciones_dialfs()
@@ -203,21 +134,17 @@ void instrucciones_dialfs()
     }
 }
 
-void actualizar_bit_map()
+void crear_archivo(char *nombre_archivo) // FALTA IMPLEMENTACION DE FUNCIONES
 {
-}
+    t_config *meta_data_archivo = crear_meta_data_archivo(nombre_archivo);
 
-void crear_archivo(char *nombre_archivo, uint32_t pid)
-{
-    crear_arch(nombre_archivo);                          // archivo creado asoc a la interfaz
-    ocupar_bloque(path_arch_bloques, nombre_archivo, 1); // asignamos un bloque del fs
-    levantar_meta_data();
-    actualizar_bit_map();
-    // en algun momento le avisamos al kernel, que agregue el archivo asociado a la interfaz a na lista
-    //
+    actualizar_bitmap(meta_data_archivo); // TODO
+    // enviar_codigo(socket_kernel, CREAR_ARCHIVO_OK);
+    free(nombreArchivo);
 
     log_info(logger, "PID: %d - Crear Archivo: %s", pid, nombre_archivo);
 }
+
 char *obtener_ruta_archivo(char *nombre_archivo)
 {
     char *ruta_fcb_buscado = string_new();
@@ -238,10 +165,25 @@ void truncar_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
 }
 void eliminar_archivo(char *nombre_archivo, uint32_t pid)
 {
+    t_config *metadata_buscado = buscar_meta_data(nombre_archivo); // TODO
+    config_destroy(metadata_buscado);
     /*Eliminar el archivo de metadatos:
      Esto implica eliminar el archivo .meta asociado al archivo que deseas eliminar.
      Actualizar el bitmap: Marcar los bloques que eran usados por el archivo como libres en el bitmap.*/
     log_info(logger, "PID: %d - Eliminar archivo: %s", pid, nombre_archivo);
+}
+
+t_config *buscar_meta_data(char *nombre_archivo)
+{
+
+    for (int i = 0; i < list_size(lista_metadata); i++)
+    {
+        t_config *posible = list_get(lista_metadata, i);
+        if ()
+        {
+            /* code */
+        }
+    }
 }
 
 void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
@@ -291,15 +233,15 @@ void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio)
 {
 
     char *ruta_fcb_buscado = obtener_ruta_archivo(nombre_archivo);
-    t_config *fcb_buscado = config_create(ruta_fcb_buscado); // archivo metadata
+    t_config *archivo_meta_data_buscado = config_create(ruta_fcb_buscado); // archivo metadata
     char *tamanio_a_aplicar;
     tamanio_a_aplicar = string_itoa(nuevo_tamanio);
 
-    uint32_t tamanio_archivo_anterior = config_get_int_value(fcb_buscado, "TAMANIO_ARCHIVO");
-    uint32_t bloque_inicial = config_get_int_value(fcb_buscado, "BLOQUE_INICIAL");
+    uint32_t tamanio_archivo_anterior = config_get_int_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO");
+    uint32_t bloque_inicial = config_get_int_value(archivo_meta_data_buscado, "BLOQUE_INICIAL");
 
-    config_set_value(fcb_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
-    config_save_in_file(fcb_buscado, ruta_fcb_buscado);
+    config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
+    config_save_in_file(archivo_meta_data_buscado, ruta_fcb_buscado);
 
     if (nuevo_tamanio > tamanio_archivo_anterior)
     {
