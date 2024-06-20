@@ -11,7 +11,7 @@
 // VARIABLES
 extern t_log *logger;
 int conexion_kernel, conexion_memoria, estoy_libre;
-
+extern config_io *valores_config;
 // ESTRUCTURAS
 typedef struct
 {

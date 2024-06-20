@@ -1,7 +1,15 @@
 #ifndef FILE_SYSTEM_H_
 #define FILE_SYSTEM_H_
 
+#include <commons/bitarray.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <commons/txt.h>
 #include "entrada_salida.h"
+
+
 //y el archivo de bloques normal
 //bit map que nos dice los bloques libres
 //metaData - utilizar las config 
@@ -12,7 +20,6 @@ char*path_arch_bloques;
 int bloque_inicial ;
 int tamanio_meta_data;
 t_bitarray* bitarray;
-
 FILE*arch_bloque;
 FILE*bit_map;
 typedef struct t_bitarray
