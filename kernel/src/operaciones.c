@@ -231,10 +231,10 @@ char *mostrar_motivo(motivoFinalizar motivo)
 
 void liberar_recursos(t_pcb *proceso)
 {   //TODO
-    /*
     int tamanio = list_size(proceso->recursosAsignados);
     // se le asignan mal los recursos al proceso
     log_info(logger, "CANTIDAD DE RECURSOS ASIGNADOS QUE TIENE EL PROCESO: %d: %d", proceso->cde->pid, tamanio);
+    /*
     for (int i = 0; i < tamanio; i++)
     {
         // liberamos los recursos que tenia el proceso
