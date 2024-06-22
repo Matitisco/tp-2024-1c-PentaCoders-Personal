@@ -1,6 +1,6 @@
 #include "../include/menu.h"
 
-void iniciar_consola_interactiva()
+void *iniciar_consola_interactiva()
 {
     while (1)
     {
@@ -9,11 +9,12 @@ void iniciar_consola_interactiva()
         /* if (habilitar_planificadores)
         {
             sem_post(b_detener_planificacion);
-            
+
         } */
         mostrar_operaciones_realizables();
         ejecutar_operacion(readline("Ingrese un valor para realizar una de las siguientes acciones: "), logger);
     }
+    return (void *)1;
 }
 
 void mostrar_operaciones_realizables()

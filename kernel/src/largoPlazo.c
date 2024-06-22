@@ -1,11 +1,10 @@
 #include "../include/largoPlazo.h"
 
-char* plani_l= "largo";
+char *plani_l = "largo";
 void *largo_plazo()
 {
     while (1)
     {
-
 
         sem_wait(binario_menu_lp); // Se bloquea esperando al menu
 
@@ -15,22 +14,14 @@ void *largo_plazo()
         proceso = transicion_new_a_ready(); // lo saca de new y lo mete a ready
 
         log_info(logger, "PID: %d - Estado Anterior: NEW - Estado Actual: READY \n", proceso->cde->pid); // Log pedido de cambio de estado
-
-        
-
     }
 }
 
-
-
-
-
 t_pcb *transicion_new_a_ready()
-{   
-    //desbloquearSiReadysVacios(); //Desbloquea Corto Plazo
-    t_pcb *proceso = transicion_generica(cola_new_global,cola_ready_global,"largo");
+{
+    // desbloquearSiReadysVacios(); //Desbloquea Corto Plazo
+    t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, "largo");
     sem_post(contador_readys);
-    
 
     return proceso;
 }
@@ -41,14 +32,14 @@ void *transicion_exit_largo_plazo()
     {
         sem_wait(b_largo_plazo_exit);
 
-        /* t_pcb *proceso = sacar_procesos_cola(cola_exec_global, plani_l);
+        /* t_pcb *proceso = sacar_procesos_cola(cola_exec_global, plani_l);*/
         /* if(habilitar_planificadores==0)
-	    {
-			sem_wait(b_reanudar_largo_plazo);
-		} 
+        {
+            sem_wait(b_reanudar_largo_plazo);
+        }
         agregar_a_estado(proceso, cola_exit_global); */
 
-        t_pcb *proceso = transicion_generica(cola_exec_global,cola_exit_global,"largo");
+        t_pcb *proceso = transicion_generica(cola_exec_global, cola_exit_global, "largo");
 
         sem_post(GRADO_MULTIPROGRAMACION);
         sem_post(b_exec_libre);
@@ -56,7 +47,3 @@ void *transicion_exit_largo_plazo()
         log_info(logger, "Finaliza el proceso %d - Motivo:", proceso->cde->pid);
     }
 }
-
-
-
-

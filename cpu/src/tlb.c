@@ -26,9 +26,9 @@ void tlb_crear(char *algoritmo, int cant_entradas)
 
     for (int i = 0; i < cant_entradas; i++)
     {
-        tlb->entradas[i].pid = -1;
-        tlb->entradas[i].pagina = -1;
-        tlb->entradas[i].marco = -1;
+        *(tlb->entradas[i].pid) = -1;
+        *(tlb->entradas[i].pagina) = -1;
+        *(tlb->entradas[i].marco) = -1;
         tlb->entradas[i].ultima_referencia = (char *)NULL;
     }
     iterador_fifo = 0;
@@ -39,8 +39,8 @@ int tlb_consultar_df_pagina(int pagina_buscada, int desplazamiento)
 
     for (int i = 0; i < tlb->cant_entradas; i++)
     {
-        int pagina_tlb = tlb->entradas[i].pagina;
-        int marco_tlb = tlb->entradas[i].marco;
+        int pagina_tlb = *(tlb->entradas[i].pagina);
+        int marco_tlb = *(tlb->entradas[i].marco);
         int tamanio_frame = tamanio_pagina;
 
         if (pagina_buscada == pagina_tlb)
@@ -159,9 +159,9 @@ int obtener_tiempo_en_miliSegundos(char *tiempo)
 tlb_entrada *entrada_crear(int pid, int pagina, int marco)
 {
     tlb_entrada *entrada_nueva = malloc(sizeof(tlb_entrada));
-    entrada_nueva->pid = pid;
-    entrada_nueva->pagina = pagina;
-    entrada_nueva->marco = marco;
+    entrada_nueva->pid = &pid;
+    entrada_nueva->pagina = &pagina;
+    entrada_nueva->marco = &marco;
     entrada_nueva->ultima_referencia = temporal_get_string_time("%H:%M:%S:%MS");
     return entrada_nueva;
 }

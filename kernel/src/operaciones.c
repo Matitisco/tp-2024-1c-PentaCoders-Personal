@@ -304,7 +304,7 @@ void modificar_grado_multiprogramacion(int valor)
 {
     for (int i = 0; i < valor; i++)
     {
-        sem_post(&GRADO_MULTIPROGRAMACION);
+        sem_post(GRADO_MULTIPROGRAMACION);
     }
     log_info(logger, "Se modifico el grado de multiprogramacion a %d", valor);
 }

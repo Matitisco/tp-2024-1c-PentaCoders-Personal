@@ -13,7 +13,7 @@ int socket_cpu_dispatch;
 int socket_cpu_interrupt;
 char *nombre_recurso_recibido;
 int socket_interfaz;
-int disp_io;
+int socket_disp_io;
 t_pcb *proceso_interrumpido;
 int habilitar_planificadores;
 int QUANTUM;
@@ -126,76 +126,10 @@ int llego_proceso()
 	return *sem_value_q;
 }
 
-void *levantarIO()
-{
-	while (1)
-	{
-		disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
-		op_code operacion = recibir_operacion(disp_io);
-		if (operacion == SOLICITUD_CONEXION_IO)
-		{
-			tipo_buffer *buffer_io = recibir_buffer(disp_io);
-
-			int cod_io = leer_buffer_enteroUint32(buffer_io);
-			nombre_IO = leer_buffer_string(buffer_io);
-			char *tipo_io = obtener_interfaz(cod_io);
-
-			if (list_find(lista_interfaces, interfaz_esta_conectada) != NULL)
-			{
-				log_info(logger, "La Interfaz %s ya esta conectada", nombre_IO);
-				enviar_cod_enum(disp_io, ESTABA_CONECTADO);
-			}
-			else
-			{
-				enviar_cod_enum(disp_io, NO_ESTABA_CONECTADO);
-				log_info(logger, "La Interfaz %s no estaba conectada", nombre_IO);
-
-				t_infoIO *infoIO = malloc(sizeof(t_infoIO));
-				infoIO->cliente_io = disp_io;
-				infoIO->nombre_io = nombre_IO;
-				infoIO->procesos_espera = list_create(); // lista de procesos
-
-				list_add(lista_interfaces, infoIO);
-				log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, infoIO->nombre_io);
-			}
-		}
-		else
-		{
-			log_info(logger, "No entiendo la operacion enviada");
-		}
-	}
-	return NULL;
-}
-
-_Bool interfaz_esta_conectada(t_infoIO *interfaz)
-{
-	return strcmp(interfaz->nombre_io, nombre_IO) == 0;
-}
-
-char *obtener_interfaz(enum_interfaz interfaz)
-{
-	if (interfaz == GENERICA)
-	{
-		return "GENERICA";
-	}
-	else if (interfaz == STDIN)
-	{
-		return "STDIN";
-	}
-	else if (interfaz == STDOUT)
-	{
-		return "STDOUT";
-	}
-	else if (interfaz == DIALFS)
-	{
-		return "DIALFS";
-	}
-	return "NO SE ENTIENDE LA INTERFAZ ENVIADA";
-}
-
 void *conexionAMemoria()
 {
 	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria);
+	return (void *)1;
 }
 
 colaEstado *constructorColaEstado(char *nombre)
@@ -388,6 +322,7 @@ colaEstado *obtener_cola(t_estados estado)
 void *levantar_CPU_Interrupt()
 {
 	socket_cpu_interrupt = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_interrupt);
+	return (void *)1;
 }
 
 void *levantar_CPU_Dispatch()
@@ -419,7 +354,6 @@ void *levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_cpu);
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
-			// IO_GEN_SLEEP INTERFAZ TIEMPO
 			sem_post(b_transicion_exec_ready);
 			break;
 
@@ -429,7 +363,10 @@ void *levantar_CPU_Dispatch()
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cde);
 
-			pthread_cancel(hiloQuantum);
+			if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0 || strcmp(valores_config->algoritmo_planificacion, "RR") == 0)
+			{
+				pthread_cancel(hiloQuantum);
+			}
 
 			sem_post(b_transicion_exec_blocked);
 
@@ -538,76 +475,66 @@ void *levantar_CPU_Dispatch()
 	}
 }
 
+// MANEJO DE INTERFACES IO
+
+void *levantarIO()
+{
+	while (1)
+	{
+		socket_disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io);
+		op_code operacion = recibir_operacion(socket_disp_io);
+		if (operacion == SOLICITUD_CONEXION_IO)
+		{
+			tipo_buffer *buffer_io = recibir_buffer(socket_disp_io);
+
+			int tipo_interfaz_io = leer_buffer_enteroUint32(buffer_io);
+			nombre_IO = leer_buffer_string(buffer_io);
+			char *tipo_io = obtener_interfaz(tipo_interfaz_io);
+
+			if (list_find(lista_interfaces, interfaz_esta_en_lista) != NULL)
+			{
+				log_info(logger, "La Interfaz %s ya esta conectada", nombre_IO);
+				enviar_cod_enum(socket_disp_io, ESTABA_CONECTADO);
+			}
+			else
+			{
+				enviar_cod_enum(socket_disp_io, NO_ESTABA_CONECTADO);
+				log_info(logger, "La Interfaz %s no estaba conectada", nombre_IO);
+				t_infoIO *infoIO = constructor_infoIO(socket_disp_io, tipo_interfaz_io);
+				list_add(lista_interfaces, infoIO);
+				log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, infoIO->nombre_io);
+			}
+		}
+		else
+		{
+			log_error(logger, "ERROR - SOLICITUD CONEXION INTERFAZ");
+		}
+	}
+	return NULL;
+}
+
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion)
 {
 	op_code operacion_desde_cpu_dispatch = leer_buffer_enteroUint32(buffer_con_instruccion);
-	t_infoIO *informacion_interfaz;
-	t_tipoDeInstruccion instruccion_a_ejecutar;
-	uint32_t tamanioRegistro;
-	uint32_t direccion_fisica;
+	t_tipoDeInstruccion instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
+	log_info(logger, "Instruccion IO a ejecutar <%d>", instruccion_a_ejecutar);
+
 	switch (operacion_desde_cpu_dispatch)
 	{
 	case SOLICITUD_INTERFAZ_GENERICA:
-
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_GEN_SLEEP
-		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
-		nombre_IO = leer_buffer_string(buffer_con_instruccion);
-
-		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
-
-		if (informacion_interfaz == NULL)
-		{
-			interfaz_no_conectada(pid);
-		}
-		else
-		{
-			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_generica(unidades_trabajo, instruccion_a_ejecutar, informacion_interfaz, pid);
-		}
+		manejar_solicitud_generica(pid, buffer_con_instruccion, instruccion_a_ejecutar);
 		break;
 
 	case SOLICITUD_INTERFAZ_STDIN:
-
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDIN_READ
-		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
-		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
-		nombre_IO = leer_buffer_string(buffer_con_instruccion);
-
-		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
-
-		if (informacion_interfaz == NULL)
-		{
-			interfaz_no_conectada(pid);
-		}
-		else
-		{
-			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_stdin(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
-		}
+		manejar_solicitud_stdin(pid, buffer_con_instruccion, instruccion_a_ejecutar);
 		break;
 
 	case SOLICITUD_INTERFAZ_STDOUT:
-
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDOUT_WRITE
-		log_info(logger, "INSTURCCION A EJECUTAR STDOUT: %d", instruccion_a_ejecutar);
-		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
-		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
-		nombre_IO = leer_buffer_string(buffer_con_instruccion);
-
-		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_conectada);
-
-		if (informacion_interfaz == NULL)
-		{
-			interfaz_no_conectada(pid);
-		}
-		else
-		{
-			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_stdout(instruccion_a_ejecutar, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
-		}
+		manejar_solicitud_stdout(pid, buffer_con_instruccion, instruccion_a_ejecutar);
 		break;
 
 	case SOLICITUD_INTERFAZ_DIALFS:
+		manejar_solicitud_dialfs(pid, buffer_con_instruccion, instruccion_a_ejecutar);
 		break;
 
 	default:
@@ -616,10 +543,70 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	}
 }
 
+void manejar_solicitud_generica(int pid, tipo_buffer *buffer, t_tipoDeInstruccion instruccion)
+{
+	uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer);
+	nombre_IO = leer_buffer_string(buffer);
+
+	t_infoIO *informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+	if (!interfaz_esta_conectada(informacion_interfaz))
+	{
+		list_remove_element(lista_interfaces, informacion_interfaz);
+		interfaz_no_conectada(pid);
+	}
+	else
+	{
+		log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+		interfaz_conectada_generica(unidades_trabajo, instruccion, informacion_interfaz, pid);
+	}
+}
+
+void manejar_solicitud_stdin(int pid, tipo_buffer *buffer, t_tipoDeInstruccion instruccion)
+{
+	uint32_t tamanioRegistro = leer_buffer_enteroUint32(buffer);
+	uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
+	nombre_IO = leer_buffer_string(buffer);
+
+	t_infoIO *informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+	if (!interfaz_esta_conectada(informacion_interfaz))
+	{
+		list_remove_element(lista_interfaces, informacion_interfaz);
+		interfaz_no_conectada(pid);
+	}
+	else
+	{
+		log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+		interfaz_conectada_stdin(instruccion, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
+	}
+}
+
+void manejar_solicitud_stdout(int pid, tipo_buffer *buffer, t_tipoDeInstruccion instruccion)
+{
+	uint32_t tamanioRegistro = leer_buffer_enteroUint32(buffer);
+	uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
+	nombre_IO = leer_buffer_string(buffer);
+
+	t_infoIO *informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+	if (!interfaz_esta_conectada(informacion_interfaz))
+	{
+		list_remove_element(lista_interfaces, informacion_interfaz);
+		interfaz_no_conectada(pid);
+	}
+	else
+	{
+		log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+		interfaz_conectada_stdout(instruccion, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
+	}
+}
+
+void manejar_solicitud_dialfs(int pid, tipo_buffer *buffer, t_tipoDeInstruccion instruccion)
+{
+}
+
 void interfaz_no_conectada(int pid)
 {
 	log_error(logger, "La interfaz %s no se encuentra conectada", nombre_IO);
-	finalizar_proceso(pid, INVALID_RESOURCE);
+	finalizar_proceso(pid, INVALID_INTERFACE);
 	sem_post(b_largo_plazo_exit);
 }
 
@@ -640,6 +627,15 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 		if (operacion_io == CONCLUI_OPERACION)
 		{
 			sem_post(b_transicion_blocked_ready);
+			if (list_is_empty(io->procesos_espera))
+			{
+				log_info(logger, "No hay procesos en espera");
+			}
+			else
+			{
+				t_cde *cde_espera = list_remove(io->procesos_espera, 0); // obtengo el que esta esperando mas tiempo
+				log_info(logger, "El proceso que estaba en espera es el proceso PID: %d", cde_espera->pid);
+			}
 			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
 		}
 	}
@@ -709,6 +705,52 @@ void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int t
 	}
 }
 
+t_infoIO *constructor_infoIO(int socket_io, int tipo_interfaz_io)
+{
+
+	t_infoIO *infoIO = malloc(sizeof(t_infoIO));
+	infoIO->cliente_io = socket_io;
+	infoIO->nombre_io = nombre_IO;
+	infoIO->tipo_io = tipo_interfaz_io;
+	infoIO->procesos_espera = list_create(); // lista de procesos en espera
+	return infoIO;
+}
+
+_Bool interfaz_esta_en_lista(void *ptr)
+{
+	t_infoIO *interfaz = (t_infoIO *)ptr;
+	return strcmp(interfaz->nombre_io, nombre_IO) == 0;
+}
+
+_Bool interfaz_esta_conectada(t_infoIO *informacion_interfaz)
+{
+	op_code cod_op = CONFIRMAR_CONEXION;
+	return (send(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), 0) == -1) || (recv(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), MSG_WAITALL) == -1);
+}
+
+char *obtener_interfaz(enum_interfaz interfaz)
+{
+	if (interfaz == GENERICA)
+	{
+		return "GENERICA";
+	}
+	else if (interfaz == STDIN)
+	{
+		return "STDIN";
+	}
+	else if (interfaz == STDOUT)
+	{
+		return "STDOUT";
+	}
+	else if (interfaz == DIALFS)
+	{
+		return "DIALFS";
+	}
+	return "NO SE ENTIENDE LA INTERFAZ ENVIADA";
+}
+
+// MANEJO DE RECURSOS
+
 bool existe_recurso2(char *nombre_recurso)
 {
 
@@ -746,8 +788,10 @@ t_recurso *obtener_recurso(char *nombre_recurso)
 	return NULL;
 }
 
-_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
+_Bool ya_tiene_instancias_del_recurso(void *ptr)
 {
+
+	t_recurso *recurso_proceso = (t_recurso *)ptr;
 	if (strcmp(nombre_recurso_recibido, recurso_proceso->nombre) == 0)
 	{
 		return 1;
