@@ -293,16 +293,16 @@ config_kernel *inicializar_config_kernel()
 
 	t_lista_recursos *recursos = list_create(); // lista con elementos de tipo t_recurso
 
-	for (int i = 0; i < tamanio; i++)
-	{ // voy creando tantos recursos según hayan en el config->  [RA,RB,RC] -> {"RA", "RB", "RC", NULL }
-		t_recurso *recurso = malloc(sizeof(t_recurso));
+	for (int i = 0; i < tamanio; i++) {// voy creando tantos recursos según hayan en el config->  [RA,RB,RC] -> {"RA", "RB", "RC", NULL }
+		t_recurso* recurso = malloc(sizeof(t_recurso));
 		recurso->nombre = strdup(lista_recursos[i]);
-		// recurso.cola_bloqueados =  //colaEstado *cola_bloqueados;
+		
 		recurso->instancias = malloc(sizeof(sem_t));
-
 		int instancias = atoi(instancias_recursos_str[i]); // cant de instancias del recurso
 		sem_init(recurso->instancias, 0, instancias);
-		list_add(recursos, recurso);
+
+		recurso->cola_bloqueados = constructorColaEstado("BLOCK_RECURSO");
+		list_add(recursos,recurso);
 	}
 	configuracion->recursos = recursos;
 	// Libero los arrays
@@ -442,7 +442,6 @@ void *levantar_CPU_Dispatch()
 
 			tipo_buffer *buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
-
 			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
 			destruir_buffer(buffer_cpu);
 
@@ -454,6 +453,7 @@ void *levantar_CPU_Dispatch()
 
 				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
 				wait_instancia_recurso2(recurso); // el SO pierde uno del recurso llamado
+				/*
 				int valor_instancias;
 
 				sem_getvalue(recurso->instancias, &valor_instancias);
@@ -471,8 +471,8 @@ void *levantar_CPU_Dispatch()
 				{
 					sem_post(b_transicion_blocked_ready);
 				} // si se bloqueo, queda esperando
+*/
 			}
-
 			else
 			{
 				printf("\033[38;2;255;105;180m \n No existe el recurso: %s a continuacion se muestra en donde esta el proceso: \n \033[0m", nombre_recurso_recibido);
@@ -481,7 +481,7 @@ void *levantar_CPU_Dispatch()
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
-
+			imprimir_recursos();
 			break;
 		case SIGNAL_RECURSO: // un proceso libera un recurso
 			printf("\033[0;33m\n SIGNAL_RECURSO \n \033[0m");
@@ -501,6 +501,10 @@ void *levantar_CPU_Dispatch()
 
 				signal_instancia_recurso(recurso);
 
+				imprimir_recursos();
+
+				/*
+
 				// sem_wait(recurso_buscado->instancias);
 
 				int valor_instancias;
@@ -513,6 +517,7 @@ void *levantar_CPU_Dispatch()
 				sem_post(b_transicion_blocked_ready);
 				sem_post(b_reanudar_largo_plazo);
 				sem_post(b_reanudar_corto_plazo);
+				*/
 			}
 			else // el recurso no existe
 			{
@@ -755,57 +760,49 @@ _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 	return 0;
 }
 
-void signal_instancia_recurso(t_recurso *recurso) // Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo.
+void signal_instancia_recurso(t_recurso * recurso) //Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo. 
 {
-	int valor;
+	int proceso_en_espera;
+	//sem_getvalue(recurso->instancias, &valor);
+	sem_post(recurso->instancias);// sumo 1 al contador de las instancias global
+	
+	sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);
 
-	sem_getvalue(recurso->instancias, &valor);
+	if(proceso_en_espera>0){ //si tengo procesos bloqueados por recurso
+		t_pcb * proceso_bloqueado = sacar_procesos_cola(recurso->cola_bloqueados);
+		//eliminarPCBEnColaPorPid(proceso_bloqueado->cde->pid,cola_bloqueado_global);//OJO ACA JOAQUIN, REVISALO BIEN TRANQILO
+		agregar_a_estado(proceso_bloqueado, cola_ready_global);
 
-	if (valor > 0)
-	{								   // si hay instancias del recurso
-		sem_post(recurso->instancias); // sumo 1 al contador de las instancias global
 	}
-	else if (valor == 0)
-	{	// hay que sacar de bloqueado el proceso
-		// t_pcb * proceso_bloqueado = sacar_procesos_cola(recurso->cola_bloqueados);
-		// agregar_a_estado(proceso_bloqueado, cola_ready_global);
-		/*
-		 En caso de que corresponda, desbloquea al primer proceso de la cola de bloqueados de ese recurso.
-		Una vez hecho esto, se devuelve la ejecución al proceso que peticiona el SIGNAL.
-
-		-aca tengo que ver si tengo un proceso bloqueado por un recurso,si ESTE signal se esta haciendo a ESE recurso
-		bloqueante, verifico si ya se puede desbloquear el proceso
-		sacar_procesos_cola()
-		*/
-
-		// list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
+	else{ //si no tengo que siga normal
+		sem_post(b_transicion_blocked_ready);
+		//list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
 	}
 
-	// aca hay que sacarle un recursos al proceso que lo tiene e incrementar las intancias del mismo
+// aca hay que sacarle un recursos al proceso que lo tiene e incrementar las intancias del mismo
 }
 // no se puede liberar un recurso que no se está consumiendo
 
-void wait_instancia_recurso2(t_recurso *recurso) // si entra acá es porque el recurso existe
+void wait_instancia_recurso2(t_recurso * recurso) // si entra acá es porque el recurso existe
 {
 	int valor;
-
 	sem_getvalue(recurso->instancias, &valor);
 
-	if (valor > 0) // Si hay instancias del recurso, puedo restar y asignar a un proceso
+	proceso_interrumpido = buscarProceso(cde_interrumpido->pid); //PCB
+
+	if (valor > 0) // Si habia instancias del recurso, puedo restar y asignar a un proceso
 	{
-		sem_wait(recurso->instancias); // le doy una instancia al proceso, y le quito una a la lista de recursos que tiene el SO
-		// De aca para abajo asigna al proceso los recursos retenidos
 
-		proceso_interrumpido = buscarProceso(cde_interrumpido->pid); // PCB
-
+		sem_wait(recurso->instancias); // RESTO instancia de recursos al SO
 		t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso); // si no lo encuentra devuelve NULL
-		if (recurso_buscado == NULL)																					  // el caso de que el proceso no contaba con el recurso ya cargado
+		
+		// SUMO instancia de recurso al PROCESO (esta reteniendo)
+		if (recurso_buscado == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
 		{
 			log_info(logger, "Recurso: <%s> No estaba cargado en proceso - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
 			t_recurso *recurso_asignado = malloc(sizeof(t_recurso));
 			recurso_asignado->nombre = nombre_recurso_recibido;
 			recurso_asignado->instancias = malloc(sizeof(sem_t));
-			recurso_asignado->cola_bloqueados = constructorColaEstado("BLOCK");
 			sem_init(recurso_asignado->instancias, 0, 1);
 
 			list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
@@ -817,12 +814,42 @@ void wait_instancia_recurso2(t_recurso *recurso) // si entra acá es porque el r
 			sem_post(recurso_buscado->instancias);
 			log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
 		}
-	} // recurso_del_proceso->cola_bloqueados->contador
+		sem_post(b_transicion_blocked_ready);
+	}// recurso_del_proceso->cola_bloqueados->contador
 	else
 	{
-		log_info(logger, "PID: <%d> - Bloqueado por: <%s>", proceso_interrumpido->cde->pid, nombre_recurso_recibido);
 		// mandar proceso a cola de bloqueados correspondiente al recurso
-		// agregar_a_estado(proceso_interrumpido, recurso->cola_bloqueados);
-		// sem_post(b_transicion_exec_blocked);
+		//sem_getvalue(recurso->instancias, &valor);
+		agregar_a_estado(proceso_interrumpido, recurso->cola_bloqueados);
+		log_info(logger, "PID: <%d> - Bloqueado por: <%s> con %d procesos en espera",proceso_interrumpido->cde->pid,nombre_recurso_recibido,(valor-1));
+		
+		imprimir_recursos();
+	}
+
+}
+
+void imprimir_recursos(){
+	for (size_t i = 0; i < list_size(valores_config->recursos); i++)
+	{
+		t_recurso * recurso = list_get(valores_config->recursos,i);
+		int valor;
+		sem_getvalue(recurso->instancias, &valor);
+		log_info(logger, "Recurso: %s - Cant: %d", recurso->nombre, valor);
 	}
 }
+
+/*
+RECURSOS:
+- Bloquea y desbloquea procesos pero falta mejorar
+	- EN SIGNAL: Hay que BUSCAR de BLOCKED GLOBAL el proceso bloqueado x recurso y pasarlo a READY GLOBAL.
+	Cuando ese proceso termina hay que devolverle la ejecucion al Signal.
+	Ejemplo:
+		Tengo RA con 0 instancias
+		ProcesoA: Wait RA ... (se bloquea ProcesoA)
+		ProcesoB: ...
+		ProcesoC: Signal RA ... (desbloquea ProcesoA y bloquea ProcesoC)
+		ProcesoA: ... EXIT (se desbloquea ProcesoC)
+		ProcesoC: ... EXIT
+
+- Liberar recursos retenidos por WAIT cuando llega a EXIT
+*/

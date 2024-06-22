@@ -257,10 +257,11 @@ void *transicion_exec_blocked() // mover a largo plazo
     
         t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "corto");
         proceso->cde = cde_interrumpido;
-        
-        temporal_stop(timer);
-        tiempo_transcurrido = temporal_gettime(timer);
-        temporal_destroy(timer);
+        if(strcmp(valores_config->algoritmo_planificacion, "FIFO") != 0){
+            temporal_stop(timer);
+            tiempo_transcurrido = temporal_gettime(timer);
+            temporal_destroy(timer);
+        } //INVENTO DE JOACO, ES SOLO PARA PROBAR RECURSOS
 
         log_info(logger, "Se bloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         proceso->estado = BLOCKED;
@@ -276,7 +277,8 @@ void *transicion_blocked_ready() // mover a largo plazo
         
         t_pcb *proceso;
         //desbloquearSiReadysVacios();
-        if( tiempo_transcurrido < QUANTUM ){    //&& tiempo_transcurrido > 500 ??
+                                            //PARA PROBAR MANEJO DE RECURSOS - JOACO
+        if( tiempo_transcurrido < QUANTUM && strcmp(valores_config->algoritmo_planificacion, "FIFO") != 0){    //&& tiempo_transcurrido > 500 ??
 
             proceso = transicion_generica(cola_bloqueado_global,cola_ready_plus, "corto"); //READY+
             proceso->estado = READY_PLUS;
