@@ -50,11 +50,6 @@ pthread_t t_transicion_blocked_ready;
 pthread_t hiloQuantum;
 t_cde *cde_interrumpido;
 t_list *lista_interfaces;
-t_args *args_MEMORIA;
-t_args *args_IO;
-t_args *args_KERNEL;
-t_args *args_CPU_DS;
-t_args *args_CPU_INT;
 extern t_log *logger;
 char *nombre_IO;
 int servidor_para_io;
@@ -66,7 +61,7 @@ int interruptor_switch_readys;
 sem_t *b_switch_readys;
 
 sem_t *contador_readys;
-char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL}; 
+char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
 
 int main(int argc, char *argv[])
 {
@@ -86,8 +81,8 @@ int main(int argc, char *argv[])
 }
 
 void iniciar_kernel()
-{	
-	
+{
+
 	habilitar_planificadores = 0;
 	inicializarEstados();
 	logger = iniciar_logger("kernel.log", "KERNEL");
@@ -105,7 +100,7 @@ void crear_hilos()
 
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
-	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva2, NULL);
+	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
@@ -119,14 +114,6 @@ void crear_hilos()
 void levantar_servidores()
 {
 	servidor_para_io = iniciar_servidor(logger, "Kernel", valores_config->ip_memoria, valores_config->puerto_escucha);
-}
-
-int llego_proceso()
-{
-	int *sem_value_q = malloc(sizeof(int));
-	sem_getvalue(cola_exec_global->contador, sem_value_q); // 0 o 1
-	log_info(logger, "VAlor sem: %d", *sem_value_q);
-	return *sem_value_q;
 }
 
 void *levantarIO()
@@ -219,9 +206,7 @@ void inicializarEstados()
 {
 	cola_new_global = constructorColaEstado("NEW");
 	cola_ready_global = constructorColaEstado("READY");
-	// cola_ready_global->contador = malloc(sizeof(sem_t));
 	cola_ready_plus = constructorColaEstado("READY+");
-	// sem_init(cola_ready_global->contador, 0, 0);
 	cola_exec_global = constructorColaEstado("EXEC");
 	cola_bloqueado_global = constructorColaEstado("BLOCK");
 	cola_exit_global = constructorColaEstado("EXIT");
@@ -279,11 +264,8 @@ config_kernel *inicializar_config_kernel()
 	configuracion->quantum = config_get_int_value(configuracion->config, "QUANTUM");
 	configuracion->grado_multiprogramacion = config_get_int_value(configuracion->config, "GRADO_MULTIPROGRAMACION");
 
-	// t_recurso **recursos;
-	// t_lista_recursos *recursos;
-
-	char **lista_recursos = config_get_array_value(configuracion->config, "RECURSOS");					   //{"RA", "RB", "RC", NULL }
-	char **instancias_recursos_str = config_get_array_value(configuracion->config, "INSTANCIAS_RECURSOS"); // {"1", "2", "1", NULL }
+	char **lista_recursos = config_get_array_value(configuracion->config, "RECURSOS");
+	char **instancias_recursos_str = config_get_array_value(configuracion->config, "INSTANCIAS_RECURSOS");
 
 	int tamanio = 0;
 	while (instancias_recursos_str[tamanio] != NULL)
@@ -344,7 +326,6 @@ t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoF
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 {
-
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	queue_push(cola_estado->estado, pcb);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
@@ -353,10 +334,10 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 {
-	t_pcb *pcb = malloc(sizeof(t_pcb));
+	// pcb = malloc(sizeof(t_pcb));
 	sem_wait(cola_estado->contador);
 	pthread_mutex_lock(cola_estado->mutex_estado);
-	pcb = queue_pop(cola_estado->estado);
+	t_pcb *pcb = queue_pop(cola_estado->estado);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
 	return pcb;
 }
@@ -409,9 +390,7 @@ void *levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			destruir_buffer(buffer_cpu_fin);
 			finalizar_proceso(cde_interrumpido->pid, SUCCESS);
-
 			sem_post(b_largo_plazo_exit);
-
 			break;
 
 		case FIN_DE_QUANTUM:
@@ -419,8 +398,7 @@ void *levantar_CPU_Dispatch()
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
 			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
-			pthread_cancel(hiloQuantum); // reseteo hilo de quantum
-			// IO_GEN_SLEEP INTERFAZ TIEMPO
+			pthread_cancel(hiloQuantum);
 			sem_post(b_transicion_exec_ready);
 			break;
 
@@ -436,7 +414,7 @@ void *levantar_CPU_Dispatch()
 			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_cpu);
 			break;
 
-		case WAIT_RECURSO: // asignamos un recurso a un proceso
+		case WAIT_RECURSO:
 
 			printf("\033[0;33m\n WAIT_RECURSO \n \033[0m");
 
@@ -549,7 +527,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	{
 	case SOLICITUD_INTERFAZ_GENERICA:
 
-		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_GEN_SLEEP
+		instruccion_a_ejecutar = leer_buffer_enteroUint32(buffer_con_instruccion);
 		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 

@@ -598,35 +598,26 @@ void obtener_y_eliminar_cde(int pid, t_registros *reg)
 // NO ANDA TODAVIA
 void eliminar_cde(t_cde *cde)
 {
-/*     int instrucciones = list_size(cde->lista_instrucciones);
-    for (int i = 0; i < instrucciones; i++)
-    {
-        t_instruccion *instruccion = list_get(cde->lista_instrucciones, i);
-        int tamanio_lista = list_size(instruccion->parametros);
-        for (int i = 0; i < tamanio_lista; i++)
+    /*     int instrucciones = list_size(cde->lista_instrucciones);
+        for (int i = 0; i < instrucciones; i++)
         {
-            char *par = list_get(instruccion->parametros, i);
-            log_info(logger, "PARAMETRO A LIBERAR: %s", par);
-            free(par);
+            t_instruccion *instruccion = list_get(cde->lista_instrucciones, i);
+            int tamanio_lista = list_size(instruccion->parametros);
+            for (int i = 0; i < tamanio_lista; i++)
+            {
+                char *par = list_get(instruccion->parametros, i);
+                log_info(logger, "PARAMETRO A LIBERAR: %s", par);
+                free(par);
+            }
+            //list_destroy(instruccion->parametros);
         }
-        //list_destroy(instruccion->parametros);
-    }
-    free(cde->path);
-    liberar_registros(cde->registros); */
+        free(cde->path);
+        liberar_registros(cde->registros); */
 }
 
 void liberar_registros(t_registros *registros)
 {
-    free(registros->AX);
-    free(registros->BX);
-    free(registros->CX);
-    free(registros->DI);
-    free(registros->DX);
-    free(registros->EAX);
-    free(registros->EBX);
-    free(registros->ECX);
-    free(registros->EDX);
-    free(registros->SI);
+    free(registros);
 }
 
 config_memoria *configuracion_memoria()

@@ -22,7 +22,6 @@
 #include "sockets.h"
 typedef t_list t_lista_recursos;
 
-
 typedef enum
 {
 	SUCCESS,
@@ -43,8 +42,6 @@ typedef enum
 	INICIAR_PROCESO,
 	INICIAR_PLANIFICACION,
 	DETENER_PLANIFICACION,
-	PLANIFICACION_PAUSADA,
-	PLANIFICACION_EN_FUNCIONAMIENTO,
 	MULTIPROGRAMACION,
 	LISTAR_ESTADOS,
 	ERROR_FINALIZAR_PROCESO,
@@ -119,12 +116,7 @@ typedef struct
 	int retraso_compactacion;
 	char *nombre_interfaz;
 } t_interfaz;
-typedef struct
-{
-	t_log *logger;
-	char *puerto;
-	char *ip;
-} t_args;
+
 typedef enum
 {
 	NEW,
@@ -133,7 +125,6 @@ typedef enum
 	EXEC,
 	BLOCKED,
 	FINISHED
-
 } t_estados;
 typedef struct
 {
@@ -141,16 +132,9 @@ typedef struct
 	t_estados estado; // estado del proceso
 	t_list *archivosAsignados;
 	t_lista_recursos *recursosAsignados;
-	int prioridad;
 	int quantum;
-	// t_list *lista_paginas; // cada proceso tiene su lista de paginas-la tabla de paginas
 } t_pcb;
 
-typedef struct
-{
-	uint32_t valor;
-	uint32_t direccion_fisica;
-} t_escrituraMemoria;
 int string_to_int(char *str);
 
 extern sem_t *sem_kernel_io_generica;
@@ -164,9 +148,7 @@ void terminar_programa(int, t_log *, t_config *);
 void destruirLog(t_log *logger);
 void destruirConfig(t_config *config);
 void liberarConexion(int conexion);
-t_args *crearArgumento(char *puerto, char *ip);
 
 void sleep_ms(int milliseconds);
-
 
 #endif

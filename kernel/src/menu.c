@@ -1,16 +1,20 @@
 #include "../include/menu.h"
 
-char *generator(const char *text, int state) {
+char *generator(const char *text, int state)
+{
     static int list_index, len;
     char *name;
 
-    if (!state) {
+    if (!state)
+    {
         list_index = 0;
         len = strlen(text);
     }
 
-    while ((name = comandos[list_index++])) {
-        if (strncmp(name, text, len) == 0) {
+    while ((name = comandos[list_index++]))
+    {
+        if (strncmp(name, text, len) == 0)
+        {
             return strdup(name);
         }
     }
@@ -18,29 +22,34 @@ char *generator(const char *text, int state) {
     return NULL;
 }
 
-char **autocompletado(const char *text, int start, int end) {
+char **autocompletado(const char *text, int start, int end)
+{
     rl_attempted_completion_over = 1;
 
     char **matches = NULL;
-    if (start == 0) {
+    if (start == 0)
+    {
         matches = rl_completion_matches(text, generator);
     }
 
     return matches;
 }
 
-char * obtener_comando(char *entrada){
+char *obtener_comando(char *entrada)
+{
     return strtok(entrada, " ");
 }
 
-int contar_tokens(char *cadena) {
+int contar_tokens(char *cadena)
+{
     int contador = 0;
     char *token;
 
     char *cadena_copia = strdup(cadena);
 
     token = strtok(cadena_copia, " ");
-    while (token != NULL) { //copia de la cadena, ya que strtok modifica la cadena original
+    while (token != NULL)
+    { // copia de la cadena, ya que strtok modifica la cadena original
         contador++;
         token = strtok(NULL, " ");
     }
@@ -50,84 +59,110 @@ int contar_tokens(char *cadena) {
 }
 
 void ejecutar_comando(char *comando, int tokens)
-{   
+{
     bool argumentros_incorrectos = false;
 
-    if(strcmp(comando, "EJECUTAR_SCRIPT") == 0)
-    {   if(tokens == 2){
+    if (strcmp(comando, "EJECUTAR_SCRIPT") == 0)
+    {
+        if (tokens == 2)
+        {
             ejecutar_script(strtok(NULL, "\0"));
         }
-        else 
-        {   
+        else
+        {
             argumentros_incorrectos = true;
         }
-	}
-	else if(strcmp(comando, "INICIAR_PROCESO") == 0){
-        if (tokens == 2){
+    }
+    else if (strcmp(comando, "INICIAR_PROCESO") == 0)
+    {
+        if (tokens == 2)
+        {
             iniciar_proceso(strtok(NULL, "\0"));
         }
-        else{
+        else
+        {
             argumentros_incorrectos = true;
         }
-	}
-	else if(strcmp(comando, "FINALIZAR_PROCESO") == 0){
-        if(tokens == 2){
-            finalizar_proceso(atoi(strtok(NULL, "\0")),INTERRUPTED_BY_USER);
+    }
+    else if (strcmp(comando, "FINALIZAR_PROCESO") == 0)
+    {
+        if (tokens == 2)
+        {
+            finalizar_proceso(atoi(strtok(NULL, "\0")), INTERRUPTED_BY_USER);
         }
-        else{
+        else
+        {
             argumentros_incorrectos = true;
         }
-	}
-	else if(strcmp(comando, "DETENER_PLANIFICACION") == 0){
-        if (tokens == 1){
+    }
+    else if (strcmp(comando, "DETENER_PLANIFICACION") == 0)
+    {
+        if (tokens == 1)
+        {
             detener_planificacion();
         }
-        else{
+        else
+        {
             argumentros_incorrectos = true;
         }
-	}
-	else if(strcmp(comando, "INICIAR_PLANIFICACION") == 0){
-        if(tokens == 1){
+    }
+    else if (strcmp(comando, "INICIAR_PLANIFICACION") == 0)
+    {
+        if (tokens == 1)
+        {
             iniciar_planificacion();
         }
-        else{
+        else
+        {
             argumentros_incorrectos = true;
         }
-	}
-	else if(strcmp(comando, "MULTIPROGRAMACION") == 0 && tokens == 2){
-        if(tokens == 2){
-            grado_multiprogramacion(atoi( strtok(NULL, "\0") ));
+    }
+    else if (strcmp(comando, "MULTIPROGRAMACION") == 0 && tokens == 2)
+    {
+        if (tokens == 2)
+        {
+            grado_multiprogramacion(atoi(strtok(NULL, "\0")));
         }
-        else{
+        else
+        {
             argumentros_incorrectos = true;
         }
-	}
-	else if(strcmp(comando, "PROCESO_ESTADO") == 0 && tokens == 1){
-        if(tokens == 1){
+    }
+    else if (strcmp(comando, "PROCESO_ESTADO") == 0 && tokens == 1)
+    {
+        if (tokens == 1)
+        {
             proceso_estado();
         }
-        else{
+        else
+        {
             argumentros_incorrectos = true;
         }
-	}
-    else if(strcmp(comando, "HELP") == 0 && tokens == 1){
-        if(tokens == 1){
+    }
+    else if (strcmp(comando, "HELP") == 0 && tokens == 1)
+    {
+        if (tokens == 1)
+        {
             printf("EJECUTAR_SCRIPT [PATH]\n");
             printf("INICIAR_PROCESO [PATH]\n");
             printf("FINALIZAR_PROCESO [PID]\n");
             printf("DETENER_PLANIFICACION\n");
             printf("INICIAR_PLANIFICACION\n");
             printf("MULTIPROGRAMACION [VALOR]\n");
+            printf("PROCESO_ESTADO\n");
         }
-        else{
+        else
+        {
             argumentros_incorrectos = true;
         }
-	}
-    else{
-        printf("%s: command not found \n",comando);
+    }
+    else
+    {
+        printf("%s: command not found \n", comando);
     }
 
-    if(argumentros_incorrectos){
+    if (argumentros_incorrectos)
+    {
         printf("Invalid arguments\n\n");
     }
 }
@@ -145,13 +180,12 @@ void iniciar_consola_interactiva2()
         add_history(entrada);
 
         int tokens = contar_tokens(entrada);
-        char *comando =  obtener_comando(entrada); // palabra reservada
+        char *comando = obtener_comando(entrada); // palabra reservada
         ejecutar_comando(comando, tokens);
-        
+
         free(entrada);
     }
 }
-
 
 void iniciar_consola_interactiva()
 {
@@ -162,7 +196,7 @@ void iniciar_consola_interactiva()
         /* if (habilitar_planificadores)
         {
             sem_post(b_detener_planificacion);
-            
+
         } */
         mostrar_operaciones_realizables();
         ejecutar_operacion(readline("Ingrese un valor para realizar una de las siguientes acciones: "), logger);

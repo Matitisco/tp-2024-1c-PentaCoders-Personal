@@ -97,7 +97,6 @@ extern int interruptor_switch_readys;
 
 extern sem_t *contador_readys;
 
-
 extern colaEstado *cola_new_global;
 extern colaEstado *cola_ready_global;
 extern colaEstado *cola_ready_plus;
@@ -171,7 +170,6 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid);
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid);
 void atender_interrupciones();
-int llego_proceso();
 char *buscar_recurso(char *recurso, int *posicion);
 
 int hayProcesosEnEstado(colaEstado* cola_estado);

@@ -63,7 +63,6 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
 void crear_y_agregar_tabla_a_lista_global(int pid);
 int *agarro_marco_que_este_libre();
 
-t_args *crearArgumento(char *puerto, char *ip);
 void crearHilos();
 config_memoria *configuracion_memoria();
 void *recibirCPU();
