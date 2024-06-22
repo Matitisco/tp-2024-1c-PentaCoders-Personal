@@ -41,4 +41,6 @@ void liberar_archivos(t_pcb *proceso);
 
 void *destroy_archivos(void *element);
 
+void *eliminarPCBEnColaPorPid(int pid_buscado, t_queue *cola);
+
 #endif

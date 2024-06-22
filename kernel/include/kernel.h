@@ -160,5 +160,5 @@ bool existe_recurso2(char *nombre_recurso);
 
 t_recurso * obtener_recurso(char *nombre_recurso);
 void imprimir_recursos();
-
+void *manejo_recursos();
 #endif

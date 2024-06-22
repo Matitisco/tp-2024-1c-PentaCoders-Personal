@@ -326,6 +326,54 @@ void mostrar_procesos(colaEstado *cola)
     }
 }
 
+void *eliminarPCBEnColaPorPid(int pid_buscado, t_queue *cola){
+    t_pcb *pcb_buscada = NULL;
+    t_queue *colaAux = queue_create();
+
+    while (!queue_is_empty(cola)) // vacia la cola y mientras busca el elemento
+    {
+        t_pcb *pcb = queue_pop(cola);
+
+        if (pcb->cde->pid == pid_buscado)
+        {
+            pcb_buscada = pcb;
+            log_info(logger, "PID PCB ENCONTRADA : %d  PC PCB ENCONTRADA: %d", pcb_buscada->cde->pid, pcb_buscada->cde->PC);
+        }else{
+            queue_push(colaAux, pcb_buscada);
+        }
+
+    }
+
+    // Restaurar la cola original
+    while (!queue_is_empty(colaAux))
+    {
+        queue_push(cola, queue_pop(colaAux));
+    }
+
+    // Liberar memoria de la cola auxiliar y sus elementos
+    while (!queue_is_empty(colaAux))
+    {
+        free(queue_pop(colaAux));
+    }
+    queue_destroy(colaAux);
+
+    if (pcb_buscada != NULL)
+    {
+        if (pcb_buscada->cde != NULL)
+        {
+            log_info(logger, "PID: <%d> Encontrado - Cola: < > \n", pcb_buscada->cde->pid);
+        }
+        else
+        {
+            log_info(logger, "El PCB encontrado no tiene un puntero válido a cde");
+        }
+    }
+    else
+    {
+        log_info(logger, "PID: <%d> No Encontrado - Cola: < >", pid_buscado);
+    }
+}
+
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
 
