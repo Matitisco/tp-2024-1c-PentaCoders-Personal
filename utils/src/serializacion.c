@@ -191,7 +191,6 @@ t_cde *leer_cde(tipo_buffer *buffer)
     // scde->path = leer_buffer_string(buffer);
     cde->registros = malloc(sizeof(t_registros));
     cde->registros = leer_buffer_registros(buffer);
-
     return cde;
 }
 void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
@@ -201,18 +200,4 @@ void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
     agregar_buffer_para_enterosUint32(buffer, cde->PC);
     // agregar_buffer_para_string(buffer, cde->path);
     agregar_buffer_para_registros(buffer, cde->registros);
-}
-
-void agregar_escrituraMemoria_buffer(tipo_buffer *buffer, t_escrituraMemoria *valores)
-{
-    agregar_buffer_para_enterosUint32(buffer, valores->valor);
-    agregar_buffer_para_enterosUint32(buffer, valores->direccion_fisica);
-}
-
-t_escrituraMemoria *leer_escrituraMemoria(tipo_buffer *buffer)
-{
-    t_escrituraMemoria *valores;
-    valores->valor = leer_buffer_enteroUint32(buffer);
-    valores->direccion_fisica = leer_buffer_enteroUint32(buffer);
-    return valores;
 }
