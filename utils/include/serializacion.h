@@ -18,22 +18,6 @@ typedef struct
 
 } tipo_buffer;
 
-typedef struct
-{
-    op_code codigo_operacion;
-    tipo_buffer *buffer;
-} t_paquete;
-
-void enviar_mensaje(char *mensaje, int socket_cliente);
-void recibir_mensaje(int socket_cliente);
-t_paquete *crear_paquete(void);
-void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
-void enviar_paquete(t_paquete *paquete, int socket_cliente);
-void eliminar_paquete(t_paquete *paquete);
-t_list *recibir_paquete(int socket_cliente);
-void *serializar_paquete(t_paquete *paquete, int bytes);
-void paquete(int conexion);
-
 void enviar_cod_enum(int socket_servidor, uint32_t cod);
 op_code recibir_operacion(int socket_cliente);
 void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde);
