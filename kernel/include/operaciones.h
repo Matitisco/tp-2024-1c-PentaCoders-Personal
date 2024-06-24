@@ -9,6 +9,7 @@
 void ejecutar_script(char *PATH);
 void iniciar_proceso(char *PATH);
 void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
+void finalizar_proceso_success(uint32_t PID, motivoFinalizar motivo);
 void detener_planificacion();
 void iniciar_planificacion();
 void grado_multiprogramacion(int valor);

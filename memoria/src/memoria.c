@@ -77,7 +77,7 @@ void *recibir_interfaces_io()
     while (1)
     {
         int dispositivo_io = esperar_cliente(logger, "Memoria", "Interfaz IO", server_fd);
-        op_code codigo_io = recibir_operacion(dispositivo_io);
+        op_code codigo_io = recibir_op_code(dispositivo_io);
         switch (codigo_io)
         {
         case ACCESO_ESPACIO_USUARIO:
@@ -95,7 +95,7 @@ void *recibirKernel()
     int cliente_fd = esperar_cliente(logger, "Memoria", "Kernel", server_fd);
     while (1)
     {
-        op_code cod_op = recibir_operacion(cliente_fd);
+        op_code cod_op = recibir_op_code(cliente_fd);
 
         if (cod_op == -1)
         {
@@ -125,7 +125,7 @@ void *recibirCPU()
     enviar_tamanio_pagina(cliente_cpu);
     while (1)
     {
-        op_code cod_op = recibir_operacion(cliente_cpu);
+        op_code cod_op = recibir_op_code(cliente_cpu);
 
         if (cod_op == -1)
         {
@@ -181,13 +181,13 @@ void pedido_frame_mmu(int cliente_cpu)
 
     if (marco < 0)
     {
-        enviar_cod_enum(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
+        enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
     }
     else
     {
         tipo_buffer *buffer_memoria_mmu = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer_memoria_mmu, marco);
-        enviar_cod_enum(cliente_cpu, PEDIDO_FRAME_CORRECTO);
+        enviar_op_code(cliente_cpu, PEDIDO_FRAME_CORRECTO);
         enviar_buffer(buffer_memoria_mmu, cliente_cpu);
         destruir_buffer(buffer_memoria_mmu);
     }
@@ -203,11 +203,11 @@ int tamanio_proceso(int pid)
 void *acceso_a_espacio_usuario(int cliente_solicitante)
 {
     op_code codigo, solicitud;
-    codigo = recibir_operacion(cliente_solicitante);
+    codigo = recibir_op_code(cliente_solicitante);
     switch (codigo)
     {
     case PEDIDO_ESCRITURA:
-        solicitud = recibir_operacion(cliente_solicitante);
+        solicitud = recibir_op_code(cliente_solicitante);
 
         if (solicitud == SOLICITUD_INTERFAZ_STDIN)
         {
@@ -222,7 +222,7 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
         break;
 
     case PEDIDO_LECTURA:
-        solicitud = recibir_operacion(cliente_solicitante);
+        solicitud = recibir_op_code(cliente_solicitante);
 
         if (solicitud == SOLICITUD_INTERFAZ_STDOUT)
         {
@@ -270,11 +270,11 @@ void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
     }
     if (resultado != -1)
     {
-        enviar_cod_enum(cliente_solicitante, OK);
+        enviar_op_code(cliente_solicitante, OK);
     }
     else
     {
-        enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
+        enviar_op_code(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
     }
     destruir_buffer(buffer);
 }
@@ -292,12 +292,12 @@ void escritura_cpu(tipo_buffer *buffer, int cliente_solicitante)
     int resultado = escribir_memoria(numero_marco, offset, pid_ejecutando, valor_a_escribir, tamanio);
     if (resultado != -1)
     {
-        enviar_cod_enum(cliente_solicitante, OK);
+        enviar_op_code(cliente_solicitante, OK);
         log_info(logger, "PID: %d - Accion: ESCRIBIR - Direccion fisica: %d - Tamaño <%d> ", pid_ejecutando, direccion_fisica, tamanio);
     }
     else
     {
-        enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
+        enviar_op_code(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
     }
     destruir_buffer(buffer);
 }
@@ -332,14 +332,14 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
 
     if ((valor_void) != NULL)
     {
-        enviar_cod_enum(cliente_solicitante, OK);
+        enviar_op_code(cliente_solicitante, OK);
         log_info(logger, "PID: <%d> - Accion: LEER - Direccion fisica: <%d> - Tamaño <%d>", pid_ejecutando, direccion_fisica, limite);
         enviar_buffer(buffer_stdout, cliente_solicitante);
         destruir_buffer(buffer_stdout);
     }
     else
     {
-        enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_LECTURA);
+        enviar_op_code(cliente_solicitante, ERROR_PEDIDO_LECTURA);
     }
 }
 
@@ -355,14 +355,14 @@ void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante)
     void *valor_leido = leer_memoria(numero_pagina, offset, pid_ejecutando, tamanio);
     if (valor_leido != NULL)
     {
-        enviar_cod_enum(cliente_solicitante, OK);
+        enviar_op_code(cliente_solicitante, OK);
         tipo_buffer *buffer = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer, valor_leido);
         enviar_buffer(buffer, cliente_solicitante);
     }
     else
     {
-        enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_LECTURA);
+        enviar_op_code(cliente_solicitante, ERROR_PEDIDO_LECTURA);
     }
 }
 
@@ -377,13 +377,13 @@ void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
     cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
     if (cde->path == NULL || cde->lista_instrucciones == NULL)
     {
-        enviar_cod_enum(cliente_fd, ERROR_INICIAR_PROCESO);
+        enviar_op_code(cliente_fd, ERROR_INICIAR_PROCESO);
     }
     else
     {
         list_add(lista_contextos, cde);
         list_add(lista_instrucciones, cde->lista_instrucciones);
-        enviar_cod_enum(cliente_fd, INICIAR_PROCESO_CORRECTO);
+        enviar_op_code(cliente_fd, INICIAR_PROCESO_CORRECTO);
         log_info(logger, "PID: <%d> - Iniciar Proceso: <%s>", cde->pid, cde->path);
     }
 }
@@ -474,7 +474,7 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
     char *instruccion = string_new();
     instruccion = list_get(contexto->lista_instrucciones, PC);
 
-    enviar_cod_enum(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
+    enviar_op_code(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
 
     enviar_buffer(buffer_instruccion, cliente_fd);
@@ -586,7 +586,7 @@ void finalizar_proceso(int kernel, tipo_buffer *buffer)
     t_registros *registros = leer_buffer_registros(buffer);
     obtener_y_eliminar_cde(pid, registros);
     eliminar_tabla_paginas(pid);
-    enviar_cod_enum(kernel, FINALIZAR_PROCESO);
+    enviar_op_code(kernel, FINALIZAR_PROCESO);
 }
 
 void obtener_y_eliminar_cde(int pid, t_registros *reg)
@@ -795,7 +795,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     }
 
     log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
-    enviar_cod_enum(cliente_cpu, RESIZE_EXITOSO);
+    enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
 }
 
 void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu)
@@ -812,7 +812,7 @@ void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu)
     log_info(logger, "MARCOS DISPONIBLES: <%d>", marcos_disponibles);
     if (paginas_adicionales > marcos_disponibles)
     { // si hay mas paginas que  cant marcos le avisamos a cpu
-        enviar_cod_enum(cliente_cpu, OUT_OF_MEMORY);
+        enviar_op_code(cliente_cpu, OUT_OF_MEMORY);
         log_error(logger, "OUT OF MEMORY");
         return;
     }
@@ -842,7 +842,7 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     }
 
     log_info(logger, "PID: %d - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", pid, tamanio_anterior, tamanio);
-    enviar_cod_enum(cliente_cpu, RESIZE_EXITOSO);
+    enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
 }
 
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio)

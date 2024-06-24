@@ -43,9 +43,9 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     uint32_t direccion_logica = obtener_valor_origen(direccion, cde);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
 
-    enviar_cod_enum(socket_memoria, ACCESO_ESPACIO_USUARIO);
-    enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
-    enviar_cod_enum(socket_memoria, LECTURA_CPU);
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_LECTURA);
+    enviar_op_code(socket_memoria, LECTURA_CPU);
     uint32_t tamanio = sizeof(direccion);
 
     tipo_buffer *buffer = crear_buffer();
@@ -56,7 +56,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     // direccion que se envia a la memoria y con la cual esta debe buscar el valor y guardarlo
     enviar_buffer(buffer, socket_memoria);
 
-    op_code lectura_memoria = recibir_operacion(socket_memoria);
+    op_code lectura_memoria = recibir_op_code(socket_memoria);
     if (lectura_memoria == OK)
     {
         tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
@@ -79,9 +79,9 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
     uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
 
-    enviar_cod_enum(socket_memoria, ACCESO_ESPACIO_USUARIO);
-    enviar_cod_enum(socket_memoria, PEDIDO_ESCRITURA);
-    enviar_cod_enum(socket_memoria, SOLICITUD_ESCRITURA_CPU);
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
+    enviar_op_code(socket_memoria, SOLICITUD_ESCRITURA_CPU);
 
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
@@ -90,7 +90,7 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
     agregar_buffer_para_enterosUint32(buffer, sizeof(reg_valor));
     enviar_buffer(buffer, socket_memoria);
 
-    op_code escritura_memoria = recibir_operacion(socket_memoria);
+    op_code escritura_memoria = recibir_op_code(socket_memoria);
     if (escritura_memoria == OK)
     {
         log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
@@ -238,7 +238,7 @@ void exec_jnz(char *registro, uint32_t numeroInstruccion, t_cde *cde)
 
 void exec_resize(char *tamanio, t_cde *cde)
 {
-    enviar_cod_enum(socket_memoria, RESIZE_EXTEND);
+    enviar_op_code(socket_memoria, RESIZE_EXTEND);
     uint32_t tamanioValor = atoi(tamanio);
     tipo_buffer *buffer = crear_buffer();
 
@@ -247,11 +247,11 @@ void exec_resize(char *tamanio, t_cde *cde)
 
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
-    op_code resize_memoria = recibir_operacion(socket_memoria);
+    op_code resize_memoria = recibir_op_code(socket_memoria);
     if (resize_memoria == OUT_OF_MEMORY)
     {
         salida_exit = 0;
-        enviar_cod_enum(socket_kernel_dispatch, OUT_OF_MEMORY);
+        enviar_op_code(socket_kernel_dispatch, OUT_OF_MEMORY);
         tipo_buffer *buffer_out_memory = crear_buffer();
         agregar_cde_buffer(buffer_out_memory, cde);
         enviar_buffer(buffer, socket_kernel_dispatch);
@@ -268,7 +268,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
     uint32_t direccion_logica_SI = cde->registros->SI;
 
     uint32_t direccion_fisica_SI = direccion_logica_a_fisica(direccion_logica_SI);
-    enviar_cod_enum(socket_memoria, PEDIDO_LECTURA);
+    enviar_op_code(socket_memoria, PEDIDO_LECTURA);
 
     tipo_buffer *buffer_copy_string = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer_copy_string, direccion_fisica_SI);
@@ -281,8 +281,8 @@ void exec_copy_string(char *tamanio, t_cde *cde)
     uint32_t tamanio_string = sizeof(atoi(tamanio));
     uint32_t direccion_logica_DI = cde->registros->DI;
     uint32_t direccion_fisica_DI = direccion_logica_a_fisica(direccion_logica_DI);
-    enviar_cod_enum(socket_memoria, PEDIDO_ESCRITURA);
-    enviar_cod_enum(socket_memoria, ESCRITURA_CPU);
+    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
+    enviar_op_code(socket_memoria, ESCRITURA_CPU);
     tipo_buffer *buffer_DI = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer_DI, direccion_fisica_DI);
     agregar_buffer_para_enterosUint32(buffer_DI, cde->pid);
@@ -294,7 +294,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
 
 void exec_wait(char *recurso, t_cde *cde)
 {
-    enviar_cod_enum(socket_kernel_dispatch, WAIT_RECURSO);
+    enviar_op_code(socket_kernel_dispatch, WAIT_RECURSO);
 
     tipo_buffer *buffer_recurso;
     buffer_recurso = crear_buffer();
@@ -308,7 +308,7 @@ void exec_wait(char *recurso, t_cde *cde)
 
 void exec_signal(char *recurso, t_cde *cde)
 {
-    enviar_cod_enum(socket_kernel_dispatch, SIGNAL_RECURSO);
+    enviar_op_code(socket_kernel_dispatch, SIGNAL_RECURSO);
 
     tipo_buffer *buffer_recurso;
     buffer_recurso = crear_buffer();
@@ -328,7 +328,7 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
     uint32_t tamanio = sizeof(atoi(reg_tamanio));
 
     buffer_instruccion_io = crear_buffer();
-    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+    enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
@@ -346,7 +346,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
 
     buffer_instruccion_io = crear_buffer();
 
-    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+    enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDOUT);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDOUT_WRITE);
@@ -360,7 +360,7 @@ void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
     interrupcion_io = 1;
     buffer_instruccion_io = crear_buffer();
 
-    enviar_cod_enum(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+    enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_GENERICA);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_GEN_SLEEP);
@@ -379,7 +379,7 @@ void exec_io_fs_read() {}
 void exec_exit(t_cde *cde)
 {
     salida_exit = 0;
-    enviar_cod_enum(socket_kernel_dispatch, FINALIZAR_PROCESO);
+    enviar_op_code(socket_kernel_dispatch, FINALIZAR_PROCESO);
     tipo_buffer *buffer = crear_buffer();
     agregar_cde_buffer(buffer, cde);
     enviar_buffer(buffer, socket_kernel_dispatch);

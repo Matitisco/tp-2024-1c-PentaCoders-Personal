@@ -25,10 +25,7 @@ void *corto_plazo()
     {
         planificar_por_vrr();
     }
-    else
-    {
-        return (void *)1;
-    }
+    return (void *)1;
 }
 
 void iniciar_sem_cp()
@@ -52,7 +49,7 @@ void planificar_por_fifo()
     while (1)
     {
         sem_wait(b_exec_libre);
-        sem_wait(contador_readys);
+        sem_wait(cola_ready_global->contador);
         proceso = transicion_ready_exec();
         proceso->estado = EXEC;
         log_info(logger, "Se agrego el proceso <%d> y PC <%d> a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
@@ -118,7 +115,7 @@ void *hilo_quantum()
     {
         sem_wait(sem_quantum);
         sleep_ms(quantum_usable);
-        enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
+        enviar_op_code(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
     }
 }
 
@@ -127,9 +124,9 @@ void *hilo_quantum()
 // READY -> EXEC
 t_pcb *transicion_ready_exec()
 {
-    t_pcb *proceso = transicion_generica(cola_ready_global, cola_exec_global, "corto");
-    // proceso->estado = EXEC;
-    log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
+
+    t_pcb *proceso = sacar_procesos_cola(cola_ready_global);
+    agregar_a_estado(proceso, cola_exec_global);
     return proceso;
 }
 // EXEC -> READY
@@ -138,11 +135,9 @@ void *transicion_exec_ready()
     while (1)
     {
         sem_wait(b_transicion_exec_ready);
-
-        // desbloquearSiReadysVacios();
         t_pcb *proceso = transicion_generica(cola_exec_global, cola_ready_global, "corto");
         proceso->cde = cde_interrumpido;
-        proceso->estado = READY; // es un puntero y puedo cambiar sus cosas desde aca
+        proceso->estado = READY;
 
         sem_post(contador_readys);
         sem_post(b_exec_libre);
@@ -245,7 +240,7 @@ int hayProcesosEnEstado(colaEstado *cola_estado)
 void enviar_a_cpu_cde(t_cde *cde)
 {
     log_info(logger, "Proceso A Enviar: <%d>", cde->pid);
-    enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO);
+    enviar_op_code(socket_cpu_dispatch, EJECUTAR_PROCESO);
     enviar_cde(socket_cpu_dispatch, cde);
 }
 

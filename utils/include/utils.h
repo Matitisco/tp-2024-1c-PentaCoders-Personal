@@ -148,7 +148,8 @@ void terminar_programa(int, t_log *, t_config *);
 void destruirLog(t_log *logger);
 void destruirConfig(t_config *config);
 void liberarConexion(int conexion);
-
+void enviar_op_code(int socket_servidor, uint32_t cod);
+op_code recibir_op_code(int socket_cliente);
 void sleep_ms(int milliseconds);
 
 #endif

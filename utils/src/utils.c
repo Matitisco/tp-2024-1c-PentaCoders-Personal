@@ -1,9 +1,5 @@
 #include "../include/utils.h"
-sem_t *sem_kernel_io_generica;
 
-/*----------------------- GENERAL ------------------*/
-
-// INICIAR LOGGER
 t_log *iniciar_logger(char *path_log, char *nombre_log)
 {
 	t_log *nuevo_logger;
@@ -14,7 +10,7 @@ t_log *iniciar_logger(char *path_log, char *nombre_log)
 	};
 	return nuevo_logger;
 }
-// INICIAR CONFIG
+
 t_config *iniciar_config(char *config_path)
 {
 	t_config *nuevo_config;
@@ -26,14 +22,14 @@ t_config *iniciar_config(char *config_path)
 	}
 	return nuevo_config;
 }
-// TERMINAR PROGRAMA
+
 void terminar_programa(int conexion, t_log *logger, t_config *config)
 {
 	destruirLog(logger);
 	destruirConfig(config);
 	liberar_conexion(conexion);
 }
-// DESTRUIR LOG
+
 void destruirLog(t_log *logger)
 {
 	if (logger != NULL)
@@ -41,7 +37,7 @@ void destruirLog(t_log *logger)
 		log_destroy(logger);
 	}
 }
-// DESTRUIR CONFIG
+
 void destruirConfig(t_config *config)
 {
 	if (config != NULL)
@@ -49,7 +45,7 @@ void destruirConfig(t_config *config)
 		config_destroy(config);
 	}
 }
-// LIBERAR CONEXION
+
 void liberarConexion(int conexion)
 {
 	if (conexion != 0)
@@ -58,34 +54,26 @@ void liberarConexion(int conexion)
 	}
 }
 
-// CREAR ARGUMENTOS
-
-
-int string_to_int(char *str) {
-    int result = 0;
-    int i = 0;
-    int sign = 1;
-
-    // Manejo del signo
-    if (str[0] == '-') {
-        sign = -1;
-        i = 1;
-    }
-
-    // Convertir cada dígito a un número entero
-    for (; str[i] != '\0'; ++i) {
-        if (str[i] >= '0' && str[i] <= '9') {
-            result = result * 10 + (str[i] - '0');
-        } else {
-            // Si el carácter no es un dígito, salir o manejar el error según sea necesario
-            printf("Error: No es un número válido\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    return result * sign;
+void sleep_ms(int milliseconds)
+{
+	usleep(milliseconds * 1000);
 }
 
-void sleep_ms(int milliseconds) {
-    usleep(milliseconds * 1000);
+void enviar_op_code(int socket_servidor, uint32_t cod)
+{
+	send(socket_servidor, &cod, sizeof(uint32_t), 0);
+}
+op_code recibir_op_code(int socket_cliente)
+{
+	op_code cod_op;
+	while (1)
+	{
+		if (recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL) > 0)
+			return cod_op;
+		else
+		{
+			close(socket_cliente);
+			return -1;
+		}
+	}
 }

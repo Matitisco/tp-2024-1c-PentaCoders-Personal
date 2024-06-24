@@ -67,6 +67,7 @@ void crearHilos();
 config_memoria *configuracion_memoria();
 void *recibirCPU();
 void *recibirKernel();
+void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu);
 void *recibir_interfaces_io();
 void inicializar_bitmap(int cant_marcos);
 // void iniciar_sem_globales();

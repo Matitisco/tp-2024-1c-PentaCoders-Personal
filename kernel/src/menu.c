@@ -191,13 +191,7 @@ void iniciar_consola_interactiva()
 {
     while (1)
     {
-        sleep(1);
         sem_post(binario_menu_lp); // Habilita largo plazo
-        /* if (habilitar_planificadores)
-        {
-            sem_post(b_detener_planificacion);
-
-        } */
         mostrar_operaciones_realizables();
         ejecutar_operacion(readline("Ingrese un valor para realizar una de las siguientes acciones: "), logger);
     }
@@ -205,15 +199,15 @@ void iniciar_consola_interactiva()
 
 void mostrar_operaciones_realizables()
 {
-    printf("\n\n");
+    printf("-----------------------------------------\n");
     printf("1-Ejecutar Script\n");
     printf("2-Iniciar Proceso\n");
     printf("3-Finalizar Proceso\n");
     printf("4-Iniciar Planificacion\n");
     printf("5-Detener Planificacion\n");
     printf("6-Modificar Grado Multiprogramacion\n");
-    printf("7-Listar Procesos por Estado\n");
-    printf("\n\n");
+    printf("7-Listar Procesos Estado\n");
+    printf("-----------------------------------------\n");
 }
 
 void ejecutar_operacion(char *opcion, t_log *logger)

@@ -59,6 +59,7 @@ sem_t *b_detener_planificacion;
 
 int interruptor_switch_readys;
 sem_t *b_switch_readys;
+sem_t *sem_finalizar_proceso;
 
 sem_t *contador_readys;
 char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
@@ -100,15 +101,15 @@ void crear_hilos()
 
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
-	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
+	pthread_create(&hiloConsola, NULL, (void*)iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
 	pthread_create(&t_transicion_blocked_ready, NULL, transicion_blocked_ready, NULL);
-	pthread_create(&hiloMEMORIA, NULL, conexionAMemoria, NULL);
+	pthread_create(&hiloMEMORIA, NULL, (void*)conexionAMemoria, NULL);
 	pthread_create(&hiloIO, NULL, levantarIO, NULL);
-	pthread_create(&hiloCPUDS, NULL, levantar_CPU_Dispatch, NULL);
-	pthread_create(&hiloCPUINT, NULL, levantar_CPU_Interrupt, NULL);
+	pthread_create(&hiloCPUDS, NULL, (void*)levantar_CPU_Dispatch, NULL);
+	pthread_create(&hiloCPUINT, NULL, (void*)levantar_CPU_Interrupt, NULL);
 }
 
 void levantar_servidores()
@@ -121,7 +122,7 @@ void *levantarIO()
 	while (1)
 	{
 		disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
-		op_code operacion = recibir_operacion(disp_io);
+		op_code operacion = recibir_op_code(disp_io);
 		if (operacion == SOLICITUD_CONEXION_IO)
 		{
 			tipo_buffer *buffer_io = recibir_buffer(disp_io);
@@ -133,11 +134,11 @@ void *levantarIO()
 			if (list_find(lista_interfaces, interfaz_esta_conectada) != NULL)
 			{
 				log_info(logger, "La Interfaz %s ya esta conectada", nombre_IO);
-				enviar_cod_enum(disp_io, ESTABA_CONECTADO);
+				enviar_op_code(disp_io, ESTABA_CONECTADO);
 			}
 			else
 			{
-				enviar_cod_enum(disp_io, NO_ESTABA_CONECTADO);
+				enviar_op_code(disp_io, NO_ESTABA_CONECTADO);
 				log_info(logger, "La Interfaz %s no estaba conectada", nombre_IO);
 
 				t_infoIO *infoIO = malloc(sizeof(t_infoIO));
@@ -157,8 +158,9 @@ void *levantarIO()
 	return NULL;
 }
 
-_Bool interfaz_esta_conectada(t_infoIO *interfaz)
+_Bool interfaz_esta_conectada(void *ptr)
 {
+	t_infoIO *interfaz = (t_infoIO *)ptr;
 	return strcmp(interfaz->nombre_io, nombre_IO) == 0;
 }
 
@@ -183,7 +185,7 @@ char *obtener_interfaz(enum_interfaz interfaz)
 	return "NO SE ENTIENDE LA INTERFAZ ENVIADA";
 }
 
-void *conexionAMemoria()
+void conexionAMemoria()
 {
 	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria);
 }
@@ -230,6 +232,7 @@ void iniciar_semaforos()
 	bloquearReadyPlus = malloc(sizeof(sem_t));
 	b_switch_readys = malloc(sizeof(sem_t));
 	contador_readys = malloc(sizeof(sem_t));
+	sem_finalizar_proceso = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
@@ -246,6 +249,7 @@ void iniciar_semaforos()
 	sem_init(bloquearReadyPlus, 0, 0);
 	sem_init(b_switch_readys, 0, 0);
 	sem_init(contador_readys, 0, 0);
+	sem_init(sem_finalizar_proceso, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -303,14 +307,8 @@ void evaluar_planificacion(char *planificador)
 {
 	if (habilitar_planificadores == 0)
 	{
-		if (strcmp(planificador, "largo"))
-		{
-			sem_wait(b_reanudar_largo_plazo);
-		}
-		else if (strcmp(planificador, "corto"))
-		{
-			sem_wait(b_reanudar_corto_plazo);
-		}
+		sem_wait(b_reanudar_largo_plazo);
+		sem_wait(b_reanudar_corto_plazo);
 	}
 }
 
@@ -334,7 +332,6 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 {
-	// pcb = malloc(sizeof(t_pcb));
 	sem_wait(cola_estado->contador);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	t_pcb *pcb = queue_pop(cola_estado->estado);
@@ -368,18 +365,18 @@ colaEstado *obtener_cola(t_estados estado)
 	return NULL;
 }
 
-void *levantar_CPU_Interrupt()
+void levantar_CPU_Interrupt()
 {
 	socket_cpu_interrupt = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_interrupt);
 }
 
-void *levantar_CPU_Dispatch()
+void levantar_CPU_Dispatch()
 {
 	socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch);
 
 	while (1)
 	{
-		op_code cod = recibir_operacion(socket_cpu_dispatch);
+		op_code cod = recibir_op_code(socket_cpu_dispatch);
 		tipo_buffer *buffer_cpu;
 
 		switch (cod)
@@ -389,8 +386,11 @@ void *levantar_CPU_Dispatch()
 			tipo_buffer *buffer_cpu_fin = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			destruir_buffer(buffer_cpu_fin);
+			sem_post(sem_finalizar_proceso);
 			finalizar_proceso(cde_interrumpido->pid, SUCCESS);
 			sem_post(b_largo_plazo_exit);
+			sem_post(b_reanudar_largo_plazo);
+			sem_post(b_reanudar_corto_plazo);
 			break;
 
 		case FIN_DE_QUANTUM:
@@ -603,9 +603,9 @@ void interfaz_no_conectada(int pid)
 
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid)
 {
-	enviar_cod_enum(io->cliente_io, CONSULTAR_DISPONIBILDAD);
+	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
 
-	op_code operacion_io = recibir_operacion(io->cliente_io);
+	op_code operacion_io = recibir_op_code(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
 	if (operacion_io == ESTOY_LIBRE)
@@ -614,7 +614,7 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 		agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
 		enviar_buffer(buffer_interfaz, io->cliente_io);
-		operacion_io = recibir_operacion(io->cliente_io);
+		operacion_io = recibir_op_code(io->cliente_io);
 		if (operacion_io == CONCLUI_OPERACION)
 		{
 			sem_post(b_transicion_blocked_ready);
@@ -632,9 +632,9 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 
 void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid)
 {
-	enviar_cod_enum(socket_io, CONSULTAR_DISPONIBILDAD);
+	enviar_op_code(socket_io, CONSULTAR_DISPONIBILDAD);
 
-	op_code operacion_io = recibir_operacion(socket_io);
+	op_code operacion_io = recibir_op_code(socket_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
 	if (operacion_io == ESTOY_LIBRE)
@@ -644,7 +644,7 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
 		enviar_buffer(buffer_interfaz, socket_io);
-		operacion_io = recibir_operacion(socket_io);
+		operacion_io = recibir_op_code(socket_io);
 
 		if (operacion_io == CONCLUI_OPERACION)
 		{
@@ -660,9 +660,9 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 
 void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid)
 {
-	enviar_cod_enum(socket_io, CONSULTAR_DISPONIBILDAD);
+	enviar_op_code(socket_io, CONSULTAR_DISPONIBILDAD);
 
-	op_code operacion_io = recibir_operacion(socket_io);
+	op_code operacion_io = recibir_op_code(socket_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
 	if (operacion_io == ESTOY_LIBRE)
@@ -673,7 +673,7 @@ void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int t
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
 		enviar_buffer(buffer_interfaz, socket_io);
 
-		operacion_io = recibir_operacion(socket_io);
+		operacion_io = recibir_op_code(socket_io);
 
 		if (operacion_io == CONCLUI_OPERACION)
 		{
@@ -724,8 +724,9 @@ t_recurso *obtener_recurso(char *nombre_recurso)
 	return NULL;
 }
 
-_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
+_Bool ya_tiene_instancias_del_recurso(void *ptr)
 {
+	t_recurso *recurso_proceso = (t_recurso *)ptr;
 	if (strcmp(nombre_recurso_recibido, recurso_proceso->nombre) == 0)
 	{
 		return 1;

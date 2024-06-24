@@ -12,6 +12,8 @@ void *largo_plazo()
         t_pcb *proceso = transicion_new_a_ready();
 
         log_info(logger, "PID: %d - Estado Anterior: NEW - Estado Actual: READY \n", proceso->cde->pid);
+        sem_post(cola_ready_global->contador);
+        sem_post(b_reanudar_largo_plazo);
     }
 }
 // NEW -> READY

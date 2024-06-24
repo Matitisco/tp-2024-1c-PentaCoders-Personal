@@ -41,7 +41,7 @@ int enviar_peticion_frame(int pagina)
 {
     int frame_buscado;
 
-    enviar_cod_enum(socket_memoria, PEDIDO_FRAME);
+    enviar_op_code(socket_memoria, PEDIDO_FRAME);
 
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, cde_recibido->pid);
@@ -49,7 +49,7 @@ int enviar_peticion_frame(int pagina)
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
 
-    op_code respuesta_mmu = recibir_operacion(socket_memoria);
+    op_code respuesta_mmu = recibir_op_code(socket_memoria);
     if (respuesta_mmu == PEDIDO_FRAME_CORRECTO)
     {
         tipo_buffer *buffer_memoria_tlb = recibir_buffer(socket_memoria);

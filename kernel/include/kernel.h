@@ -22,7 +22,6 @@
 
 typedef t_list t_lista_recursos;
 
-
 typedef struct
 {
 	char *nombreEstado;
@@ -59,7 +58,7 @@ typedef struct
 {
 	int cliente_io;
 	char *nombre_io;
-	t_list* procesos_espera;
+	t_list *procesos_espera;
 } t_infoIO;
 
 // VARIABLES
@@ -88,6 +87,7 @@ extern int habilitar_planificadores;
 extern config_kernel *valores_config;
 extern int socket_memoria;
 extern int socket_cpu_dispatch;
+extern sem_t *sem_finalizar_proceso;
 extern int socket_cpu_interrupt;
 // DECLARACION VARIABLES GLOBALES
 
@@ -110,7 +110,7 @@ extern sem_t *bloquearReadyPlus;
 // FUNCIONES
 void crear_hilos();
 void proceso_estado();
-void *conexionAMemoria();
+void conexionAMemoria();
 void iniciar_consola_interactiva();
 void iniciar_consola_interactiva2();
 void gestionar_peticiones_memoria();
@@ -120,18 +120,17 @@ void inicializarEstados();
 colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
-void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado );
+void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
 
-t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char* planificacion);
-void evaluar_planificacion(char* planificador);
-
+t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion);
+void evaluar_planificacion(char *planificador);
 
 void iniciar_semaforos();
 
 // FUNCIONES DE LEVANTAR MODULOS
-void *levantar_CPU_Dispatch();
-void *levantar_CPU_Interrupt();
+void levantar_CPU_Dispatch();
+void levantar_CPU_Interrupt();
 void *levantarIO();
 void iniciar_hilos();
 
@@ -151,11 +150,10 @@ bool existe_recurso2(char *nombre_recurso);
 
 void wait_instancia_recurso(int i);
 
-void wait_instancia_recurso2(t_recurso * recurso);
-_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso);
+void wait_instancia_recurso2(t_recurso *recurso);
+_Bool ya_tiene_instancias_del_recurso(void *ptr);
 
-
-void signal_instancia_recurso(t_recurso * recurso);
+void signal_instancia_recurso(t_recurso *recurso);
 void interfaz_no_conectada(int pid);
 void eliminar_proceso(t_pcb *proceso);
 t_pcb *buscarProceso(uint32_t pid);
@@ -164,7 +162,7 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
 
 char *obtener_interfaz(enum_interfaz interfaz);
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion);
-_Bool interfaz_esta_conectada();
+_Bool interfaz_esta_conectada(void *ptr);
 t_cde *iniciar_cde(char *PATH);
 void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid);
 void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid);
@@ -172,22 +170,19 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 void atender_interrupciones();
 char *buscar_recurso(char *recurso, int *posicion);
 
-int hayProcesosEnEstado(colaEstado* cola_estado);
+int hayProcesosEnEstado(colaEstado *cola_estado);
 
 void bloquearSiReadysVacios();
 void desbloquearSiReadysVacios();
 
 void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);
 
-void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);//no se usa
+void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo); // no se usa
 
 void valorSemaforo(sem_t *semaforo);
 
-
-
-
 bool existe_recurso2(char *nombre_recurso);
 
-t_recurso * obtener_recurso(char *nombre_recurso);
+t_recurso *obtener_recurso(char *nombre_recurso);
 
 #endif

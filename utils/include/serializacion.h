@@ -18,10 +18,6 @@ typedef struct
 
 } tipo_buffer;
 
-// ENVIAR Y RECIBIR CODIGOS OP_CODE
-void enviar_cod_enum(int socket_servidor, uint32_t cod);
-op_code recibir_operacion(int socket_cliente);
-
 // BUFFERS
 tipo_buffer *crear_buffer();
 tipo_buffer *recibir_buffer(int socket);

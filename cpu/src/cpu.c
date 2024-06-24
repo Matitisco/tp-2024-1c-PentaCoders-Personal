@@ -86,7 +86,7 @@ void *levantar_kernel_dispatch()
 	socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
-		op_code codigo = recibir_operacion(socket_kernel_dispatch);
+		op_code codigo = recibir_op_code(socket_kernel_dispatch);
 
 		if (codigo == -1)
 		{
@@ -129,7 +129,7 @@ void *levantar_kernel_interrupt()
 	{
 		if (salida_exit)
 		{
-			op_code codigo = recibir_operacion(socket_kernel_interrupt);
+			op_code codigo = recibir_op_code(socket_kernel_interrupt);
 			log_info(logger, "Me llego una interrupcion");
 
 			if (codigo == -1)
@@ -142,15 +142,6 @@ void *levantar_kernel_interrupt()
 			{
 			case PROCESO_INTERRUMPIDO_QUANTUM:
 				interrupcion_rr = 1;
-				break;
-			case SOLICITUD_EXIT:
-				tipo_buffer *buffer_kernel = recibir_buffer(socket_kernel_interrupt); // recibo el buffer de kernel
-				int pid = leer_buffer_enteroUint32(buffer_kernel);					  // id del proceso
-				destruir_buffer(buffer_kernel);
-				// si esta en cpu entonces mandamos a cpu_interrupt una interrupcion
-				// pidiendo que desaloje el proceso de la cpu y retorne el cde
-
-				// guardamos en una lista las interrupciones que luego va a ser leida por check_interrupt aplicar semaforos mutex
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
@@ -177,7 +168,7 @@ void recibir_tamanio_pagina(int socket_memoria)
 
 char *fetch(t_cde *contexto)
 {
-	enviar_cod_enum(socket_memoria, PEDIDO_INSTRUCCION);
+	enviar_op_code(socket_memoria, PEDIDO_INSTRUCCION);
 	tipo_buffer *buffer = crear_buffer();
 
 	agregar_buffer_para_enterosUint32(buffer, contexto->pid);
@@ -188,7 +179,7 @@ char *fetch(t_cde *contexto)
 	enviar_buffer(buffer, socket_memoria);
 	destruir_buffer(buffer);
 
-	op_code operacion_desde_memoria = recibir_operacion(socket_memoria);
+	op_code operacion_desde_memoria = recibir_op_code(socket_memoria);
 
 	if (operacion_desde_memoria == ENVIAR_INSTRUCCION_CORRECTO)
 	{
@@ -324,7 +315,7 @@ void check_interrupt()
 		}
 		else
 		{
-			enviar_cod_enum(socket_kernel_dispatch, FIN_DE_QUANTUM);
+			enviar_op_code(socket_kernel_dispatch, FIN_DE_QUANTUM);
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		}
