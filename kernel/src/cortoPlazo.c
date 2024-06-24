@@ -48,12 +48,15 @@ void planificar_por_fifo()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
+        sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
-        sem_wait(cola_ready_global->contador);
         proceso = transicion_ready_exec();
-        proceso->estado = EXEC;
         log_info(logger, "Se agrego el proceso <%d> y PC <%d> a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
         enviar_a_cpu_cde(proceso->cde);
+        if (habilitar_planificadores == 1)
+        {
+            sem_post(b_reanudar_corto_plazo);
+        }
     }
 }
 
@@ -62,13 +65,17 @@ void planificar_por_rr()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
+        sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
-        sem_wait(contador_readys);
         proceso = transicion_ready_exec();
         proceso->estado = EXEC;
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por RR con Quantum: %d\n", proceso->cde->pid, QUANTUM);
         inicio_quantum();
         enviar_a_cpu_cde(proceso->cde);
+        if (habilitar_planificadores == 1)
+        {
+            sem_post(b_reanudar_corto_plazo);
+        }
     }
 }
 
@@ -77,8 +84,9 @@ void planificar_por_vrr()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
+        sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
-        sem_wait(contador_readys);
+
         if (hayProcesosEnEstado(cola_ready_plus))
         {
             proceso = transicion_generica(cola_ready_plus, cola_exec_global, "corto");
@@ -95,6 +103,10 @@ void planificar_por_vrr()
         }
         enviar_a_cpu_cde(proceso->cde);
         timer = temporal_create();
+        if (habilitar_planificadores == 1)
+        {
+            sem_post(b_reanudar_corto_plazo);
+        }
     }
 }
 
@@ -124,9 +136,8 @@ void *hilo_quantum()
 // READY -> EXEC
 t_pcb *transicion_ready_exec()
 {
-    //= sacar_procesos_cola(cola_ready_global);
-    // agregar_a_estado(proceso, cola_exec_global);
     t_pcb *proceso = transicion_generica(cola_ready_global, cola_exec_global, " ");
+    proceso->estado = EXEC;
     return proceso;
 }
 // EXEC -> READY

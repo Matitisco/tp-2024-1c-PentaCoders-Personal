@@ -155,14 +155,32 @@ void eliminar_proceso(t_pcb *proceso)
 
 void detener_planificacion()
 {
-    habilitar_planificadores = 0;
+    if (habilitar_planificadores == 1)
+    {
+        habilitar_planificadores = 0;
+        sem_wait(b_reanudar_largo_plazo);
+        sem_wait(b_reanudar_corto_plazo);
+        log_info(logger, "PLANIFICACION PAUSADA");
+    }
+    else
+    {
+        log_info(logger, "PLANIFICACION YA ESTA PAUSADA");
+    }
 }
 
 void iniciar_planificacion()
 {
-    habilitar_planificadores = 1;
-    sem_post(b_reanudar_largo_plazo);
-    sem_post(b_reanudar_corto_plazo);
+    if (habilitar_planificadores == 0)
+    {
+        habilitar_planificadores = 1;
+        sem_post(b_reanudar_largo_plazo);
+        sem_post(b_reanudar_corto_plazo);
+        log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
+    }
+    else
+    {
+        log_info(logger, "PLANIFICACION YA ESTA EN FUNCIONAMIENTO");
+    }
 }
 
 void grado_multiprogramacion(int valor)

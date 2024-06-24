@@ -307,16 +307,16 @@ void evaluar_planificacion(char *planificador)
 {
 	if (habilitar_planificadores == 0)
 	{
-		sem_wait(b_reanudar_largo_plazo);
+		// sem_wait(b_reanudar_largo_plazo);
 		sem_wait(b_reanudar_corto_plazo);
 	}
 }
 
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion)
 {
-	evaluar_planificacion(planificacion);
+	//evaluar_planificacion(planificacion);
 	t_pcb *proceso = sacar_procesos_cola(colaEstadoInicio);
-	evaluar_planificacion(planificacion);
+	//evaluar_planificacion(planificacion);
 	agregar_a_estado(proceso, colaEstadoFinal);
 
 	return proceso;
