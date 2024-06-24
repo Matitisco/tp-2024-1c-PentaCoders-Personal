@@ -191,6 +191,7 @@ void iniciar_consola_interactiva()
 {
     while (1)
     {
+        sleep(0.5);
         sem_post(binario_menu_lp); // Habilita largo plazo
         mostrar_operaciones_realizables();
         ejecutar_operacion(readline("Ingrese un valor para realizar una de las siguientes acciones: "), logger);
@@ -212,7 +213,7 @@ void mostrar_operaciones_realizables()
 
 void ejecutar_operacion(char *opcion, t_log *logger)
 {
-    op_code cod_op = obtenerCodigo(opcion, logger);
+    opciones_menu cod_op = obtenerCodigo(opcion, logger);
     switch (cod_op)
     {
     case EJECUTAR_SCRIPT:
@@ -225,7 +226,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         iniciar_proceso(PATH_INSTRUCCIONES);
         free(PATH_INSTRUCCIONES);
         break;
-    case FINALIZAR_PROCESO:
+    case FINALIZAR_PROCESO_MENU:
         char *PID = readline("Ingrese el PID del Proceso a Finalizar: ");
         finalizar_proceso(atoi(PID), INTERRUPTED_BY_USER);
         free(PID);
@@ -251,7 +252,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
     }
 }
 
-op_code obtenerCodigo(char *opcion, t_log *logger)
+opciones_menu obtenerCodigo(char *opcion, t_log *logger)
 {
     const char *opcion_elegida = opcion;
     if (strcmp(opcion_elegida, "1") == 0)
@@ -267,7 +268,7 @@ op_code obtenerCodigo(char *opcion, t_log *logger)
     if (strcmp(opcion_elegida, "3") == 0)
     {
         log_info(logger, "Se eligio la opcion FINALIZAR PROCESO");
-        return FINALIZAR_PROCESO;
+        return FINALIZAR_PROCESO_MENU;
     }
     if (strcmp(opcion_elegida, "4") == 0)
     {

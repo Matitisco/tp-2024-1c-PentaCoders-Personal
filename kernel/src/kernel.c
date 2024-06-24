@@ -101,15 +101,15 @@ void crear_hilos()
 
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
-	pthread_create(&hiloConsola, NULL, (void*)iniciar_consola_interactiva, NULL);
+	pthread_create(&hiloConsola, NULL, (void *)iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
 	pthread_create(&t_transicion_blocked_ready, NULL, transicion_blocked_ready, NULL);
-	pthread_create(&hiloMEMORIA, NULL, (void*)conexionAMemoria, NULL);
+	pthread_create(&hiloMEMORIA, NULL, (void *)conexionAMemoria, NULL);
 	pthread_create(&hiloIO, NULL, levantarIO, NULL);
-	pthread_create(&hiloCPUDS, NULL, (void*)levantar_CPU_Dispatch, NULL);
-	pthread_create(&hiloCPUINT, NULL, (void*)levantar_CPU_Interrupt, NULL);
+	pthread_create(&hiloCPUDS, NULL, (void *)levantar_CPU_Dispatch, NULL);
+	pthread_create(&hiloCPUINT, NULL, (void *)levantar_CPU_Interrupt, NULL);
 }
 
 void levantar_servidores()

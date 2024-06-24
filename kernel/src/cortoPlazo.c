@@ -124,9 +124,9 @@ void *hilo_quantum()
 // READY -> EXEC
 t_pcb *transicion_ready_exec()
 {
-
-    t_pcb *proceso = sacar_procesos_cola(cola_ready_global);
-    agregar_a_estado(proceso, cola_exec_global);
+    //= sacar_procesos_cola(cola_ready_global);
+    // agregar_a_estado(proceso, cola_exec_global);
+    t_pcb *proceso = transicion_generica(cola_ready_global, cola_exec_global, " ");
     return proceso;
 }
 // EXEC -> READY

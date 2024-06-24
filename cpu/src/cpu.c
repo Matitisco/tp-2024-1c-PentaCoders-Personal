@@ -86,7 +86,8 @@ void *levantar_kernel_dispatch()
 	socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
-		op_code codigo = recibir_op_code(socket_kernel_dispatch);
+		op_code codigo = 0;
+		codigo = recibir_op_code(socket_kernel_dispatch);
 
 		if (codigo == -1)
 		{

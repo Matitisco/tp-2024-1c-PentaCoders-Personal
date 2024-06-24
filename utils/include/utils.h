@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
-// #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
 #include <commons/log.h>
@@ -15,7 +14,6 @@
 #include <readline/history.h>
 
 #include <semaphore.h>
-// #include <sys/socket.h>
 #include <commons/collections/list.h>
 #include <assert.h>
 #include "registros.h"
@@ -30,6 +28,18 @@ typedef enum
 	OUT_OF_MEMORY_END,
 	INTERRUPTED_BY_USER
 } motivoFinalizar;
+
+typedef enum
+{
+	EJECUTAR_SCRIPT,
+	INICIAR_PROCESO,
+	FINALIZAR_PROCESO_MENU,
+	INICIAR_PLANIFICACION,
+	DETENER_PLANIFICACION,
+	MULTIPROGRAMACION,
+	LISTAR_ESTADOS,
+} opciones_menu;
+
 typedef enum
 {
 	SOLICITUD_INICIAR_PROCESO,
@@ -37,13 +47,6 @@ typedef enum
 	ERROR_INICIAR_PROCESO,
 	SOLICITUD_FINALIZAR_PROCESO,
 	FINALIZAR_PROCESO,
-	// MENU
-	EJECUTAR_SCRIPT,
-	INICIAR_PROCESO,
-	INICIAR_PLANIFICACION,
-	DETENER_PLANIFICACION,
-	MULTIPROGRAMACION,
-	LISTAR_ESTADOS,
 	ERROR_FINALIZAR_PROCESO,
 	PEDIDO_INSTRUCCION,
 	PEDIDO_PCB,
