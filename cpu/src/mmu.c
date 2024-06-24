@@ -4,8 +4,10 @@ int TLB_HABILITADA;
 
 uint32_t direccion_logica_a_fisica(int direccion_logica)
 {
-    int numero_pagina = calcular_pagina(direccion_logica);
-    int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
+    log_info(logger, "DIRECCION LOGICA: %d", direccion_logica);
+    int numero_pagina = calcular_pagina(direccion_logica); // 1
+    log_info(logger, "NUMERO PAGINA A BUSCAR : %d", numero_pagina);
+    int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina; // 0
 
     if (TLB_HABILITADA)
     {

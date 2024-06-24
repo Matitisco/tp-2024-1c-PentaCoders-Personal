@@ -40,7 +40,9 @@ int tlb_consultar_df_pagina(int pagina_buscada, int desplazamiento)
     for (int i = 0; i < tlb->cant_entradas; i++)
     {
         int pagina_tlb = tlb->entradas[i].pagina;
+        log_info(logger, "PAGINA CARGADA: %d EN ENTRADA DE TLB: %d", pagina_tlb, i);
         int marco_tlb = tlb->entradas[i].marco;
+        log_info(logger, "MARCO DE PAGINA CARGADA: %d EN ENTRADA DE TLB: %d", marco_tlb, i);
         int tamanio_frame = tamanio_pagina;
 
         if (pagina_buscada == pagina_tlb)

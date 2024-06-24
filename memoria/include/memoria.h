@@ -33,7 +33,7 @@ typedef struct
 void *espacio_usuario;
 typedef struct
 {
-	int marco; // numeor de marco donde esta la pagina
+	int marco;		 // numeor de marco donde esta la pagina
 	int bit_validez; // si esta en memoria
 	int pid;		 // la pagina conoce al proceso del cual es parte ?
 } t_pagina;
@@ -48,7 +48,7 @@ extern t_log *logger;
 
 int socket_cpu;
 int cliente_fd;
-pthread_t hiloCPU, hiloKernel, hiloIO;
+pthread_t hiloCPU, hiloKernel, hiloIO, hiloEspacioUsuario;
 
 /*Paginacion */
 t_list *list_tabla_paginas; // losta global de paginas y cada nodo tiene una tabla del proceso
@@ -95,9 +95,8 @@ void *destroy_instruccion(void *element);
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio);
 void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio);
 char *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
-void *acceso_a_espacio_usuario(int cliente_solicitante);
+void *acceso_a_espacio_usuario();
 void pedido_frame_mmu(int cliente_cpu);
-void *acceso_a_espacio_usuario(int cliente_solicitante);
 void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante);
 void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante);
 void escritura_cpu(tipo_buffer *buffer, int cliente_solicitante);

@@ -40,9 +40,9 @@ void exec_set(char *registro, uint32_t valor)
 
 void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 {
-    uint32_t direccion_logica = obtener_valor_origen(direccion, cde);
+    uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
-
+    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
     enviar_op_code(socket_memoria, LECTURA_CPU);
@@ -55,6 +55,11 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
     // direccion que se envia a la memoria y con la cual esta debe buscar el valor y guardarlo
     enviar_buffer(buffer, socket_memoria);
+
+    buffer->offset = 0;
+    log_info(logger, "\033[38;2;255;105;180m Direccion fisica enviada: %u \033[0m", leer_buffer_enteroUint32(buffer));
+    log_info(logger, "\033[38;2;255;105;180m PID enviada: %u \033[0m", leer_buffer_enteroUint32(buffer));
+    log_info(logger, "\033[38;2;255;105;180m TAMANIO enviada: %u \033[0m", leer_buffer_enteroUint32(buffer));
 
     op_code lectura_memoria = recibir_op_code(socket_memoria);
     if (lectura_memoria == OK)

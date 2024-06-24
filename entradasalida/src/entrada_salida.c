@@ -165,7 +165,7 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io)
 	conexion_kernel = levantarCliente(logger, "KERNEL", interfaz_io->ip_kernel, string_itoa(interfaz_io->puerto_kernel));
 	tipo_buffer *buffer_kernel_io = crear_buffer();
 
-	enviar_cod_enum(conexion_kernel, SOLICITUD_CONEXION_IO);
+	enviar_op_code(conexion_kernel, SOLICITUD_CONEXION_IO);
 	char *nombre_interfaz = interfaz_io->nombre_interfaz;
 	agregar_buffer_para_enterosUint32(buffer_kernel_io, interfaz_io->tipo_interfaz);
 	agregar_buffer_para_string(buffer_kernel_io, nombre_interfaz);
@@ -173,7 +173,7 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io)
 	enviar_buffer(buffer_kernel_io, conexion_kernel);
 	destruir_buffer(buffer_kernel_io);
 	// 2-esperar que kernel envie un mensaje
-	op_code mensaje_kernel = recibir_operacion(conexion_kernel);
+	op_code mensaje_kernel = recibir_op_code(conexion_kernel);
 	if (mensaje_kernel == ESTABA_CONECTADO)
 	{
 		log_info(logger, "Ya estoy conectada al Kernel");
@@ -185,21 +185,21 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io)
 	}
 	while (1)
 	{
-		op_code consulta_kernel = recibir_operacion(conexion_kernel);
+		op_code consulta_kernel = recibir_op_code(conexion_kernel);
 		// 3-atender el mensaje que envia kernel
 		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
 		{
 			if (estoy_libre)
 			{
-				enviar_cod_enum(conexion_kernel, ESTOY_LIBRE);
+				enviar_op_code(conexion_kernel, ESTOY_LIBRE);
 				estoy_libre = 0;
 				realizar_operacion_gen();
 				// 4-responder al kernel que termine
-				enviar_cod_enum(conexion_kernel, CONCLUI_OPERACION);
+				enviar_op_code(conexion_kernel, CONCLUI_OPERACION);
 			}
 			else
 			{
-				enviar_cod_enum(conexion_kernel, NO_ESTOY_LIBRE);
+				enviar_op_code(conexion_kernel, NO_ESTOY_LIBRE);
 			}
 		}
 		else
@@ -237,7 +237,7 @@ void arrancar_interfaz_stdin(t_interfaz *interfaz_io)
 
 	tipo_buffer *buffer_kernel_io = crear_buffer();
 
-	enviar_cod_enum(conexion_kernel, SOLICITUD_CONEXION_IO);
+	enviar_op_code(conexion_kernel, SOLICITUD_CONEXION_IO);
 	char *nombre_interfaz = interfaz_io->nombre_interfaz;
 	agregar_buffer_para_enterosUint32(buffer_kernel_io, interfaz_io->tipo_interfaz);
 	agregar_buffer_para_string(buffer_kernel_io, nombre_interfaz);
@@ -245,7 +245,7 @@ void arrancar_interfaz_stdin(t_interfaz *interfaz_io)
 	enviar_buffer(buffer_kernel_io, conexion_kernel);
 	destruir_buffer(buffer_kernel_io);
 	// 2-esperar que kernel envie un mensaje
-	op_code mensaje_kernel = recibir_operacion(conexion_kernel);
+	op_code mensaje_kernel = recibir_op_code(conexion_kernel);
 	if (mensaje_kernel == ESTABA_CONECTADO)
 	{
 		log_info(logger, "Ya estoy conectada al Kernel");
@@ -258,21 +258,21 @@ void arrancar_interfaz_stdin(t_interfaz *interfaz_io)
 
 	while (1)
 	{
-		op_code consulta_kernel = recibir_operacion(conexion_kernel);
+		op_code consulta_kernel = recibir_op_code(conexion_kernel);
 		// 3-atender el mensaje que envia kernel
 		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
 		{
 			if (estoy_libre)
 			{
-				enviar_cod_enum(conexion_kernel, ESTOY_LIBRE);
+				enviar_op_code(conexion_kernel, ESTOY_LIBRE);
 				estoy_libre = 0;
 				realizar_operacion_stdin();
 				// 4-responder al kernel que termine
-				enviar_cod_enum(conexion_kernel, CONCLUI_OPERACION);
+				enviar_op_code(conexion_kernel, CONCLUI_OPERACION);
 			}
 			else
 			{
-				enviar_cod_enum(conexion_kernel, NO_ESTOY_LIBRE);
+				enviar_op_code(conexion_kernel, NO_ESTOY_LIBRE);
 			}
 		}
 		else
@@ -301,9 +301,9 @@ void realizar_operacion_stdin()
 		log_info(logger, "TEXTO YA LIMITADO: '%s'", nuevo_texto);
 		t_list *lista_enteros = convertir_a_numeros(nuevo_texto);
 
-		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
-		enviar_cod_enum(conexion_memoria, PEDIDO_ESCRITURA);
-		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
+		enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
+		enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
+		enviar_op_code(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
 
 		tipo_buffer *buffer_a_memoria = crear_buffer();
 
@@ -321,7 +321,7 @@ void realizar_operacion_stdin()
 
 		destruir_buffer(buffer_a_memoria);
 
-		op_code codigo_memoria = recibir_operacion(conexion_memoria);
+		op_code codigo_memoria = recibir_op_code(conexion_memoria);
 		if (codigo_memoria == OK)
 		{
 			sleep_ms(valores_config->tiempo_unidad_trabajo);
@@ -383,7 +383,7 @@ void arrancar_interfaz_stdout(t_interfaz *interfaz_io)
 
 	tipo_buffer *buffer_kernel_io = crear_buffer();
 
-	enviar_cod_enum(conexion_kernel, SOLICITUD_CONEXION_IO);
+	enviar_op_code(conexion_kernel, SOLICITUD_CONEXION_IO);
 	char *nombre_interfaz = interfaz_io->nombre_interfaz;
 	agregar_buffer_para_enterosUint32(buffer_kernel_io, interfaz_io->tipo_interfaz);
 	agregar_buffer_para_string(buffer_kernel_io, nombre_interfaz);
@@ -391,7 +391,7 @@ void arrancar_interfaz_stdout(t_interfaz *interfaz_io)
 	enviar_buffer(buffer_kernel_io, conexion_kernel);
 	destruir_buffer(buffer_kernel_io);
 	// 2-esperar que kernel envie un mensaje
-	op_code mensaje_kernel = recibir_operacion(conexion_kernel);
+	op_code mensaje_kernel = recibir_op_code(conexion_kernel);
 	if (mensaje_kernel == ESTABA_CONECTADO)
 	{
 		log_info(logger, "Ya estoy conectada al Kernel");
@@ -403,21 +403,21 @@ void arrancar_interfaz_stdout(t_interfaz *interfaz_io)
 	}
 	while (1)
 	{
-		op_code consulta_kernel = recibir_operacion(conexion_kernel);
+		op_code consulta_kernel = recibir_op_code(conexion_kernel);
 		// 3-atender el mensaje que envia kernel
 		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
 		{
 			if (estoy_libre)
 			{
-				enviar_cod_enum(conexion_kernel, ESTOY_LIBRE);
+				enviar_op_code(conexion_kernel, ESTOY_LIBRE);
 				estoy_libre = 0;
 				realizar_operacion_stdout();
 				// 4-responder al kernel que termine
-				enviar_cod_enum(conexion_kernel, CONCLUI_OPERACION);
+				enviar_op_code(conexion_kernel, CONCLUI_OPERACION);
 			}
 			else
 			{
-				enviar_cod_enum(conexion_kernel, NO_ESTOY_LIBRE);
+				enviar_op_code(conexion_kernel, NO_ESTOY_LIBRE);
 			}
 		}
 		else
@@ -438,9 +438,9 @@ void realizar_operacion_stdout()
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_STDOUT_WRITE)
 	{
-		enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
-		enviar_cod_enum(conexion_memoria, PEDIDO_LECTURA);
-		enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
+		enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
+		enviar_op_code(conexion_memoria, PEDIDO_LECTURA);
+		enviar_op_code(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
 
 		tipo_buffer *buffer_a_memoria = crear_buffer();
 		agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
@@ -450,7 +450,7 @@ void realizar_operacion_stdout()
 
 		destruir_buffer(buffer_a_memoria);
 
-		op_code codigo_memoria = recibir_operacion(conexion_memoria);
+		op_code codigo_memoria = recibir_op_code(conexion_memoria);
 		if (codigo_memoria == OK)
 		{
 			char *texto_reconstruido = malloc(limitante_cadena);
