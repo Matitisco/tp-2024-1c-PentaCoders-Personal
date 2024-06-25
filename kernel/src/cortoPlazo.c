@@ -167,9 +167,12 @@ void *transicion_exec_blocked()
         t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "corto");
         proceso->cde = cde_interrumpido;
 
-        temporal_stop(timer);
-        tiempo_transcurrido = temporal_gettime(timer);
-        temporal_destroy(timer);
+        if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
+        {
+            temporal_stop(timer);
+            tiempo_transcurrido = temporal_gettime(timer);
+            temporal_destroy(timer);
+        }
 
         log_info(logger, "Se bloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         proceso->estado = BLOCKED;
@@ -184,13 +187,21 @@ void *transicion_blocked_ready()
         sem_wait(b_transicion_blocked_ready);
 
         t_pcb *proceso;
-        if (tiempo_transcurrido < QUANTUM)
+        if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
         {
+            if (tiempo_transcurrido < QUANTUM)
+            {
 
-            proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "corto"); // READY+
-            proceso->estado = READY_PLUS;
-            proceso->quantum = QUANTUM - tiempo_transcurrido;
-            log_info(logger, "El proceso tiene un quantum restante de %d", proceso->quantum);
+                proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "corto"); // READY+
+                proceso->estado = READY_PLUS;
+                proceso->quantum = QUANTUM - tiempo_transcurrido;
+                log_info(logger, "El proceso tiene un quantum restante de %d", proceso->quantum);
+            }
+            else
+            {
+                proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto"); // READY+
+                proceso->estado = READY;
+            }
         }
         else
         {
@@ -199,8 +210,6 @@ void *transicion_blocked_ready()
         }
 
         proceso->cde = cde_interrumpido;
-
-        sem_post(contador_readys);
 
         log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
     }

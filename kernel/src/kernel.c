@@ -314,9 +314,9 @@ void evaluar_planificacion(char *planificador)
 
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion)
 {
-	//evaluar_planificacion(planificacion);
+	// evaluar_planificacion(planificacion);
 	t_pcb *proceso = sacar_procesos_cola(colaEstadoInicio);
-	//evaluar_planificacion(planificacion);
+	// evaluar_planificacion(planificacion);
 	agregar_a_estado(proceso, colaEstadoFinal);
 
 	return proceso;
@@ -408,7 +408,10 @@ void levantar_CPU_Dispatch()
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cde);
 
-			pthread_cancel(hiloQuantum);
+			if (strcmp(valores_config->algoritmo_planificacion, "RR") == 0 || strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
+			{
+				pthread_cancel(hiloQuantum);
+			}
 			sem_post(b_transicion_exec_blocked);
 
 			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_cpu);

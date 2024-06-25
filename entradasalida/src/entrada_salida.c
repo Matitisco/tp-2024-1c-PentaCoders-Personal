@@ -288,7 +288,8 @@ void realizar_operacion_stdin()
 	tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
 	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
 	int limitante_cadena = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, limito la cadena que meto
-	// ej si meto la cadena, Interfaz y el limite es de 3 bytes, entonces solo puedo meter Int
+	log_info(logger, "CANT DE BYTES A COPIAR: %d", limitante_cadena);
+	
 	int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a grabar el dato en memoria
 	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
 	if (sol_operacion == IO_STDIN_READ)

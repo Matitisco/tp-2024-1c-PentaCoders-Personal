@@ -267,33 +267,125 @@ void exec_resize(char *tamanio, t_cde *cde)
         return;
     }
 }
+/* void leer(uint32_t direccion_fisica, t_cde *cde)
+{
+
+    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_LECTURA);
+    enviar_op_code(socket_memoria, LECTURA_CPU);
+    uint32_t tamanio = sizeof(direccion);
+
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);
+    agregar_buffer_para_enterosUint32(buffer, sizeof(tamanio));
+
+    // direccion que se envia a la memoria y con la cual esta debe buscar el valor y guardarlo
+    enviar_buffer(buffer, socket_memoria);
+} */
+
+/*
+void exec_mov_in(char *datos, char *direccion, t_cde *cde)
+{
+    uint32_t direccion_logica = obtener_valor(direccion);
+    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
+    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_LECTURA);
+    enviar_op_code(socket_memoria, LECTURA_CPU);
+    uint32_t tamanio = sizeof(direccion);
+
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);
+    agregar_buffer_para_enterosUint32(buffer, tamanio);
+
+    // direccion que se envia a la memoria y con la cual esta debe buscar el valor y guardarlo
+    enviar_buffer(buffer, socket_memoria);
+
+    buffer->offset = 0;
+    log_info(logger, "\033[38;2;255;105;180m Direccion fisica enviada: %u \033[0m", leer_buffer_enteroUint32(buffer));
+    log_info(logger, "\033[38;2;255;105;180m PID enviada: %u \033[0m", leer_buffer_enteroUint32(buffer));
+    log_info(logger, "\033[38;2;255;105;180m TAMANIO enviada: %u \033[0m", leer_buffer_enteroUint32(buffer));
+
+    op_code lectura_memoria = recibir_op_code(socket_memoria);
+    if (lectura_memoria == OK)
+    {
+        tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
+        uint32_t valor = leer_buffer_enteroUint32(buffer_valor);
+        exec_set(datos, valor);
+        destruir_buffer(buffer_valor);
+        log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor);
+    }
+    else
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+        // exec_exit(cde); Ver si esto esta bien
+    }
+    destruir_buffer(buffer);
+} */
 
 void exec_copy_string(char *tamanio, t_cde *cde)
 {
-    uint32_t direccion_logica_SI = cde->registros->SI;
+    // LEER STRING
 
+    uint32_t direccion_logica_SI = cde->registros->SI; // SET SI 0
     uint32_t direccion_fisica_SI = direccion_logica_a_fisica(direccion_logica_SI);
+    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica_SI);
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
+    enviar_op_code(socket_memoria, LECTURA_CPU);
 
     tipo_buffer *buffer_copy_string = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer_copy_string, direccion_fisica_SI);
     agregar_buffer_para_enterosUint32(buffer_copy_string, cde->pid);
+    agregar_buffer_para_enterosUint32(buffer_copy_string, sizeof(cde->registros->SI));
+
     enviar_buffer(buffer_copy_string, socket_memoria);
     destruir_buffer(buffer_copy_string);
+    uint32_t valor;
+    op_code lectura_memoria = recibir_op_code(socket_memoria);
+    if (lectura_memoria == OK)
+    {
+        tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
+        valor = leer_buffer_enteroUint32(buffer_valor); // <---
+        destruir_buffer(buffer_valor);
+        log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica_SI, valor);
 
-    tipo_buffer *buffer_lectura = recibir_buffer(socket_memoria);
-    char *unString = leer_buffer_string(buffer_lectura);
+        char *cadena = malloc(sizeof(uint32_t));
+        memcpy(cadena, &valor, sizeof(uint32_t));
+        log_info(logger, "Cadena recibida %s", cadena); //
+    }
+    else
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+    }
+
+    // ESCRIBIR STRING LEIDO
+
     uint32_t tamanio_string = sizeof(atoi(tamanio));
     uint32_t direccion_logica_DI = cde->registros->DI;
     uint32_t direccion_fisica_DI = direccion_logica_a_fisica(direccion_logica_DI);
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
-    enviar_op_code(socket_memoria, ESCRITURA_CPU);
+    enviar_op_code(socket_memoria, SOLICITUD_ESCRITURA_CPU);
     tipo_buffer *buffer_DI = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer_DI, direccion_fisica_DI);
+    agregar_buffer_para_enterosUint32(buffer_DI, valor);
     agregar_buffer_para_enterosUint32(buffer_DI, cde->pid);
     agregar_buffer_para_enterosUint32(buffer_DI, tamanio_string);
-    agregar_buffer_para_string(buffer_DI, unString);
     enviar_buffer(buffer_DI, socket_memoria);
+
+    op_code escritura_memoria = recibir_op_code(socket_memoria);
+    if (escritura_memoria == OK)
+    {
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica_DI, valor);
+    }
+    else
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+    }
     destruir_buffer(buffer_DI);
 }
 
@@ -330,7 +422,7 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
     interrupcion_io = 1;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
-    uint32_t tamanio = sizeof(atoi(reg_tamanio));
+    uint32_t tamanio = sizeof(reg_tamanio);
 
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
