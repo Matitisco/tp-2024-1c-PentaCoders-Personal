@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <commons/txt.h>
 #include "entrada_salida.h"
