@@ -187,7 +187,17 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
                 enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
             }
             destruir_buffer(buffer_escritura);
-        }
+        }else if(SOLICITUD_ESCRITURA_DIALFS){
+
+            tipo_buffer *buffer_lectura = recibir_buffer(cliente_solicitante);
+            char*nombre_archivo =leer_buffer_string(buffer_lectura);
+            uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
+            uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_lectura);
+            uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
+            uint32_t puntero_archivo= leer_buffer_enteroUint32(buffer_lectura);
+            //LEE EN MEMORIA Y ESCRIBE EL ARCHIVO LO QUE LETO EN MEMORI
+           
+            destruir_buffer(buffer_escritura);
         else if (solicitud == SOLICITUD_ESCRITURA_CPU)
         {
             tipo_buffer *buffer_escritura = recibir_buffer(cliente_solicitante);
@@ -236,7 +246,17 @@ void *acceso_a_espacio_usuario(int cliente_solicitante)
             {
                 enviar_cod_enum(cliente_solicitante, ERROR_PEDIDO_LECTURA);
             }
-        }
+        }else if(solicitud == LECTURA_DIALFS) {
+           
+            tipo_buffer *buffer_lectura = recibir_buffer(cliente_solicitante);
+            char*nombre_archivo =leer_buffer_string(buffer_lectura);
+            uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
+            uint32_t direccionFisica = leer_buffer_enteroUint32(buffer_lectura);
+            uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
+            uint32_t puntero_archivo= leer_buffer_enteroUint32(buffer_lectura);
+            //LEE EL ARCHIVO Y ESCRIBE EN MEMORIA
+            //medio confuso
+            }
         else if (solicitud == LECTURA_CPU) // caso de cpu
         {
             tipo_buffer *buffer_lectura = recibir_buffer(cliente_solicitante);
@@ -739,6 +759,17 @@ void *leer_memoria(uint32_t direccion_fisica, uint32_t pid, uint32_t tamanio)
     log_info(logger, "PID: <%d> - Accion: LEER - Direccion fisica: <%d> - Tamaño <%d>", pid, direccion_fisica, tamanio);
 
     return valor;
+}
+void*leer_memoria_dialfs(uint32_t direccion_fisica, uint32_t pid,){
+     usleep(valores_config->retardo_respuesta * 1000);
+    uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+/*lea desde el archivo a partir del valor del Registro Puntero Archivo la cantidad de bytes
+indicada por Registro Tamaño y se escriban en la Memoria a partir de la dirección lógica
+indicada en el Registro Dirección.*/
+
+
+
 }
 void *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes)
 {
