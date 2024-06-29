@@ -2,6 +2,7 @@
 #include "../include/fileSystem.h"
 config_io *valores_config;
 t_list *tabla_archivos_abierto;
+uint32_t bitarray_pointer;
 
 void levantar_bitmap()
 {
@@ -15,7 +16,7 @@ void levantar_bitmap()
         close(bitmap);
     }
 
-    bmap = mmap(NULL, mystat.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, bitmap, 0);
+    void* bmap = mmap(NULL, mystat.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, bitmap, 0);
 
     if (bmap == MAP_FAILED)
     {
@@ -36,7 +37,8 @@ void levantar_archivo_bloques() // CREAMOS EL ARCHIVO DE BLOQUES MAPEADO EN MEMO
 
     if (archivo_bloque == -1)
     {
-        archivo_bloque = open(config_file_system.path_bloques, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    
+        archivo_bloque = open(valores_config->path_bloques, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
         ftruncate(archivo_bloque, tamArchivoBloques);
     }
     else
@@ -46,7 +48,7 @@ void levantar_archivo_bloques() // CREAMOS EL ARCHIVO DE BLOQUES MAPEADO EN MEMO
 
     ftruncate(archivo_bloque, tamArchivoBloques);
 
-    bloquesMapeado = mmap(NULL, tamArchivoBloques, PROT_WRITE, MAP_SHARED, archivo_bloque, 0);
+    void *bloquesMapeado = mmap(NULL, tamArchivoBloques, PROT_WRITE, MAP_SHARED, archivo_bloque, 0);
 }
 
 t_config *crear_meta_data_archivo(char *nombre_archivo)
@@ -57,7 +59,7 @@ t_config *crear_meta_data_archivo(char *nombre_archivo)
 
     uint32_t bloqueInicial = bloque_libre();
 
-    char *num_bloque_inicial_ = string_itoa(bloqueInicial);
+    char *num_bloque_inicial = string_itoa(bloqueInicial);
 
     txt_write_in_file(meta_data_archivo, "BLOQUE_INICIAL="); // escribimos en el archivo el bloque
     txt_write_in_file(meta_data_archivo, num_bloque_inicial);
@@ -73,6 +75,7 @@ t_config *crear_meta_data_archivo(char *nombre_archivo)
     return meta_data_archivo;
 }
 
+/*
 uint32_t obtener_nro_bloque_libre()
 {
     for (int nroBloque = 0; nroBloque < config_file_system.cantidad_bloques_swap; nroBloque++)
@@ -81,8 +84,8 @@ uint32_t obtener_nro_bloque_libre()
         if (!bloqueOcupado)
             return nroBloque;
     }
-}
-
+}*/
+/*
 void escribir_en_bitmap(uint32_t nroBloque, uint8_t valor) // VER SI LAS NECESITAMOS
 {
     memcpy(bitmapBloquesSwap + nroBloque, &valor, sizeof(uint8_t));
@@ -94,7 +97,7 @@ uint8_t leer_de_bitmap(uint32_t nroBloque) // VER SI LAS NECESITAMOS
     memcpy(&estadoBloque, bitmapBloquesSwap + nroBloque, sizeof(uint8_t));
     return estadoBloque;
 }
-
+*/
 void instrucciones_dialfs()
 {
     while (1)
@@ -137,11 +140,15 @@ void instrucciones_dialfs()
 void crear_archivo(char *nombre_archivo) // HECHO
 {
     t_config *meta_data_archivo = crear_meta_data_archivo(nombre_archivo);
+    
+    if(meta_data_archivo){
+    enviar_cod_enum(conexion_kernel,CREAR_ARCHIVO_OK);
 
-    enviar_codigo(socket_kernel, CREAR_ARCHIVO_OK);
-    free(nombreArchivo);
-
+    }else {
+    enviar_cod_enum(conexion_kernel,ERROR_CREAR_ARCHIVO_OK);
     log_info(logger, "PID: %d - Crear Archivo: %s", pid, nombre_archivo);
+    }
+    
 }
 
 char *obtener_ruta_archivo(char *nombre_archivo)
@@ -164,19 +171,22 @@ void truncar_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
 }
 void eliminar_archivo(char *nombre_archivo, uint32_t pid)
 {
-    // no hay que destruir el config
-    // hay que sobreescribir lo que hay en el meta data
     t_config *metadata_buscado = buscar_meta_data(nombre_archivo);
     int tamanio_archivo = config_get_int_value(metadata_buscado, "TAMANIO_ARCHIVO");
-    int tamanio_bloque = config_get_int_value(valores_config->tama, "BLOCK_SIZE");
+    int tamanio_bloque = valores_config->block_size;
     int cant_bloques_ocupados = tamanio_archivo / tamanio_bloque;
-    log_info(logger, "ARCHIVO: %s - BLOQUES OCUPADOS: %d", nombre_archivo, cant_bloques_ocupados);
     int posicion_inicial = config_get_int_value(metadata_buscado, "BLOQUE_INICIAL");
-    for (int i = posicion_inicial; i < cant_bloques_ocupados + posicion_inicial, i++)
+    
+    log_info(logger, "ARCHIVO: %s - BLOQUES OCUPADOS: %d", nombre_archivo, cant_bloques_ocupados);
+
+    for (int i = posicion_inicial; i < cant_bloques_ocupados + posicion_inicial; i++)
     {
-        liberarBloque(i); // marcamos los bloques libres en el bitarray
+        liberarBloque(posicion_inicial +i); // marcamos los bloques libres en el bitarray
     }
-    remove(nombre_archivo); // eliminamos archivo
+
+    char*ruta_archivo= obtener_ruta_archivo(nombre_archivo);
+    remove(ruta_archivo); // eliminamos archivo
+    free(ruta_archivo);
     log_info(logger, "PID: %d - Eliminar archivo: %s", pid, nombre_archivo);
 }
 
@@ -195,8 +205,9 @@ void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
     agregar_buffer_para_string(buffer_memoria, puntero_archivo);
     agregar_buffer_para_enterosUint32(buffer_memoria, direccion_fisica);
     destruir_buffer(buffer);
-    // free(nombre_archivo); este no estoy segura
-    // tendria que enviarle el pid de alguna forma
+    
+
+
     log_info(logger, "PID: %d - Escribir:  %s - Tamanio a Leer: %d - Puntero Archivo: %d", pid, nombre_archivo, tamanio, puntero_archivo);
 }
 void leer_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
@@ -233,40 +244,44 @@ void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio)
     uint32_t tamanio_archivo_anterior = config_get_int_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO");
     uint32_t bloque_inicial = config_get_int_value(archivo_meta_data_buscado, "BLOQUE_INICIAL");
 
+    
     config_save_in_file(archivo_meta_data_buscado, ruta_fcb_buscado);
     uint32_t cantidad_bloques_agregar = (nuevo_tamanio - tamanio_archivo_anterior) / valores_config->tam_bloque;
 
     if (nuevo_tamanio > tamanio_archivo_anterior) // hay que amplar archiv
     {
-        ampliar_archivo(); // TODO FALTAN TODOS LOS PARAMETROS OJO
+        ampliar_archivo(archivo_meta_data_buscado,tamanio_a_aplicar, tamanio_archivo_anterior, cantidad_bloques_agregar,valores_config->tam_bloque,bloque_inicial); // TODO FALTAN TODOS LOS PARAMETROS OJO
     }
     else
     {
-        reducir_archivo(tamanio_archivo_anterior, tamanio_a_aplicar) // TODO
-            for (int i = 0; cantidad_bloques_agregar; i++)
+        reducir_archivo(tamanio_archivo_anterior, tamanio_a_aplicar); // TODO
+            for(int i = 0; i < cantidad_bloques_agregar; i++)
                 sacar_bloque_();
     }
 
-    config_destroy(fcb_buscado);
+    config_destroy(archivo_meta_data_buscado);
     free(ruta_fcb_buscado);
     free(tamanio_a_aplicar);
 }
 
-void ampliar_archivo()
+void ampliar_archivo(t_config* archivo_meta_data_buscado,uint32_t tamanio_a_aplicar ,uint32_t tamanio_archivo_anterior,uint32_t cantidad_bloques_agregar,uint32_t tamanio_bloque, uint32_t bloque_inicial)
 {
     if (hay_espacio_disponible(cantidad_bloques_agregar))
     {
-        if (espacio_disponible_es_contiguo(cantidad_bloques_agregar, valores_config->tam_bloque, bloque_inicial, tamanio_archivo_anterior))
+        if (espacio_disponible_es_contiguo(cantidad_bloques_agregar, tamanio_bloque, bloque_inicial, tamanio_archivo_anterior))
         {
-            for (int i = 0; i < (nuevo_tamanio - tamanio_archivo_anterior) / valores_config->tam_bloque; i++)
+            for (int i = 0; i < (tamanio_a_aplicar- tamanio_archivo_anterior) / valores_config->tam_bloque; i++)
             {
                 int bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
                 int bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
-                for (int i = bloque_final_sin_ampliar, i < bloque_final_ampiado; i++)
+                for (int i = bloque_final_sin_ampliar; i < bloque_final_ampiado; i++)
                 { // |1|1|1|3|2|2|2||||||||||
-                        (bitarray_set_bit(bitarray, 1)
+                        (bitarray_set_bit(bitarray, i));
                 }
+                msync(bitarray->bitarray, bitarray->size, MS_SYNC);
                 config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
+                config_save(archivo_meta_data_buscado);
+            
             }
         }
         else
@@ -274,29 +289,34 @@ void ampliar_archivo()
             compactar(); // TODO
             for (int i = 0; i < cantidad_bloques_agregar; i++)
             {
-                // nos posicionamos al final y asignamos los blqoues al arcgivo TODO
+                uint32_t nuevo_blpque = obtener_nro_bloque_libre();
+                bitarray_set_bit(bitarray, nuevo_blpque);// nos posicionamos al final y asignamos los blqoues al archivo TODO
             }
+            msync(bitarray->bitarray, bitarray->size, MS_SYNC);
             config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
+            config_save(archivo_meta_data_buscado);
+           
         }
     }
     else
     {
-        log_error(logger, "NO hay mas espacio para que el archivo se amplie")
+        log_error(logger, "NO hay mas espacio para que el archivo se amplie");
     }
 }
-void reducir_archivo(uint32_t tamaio_archivo_anterior, uint32_t tamanio_a_aplicar)
+void reducir_archivo(t_config* archivo_metadata_buscado, uint32_t tamanio_archivo_anterior, uint32_t tamanio_a_aplicar, uint32_t tamanio_bloque)
 {
     uint32_t bloques_a_eliminar = tamanio_archivo_anterior - tamanio_a_aplicar / valores_config->tam_bloque;
-    | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
-    bloque_final_reducido = bloque_final_sin_ampliar - bloques_a_eliminar;
+    uint32_t bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
+    uint32_t bloque_final_reducido = bloque_final_sin_ampliar - bloques_a_eliminar;
 
-    for (int i = bloque_final_sin_ampliar i < bloque_final_reducido, i--)
+    for (int i = bloque_final_sin_ampliar ;i < bloque_final_reducido; i--)
     {
-
-        bitarray_set_bit(bitarray, 0);
-        bloque_libre = i;
-        i = bitarray_size;
+        //va liberndo los bits
+        bitarray_clean_bit(bitarray, i);//va seteando el bloque indicado en 0
     }
+    msync(bitarray->bitarray,bitarray->size,MS_SYNC);
+    config_set_value(archivo_metadata_buscado,"TAMANIIO ARCHIVO", tamanio_a_aplicar);
+    config_save(archivo_metadata_buscado);
 }
 
 // necesitamos saber cuales son los bloques que si o si va a usar
@@ -315,8 +335,10 @@ _Bool hay_espacio_disponible(uint32_t cant_bloques_agregar)
 
 _Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial, uint32_t tamanio_archivo_anterior)
 {
-    bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
-    bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
+    uint32_t bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
+    uint32_t bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
+    uint32_t contador_libres=0;
+    int i;
 
     for (i = bloque_final_sin_ampliar, i < bloque_final_ampiado; i++)
     {                                            // |1|1|1|3|2|2|2||||||||||
@@ -339,21 +361,21 @@ _Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t
     // si todos estan libres  turue
 }
 
-void agregar_bloque(uint32_t bloques_agregar, uint32_t tamanio_a_aplicar)
+void agregar_bloque(t_config *archivo_meta_data,uint32_t bloques_agregar, uint32_t tamanio_a_aplicar)
 {
     // Cambiar el config del tamanio del meta data
     // mrcar los bitocupados del bitarray
     config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
 }
 
-void sacar_bloque(uint32_t bloques_a_eliminar, uint32_t tamanio_a_aplicar)
+void sacar_bloque(t_config *archivo_meta_data_buscado,uint32_t bloques_a_eliminar, uint32_t tamanio_a_aplicar)
 {
     config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
 }
 int contar_bloques_ocupados_bitarray()
 {
     int contador_libres;
-    for (int i = 0; i < bitarray_size; i++)
+    for (int i = 0; i < bitarray->size; i++)
     {
         if (bitarray_test_bit(bitarray, i) == 0) // libre
         {
@@ -367,16 +389,16 @@ uint32_t bloque_libre() // esto lo usamos cuando debamos inicializar el meta dat
 {
 
     uint32_t bloque_libre = -1;
-    for (uint32_t i = 0; i < bitarray_size; i++)
+    for (uint32_t i = 0; i <bitarray->size; i++)
     {
         if (bitarray_test_bit(bitarray, i) == 0)
         {
             bitarray_set_bit(bitarray, i);
             bloque_libre = i;
-            i = bitarray_size;
+            i = bitarray->size;
         }
     }
-    int sync = msync(bitarray_pointer, bitarray_size, MS_SYNC);
+    int sync = msync(bitarray_pointer,bitarray->size, MS_SYNC);
     if (sync == -1)
     {
         {
@@ -408,11 +430,13 @@ t_config *buscar_meta_data(char *nombre_archivo)
 // libera bloque del bitarray
 int liberarBloque(uint32_t bit)
 {
+ 
+    
     if (bitarray_test_bit(bitarray, bit) == 0)
     {
         bitarray_clean_bit(bitarray, bit);
     }
-    int sync = msync(bitarray_pointer, bitarray_size, MS_SYNC);
+    int sync = msync(bitarray_pointer, bitarray->size, MS_SYNC);
     if (sync == -1)
     {
         log_error(logger, "");
@@ -421,6 +445,7 @@ int liberarBloque(uint32_t bit)
 
     return 0;
 }
+
 // Forma de resolver compactacion lista de nombre sde archivos, el ultimo dejarlo al final(el que se quiere compactar
 // y nada exitos
 /*
