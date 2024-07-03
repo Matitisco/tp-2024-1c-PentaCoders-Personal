@@ -14,7 +14,7 @@
 //y el archivo de bloques normal
 //bit map que nos dice los bloques libres
 //metaData - utilizar las config 
-
+void*bloquesMapeado;
 char*path_meta_data;
 char*path_bitmap;
 char*path_arch_bloques;
@@ -47,9 +47,14 @@ _Bool hay_espacio_disponible(uint32_t cant_bloques_agregar);
 void reducir_archivo(t_config* archivo_metadata_buscado, uint32_t tamanio_archivo_anterior, uint32_t tamanio_a_aplicar, uint32_t tamanio_bloque);
 void ampliar_archivo(t_config* archivo_meta_data_buscado,uint32_t tamanio_a_aplicar ,uint32_t tamanio_archivo_anterior,uint32_t cantidad_bloques_agregar,uint32_t tamanio_bloque, uint32_t bloque_inicial);
 void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio);
-
+void compactar(char* nombre_archivo);
+int* obtener_bloques_archivo(char* nombre_archivo);
 
 uint32_t bloque_libre();
+void mover_bloque(int origen, int destino) ;
+void desplazar_archivos_y_eliminar_bloques_libres();
+void mover_archivo_al_final_del_fs(char* nombre_archivo);
+
 
 #endif
 

@@ -1,7 +1,6 @@
 
 #include "../include/fileSystem.h"
 config_io *valores_config;
-t_list *tabla_archivos_abierto;
 uint32_t bitarray_pointer;
 
 void levantar_bitmap()
@@ -137,7 +136,7 @@ void instrucciones_dialfs()
     }
 }
 
-void crear_archivo(char *nombre_archivo) // HECHO
+void crear_archivo(char *nombre_archivo, uint32_t pid) // HECHO
 {
     t_config *meta_data_archivo = crear_meta_data_archivo(nombre_archivo);
     
@@ -333,40 +332,32 @@ _Bool hay_espacio_disponible(uint32_t cant_bloques_agregar)
     return cant_bloques_agregar <= bloques_disponibles;
 }
 
-_Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial, uint32_t tamanio_archivo_anterior)
-{
-    uint32_t bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
+_Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial, uint32_t tamanio_archivo_anterior) {
+    // Calcula el bloque final actual del archivo
+    uint32_t bloque_final_sin_ampliar = bloque_inicial + (tamanio_archivo_anterior / tamanio_bloque);
     uint32_t bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
-    uint32_t contador_libres=0;
+    uint32_t contador_libres = 0;
     int i;
 
-    for (i = bloque_final_sin_ampliar, i < bloque_final_ampiado; i++)
-    {                                            // |1|1|1|3|2|2|2||||||||||
-        if (bitarray_test_bit(bitarray, i) == 0) // libre
-        {
-            contador_libres++; // cantidad de bloques libres
-        }
-        else
-        {
-            return false;
+    // Itera desde el bloque final actual hasta el bloque final ampliado
+    for (i = bloque_final_sin_ampliar; i < bloque_final_ampiado; i++) {
+        // Verifica si el bloque actual está libre
+        if (bitarray_test_bit(bitarray, i) == 0) { // libre
+            contador_libres++; // Incrementa el contador de bloques libres
+        } else {
+            return false; // Si algún bloque no está libre, retorna false
         }
     }
-    if (cantidad_bloques_agregar == contador_libres)
-    {
-        return true; // esto simbolizaria que los bloque que neceiesta el archivo estan libres y son contiguos
+
+    // Si la cantidad de bloques libres es igual a la cantidad de bloques a agregar
+    if (cantidad_bloques_agregar == contador_libres) {
+        return true; // Los bloques necesarios están libres y son contiguos
     }
 
-    // me posicion al final de archivo
-    // cuento si desde el final del archivo hasta la cantidad de bloques que quieor agregar si estan libres
-    // si todos estan libres  turue
+    // Si no se encuentra el espacio necesario, retorna false
+    return false;
 }
 
-void agregar_bloque(t_config *archivo_meta_data,uint32_t bloques_agregar, uint32_t tamanio_a_aplicar)
-{
-    // Cambiar el config del tamanio del meta data
-    // mrcar los bitocupados del bitarray
-    config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
-}
 
 void sacar_bloque(t_config *archivo_meta_data_buscado,uint32_t bloques_a_eliminar, uint32_t tamanio_a_aplicar)
 {
@@ -445,22 +436,149 @@ int liberarBloque(uint32_t bit)
 
     return 0;
 }
+_Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial, uint32_t tamanio_archivo_anterior) {
+    uint32_t bloque_final_sin_ampliar = bloque_inicial + (tamanio_archivo_anterior / tamanio_bloque);
+    uint32_t bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
+    uint32_t contador_libres = 0;
+    int i;
+    for (i = bloque_final_sin_ampliar; i < bloque_final_ampiado; i++) {
+        if (bitarray_test_bit(bitarray, i) == 0) { // libre
+            contador_libres++;
+        } else {
+            return false; 
+        }
+    }
+    if (cantidad_bloques_agregar == contador_libres) {
+        return true;
+    }
+    return false;
+}
+int* obtener_bloques_archivo(char* nombre_archivo)
+{
+    // Esta función debe devolver la lista de bloques ocupados por el archivo específico
+    // Supongamos que los bloques están almacenados en la metadata del archivo
+    // Aquí hay un ejemplo de cómo podrías implementarla
 
-// Forma de resolver compactacion lista de nombre sde archivos, el ultimo dejarlo al final(el que se quiere compactar
-// y nada exitos
-/*
-arch2 15
-arcg2 18
-[ Arh1|Arch2|||Arch3|||||||||||||||| ||2|||| ||2||||||2||||
-||||||||||||||2|||| |||||||||2||||||2|||| ||]
-||||||||2||||||2|||| |||||||||2||||||2|||| |
-//Tamnio archivo y tamanio a ampliar
-//Caso a analizar->Ver que hay algun bloqe libre
-//Si hay bloques:
-    el tamaño a ampliar es menor a al tamaño disponible
-                  Si hay espacio disponible:
-                    ES espacio contiguo ?                        S
-                    Si los bloques siguientes de nuestro archivo estan libre, entonces BIEN
-                    No es contiguo, compactamos,
-*/
-//[]
+    t_config* metadata = obtener_metadata_archivo(nombre_archivo);
+    int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
+    int cantidad_bloques = tamanio_archivo / valores_config->block_size;
+
+    int* bloques = malloc(cantidad_bloques * sizeof(int));
+    for (int i = 0; i < cantidad_bloques; i++)
+    {
+        bloques[i] = config_get_int_value(metadata, "BLOQUE_" + i);
+    }
+
+    return bloques;
+}
+
+void compactar(char* nombre_archivo)
+{
+    desplazar_archivos_y_eliminar_bloques_libres();
+    mover_archivo_al_final_del_fs(nombre_archivo);
+}
+void mover_archivo_al_final_del_fs(char* nombre_archivo) {
+    int total_bloques = valores_config->block_count;
+    int tam_bloque = valores_config->block_size;
+    int* bloques_archivo;
+    int cantidad_bloques_archivo;
+
+    // Obtener los bloques del archivo y su cantidad
+    bloques_archivo = obtener_bloques_archivo(nombre_archivo);
+    cantidad_bloques_archivo = obtener_cantidad_bloques_archivo(nombre_archivo);
+
+    // Encontrar el primer bloque libre al final del sistema de archivos
+    int primer_bloque_libre = total_bloques - cantidad_bloques_archivo;
+
+    // Mover cada bloque del archivo al final del sistema de archivos
+    for (int i = 0; i < cantidad_bloques_archivo; i++) {
+        int bloque_actual = bloques_archivo[i];
+        void* src = bloquesMapeado + (bloque_actual * tam_bloque);
+        void* dest = bloquesMapeado + (primer_bloque_libre * tam_bloque);
+        memmove(dest, src, tam_bloque);
+
+        // Actualizar el bitarray y la metadata del archivo
+        bitarray_clean_bit(bitarray, bloque_actual);
+        bitarray_set_bit(bitarray, primer_bloque_libre);
+        bloques_archivo[i] = primer_bloque_libre;
+
+        // Avanzar al siguiente bloque libre al final del FS
+        primer_bloque_libre++;
+    }
+
+    // Actualizar la metadata del archivo con los nuevos bloques
+    actualizar_metadata_archivo(nombre_archivo, bloques_archivo);
+    // Sincronizar el bitarray y los bloques mapeados con el sistema de archivos
+    msync(bitarray_pointer, bitarray->size, MS_SYNC);
+    msync(bloquesMapeado, total_bloques * tam_bloque, MS_SYNC);
+
+    // Liberar memoria utilizada para los bloques del archivo
+    free(bloques_archivo);
+
+    // Loggear la operación completada
+    log_info(logger, "Archivo %s movido al final del área ocupada del sistema de archivos", nombre_archivo);
+}
+void desplazar_archivos_y_eliminar_bloques_libres(){
+    int total_bloques = valores_config->block_count;
+    int bloque_actual = 0; // posición de lectura de bloques ocupados
+    int bloque_libre = 0;  // posición de escritura de bloques libres
+
+    // Recorrer todos los bloques del bitarray
+    while (bloque_actual < total_bloques) {
+        // Si el bloque actual está ocupado
+        if (bitarray_test_bit(bitarray, bloque_actual)) {
+            // Si la posición de escritura es menor a la posición de lectura
+            if (bloque_libre < bloque_actual) {
+                // Copiar el contenido del bloque ocupado al bloque libre
+                mover_bloque(bloque_actual, bloque_libre);
+                // Marcar el bloque libre como ocupado en el bitarray
+                bitarray_set_bit(bitarray, bloque_libre);
+                // Limpiar el bloque ocupado en el bitarray
+                bitarray_clean_bit(bitarray, bloque_actual);
+                // Actualizar la metadata del archivo que usa este bloque
+                actualizar_metadata_bloque(bloque_actual, bloque_libre);
+                // Avanzar a la siguiente posición libre
+                bloque_libre++;
+            } else {
+                // Si la posición de escritura es igual o mayor a la posición de lectura
+                // No hay nada que mover, simplemente avanzar a la siguiente posición libre
+                bloque_libre++;
+            }
+        }
+        // Avanzar a la siguiente posición de lectura
+        bloque_actual++;
+    }
+
+    // Sincronizar el bitarray con el sistema de archivos
+    msync(bitarray_pointer, bitarray->size, MS_SYNC);
+}
+void mover_bloque(int origen, int destino) {
+    int tamano_bloque = valores_config->block_size;
+    char *contenido_bloque = malloc(tamano_bloque);
+    
+    // Leer el contenido del bloque de origen
+    memcpy(contenido_bloque, bloquesMapeado + (origen * tamano_bloque), tamano_bloque);
+    // Escribir el contenido en el bloque de destino
+    memcpy(bloquesMapeado + (destino * tamano_bloque), contenido_bloque, tamano_bloque);
+    
+    free(contenido_bloque);
+}
+void actualizar_metadata_archivo(char* nombre_archivo, int* nuevos_bloques)
+{
+    t_config* metadata = obtener_metadata_archivo(nombre_archivo);
+    int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
+    int cantidad_bloques = tamanio_archivo / valores_config->block_size;
+
+    for (int i = 0; i < cantidad_bloques; i++)
+    {
+        char* clave = string_from_format("BLOQUE_%d", i);
+        config_set_value(metadata, clave, string_itoa(nuevos_bloques[i]));
+        free(clave);
+    }
+
+    config_save(metadata);
+}
+//[1|1|1|||2|2|2|||3|4||||||||||||| |]
+//[1|1|1|2|2|2|3|4||||||||||||||||| |]
+//Deberia volver a mover el archivo pero al final por ejemplo si fuese el 1
+//
