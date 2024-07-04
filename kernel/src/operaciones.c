@@ -79,8 +79,9 @@ void iniciar_proceso(char *PATH)
 
 void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
 {
+    
 
-    sem_wait(sem_finalizar_proceso);
+    sem_wait(sem_finalizar_proceso); // CUANDO SE FINALIZA UN PROCESO SE QUEDA TRABADO 
     if (motivo == SUCCESS)
     {
         finalizar_proceso_success(PID, motivo);
@@ -93,11 +94,14 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
         if (proceso == NULL) // NEW, READY, BLOCKED
         {
             proceso = buscarProceso(PID);
+            
+            
         }
         else // EXEC
         {
             enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT);
         }
+        
 
         enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
 
@@ -111,9 +115,14 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
 
         op_code codigo = recibir_op_code(socket_memoria);
         if (codigo == FINALIZAR_PROCESO)
-        {
-            sacar_procesos_cola(obtener_cola(proceso->estado));
+
+        {   
+
+            sacar_proceso_cola(obtener_cola(proceso->estado),proceso->cde->pid);
+           
             eliminar_proceso(proceso);
+            //printf("\033[1;34m ------------------ FINALIZAR PROCESO ------------------ \033[0m\n");
+            //proceso_estado();
             log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
         }
         else
@@ -367,20 +376,25 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
             log_info(logger, "PID PCB ENCONTRADA : %d  PC PCB ENCONTRADA: %d", pcb_buscada->cde->pid, pcb_buscada->cde->PC);
         }
 
-        queue_push(colaAux, pcb_buscada);
+        queue_push(colaAux, pcb);
     }
+        
 
     // Restaurar la cola original
     while (!queue_is_empty(colaAux))
     {
         queue_push(cola, queue_pop(colaAux));
     }
-
+    
+    //printf("\033[1;34m ------------------ FINALIZAR PROCESO ------------------ \033[0m\n");
+    //proceso_estado();
     // Liberar memoria de la cola auxiliar y sus elementos
+
     while (!queue_is_empty(colaAux))
     {
         free(queue_pop(colaAux));
     }
+
     queue_destroy(colaAux);
 
     if (pcb_buscada != NULL)

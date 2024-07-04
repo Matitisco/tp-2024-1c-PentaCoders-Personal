@@ -448,8 +448,10 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 {
     t_list *list_instrucciones = list_create();
     char *ruta_completa = string_new();
-
-    ruta_completa = obtener_ruta(nombre_archivo);
+    string_append(&ruta_completa, valores_config->path_instrucciones);
+    string_append(&ruta_completa, "/");
+    string_append(&ruta_completa, nombre_archivo);
+    //ruta_completa = obtener_ruta(nombre_archivo);
 
     FILE *archivo = fopen(ruta_completa, "r");
 

@@ -122,6 +122,7 @@ config_kernel *inicializar_config_kernel();
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
+void sacar_proceso_cola(colaEstado *cola_estado,uint32_t pid);
 
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion);
 void evaluar_planificacion(char *planificador);

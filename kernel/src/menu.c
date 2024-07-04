@@ -88,6 +88,7 @@ void ejecutar_comando(char *comando, int tokens)
     {
         if (tokens == 2)
         {
+            sem_post(sem_finalizar_proceso);
             finalizar_proceso(atoi(strtok(NULL, "\0")), INTERRUPTED_BY_USER);
         }
         else
