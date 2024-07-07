@@ -357,7 +357,7 @@ void sacar_proceso_cola(colaEstado *cola_estado,uint32_t pid)//si llega acá es 
     //proceso_estado();
 	
 
-	while (pcb->cde->pid != pid) // lo va sacando hasta llegar al proceso
+	while (!queue_is_empty(cola_estado->estado)) // lo va sacando hasta llegar al proceso
 	{
 		pcb = queue_pop(cola_estado->estado);
 		if(pcb->cde->pid != pid)
@@ -367,8 +367,7 @@ void sacar_proceso_cola(colaEstado *cola_estado,uint32_t pid)//si llega acá es 
 	}
 	while (!queue_is_empty(cola_auxiliar))
 	{
-		pcb = queue_pop(cola_auxiliar);
-		queue_push(cola_estado->estado, pcb);
+		queue_push(cola_estado->estado, queue_pop(cola_auxiliar));
 	}
 	
 	queue_destroy(cola_auxiliar);

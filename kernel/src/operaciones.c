@@ -117,12 +117,12 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
         if (codigo == FINALIZAR_PROCESO)
 
         {   
-
+            //printf("\033[1;34m ------------------ FINALIZAR PROCESO ------------------ \033[0m\n");
+            //proceso_estado();
             sacar_proceso_cola(obtener_cola(proceso->estado),proceso->cde->pid);
            
             eliminar_proceso(proceso);
-            //printf("\033[1;34m ------------------ FINALIZAR PROCESO ------------------ \033[0m\n");
-            //proceso_estado();
+            
             log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
         }
         else
