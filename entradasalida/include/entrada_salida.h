@@ -8,10 +8,6 @@
 #include "../../utils/include/conexiones.h"
 #include "../../utils/include/serializacion.h"
 
-// VARIABLES
-extern t_log *logger;
-int conexion_kernel, conexion_memoria, estoy_libre;
-extern config_io *valores_config;
 // ESTRUCTURAS
 typedef struct
 {
@@ -27,6 +23,12 @@ typedef struct
 	int block_count;
 	int retraso_compactacion;
 } config_io;
+
+
+// VARIABLES
+extern t_log *logger;
+extern int conexion_kernel, conexion_memoria, estoy_libre;
+extern config_io *valores_config;
 
 // INICIAR INTERFAZ
 typedef struct {
@@ -61,6 +63,8 @@ void arrancar_interfaz_generica(t_interfaz *interfaz_io);
 void arrancar_interfaz_stdin(t_interfaz *interfaz_io);
 void arrancar_interfaz_stdout(t_interfaz *interfaz_io);
 void arrancar_interfaz_dialfs(t_interfaz *interfaz_io);
+
+void instrucciones_dialfs();
 
 // REALIZAR OPERACION
 void realizar_operacion_gen();

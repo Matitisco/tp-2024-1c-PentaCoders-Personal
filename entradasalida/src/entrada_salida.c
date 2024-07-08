@@ -425,45 +425,58 @@ void realizar_operacion_stdout()
 	estoy_libre = 1;
 	destruir_buffer(buffer_sol_operacion);
 }
-/*
-void arrancar_interfaz_dialfs(t_interfaz *interfaz_io) // IMPLEMENTAR
+void arrancar_interfaz_dialfs(t_interfaz *interfaz_io)
 {
-	uint32_t tamanio_arch_bloques =valores_config->block_size *valores_config->block_count; 
-	crear_archivo_bloques("bloques.dat",tamanio_arch_bloques);
-}*/
+	conexion_kernel = levantarCliente(logger, "KERNEL", interfaz_io->ip_kernel, string_itoa(interfaz_io->puerto_kernel));
+	conexion_memoria = levantarCliente(logger, "MEMORIA", interfaz_io->ip_memoria, string_itoa(interfaz_io->puerto_memoria));
 
+	tipo_buffer *buffer_kernel_io = crear_buffer();
 
-void realizar_operacion_dialfs() // IMPLEMENTAR
-{
-	// FALTAN ESTOS LOGS
-	// log_info(logger, "PID: <%d> - Inicio Compactacion");
-	// log_info(logger, "PID: <%d> - FIn Compactacion");
-	tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
-	t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
-	int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
-	switch (sol_operacion)
+	enviar_cod_enum(conexion_kernel, SOLICITUD_CONEXION_IO);
+	char *nombre_interfaz = interfaz_io->nombre_interfaz;
+	agregar_buffer_para_enterosUint32(buffer_kernel_io, interfaz_io->tipo_interfaz);
+	agregar_buffer_para_string(buffer_kernel_io, nombre_interfaz);
+
+	enviar_buffer(buffer_kernel_io, conexion_kernel);
+	destruir_buffer(buffer_kernel_io);
+	// 2-esperar que kernel envie un mensaje
+	op_code mensaje_kernel = recibir_operacion(conexion_kernel);
+	if (mensaje_kernel == ESTABA_CONECTADO)
 	{
-	case IO_FS_CREATE:
-		log_info(logger, "PID: <%d> - Operacion: <IO_FS_CREATE>", pid);
-		log_info(logger, "PID: <%d> - Crear Archivo: <%s>", pid, "NOMBRE ARCHIVO");
-		break;
-	case IO_FS_DELETE:
-		log_info(logger, "PID: <%d> - Operacion: <IO_FS_DELETE>", pid);
-		log_info(logger, "PID: <%d> - Eliminar Archivo: <%s>", pid, "NOMBRE ARCHIVO");
-		break;
-	case IO_FS_TRUNCATE:
-		log_info(logger, "PID: <%d> - Operacion: <IO_FS_TRUNCATE>", pid);
-		log_info(logger, "PID: <%d> - Truncar Archivo: <%s> - Tamaño: <%s>", pid, "NOMBRE ARCHIVO", "TAMAÑO");
-		break;
-	case IO_FS_READ:
-		log_info(logger, "PID: <%d> - Operacion: <IO_FS_READ>", pid);
-		log_info(logger, "PID: <%d> - Leer Archivo: <%s> - Tamaño a Leer: <%s> - Puntero Archivo: <%s>", pid, "NOMBRE ARCHIVO", "TAMAÑO", "PUNTERO_ARCHIVO");
-		break;
-	case IO_FS_WRITE:
-		log_info(logger, "PID: <%d> - Operacion: <IO_FS_WRITE>", pid);
-		log_info(logger, "PID: <%d> - Escribir Archivo: <%s> - Tamaño a Escribir: <%s> - Puntero Archivo: <%s>", pid, "NOMBRE ARCHIVO", "TAMAÑO", "PUNTERO_ARCHIVO");
-		break;
-	default:
-		break;
+		log_info(logger, "Ya estoy conectada al Kernel");
+		exit(1);
 	}
+	else if (mensaje_kernel == NO_ESTABA_CONECTADO)
+	{
+		log_info(logger, "Conexion a Kernel Correcta");
+	}
+	while (1)
+	{
+		op_code consulta_kernel = recibir_operacion(conexion_kernel);
+		// 3-atender el mensaje que envia kernel
+		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
+		{
+			if (estoy_libre)
+			{
+				enviar_cod_enum(conexion_kernel, ESTOY_LIBRE);
+				estoy_libre = 0;
+				realizar_operacion_dialfs();
+				// 4-responder al kernel que termine
+				enviar_cod_enum(conexion_kernel, CONCLUI_OPERACION);
+			}
+			else
+			{
+				enviar_cod_enum(conexion_kernel, NO_ESTOY_LIBRE);
+			}
+		}
+		else
+		{
+			log_info(logger, "No comprendo la instruccion que me envias");
+		}
+		// 5-vuelvo al paso 2
+	}
+}
+void realizar_operacion_dialfs()
+{
+	instrucciones_dialfs();
 }
