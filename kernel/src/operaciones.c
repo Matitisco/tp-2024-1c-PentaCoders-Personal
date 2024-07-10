@@ -9,11 +9,25 @@ void ejecutar_script(char *PATH)
     char *linea_script = string_new();
     char **lineas_script = string_array_new();
     char linea[1024];
-    FILE *archivo_script = fopen(PATH, "r");
+
+    char *path_completo = string_new();
+    char *ruta_acceso[1024];
+
+    if (getcwd(ruta_acceso, sizeof(ruta_acceso)) == NULL)
+    {
+        log_info(logger, "No se pudo obtener la raiz");
+        return NULL;
+    }
+
+    string_append(&path_completo, ruta_acceso);    
+    string_append(&path_completo, "/../memoria/pruebas/checkpoint_3/scripts/");
+    string_append(&path_completo, PATH);
+
+    FILE *archivo_script = fopen(path_completo, "r");
 
     if (archivo_script == NULL)
     {
-        log_info(logger, "No se pudo leer el script con PATH: %s", PATH);
+        log_info(logger, "No se pudo leer el script con PATH: %s", path_completo);
         iniciar_consola_interactiva();
     }
     while (fgets(linea, sizeof(linea), archivo_script) != NULL)
