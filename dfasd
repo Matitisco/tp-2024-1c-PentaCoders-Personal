@@ -1,0 +1,666 @@
+[33mcommit 89316fcebef9f30fb827ac9c22e1c9ac1e417812[m[33m ([m[1;36mHEAD -> [m[1;32mTests[m[33m)[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon Jul 8 00:04:35 2024 +0000
+
+    Commit previo a merge con FS y DIALFS
+
+[33mcommit 12b08f898b78ea4623fda138d7a801c4f14f67be[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon Jun 24 19:39:11 2024 +0000
+
+    merge
+
+[33mcommit cf9ec8112923dfec9ee95365deb89c22689b8a92[m[33m ([m[1;31morigin/Tests[m[33m)[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Wed Jun 12 05:11:21 2024 +0000
+
+    testear el tema del estado bloqueado
+
+[33mcommit ee77ec6607ddc98e352779697991577336624734[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Wed Jun 12 04:30:51 2024 +0000
+
+    .
+
+[33mcommit 33718c0c8c4c71121cc4cece53b14137ecd41ef4[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Wed Jun 12 04:22:37 2024 +0000
+
+    Solucion problema sincro
+
+[33mcommit c80fdbb4a6222063e2b300e14849165b22f058d7[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Mon Jun 10 19:44:37 2024 +0000
+
+    avances vrr
+
+[33mcommit b95e756af6d4060be04881b19e7f1f4e65c2e167[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Fri Jun 7 04:58:09 2024 +0000
+
+    RR anda perfecto & resolucion bug DETENER_PLANIFICACION
+
+[33mcommit 4f6bf711e92c4d54354c4648309ba4953c4da012[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Sat Jun 1 05:07:10 2024 +0000
+
+    RR anda bien, ahora hay un problema con que no se bloquea el hilo de RR cada vez que se queda Ready vacio, intenta hacer queue_pop pero no tira seg fault porque no hay nadie en Ready
+
+[33mcommit 6de83a16a521a50a0b60131094f469fdd48353d1[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri May 31 17:47:28 2024 +0000
+
+    TOdos los procesos vuelven a cargarse en ready al planificar de una
+
+[33mcommit 89e3a1d66415cb3c94c6c196ffe5ff1231714357[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri May 31 17:05:37 2024 +0000
+
+    ARREGLO FIFO, ARREGLO IO GENERICAS
+
+[33mcommit c6afd8d73adfa32cbad8de36b33ebe29a3c08237[m[33m ([m[1;33mtag: checkpoint-2[m[33m)[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Sat May 25 15:58:21 2024 +0000
+
+    Commit previo a checkpooint 2
+
+[33mcommit b154b6393bad69fa10cc6768ce60768440a8b043[m
+Merge: 315c753 114127c
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Sat May 25 15:47:29 2024 +0000
+
+    Merge remote-tracking branch 'refs/remotes/origin/main'
+
+[33mcommit 315c753825fd3e69e030dc7b2da32f9ef5a9fc00[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Sat May 25 15:47:19 2024 +0000
+
+    YA se desalojan procesos por rr, no se actualiza el cde ni el pc correctamente
+
+[33mcommit 114127c70211c50a8a241a2a5b84800c5364cdf1[m
+Author: NahuelLazarte <clazarte@frba.utn.edu.ar>
+Date:   Sat May 25 13:54:44 2024 +0000
+
+    Arreglo problema instruccion PC memoria
+
+[33mcommit b0e4aae651a4eff7dd166486aca20dcd28842bb3[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Sat May 25 04:09:24 2024 +0000
+
+    Falta terminar rr y estamos
+
+[33mcommit 4178d131bfc088b166f63ec56eb1e1c28432ba1c[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Sat May 25 01:58:13 2024 +0000
+
+    YA ANDA ENTRADA Y SALIDA GENERICAA
+
+[33mcommit e249466d60d89c26a807989391857a58a192409d[m
+Merge: 92451ad 92f7c14
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri May 24 23:23:22 2024 +0000
+
+    Mergeo cambios
+
+[33mcommit 92451ad7fe8c65aacc3b87d6937bcff2cfa32dcb[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri May 24 23:20:24 2024 +0000
+
+    Incorporo mis cambios a lo de los chicos
+
+[33mcommit 92f7c14256513d78b148cc5b619665535dcdf3ab[m
+Merge: 8e3e0bf 03621eb
+Author: Matías José Tiscornia <82007207+Matitisco@users.noreply.github.com>
+Date:   Fri May 24 23:00:23 2024 +0000
+
+    Merge pull request #47 from sisoputnfrba/intento-rr
+    
+    Intento rr
+
+[33mcommit 03621eb92c114b5676d70f918ee7e37e6ec2689e[m[33m ([m[1;31morigin/intento-rr[m[33m)[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Fri May 24 22:59:57 2024 +0000
+
+    .
+
+[33mcommit d874447a90fa954ee546d0d797b98ea926ef5d39[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Fri May 24 22:58:50 2024 +0000
+
+    RR no anda,al iniciar un 2do proceso, este no se manda a EXEC,  el problema esta en el conteo del quantum de RR, habria que arreglar eso y ver por que no se manda a EXEC el 2do proceso
+
+[33mcommit 422b9e9ef31e32a0a550fc93a30d8b88963a1479[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Fri May 24 22:16:45 2024 +0000
+
+    intento-rr
+
+[33mcommit 8e3e0bffb7e229cb49e95595f0890d95eece4a3d[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Fri May 24 21:10:23 2024 +0000
+
+    Ejecuta todos los procesos que queramos y los termina bien, reestructuramos las colas y falta ver DETENER_PLANIFICACION
+
+[33mcommit 5e8618d52b4442d4b97477171acb3fb858b6b601[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Fri May 24 19:57:33 2024 +0000
+
+    anda transicion a exit
+
+[33mcommit cf45c3be1086cef309674431ddb5a706799fcf1d[m
+Merge: 3bf0bc8 6f5ce1f
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Fri May 24 19:38:09 2024 +0000
+
+    Kernel recibe de CPU la orden de finalizar proceso, falta arreglar un error de un binario que habilita a largo plazo para pasar proceso a exit
+
+[33mcommit 3bf0bc8c4b09c7efcce1be2c5ec4af07fbb9fb25[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Fri May 24 19:35:51 2024 +0000
+
+    Kernel recibe de CPU la orden pasar a exit, error con mutex que habilita a largo plazo a hacerlo
+
+[33mcommit 6f5ce1fbbc977413f870855aae2ea66f44612123[m
+Author: BorquezBelli <pborquezbelli@frba.utn.edu.ar>
+Date:   Fri May 24 15:03:23 2024 +0000
+
+    solo mate un buffer
+
+[33mcommit 66213ea4fca7f47baa2a07aac13dcd0305956f63[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 23 23:55:47 2024 +0000
+
+    Intento de interrupciones y desalojo de procesos, falta volver a ver rr y el tema de las io
+
+[33mcommit 379278d32b2120e5551dc8a2234586a86b2b7127[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 23 20:39:00 2024 +0000
+
+    CPU EJECUTA PROCESOS! Falta checkear interrupciones y manejar el EXIT
+
+[33mcommit e021cb942bc883702b679cfad34ba92caf2fd08a[m
+Author: NahuelLazarte <clazarte@frba.utn.edu.ar>
+Date:   Wed May 22 23:04:14 2024 +0000
+
+    Resuelvo problema Ejecutar Script en Kernel
+
+[33mcommit 36f8400081606af86bbd01ce3d14fdb06a077172[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Wed May 22 17:05:58 2024 +0000
+
+    TOdavia la memoria no puede enviar a fetch las instrucciones bien, envia valores negativos
+
+[33mcommit 7feba42e4101f1816256ee18a896435f41463df0[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Wed May 22 05:22:24 2024 +0000
+
+    YA encontre el problema que hace que no reciba nada, debemos cambiar el nombre de socket_cpu en memoria.c por otro nombre, osea debemos recibir el socket dispatch en este caso
+
+[33mcommit 750d61d46f177cfe4c374b586acaf7eeda400a94[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Tue May 21 20:28:30 2024 +0000
+
+    Podemos enviar procesos a CPU, problemas con recibir_operacion al leer instrucciones en fetch()
+
+[33mcommit 31e1bb2bad9f2490f753178ca5bef27d0bb32d99[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 20 20:48:19 2024 +0000
+
+    Subo los avances que hicimos en IO, arreglamos kernel y ahora ya se debeira poder ejecutar un procerso por fifo o round robin, hay un problema que se corta el kernel luego de enviarlo a cpu dispatch
+
+[33mcommit 4ace52417e9666ce753b0cc31467d62ad99d8e9b[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 20 05:06:12 2024 +0000
+
+    Ya se pueden leer scripts, solucionar problemas con semaforos entre kernel y memoria
+
+[33mcommit e03888dc7b1e9518218f81cdf4a6490e55a8be04[m
+Merge: fd6c7e8 d4fe8f3
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 20 02:56:20 2024 +0000
+
+    Merge remote-tracking branch 'refs/remotes/origin/main'
+
+[33mcommit fd6c7e8a799bb38645c411b4e709c3128e27de4e[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 20 02:56:13 2024 +0000
+
+    Commit antes de hacer git pull
+
+[33mcommit dfbc7ddbb0f3c72f1a36492c96efe68655ea41f1[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 20 02:40:50 2024 +0000
+
+    La memoria ahora puede leer archivos de instrucciones y guarda las mismas en una lista dentro del proceso
+
+[33mcommit d4fe8f3664e6c4e0d0c176acf7ffcea4a4ec1277[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Mon May 20 01:48:55 2024 +0000
+
+    INICIAR y DETENER PLANIFICACION ANDAN
+
+[33mcommit 16dc02ff9fc8da93bebc18df83e3e6d34c733fa6[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 16 20:39:27 2024 +0000
+
+    Avances entre conexion de CPU, KERNEL Y MEMORIA, hay un error de sincronizacion cuando la memoria pide el cod op al kernel, ver que onda y arreglar parseo de archibo
+
+[33mcommit ecfe1d678341a2ea2a1d052b6de54b3fa069b0ae[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 16 19:08:14 2024 +0000
+
+    Subo cambios que nos faltaron subir de la vez pasada
+
+[33mcommit 73d31d016564b0f123f81ab9fc77134af4c4f235[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 13 19:51:58 2024 +0000
+
+    Avanzamos con PLanificacion FIFO Y RR
+
+[33mcommit e8eb7e0320234ccf32b78a63a57356cd2c208816[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 13 04:58:52 2024 +0000
+
+    Avances con la funcion ejecutar_Script
+
+[33mcommit cc4d1d0cfdea7b5b21a4b719b94f260986bc58d8[m
+Merge: bb6fee8 ef12acf
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 13 04:04:55 2024 +0000
+
+    Merge entre Branch Interfaces y Main
+
+[33mcommit bb6fee88b6db78f8d44d42bfdc1a23b1a3884842[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 13 00:10:32 2024 +0000
+
+    Avanzamos con las instrucciones de cpu y ya deberia poderse conectar cpu con memoria y ser la cpu el server de kernel (creamos hilos), hay un problema con referencias
+
+[33mcommit c48f416706ec8b09ef3fd16b948ef4b8b67b5329[m
+Author: NatalyRohling <nrohlinginsua@frba.utn.edu.ar>
+Date:   Fri May 10 16:42:48 2024 +0000
+
+    Agrege lo que teniamos en la rama de CPU y alguna cosa mas
+
+[33mcommit ceecf63491f56e1f323a0c040b7336595e863d1b[m
+Author: NatalyRohling <nrohlinginsua@frba.utn.edu.ar>
+Date:   Fri May 10 16:04:59 2024 +0000
+
+    AGrego lo de reciir buffer de cpu a kernel y luego de kernel a IO
+
+[33mcommit cc23b4dadb8980bad490e7e9aaf8df175741f30b[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri May 10 05:47:19 2024 +0000
+
+    Subo avances en levantar IO y algunos planteos en menu
+
+[33mcommit 7c20de3e4a06d018327cc9e4a5aff0bbea59d392[m
+Author: BorquezBelli <pborquezbelli@frba.utn.edu.ar>
+Date:   Thu May 9 23:38:25 2024 +0000
+
+    kernel y cpu conectan con memoria
+
+[33mcommit ef12acf5e6270ea7b4095ccdbf425e7561a81319[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 9 22:22:59 2024 +0000
+
+    Me olvide de subir esto
+
+[33mcommit 3a3b4b0737fb13ab9295ea83f86529a2dd1ad757[m
+Author: BorquezBelli <pborquezbelli@frba.utn.edu.ar>
+Date:   Thu May 9 21:47:19 2024 +0000
+
+    anda largo plazo procesos en new y ready con PID correcto
+
+[33mcommit 2c93235a8fbdcf7729281d1a2255ed2bdc2ea908[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 9 04:49:10 2024 +0000
+
+    LA operacion io_gen_sleep deberia funcionar ya, falta ver si compila
+
+[33mcommit 0343c1318164b51b502ec2d79387f4d6ab47feb4[m
+Merge: 2fa6e8d d0b295d
+Author: Matías José Tiscornia <82007207+Matitisco@users.noreply.github.com>
+Date:   Wed May 8 21:13:37 2024 +0000
+
+    Merge pull request #30 from sisoputnfrba/kernel
+    
+    Agregamos Largo Plazo  y el ida y vuelta con Memoria anda bien
+
+[33mcommit d0b295dbfa412d7c9922236e816c050f904c7516[m[33m ([m[1;31morigin/kernel[m[33m)[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Wed May 8 21:11:15 2024 +0000
+
+    AVANZAMOS CON LARGO PLAZO, AHORA UN PROCSO PASA DE NEW A READY :D
+
+[33mcommit d4023653413fefdf9d4bad54cfb8d6db1ac26ec1[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Tue May 7 14:55:02 2024 +0000
+
+    Iniciar Proceso falta que lea el archivo con instrucciones
+
+[33mcommit 93fd1d4b7c86d5d9a09b026890aa589c5848e504[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Tue May 7 04:30:10 2024 +0000
+
+    Arreglo funciones de serializacion que no desplazaban el offset, y ahora a memoria memoria arma el cde y le llega todo
+
+[33mcommit c35fed8734cea84c97ec21536d621810fa9dc916[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Tue May 7 01:34:45 2024 +0000
+
+    modificacion recibir_paquete_cte usando las funciones de leer para deserealizar, tira error con el tema del tamanio en leer string
+
+[33mcommit e45ca171e41a0dd9f046f961afc345fd7fdd1823[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Tue May 7 00:42:24 2024 +0000
+
+    Problema con solictiuid_ se corta al reibicr el paquete
+
+[33mcommit 87aee24c02005e6f205a196230802dccf5be29b3[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Tue May 7 00:27:31 2024 +0000
+
+    Arreglamos recibir operacion usando paquetes :D, una tortura
+
+[33mcommit 4e3279fb422af06dca0f992410603836230651b6[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon May 6 22:23:50 2024 +0000
+
+    SUbo parte implementaicon de recibir interfaz en kernel con mod en archvios
+
+[33mcommit a0c7c07efa3753360177a5690677e637ec0e835a[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Sun May 5 22:39:11 2024 +0000
+
+    Hago implementacion de crear interfaces, falta que reciban de kernel las instrucciones
+
+[33mcommit 915fa5048e1b89bcb4b5e7b575ef3da656d25ed1[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Sat May 4 13:59:23 2024 +0000
+
+    Agrego en menu, algunas funciones para las operaciones, falta definirlas y sus firmas
+
+[33mcommit 2fa6e8dc54b60fa35a9abf84f7a479bf0fc78384[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri May 3 22:45:21 2024 +0000
+
+    Hago la conexcion del kernel con memoria en un hilo, falta solucionar el porque se desconecta el kernel luego de enviar algo a memoria y evitar que la memoria se desconecte en tiempo de ejecucion
+
+[33mcommit 8e4ab24187e9214a98789a1d70a72a096cbae183[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri May 3 21:35:12 2024 +0000
+
+    Terminadas las funciones de serializacion generales, arreglamos partes del utils y compila
+
+[33mcommit ce9b49f541dbc96331d9e9f31bef3d72fdcf904e[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 22:11:45 2024 +0000
+
+    .
+
+[33mcommit 7a73246a0bb5688733c762c4b5461ff256a8c4cc[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 22:11:00 2024 +0000
+
+    avanzamos con la conexion kernel-memoria | no compila, vamos a reordenar serializacion
+
+[33mcommit d316b8da09d29491dca10475f12ed0f1600f93e2[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 22:10:21 2024 +0000
+
+    crea hilo memoria-kernel y recibe el codOP de iniciar_proceso | no compila porque vamos a reordenar serializacion
+
+[33mcommit 832c78322149ccdc973a5ff8441384deb5a67853[m
+Merge: fa93951 3a8a5d9
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 05:32:21 2024 +0000
+
+    funciona todo
+
+[33mcommit fa93951913eb9c864d25485b58cf5d6dc53028a2[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 05:25:56 2024 +0000
+
+    .
+
+[33mcommit 961643419a1a3cd51790df035867639b9b7f6953[m
+Merge: 5143b75 e0bc614
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 05:21:52 2024 +0000
+
+    Co-authored-by: Nahuel Lazarte <NahuelLazarte@users.noreply.github.com>
+    Co-authored-by: Ignacio Joaquín Riolffi <iriolffi@frba.utn.edu.ar>
+    Co-authored-by: Nataly Rohling <nrohlinginsua@frba.utn.edu.ar>
+
+[33mcommit 3a8a5d9c14743d5ff8d69b2c5649263443b8e637[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 2 05:19:38 2024 +0000
+
+    Termino de arreglar las incompatibilidades y tanto kernel como memoria compilan y funcionan como servidor:D
+
+[33mcommit 5143b7573a001b86897ad56eb074dd750c4c15c5[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 05:15:49 2024 +0000
+
+    .
+
+[33mcommit e0bc614bcd9996e83a9007244610b3ec6844e5b2[m
+Merge: 7eecd02 f5817cf
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 2 04:53:10 2024 +0000
+
+    Merge remote-tracking branch 'refs/remotes/origin/main'
+    
+    Co-authored-by: Nataly Rohling <nrohlinginsua@frba.utn.edu.ar>
+    Co-authored-by: Nahuel Lazarte <NahuelLazarte@users.noreply.github.com>
+    Co-authored-by: Matías José Tiscornia <Matitisco@users.noreply.github.com>
+    Co-authored-by: Borquez Belli <pborquezbelli@frba.utn.edu.ar>
+
+[33mcommit 7eecd0207d684ddce24f961d58b1736fd95c8e62[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 2 04:48:37 2024 +0000
+
+    Creo los hilos y andan
+
+[33mcommit f5817cfbcb3093d8cb30faf004d0c3adc53b68a6[m
+Merge: a0db44d 4674895
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 04:31:13 2024 +0000
+
+    compila todo
+
+[33mcommit a0db44dfc42fcf105edd42861626ca135abf2fe1[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Thu May 2 04:29:41 2024 +0000
+
+    todo compila otra vez
+
+[33mcommit 467489521e7588174aa80049bcc4333cbb4e33d6[m
+Author: Matías José Tiscornia <82007207+Matitisco@users.noreply.github.com>
+Date:   Thu May 2 01:01:30 2024 -0300
+
+    Update README.md
+
+[33mcommit 332c67c6aa64d8c5dfc088a8aad1b3467f49b6df[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu May 2 03:43:44 2024 +0000
+
+    Arreglo problema de referencias cruzadas en KERNEL
+
+[33mcommit d1decde98ff2579723d99cffc734a556fce3cefd[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Wed May 1 22:27:18 2024 +0000
+
+    error de multiple definicion
+
+[33mcommit ceaba5972b4a0b82f2eea6ddee4f978886118053[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Wed May 1 21:09:03 2024 +0000
+
+    cambios en memoria, no compila
+
+[33mcommit 14589ab3f5002fc0aa0c20f324053d8914864e18[m
+Author: NatalyRohling <nrohlinginsua@frba.utn.edu.ar>
+Date:   Mon Apr 29 20:39:51 2024 +0000
+
+     EL kernel envia el cde y el cpu lo recibe, complete un toque mas la funcion de iniciar proceso, agregue unos enum y alguan cosita mas
+
+[33mcommit 08f475053ec8d51e5515dca745b380587f2beef1[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon Apr 29 18:05:28 2024 +0000
+
+    Avanzamos con iniciar proceso y terminar proceso y con el planificador corto plazo
+
+[33mcommit f601438fbe8cc19ee8c706762fb287f0727fd833[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri Apr 26 20:40:27 2024 +0000
+
+    YA PODEMOS CREAR PROCESOS
+
+[33mcommit 818f6dcb5458de868d52f0da8be4353e43243ab8[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri Apr 26 19:44:25 2024 +0000
+
+    Agregamos Estados, Colas Sincronizados ,Hilos (Comentados) y modificamos el funcionamiento de levantar servidor
+
+[33mcommit 1c5595db9dac4930acec2109858540fa0f051b6a[m
+Merge: 4b79377 4d953ba
+Author: NatalyRohling <nrohlinginsua@frba.utn.edu.ar>
+Date:   Wed Apr 24 15:39:54 2024 +0000
+
+    Hice un merge y estuve avanzando con el pcb y el pedido de instrucciones en memoria
+
+[33mcommit 4b79377457505303a35c2a8a242db9b6dc76f289[m
+Merge: 179f6c5 fbf76ce
+Author: NatalyRohling <nrohlinginsua@frba.utn.edu.ar>
+Date:   Wed Apr 24 15:31:45 2024 +0000
+
+    Avances con la recepcion del PCB Y le pedido de instrucciones de memoria
+
+[33mcommit 4d953baafc8503906a39735bf59ee365254c06d5[m
+Author: BorquezBelli <pborquezbelli@frba.utn.edu.ar>
+Date:   Wed Apr 24 15:16:13 2024 +0000
+
+    estructura ciclo de instrucciones
+
+[33mcommit 179f6c5c6fc2dd84ac05a694ed43ef10a59fc851[m
+Author: NatalyRohling <nrohlinginsua@frba.utn.edu.ar>
+Date:   Wed Apr 24 15:12:17 2024 +0000
+
+    Avance con recibo de pcb y pedido de instruccion en memoria
+
+[33mcommit fbf76cecd6ef6aa9d2a2319bc27c935aae729014[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon Apr 22 02:41:52 2024 +0000
+
+    Problema con los loggers deberia estar resuelto
+
+[33mcommit 22acb0a869fe52e188adc72f747c36133046caa3[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Mon Apr 22 00:38:20 2024 +0000
+
+    Planteo Funciones de Kernel y Estructura PCB
+
+[33mcommit fb7ac8219f9ba272e14c24a838a8d841d41da0e0[m
+Author: NatalyRohling <nrohlinginsua@frba.utn.edu.ar>
+Date:   Sun Apr 21 23:17:44 2024 +0000
+
+    Agrego las instrucciones y los registros
+
+[33mcommit bd395d1c8b8d9df037aea305db3f3a53e64d6981[m[33m ([m[1;33mtag: checkpoint-1[m[33m)[m
+Merge: cb76fe1 ff7ab66
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu Apr 18 19:51:25 2024 +0000
+
+    Unificamos ambas partes desarrolladas
+
+[33mcommit cb76fe18362fec573b2954b39644a08c6737d44d[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu Apr 18 18:58:03 2024 +0000
+
+    Todos los modulos ya se conectan entre si
+
+[33mcommit ff7ab66112aae2f800b1e441004ee649b41d17c0[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Wed Apr 17 19:27:54 2024 +0000
+
+    config delegadas a un constructor, codigo mas limpio
+
+[33mcommit a3e37a3400a569987eadf1905f3e00fa170aa31c[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Wed Apr 17 18:06:11 2024 +0000
+
+    Problema con segmentation de cpu arreglado
+
+[33mcommit 558c5af773a8f513f11c0f0b1190f080520fd71e[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Wed Apr 17 17:51:19 2024 +0000
+
+    Casi andan todos los modulos
+
+[33mcommit 3565c26141e3c0cb6d49b793b71b6c226b15126b[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Wed Apr 17 16:51:58 2024 +0000
+
+    Arreglo problema con las configs
+
+[33mcommit 4e041c949f1f52110fac357f73e7f0918506746b[m
+Author: NahuelLazarte <clazarte@frba.utn.edu.ar>
+Date:   Tue Apr 16 23:26:36 2024 +0000
+
+    CPU se conecta a Memoria
+
+[33mcommit 8eceaa069efd32f3a466a9e9fe648a9e40805fb3[m
+Author: BorquezBelli <pborquezbelli@frba.utn.edu.ar>
+Date:   Mon Apr 15 22:05:08 2024 +0000
+
+    <de i/o a memoria>
+
+[33mcommit 4c2e5f60c1db452ef33ce05ed7a57aa9163723df[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Sun Apr 14 22:43:46 2024 +0000
+
+    kernel->cpu solucionado
+
+[33mcommit dc06d50f0a8da262250323e548f04ad512c480c5[m
+Author: NatalyRohling <nrohlinginsua@frba.utn.edu.ar>
+Date:   Sun Apr 14 22:06:51 2024 +0000
+
+    INTENTE HACER ALGO DEL TP BESOS
+
+[33mcommit 10488d9fdd12386e1fc8eb989f8e669870d4ce1b[m
+Author: Matitisco <matiscornia@frba.utn.edu.ar>
+Date:   Sun Apr 14 19:53:36 2024 +0000
+
+    Conexion Kernel -> Memoria + Cambio en funciones de conexion entre modulos (sockets.c)
+
+[33mcommit 2f2f18fad45c889d481952eb9222cb75b5ae0848[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Sat Apr 13 14:05:39 2024 +0000
+
+    Conversion de algunas formulas a ser mas generales
+
+[33mcommit 546103cce26cb1dcd552a309da904a662ec54695[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Fri Apr 12 23:09:52 2024 +0000
+
+    reestructuro algunas carpetas con sus .h para mayor organizacion
+
+[33mcommit 7d3b3c71e3980c5c91357320395c234a81144209[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu Apr 11 20:29:43 2024 +0000
+
+    Ya se conecta el kernel con entrada y salida
+
+[33mcommit fd887d8070cde4c1492a53c2855d052a3e08680e[m
+Author: Ignacio Joaquin Riolffi <iriolffi@frba.utn.edu.ar>
+Date:   Thu Apr 11 19:59:19 2024 +0000
+
+    Agrego los utils necesarios para la conexion cliente-servidor
+
+[33mcommit 1a0bc5326fa2f9e563224533f7289ae8f5e22634[m
+Author: Sistemas Operativos - UTN.BA <inscripciones.utnso@gmail.com>
+Date:   Sat Mar 30 23:43:40 2024 -0300
+
+    Initial commit
