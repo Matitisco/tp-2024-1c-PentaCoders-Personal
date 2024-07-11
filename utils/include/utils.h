@@ -93,10 +93,16 @@ typedef enum
 	RESIZE_EXITOSO,
 	SOLICITUD_ESCRITURA_CPU,
 	LECTURA_CPU,
+	SOLICITUD_DIALFS,
+	CREAR_ARCHIVO_OK,
+	ERROR_CREAR_ARCHIVO_OK,
+	LECTURA_DIALFS,
 	PEDIDO_FRAME,
 	PEDIDO_FRAME_CORRECTO,
-	PEDIDO_FRAME_INCORRECTO
+	PEDIDO_FRAME_INCORRECTO,
+	PEDIDO_ESCRITURA_DIALFS
 } op_code;
+
 typedef enum
 {
 	GENERICA,
@@ -105,6 +111,13 @@ typedef enum
 	DIALFS,
 } enum_interfaz;
 
+typedef enum {
+	F_CREATE,
+	F_DELETE,
+	F_TRUNCATE,
+	F_READ,
+	F_WRITE
+} operacion_dialfs;
 typedef struct
 {
 	enum_interfaz tipo_interfaz;

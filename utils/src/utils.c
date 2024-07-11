@@ -63,6 +63,7 @@ void enviar_op_code(int socket_servidor, uint32_t cod)
 {
 	send(socket_servidor, &cod, sizeof(uint32_t), 0);
 }
+
 op_code recibir_op_code(int socket_cliente)
 {
 	op_code cod_op;

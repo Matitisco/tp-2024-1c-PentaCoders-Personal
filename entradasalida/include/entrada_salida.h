@@ -8,10 +8,6 @@
 #include "../../utils/include/conexiones.h"
 #include "../../utils/include/serializacion.h"
 
-// VARIABLES
-extern t_log *logger;
-int conexion_kernel, conexion_memoria, estoy_libre;
-
 // ESTRUCTURAS
 typedef struct
 {
@@ -28,29 +24,52 @@ typedef struct
 	int retraso_compactacion;
 } config_io;
 
+
+// VARIABLES
+extern t_log *logger;
+extern int conexion_kernel, conexion_memoria, estoy_libre;
+extern config_io *valores_config;
+
 // INICIAR INTERFAZ
-config_io *inicializar_config_IO(char *PATH);
+typedef struct {
+	//t_list 
+}tabla_archivos_abierto;
+
+typedef struct {
+	//permisos
+	//fecha de creacion
+	//tam archivo
+	//bloques
+
+}t_fcb;
+
+typedef struct {
+	int contadorAPerturas;
+	int descriptor;
+	//t_fcb*fcb:
+
+}arch;
+
+void realizar_operacion_gen(t_interfaz *interfaz);
+void realizar_operacion_stdin(t_interfaz *interfaz);
+void realizar_operacion_stdout(t_interfaz *interfaz);
+void realizar_operacion_dialfs(t_interfaz *interfaz);
+
+
+
+void iniciar_modulo_io();
+void liberar_modulo_io();
+
 void levantar_interfaz(char *nombre, char *PATH);
+void arrancar_interfaz(t_interfaz *interfaz);
 
-// CREAR INTERFAZ
-t_interfaz *crear_interfaz_generica(config_io *config, char *nombre);
-t_interfaz *crear_interfaz_stdin(config_io *config, char *nombre);
-t_interfaz *crear_interfaz_stdout(config_io *config, char *nombre);
-t_interfaz *crear_interfaz_dialfs(config_io *config, char *nombre);
+void conectarse_kernel(t_interfaz *interfaz);
+void conectarse_memoria(t_interfaz *interfaz);
 
-// ARRANCAR INTERFAZ
-void arrancar_interfaz_generica(t_interfaz *interfaz_io);
-void arrancar_interfaz_stdin(t_interfaz *interfaz_io);
-void arrancar_interfaz_stdout(t_interfaz *interfaz_io);
-void arrancar_interfaz_dialfs(t_interfaz *interfaz_io);
-
-// REALIZAR OPERACION
-void realizar_operacion_gen();
-void realizar_operacion_stdin();
-void realizar_operacion_stdout();
-void realizar_operacion_dialfs();
-
-// AUXILIARES
+t_interfaz *crear_interfaz(config_io *config, char *nombre);
 enum_interfaz asignar_interfaz(char *nombre_Interfaz);
-t_list *convertir_a_numeros(char *texto);
+config_io *inicializar_config_IO(char *PATH);
+void realizar_operacion(t_interfaz *interfaz);
+
+
 #endif

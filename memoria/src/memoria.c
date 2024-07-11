@@ -222,6 +222,10 @@ void *acceso_a_espacio_usuario()
             tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
             escritura_cpu(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
         }
+        else if(solicitud == SOLICITUD_ESCRITURA_DIALFS){
+              tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
+            escritura_cpu(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
+        }
         break;
 
     case PEDIDO_LECTURA:
@@ -237,6 +241,10 @@ void *acceso_a_espacio_usuario()
             tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
             lectura_cpu(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
             destruir_buffer(buffer_lectura);
+        }
+        else if(solicitud  ==LECTURA_DIALFS){
+             tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
+            lectura_interfaz(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
         }
         break;
     default:
@@ -404,13 +412,13 @@ void ejecutarMovIn(){
 }
 */
 
-void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
-{
-    buffer = recibir_buffer(cliente_fd);
-    t_cde *cde = armarCde(buffer);
-    destruir_buffer(buffer);
-    // agrego una tabla vacio de paginas asociada al proceso, auna lista de tablas globales
-    crear_y_agregar_tabla_a_lista_global(cde->pid);
+    void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
+    {
+        buffer = recibir_buffer(cliente_fd);
+        t_cde *cde = armarCde(buffer);
+        destruir_buffer(buffer);
+        // agrego una tabla vacio de paginas asociada al proceso, auna lista de tablas globales
+        crear_y_agregar_tabla_a_lista_global(cde->pid);
 
     cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
     if (cde->path == NULL || cde->lista_instrucciones == NULL)
@@ -435,14 +443,14 @@ void crear_y_agregar_tabla_a_lista_global(int pid)
     log_info(logger, "PID: <%d> - Tamaño : <%d>", pid, list_size(tabla_proceso->tabla_paginas_proceso));
 }
 
-t_cde *armarCde(tipo_buffer *buffer)
-{
-    t_cde *cde = malloc(sizeof(t_cde));
-    cde->pid = leer_buffer_enteroUint32(buffer);
-    cde->path = leer_buffer_string(buffer);
-    cde->lista_instrucciones = list_create();
-    return cde;
-}
+    t_cde *armarCde(tipo_buffer * buffer)
+    {
+        t_cde *cde = malloc(sizeof(t_cde));
+        cde->pid = leer_buffer_enteroUint32(buffer);
+        cde->path = leer_buffer_string(buffer);
+        cde->lista_instrucciones = list_create();
+        return cde;
+    }
 
 t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 {
@@ -453,7 +461,7 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
     string_append(&ruta_completa, nombre_archivo);
     //ruta_completa = obtener_ruta(nombre_archivo);
 
-    FILE *archivo = fopen(ruta_completa, "r");
+        FILE *archivo = fopen(ruta_completa, "r");
 
     if (archivo == NULL)
     {
@@ -471,66 +479,66 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
     return list_instrucciones;
 }
 
-char *obtener_ruta(char *nombre_archivo)
-{
-    char *ruta_completa = string_new();
-    char *ruta_acceso[1024];
-
-    if (getcwd(ruta_acceso, sizeof(ruta_acceso)) == NULL)
+    char *obtener_ruta(char *nombre_archivo)
     {
-        log_info(logger, "No se pudo obtener la raiz");
-        return NULL;
+        char *ruta_completa = string_new();
+        char *ruta_acceso[1024];
+
+        if (getcwd(ruta_acceso, sizeof(ruta_acceso)) == NULL)
+        {
+            log_info(logger, "No se pudo obtener la raiz");
+            return NULL;
+        }
+        // TODO: esto debe tener configurada en realidad el path de config de memoria
+        string_append(&ruta_completa, ruta_acceso);
+        string_append(&ruta_completa, "/pruebas/checkpoint_3/archivos/");
+        string_append(&ruta_completa, nombre_archivo);
+
+        return ruta_completa;
     }
-    // TODO: esto debe tener configurada en realidad el path de config de memoria
-    string_append(&ruta_completa, ruta_acceso);
-    string_append(&ruta_completa, "/pruebas/checkpoint_3/archivos/");
-    string_append(&ruta_completa, nombre_archivo);
 
-    return ruta_completa;
-}
-
-void enviar_tamanio_pagina(int cpu)
-{
-    tipo_buffer *buffer_con_tam_pagina = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer_con_tam_pagina, valores_config->tam_pagina);
-    enviar_buffer(buffer_con_tam_pagina, cpu);
-    destruir_buffer(buffer_con_tam_pagina);
-}
+    void enviar_tamanio_pagina(int cpu)
+    {
+        tipo_buffer *buffer_con_tam_pagina = crear_buffer();
+        agregar_buffer_para_enterosUint32(buffer_con_tam_pagina, valores_config->tam_pagina);
+        enviar_buffer(buffer_con_tam_pagina, cpu);
+        destruir_buffer(buffer_con_tam_pagina);
+    }
 
 void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
 {
     sleep_ms(valores_config->retardo_respuesta);
 
-    tipo_buffer *buffer = recibir_buffer(cliente_fd);
-    uint32_t PID = leer_buffer_enteroUint32(buffer);
-    uint32_t PC = leer_buffer_enteroUint32(buffer);
+        tipo_buffer *buffer = recibir_buffer(cliente_fd);
+        uint32_t PID = leer_buffer_enteroUint32(buffer);
+        uint32_t PC = leer_buffer_enteroUint32(buffer);
 
-    t_cde *contexto = malloc(sizeof(t_cde));
+        t_cde *contexto = malloc(sizeof(t_cde));
 
-    contexto = obtener_contexto_en_ejecucion(PID, contextos);
+        contexto = obtener_contexto_en_ejecucion(PID, contextos);
 
-    tipo_buffer *buffer_instruccion = crear_buffer();
-    char *instruccion = string_new();
-    instruccion = list_get(contexto->lista_instrucciones, PC);
+        tipo_buffer *buffer_instruccion = crear_buffer();
+        char *instruccion = string_new();
+        instruccion = list_get(contexto->lista_instrucciones, PC);
 
     enviar_op_code(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
 
-    enviar_buffer(buffer_instruccion, cliente_fd);
-    destruir_buffer(buffer_instruccion);
-    destruir_buffer(buffer);
-    log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
-    free(instruccion);
-}
+        enviar_buffer(buffer_instruccion, cliente_fd);
+        destruir_buffer(buffer_instruccion);
+        destruir_buffer(buffer);
+        log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
+        free(instruccion);
+    }
 
-t_cde *obtener_contexto_en_ejecucion(int PID, t_list *contextos)
-{
-    PID_buscado = PID;
-    t_cde *cde_proceso = malloc(sizeof(t_cde));
-    cde_proceso = list_find(contextos, estaElContextoConCiertoPID);
-    cde_proceso->lista_instrucciones = list_get(lista_instrucciones, cde_proceso->pid);
-    return cde_proceso;
-}
+    t_cde *obtener_contexto_en_ejecucion(int PID, t_list *contextos)
+    {
+        PID_buscado = PID;
+        t_cde *cde_proceso = malloc(sizeof(t_cde));
+        cde_proceso = list_find(contextos, estaElContextoConCiertoPID);
+        cde_proceso->lista_instrucciones = list_get(lista_instrucciones, cde_proceso->pid);
+        return cde_proceso;
+    }
 
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code)
 {
@@ -613,10 +621,10 @@ char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code)
     return NULL;
 }
 
-_Bool estaElContextoConCiertoPID(t_cde *contexto)
-{
-    return contexto->pid == PID_buscado;
-}
+    _Bool estaElContextoConCiertoPID(t_cde * contexto)
+    {
+        return contexto->pid == PID_buscado;
+    }
 
 void finalizar_proceso(int kernel, tipo_buffer *buffer)
 {
@@ -659,19 +667,19 @@ void liberar_registros(t_registros *registros)
     free(registros);
 }
 
-config_memoria *configuracion_memoria()
-{
-    config_memoria *valores_config = malloc(sizeof(config_memoria));
+    config_memoria *configuracion_memoria()
+    {
+        config_memoria *valores_config = malloc(sizeof(config_memoria));
 
-    valores_config->config = iniciar_config("memoria.config");
-    valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
-    valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
-    valores_config->path_instrucciones = config_get_string_value(valores_config->config, "PATH_INSTRUCCIONES");
-    valores_config->tam_memoria = config_get_int_value(valores_config->config, "TAM_MEMORIA");
-    valores_config->tam_pagina = config_get_int_value(valores_config->config, "TAM_PAGINA");
-    valores_config->retardo_respuesta = config_get_int_value(valores_config->config, "RETARDO_RESPUESTA");
-    return valores_config;
-}
+        valores_config->config = iniciar_config("memoria.config");
+        valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
+        valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
+        valores_config->path_instrucciones = config_get_string_value(valores_config->config, "PATH_INSTRUCCIONES");
+        valores_config->tam_memoria = config_get_int_value(valores_config->config, "TAM_MEMORIA");
+        valores_config->tam_pagina = config_get_int_value(valores_config->config, "TAM_PAGINA");
+        valores_config->retardo_respuesta = config_get_int_value(valores_config->config, "RETARDO_RESPUESTA");
+        return valores_config;
+    }
 
 t_pagina *crear_pagina(int bit_validez, int marco, int pidProceso)
 {
@@ -688,10 +696,10 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas)
     return list_paginas;
 }
 
-void eliminar_tabla_paginas(uint32_t pid)
-{
-    int cant_paginas = 0;
-    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista global de  tabla del proceso
+    void eliminar_tabla_paginas(uint32_t pid)
+    {
+        int cant_paginas = 0;
+        t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista global de  tabla del proceso
 
     int tamanio_tabla_pag = list_size(tabla_paginas->tabla_paginas_proceso);
     for (int i = 0; i < tamanio_tabla_pag; i++)
@@ -740,23 +748,23 @@ void colocar_pagina_en_marco(t_pagina *pagina)
     pagina->marco = *marco_libre;
 }
 
-int *agarro_marco_que_este_libre()
-{
-    int pos_marco_libre = obtener_marco_libre();           // busco el primer marco libre que encuentro en el bitmap
-    return list_get(lista_global_marcos, pos_marco_libre); // hago list get para conseguir en la lista global de marcos,la posicion
-}
-
-int obtener_marco_libre()
-{
-    for (int i = 0; i < cant_marcos; i++)
+    int *agarro_marco_que_este_libre()
     {
-        if (array_bitmap[i].bit_ocupado == 0)
-        {
-            return i;
-        }
+        int pos_marco_libre = obtener_marco_libre();           // busco el primer marco libre que encuentro en el bitmap
+        return list_get(lista_global_marcos, pos_marco_libre); // hago list get para conseguir en la lista global de marcos,la posicion
     }
-    return -1;
-}
+
+    int obtener_marco_libre()
+    {
+        for (int i = 0; i < cant_marcos; i++)
+        {
+            if (array_bitmap[i].bit_ocupado == 0)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
 
 int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina_buscada)
 {
@@ -773,10 +781,10 @@ int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina_busca
     return -1;
 }
 
-void liberar_marco(int nroMarco)
-{
-    list_replace(lista_global_marcos, nroMarco, NULL);
-}
+    void liberar_marco(int nroMarco)
+    {
+        list_replace(lista_global_marcos, nroMarco, NULL);
+    }
 
 void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
