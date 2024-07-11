@@ -73,7 +73,6 @@ void inicializar_bitmap(int cant_marcos);
 // void iniciar_sem_globales();
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
 void finalizar_proceso(int cliente_fd, tipo_buffer *buffer);
-char *obtener_ruta(char *nombre_archivo);
 void eliminar_proceso(int pid_a_eliminar);
 t_pcb *buscar_proceso_por_pid(int pid);
 void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos);
@@ -94,6 +93,9 @@ void *destroy_instruccion(void *element);
 // espacio de usuario
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio);
 void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio);
+void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio);
+void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio);
+
 char *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario();
 void pedido_frame_mmu(int cliente_cpu);

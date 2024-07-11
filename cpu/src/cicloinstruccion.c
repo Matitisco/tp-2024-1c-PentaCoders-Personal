@@ -41,7 +41,7 @@ void exec_set(char *registro, uint32_t valor)
 void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 {
     uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
@@ -82,7 +82,7 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
     uint32_t reg_valor = obtener_valor(datos);
     uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
 
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
@@ -466,6 +466,7 @@ void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
 }
+/*
 void exec_io_fs_create(char *nombre_interfaz, char *nombre_archivo, t_cde *cde)
 {
     buffer_instruccion_io = crear_buffer();
@@ -476,9 +477,10 @@ void exec_io_fs_create(char *nombre_interfaz, char *nombre_archivo, t_cde *cde)
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
-}
+}*/
 
 // IMPLEMENTAR PARA ENTREGA FINAL
+
 void exec_io_fs_create(char *nombre_interfaz, char *nombre_archivo, t_cde *cde)
 {
     buffer_instruccion_io = crear_buffer();
@@ -516,6 +518,7 @@ void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char *reg_
     agregar_buffer_para_string(buffer_instruccion_io, nombre_archivo);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
 }
+
 void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_tamanio, char *reg_direccion, uint32_t puntero_archivo, t_cde *cde)
 {
     uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);

@@ -22,7 +22,7 @@ void exec_io_fs_create(char *nombre_interfaz, char *nombre_archivo,t_cde *cde);
 void exec_io_fs_delete(char *nombre_interfaz, char *nombre_archivo,t_cde *cde);
 void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char *reg_tamanio, t_cde *cde);
 void exec_exit(t_cde *cde);
-void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_tamanio, char *reg_direccion, char *puntero_archivo, t_cde *cde);
+void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_tamanio, char *reg_direccion, uint32_t puntero_archivo, t_cde *cde);
 void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_tamanio, char *reg_direccion, char *puntero_archivo, t_cde *cde);
 
 // AUXILIARES
