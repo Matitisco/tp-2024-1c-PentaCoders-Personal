@@ -149,6 +149,7 @@ void *levantar_kernel_interrupt()
 				break;
 			case SOLICITUD_EXIT:
 				log_info(logger, "Me llego una interrupcion para FINALIZAR_PROCESO");
+				interrupcion_exit = 1;
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
@@ -279,36 +280,36 @@ void execute(char **instruccion, t_cde *contextoProceso)
 		actualizar_cde(contextoProceso);
 		break;
 	case IO_FS_CREATE:
-	    exec_io_fs_create(instruccion[1], instruccion[2], contextoProceso);
+		exec_io_fs_create(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case IO_FS_DELETE:
-	     exec_io_fs_delete(instruccion[1], instruccion[2], contextoProceso);
+		exec_io_fs_delete(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case IO_FS_TRUNCATE:
-	    exec_io_fs_truncate(instruccion[1], instruccion[2],instruccion[3], contextoProceso);
+		exec_io_fs_truncate(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s ", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
 	case IO_FS_WRITE:
-	    exec_io_fs_write(instruccion[1],instruccion[2],instruccion[3],instruccion[4],instruccion[5], contextoProceso);
+		exec_io_fs_write(instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5], contextoProceso);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
-		
+
 		break;
 	case IO_FS_READ:
-	    exec_io_fs_read(instruccion[1],instruccion[2],instruccion[3],instruccion[4],instruccion[5], contextoProceso);
+		exec_io_fs_read(instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5], contextoProceso);
 		actualizar_cde(contextoProceso);
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
-		
+
 		break;
 	case EXIT:
 		interrupcion_rr = 0;
 		log_info(logger, "Instrucción Ejecutando: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
-		exec_exit(contextoProceso);
+		exec_exit(contextoProceso, SUCCESS);
 		actualizar_cde(contextoProceso);
 		break;
 	default:
@@ -348,14 +349,12 @@ void check_interrupt()
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		log_info(logger, "\nINTERRUPCION - BLOCK - \n");
 	} */
-	else if (interrupcion_exit)
+	else if (interrupcion_exit) // por parte del kernel
 	{
 		salida_exit = 0;
 		interrupcion_exit = 0;
-		log_info(logger,"Proceso %d Finalizado por Consola",cde_recibido->pid);
-		exec_exit(cde_recibido);
-		agregar_cde_buffer(buffer_cde, cde_recibido);
-		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		log_info(logger, "Proceso %d Finalizado por Consola", cde_recibido->pid);
+		exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 		log_info(logger, "\nINTERRUPCION - EXIT - \n");
 	}
 	else if (interrupcion_io)
