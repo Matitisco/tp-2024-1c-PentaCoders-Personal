@@ -107,13 +107,11 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
 
         if (proceso == NULL) // NEW, READY, BLOCKED
         {
-            proceso = buscarProceso(PID);
-            
-            
+            proceso = buscarProceso(PID); 
         }
         else // EXEC
         {
-            enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT);
+            enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT);   // Si esta en CPU le aviso que lo finalice
         }
         
 
