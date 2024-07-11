@@ -3,6 +3,7 @@
 // VARIABLES GLOBALES
 config_cpu *valores_config_cpu;
 int interrupcion_rr;
+int interrupcion_exit;
 int interrrupcion_fifo;
 int interrupcion_entrada_salida;
 int interrupcion_io;
@@ -145,6 +146,9 @@ void *levantar_kernel_interrupt()
 			{
 			case PROCESO_INTERRUMPIDO_QUANTUM:
 				interrupcion_rr = 1;
+				break;
+			case SOLICITUD_EXIT:
+				log_info(logger, "Me llego una interrupcion para FINALIZAR_PROCESO");
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
@@ -335,7 +339,7 @@ void check_interrupt()
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		}
 	}
-	else if (interrrupcion_fifo)
+	/* else if (interrrupcion_fifo)
 	{
 		salida_exit = 0;
 		interrrupcion_fifo = 0;
@@ -343,6 +347,16 @@ void check_interrupt()
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		log_info(logger, "\nINTERRUPCION - BLOCK - \n");
+	} */
+	else if (interrupcion_exit)
+	{
+		salida_exit = 0;
+		interrupcion_exit = 0;
+		log_info(logger,"Proceso %d Finalizado por Consola",cde_recibido->pid);
+		exec_exit(cde_recibido);
+		agregar_cde_buffer(buffer_cde, cde_recibido);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		log_info(logger, "\nINTERRUPCION - EXIT - \n");
 	}
 	else if (interrupcion_io)
 	{

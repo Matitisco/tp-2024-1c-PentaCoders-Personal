@@ -631,8 +631,16 @@ void finalizar_proceso(int kernel, tipo_buffer *buffer)
     buffer = recibir_buffer(kernel);
     uint32_t pid = leer_buffer_enteroUint32(buffer);
     t_registros *registros = leer_buffer_registros(buffer);
-    obtener_y_eliminar_cde(pid, registros);
-    eliminar_tabla_paginas(pid);
+
+    t_cde *cde = obtener_contexto_en_ejecucion(pid, lista_contextos);   
+
+    if(cde !=NULL){                 
+        cde->registros = registros;
+        eliminar_cde(cde);  
+        obtener_y_eliminar_cde(pid, registros);
+        eliminar_tabla_paginas(pid);
+    }
+    
     enviar_op_code(kernel, FINALIZAR_PROCESO);
 }
 
