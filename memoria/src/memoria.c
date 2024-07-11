@@ -371,13 +371,14 @@ void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante)
     //uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
     void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio);
+    uint32_t valor = *(uint32_t *)valor_leido;
 
     if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
         tipo_buffer *buffer = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer, valor_leido);
-        log_info(logger, "SE LEYO EL VALOR : %d", valor_leido);
+        log_info(logger, "SE LEYO EL VALOR : %u", valor);
         enviar_buffer(buffer, cliente_solicitante);
     }
     else

@@ -46,7 +46,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
     enviar_op_code(socket_memoria, LECTURA_CPU);
-    uint32_t tamanio = sizeof(direccion);
+    uint32_t tamanio = sizeof(uint32_t);
 
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
