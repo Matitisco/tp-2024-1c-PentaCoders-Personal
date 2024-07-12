@@ -683,7 +683,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu) {
         log_error(logger, "PID: <%d> - NO SE ENCONTRO TABLA PAGINAS", pid);
         return;
     }
-
+    int tamanio_anterior = tamanio_proceso(pid);
     int tam_pagina = valores_config->tam_pagina;
     int cantidad_paginas_nuevas = tamanio / tam_pagina;
     int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
@@ -704,7 +704,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu) {
 
     imprimir_paginas_proceso(tabla_paginas->paginas_proceso);
 
-    int tamanio_anterior = tamanio_proceso(pid);
+    
     log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
     enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
 }
@@ -719,7 +719,6 @@ void asignar_paginas_nuevas(t_tabla_paginas *tabla_paginas, int paginas_adiciona
         }
     }
 }
-
 
 int cantidad_marcos_libres()
 {
@@ -741,28 +740,34 @@ void imprimir_paginas_proceso(t_list *tp_paginas_proceso){
     }
 }
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
-{
-    int paginas_requeridas = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina; // cant de paginas que tiene que tener con este nuevo tamanio
-    int tamanio_anterior = tamanio_proceso(pid);
+{   
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista de listaa
     if (tabla_paginas == NULL)
     {
         log_info(logger, "NO se encontro la tabla de paginas con pid %d", pid);
         return;
     }
-    int paginas_actuales = list_size(tabla_paginas->paginas_proceso); // cantida de paginas que hay jasta el momento
-                                                                      // Si el proceso tiene más páginas de las requeridas, liberar las excesivas desde el final
+    int tamanio_anterior = tamanio_proceso(pid);
+    int tam_pagina = valores_config->tam_pagina;
+    int paginas_post_resize = tamanio / tam_pagina;
+    int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
+    int cantidad_paginas_a_eliminar = cantidad_paginas_actuales - paginas_post_resize;
+    
     t_list *paginas = tabla_paginas->paginas_proceso;
-    while (paginas_actuales > paginas_requeridas)
-    {
-        t_pagina *pagina_a_eliminar = list_remove(paginas, paginas_actuales - 1);
-        pagina_a_eliminar->bit_validez = 0; // Marcar como no válida
-        free(pagina_a_eliminar);            // Liberar la memoria de la página
-        paginas_actuales--;
-    }
-
+    eliminar_paginas(paginas, cantidad_paginas_a_eliminar);
+    imprimir_paginas_proceso(tabla_paginas->paginas_proceso);
+    
     log_info(logger, "PID: %d - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", pid, tamanio_anterior, tamanio);
     enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
+}
+
+void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar) {
+    for (int i = 0; i < cantidad_a_eliminar; i++) {
+        // Siempre se elimina la última página debido a que la lista se reduce en cada iteración
+        t_pagina *pagina_a_eliminar = list_remove(paginas, list_size(paginas) - 1);
+        pagina_a_eliminar->bit_validez = 0; // Marcar como no válida
+        free(pagina_a_eliminar);            // Liberar la memoria de la página
+    }
 }
 
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio)

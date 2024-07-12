@@ -113,7 +113,7 @@ void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante);
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
 void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
 void asignar_paginas_nuevas(t_tabla_paginas *tabla_paginas, int paginas_adicionales, uint32_t pid);
-
+void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar);
 // auxx de paginas
 int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina);
 void enviar_tamanio_pagina(int cpu);
