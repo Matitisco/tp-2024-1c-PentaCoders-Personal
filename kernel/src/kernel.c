@@ -495,9 +495,21 @@ void levantar_CPU_Dispatch()
 }
 
 // MANEJO DE INTERFACES DE ENTRADA/SALIDA
+_Bool interfaz_esta_en_lista(void *ptr)
+{
+	t_infoIO *interfaz = (t_infoIO *)ptr;
+	return strcmp(interfaz->nombre_io, nombre_IO) == 0;
+}
+
+_Bool interfaz_esta_conectada(t_infoIO *informacion_interfaz)
+{
+	op_code cod_op = CONFIRMAR_CONEXION;
+	return (send(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), 0) == -1) || (recv(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), MSG_WAITALL) == -1);
+}
 
 void *levantarIO()
 {
+	/*
 	while (1)
 	{
 		socket_disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
@@ -536,19 +548,10 @@ void *levantarIO()
 		}
 	}
 	return NULL;
+	*/
 }
 
-_Bool interfaz_esta_en_lista(void *ptr)
-{
-	t_infoIO *interfaz = (t_infoIO *)ptr;
-	return strcmp(interfaz->nombre_io, nombre_IO) == 0;
-}
 
-_Bool interfaz_esta_conectada(t_infoIO *informacion_interfaz)
-{
-	op_code cod_op = CONFIRMAR_CONEXION;
-	return (send(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), 0) == -1) || (recv(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), MSG_WAITALL) == -1);
-}
 
 char *obtener_interfaz(enum_interfaz interfaz)
 {
@@ -572,7 +575,7 @@ char *obtener_interfaz(enum_interfaz interfaz)
 }
 
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion)
-{
+{/*
 	op_code operacion_desde_cpu_dispatch = leer_buffer_enteroUint32(buffer_con_instruccion);
 	t_tipoDeInstruccion instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion);
 	log_info(logger, "Instruccion IO a Ejecutar: <%d> ", instruccion_interfaz);
@@ -805,6 +808,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		log_error(logger, "ERROR - Solicitud Interfaz Enviada Por CPU");
 		break;
 	}
+	*/
 }
 
 void interfaz_no_conectada(int pid)

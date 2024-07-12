@@ -7,7 +7,7 @@
 
 // TRADUCCION
 uint32_t direccion_logica_a_fisica(int direccion_logica);
-
+uint32_t traducir_direccion_mmu(uint32_t direccion_logica);
 // AUXILIARES
 int calcular_pagina(int direccion_logica);
 int enviar_peticion_frame(int pagina);
