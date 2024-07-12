@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     valores_config = configuracion_memoria();
 
     lista_global_tablas = list_create();
-    cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; 
+    cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina;
     crear_espacio_usuario();
 
     tabla_actual = malloc(sizeof(t_tabla_paginas));
@@ -44,8 +44,9 @@ int main(int argc, char *argv[])
     destruirLog(logger);
 }
 
-void crear_marcos(int cant_marcos){
-    lista_global_marcos = list_create(); 
+void crear_marcos(int cant_marcos)
+{
+    lista_global_marcos = list_create();
     for (int i = 0; i < cant_marcos; i++)
     {
         list_add(lista_global_marcos, NULL); // creo mi lista de marcos-tabla. En principio todo en null
@@ -185,11 +186,12 @@ void pedido_frame_mmu(int cliente_cpu)
 
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
 
-    if(list_size(tabla->paginas_proceso) <= pagina){
+    if (list_size(tabla->paginas_proceso) <= pagina)
+    {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
         return;
     }
-    
+
     t_pagina *pagina_buscada = list_get(tabla->paginas_proceso, pagina);
     int marco = pagina_buscada->marco;
 
@@ -228,17 +230,17 @@ void *acceso_a_espacio_usuario()
             tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
             escritura_interfaz(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
         }
-        
+
         else if (solicitud == SOLICITUD_ESCRITURA_CPU)
         {
             tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
             escritura_cpu(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
         }
-       /*
-        else if(solicitud == SOLICITUD_ESCRITURA_DIALFS){
-              tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
-            escritura_cpu(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
-        }*/
+        /*
+         else if(solicitud == SOLICITUD_ESCRITURA_DIALFS){
+               tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
+             escritura_cpu(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
+         }*/
         break;
 
     case PEDIDO_LECTURA:
@@ -255,8 +257,9 @@ void *acceso_a_espacio_usuario()
             lectura_cpu(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
             destruir_buffer(buffer_lectura);
         }
-        else if(solicitud  ==LECTURA_DIALFS){
-             tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
+        else if (solicitud == LECTURA_DIALFS)
+        {
+            tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
             lectura_interfaz(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
         }
         break;
@@ -315,7 +318,7 @@ void escritura_cpu(tipo_buffer *buffer, int cliente_solicitante)
 
     uint32_t numero_marco = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
-    //chequear si dicho pid puede ecribir
+    // chequear si dicho pid puede ecribir
     int resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio);
 
     if (resultado != -1)
@@ -378,8 +381,8 @@ void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
 
-    //uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
-    //uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+    // uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
+    // uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
     void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio);
     uint32_t valor = *(uint32_t *)valor_leido;
@@ -398,40 +401,13 @@ void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante)
     }
 }
 
-/*
-void ejecutarMovIn(){
-    t_buffer* buffer = recibir_buffer(socket_cpu);
-    uint32_t dirFisica = buffer_read_uint32(buffer);
-    uint32_t pid = buffer_read_uint32(buffer);
-    uint32_t nroPag = buffer_read_uint32(buffer);
-    destruir_buffer_nuestro(buffer);
-
-    uint32_t valorLeido = 0;
-    memcpy(&valorLeido, memoriaPrincipal + dirFisica, sizeof(uint32_t));
-
-    enviar_codigo(socket_cpu, MOV_IN_OK);
-
-    t_pagina* pagLeida = buscarPaginaPorNroYPid(nroPag, pid);
-    pagLeida->ultimaReferencia = temporal_get_string_time("%H:%M:%S:%MS");
-
-    log_info(logger_memoria, "PID: %d - Acción: LEER - Dirección física: %d", pid, dirFisica);
-
-    //log_warning(logger_memoria, "Valor leido: %d", valorLeido);
-
-    buffer = crear_buffer_nuestro();
-    buffer_write_uint32(buffer, valorLeido);
-    enviar_buffer(buffer, socket_cpu);
-    destruir_buffer_nuestro(buffer);
-}
-*/
-
-    void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
-    {
-        buffer = recibir_buffer(cliente_fd);
-        t_cde *cde = armarCde(buffer);
-        destruir_buffer(buffer);
-        // agrego una tabla vacio de paginas asociada al proceso, auna lista de tablas globales
-        crear_y_agregar_tabla_a_lista_global(cde->pid);
+void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
+{
+    buffer = recibir_buffer(cliente_fd);
+    t_cde *cde = armarCde(buffer);
+    destruir_buffer(buffer);
+    // agrego una tabla vacio de paginas asociada al proceso, auna lista de tablas globales
+    crear_y_agregar_tabla_a_lista_global(cde->pid);
 
     cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
     if (cde->path == NULL || cde->lista_instrucciones == NULL)
@@ -456,25 +432,25 @@ void crear_y_agregar_tabla_a_lista_global(int pid)
     log_info(logger, "PID: <%d> - Tamaño : <%d>", pid, list_size(tabla_proceso->paginas_proceso));
 }
 
-    t_cde *armarCde(tipo_buffer * buffer)
-    {
-        t_cde *cde = malloc(sizeof(t_cde));
-        cde->pid = leer_buffer_enteroUint32(buffer);
-        cde->path = leer_buffer_string(buffer);
-        cde->lista_instrucciones = list_create();
-        return cde;
-    }
+t_cde *armarCde(tipo_buffer *buffer)
+{
+    t_cde *cde = malloc(sizeof(t_cde));
+    cde->pid = leer_buffer_enteroUint32(buffer);
+    cde->path = leer_buffer_string(buffer);
+    cde->lista_instrucciones = list_create();
+    return cde;
+}
 
 t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 {
     t_list *list_instrucciones = list_create();
     char *ruta_completa = string_new();
     string_append(&ruta_completa, valores_config->path_instrucciones);
-    //string_append(&ruta_completa, "/");
+    // string_append(&ruta_completa, "/");
     string_append(&ruta_completa, nombre_archivo);
-    //ruta_completa = obtener_ruta(nombre_archivo);
+    // ruta_completa = obtener_ruta(nombre_archivo);
 
-        FILE *archivo = fopen(ruta_completa, "r");
+    FILE *archivo = fopen(ruta_completa, "r");
 
     if (archivo == NULL)
     {
@@ -492,8 +468,6 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
     return list_instrucciones;
 }
 
-
-
 void enviar_tamanio_pagina(int cpu)
 {
     tipo_buffer *buffer_con_tam_pagina = crear_buffer();
@@ -506,36 +480,36 @@ void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
 {
     sleep_ms(valores_config->retardo_respuesta);
 
-        tipo_buffer *buffer = recibir_buffer(cliente_fd);
-        uint32_t PID = leer_buffer_enteroUint32(buffer);
-        uint32_t PC = leer_buffer_enteroUint32(buffer);
+    tipo_buffer *buffer = recibir_buffer(cliente_fd);
+    uint32_t PID = leer_buffer_enteroUint32(buffer);
+    uint32_t PC = leer_buffer_enteroUint32(buffer);
 
-        t_cde *contexto = malloc(sizeof(t_cde));
+    t_cde *contexto = malloc(sizeof(t_cde));
 
-        contexto = obtener_contexto_en_ejecucion(PID, contextos);
+    contexto = obtener_contexto_en_ejecucion(PID, contextos);
 
-        tipo_buffer *buffer_instruccion = crear_buffer();
-        char *instruccion = string_new();
-        instruccion = list_get(contexto->lista_instrucciones, PC);
+    tipo_buffer *buffer_instruccion = crear_buffer();
+    char *instruccion = string_new();
+    instruccion = list_get(contexto->lista_instrucciones, PC);
 
     enviar_op_code(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
 
-        enviar_buffer(buffer_instruccion, cliente_fd);
-        destruir_buffer(buffer_instruccion);
-        destruir_buffer(buffer);
-        log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
-        free(instruccion);
-    }
+    enviar_buffer(buffer_instruccion, cliente_fd);
+    destruir_buffer(buffer_instruccion);
+    destruir_buffer(buffer);
+    log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
+    free(instruccion);
+}
 
-    t_cde *obtener_contexto_en_ejecucion(int PID, t_list *contextos)
-    {
-        PID_buscado = PID;
-        t_cde *cde_proceso = malloc(sizeof(t_cde));
-        cde_proceso = list_find(contextos, estaElContextoConCiertoPID);
-        cde_proceso->lista_instrucciones = list_get(lista_instrucciones, cde_proceso->pid);
-        return cde_proceso;
-    }
+t_cde *obtener_contexto_en_ejecucion(int PID, t_list *contextos)
+{
+    PID_buscado = PID;
+    t_cde *cde_proceso = malloc(sizeof(t_cde));
+    cde_proceso = list_find(contextos, estaElContextoConCiertoPID);
+    cde_proceso->lista_instrucciones = list_get(lista_instrucciones, cde_proceso->pid);
+    return cde_proceso;
+}
 
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code)
 {
@@ -618,10 +592,10 @@ char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code)
     return NULL;
 }
 
-    _Bool estaElContextoConCiertoPID(t_cde * contexto)
-    {
-        return contexto->pid == PID_buscado;
-    }
+_Bool estaElContextoConCiertoPID(t_cde *contexto)
+{
+    return contexto->pid == PID_buscado;
+}
 
 void finalizar_proceso(int kernel, tipo_buffer *buffer)
 {
@@ -629,15 +603,16 @@ void finalizar_proceso(int kernel, tipo_buffer *buffer)
     uint32_t pid = leer_buffer_enteroUint32(buffer);
     t_registros *registros = leer_buffer_registros(buffer);
 
-    t_cde *cde = obtener_contexto_en_ejecucion(pid, lista_contextos);   
+    t_cde *cde = obtener_contexto_en_ejecucion(pid, lista_contextos);
 
-    if(cde !=NULL){                 
+    if (cde != NULL)
+    {
         cde->registros = registros;
-        eliminar_cde(cde);  
+        eliminar_cde(cde);
         obtener_y_eliminar_cde(pid, registros);
         eliminar_tabla_paginas(pid);
     }
-    
+
     enviar_op_code(kernel, FINALIZAR_PROCESO);
 }
 
@@ -672,19 +647,19 @@ void liberar_registros(t_registros *registros)
     free(registros);
 }
 
-    config_memoria *configuracion_memoria()
-    {
-        config_memoria *valores_config = malloc(sizeof(config_memoria));
+config_memoria *configuracion_memoria()
+{
+    config_memoria *valores_config = malloc(sizeof(config_memoria));
 
-        valores_config->config = iniciar_config("memoria.config");
-        valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
-        valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
-        valores_config->path_instrucciones = config_get_string_value(valores_config->config, "PATH_INSTRUCCIONES");
-        valores_config->tam_memoria = config_get_int_value(valores_config->config, "TAM_MEMORIA");
-        valores_config->tam_pagina = config_get_int_value(valores_config->config, "TAM_PAGINA");
-        valores_config->retardo_respuesta = config_get_int_value(valores_config->config, "RETARDO_RESPUESTA");
-        return valores_config;
-    }
+    valores_config->config = iniciar_config("memoria.config");
+    valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
+    valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
+    valores_config->path_instrucciones = config_get_string_value(valores_config->config, "PATH_INSTRUCCIONES");
+    valores_config->tam_memoria = config_get_int_value(valores_config->config, "TAM_MEMORIA");
+    valores_config->tam_pagina = config_get_int_value(valores_config->config, "TAM_PAGINA");
+    valores_config->retardo_respuesta = config_get_int_value(valores_config->config, "RETARDO_RESPUESTA");
+    return valores_config;
+}
 
 t_pagina *crear_pagina(int bit_validez, int marco, int pidProceso)
 {
@@ -701,10 +676,10 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas)
     return list_paginas;
 }
 
-    void eliminar_tabla_paginas(uint32_t pid)
-    {
-        int cant_paginas = 0;
-        t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista global de  tabla del proceso
+void eliminar_tabla_paginas(uint32_t pid)
+{
+    int cant_paginas = 0;
+    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista global de  tabla del proceso
 
     int tamanio_tabla_pag = list_size(tabla_paginas->paginas_proceso);
     for (int i = 0; i < tamanio_tabla_pag; i++)
@@ -743,33 +718,27 @@ t_tabla_paginas *buscar_en_lista_global(int pid)
 
 void colocar_pagina_en_marco(t_pagina *pagina)
 {
-    int *marco_libre = agarro_marco_que_este_libre(lista_global_marcos); // consigo el primer marco libre que encuentro
-    if (marco_libre == NULL)
+    int marco_libre = obtener_posicion_marco_libre(); // consigo el primer marco libre que encuentro
+    if (marco_libre == -1)
     {
         log_info(logger, "No hay ningun marco libre, OUT OF MEMORY");
         // puede ser que debamos finalizar el proceso
     }
-    pagina->bit_validez = 1; // esta en memoria ffisica , o sea tiene un marco
-    pagina->marco = *marco_libre;
+    pagina->bit_validez = 1; // esta en memoria fisica , o sea tiene un marco
+    pagina->marco = marco_libre;
 }
 
-    int *agarro_marco_que_este_libre()
+int obtener_posicion_marco_libre()
+{
+    for (int i = 0; i < cant_marcos; i++)
     {
-        int pos_marco_libre = obtener_marco_libre();           // busco el primer marco libre que encuentro en el bitmap
-        return list_get(lista_global_marcos, pos_marco_libre); // hago list get para conseguir en la lista global de marcos,la posicion
-    }
-
-    int obtener_marco_libre()
-    {
-        for (int i = 0; i < cant_marcos; i++)
+        if (array_bitmap[i].bit_ocupado == 0)
         {
-            if (array_bitmap[i].bit_ocupado == 0)
-            {
-                return i;
-            }
+            return i;
         }
-        return -1;
     }
+    return -1;
+}
 
 int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina_buscada)
 {
@@ -786,10 +755,10 @@ int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina_busca
     return -1;
 }
 
-    void liberar_marco(int nroMarco)
-    {
-        list_replace(lista_global_marcos, nroMarco, NULL);
-    }
+void liberar_marco(int nroMarco)
+{
+    list_replace(lista_global_marcos, nroMarco, NULL);
+}
 
 void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
@@ -882,7 +851,7 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         return;
     }
     int paginas_actuales = list_size(tabla_paginas->paginas_proceso); // cantida de paginas que hay jasta el momento
-                                                                            // Si el proceso tiene más páginas de las requeridas, liberar las excesivas desde el final
+                                                                      // Si el proceso tiene más páginas de las requeridas, liberar las excesivas desde el final
     t_list *paginas = tabla_paginas->paginas_proceso;
     while (paginas_actuales > paginas_requeridas)
     {
@@ -927,21 +896,23 @@ void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, vo
     }
 }
 
-void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio){
+void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio)
+{
     sleep_ms(valores_config->retardo_respuesta);
-    log_info(logger,"PID: <PID> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>",direccion_fisica,tamanio);
+    log_info(logger, "PID: <PID> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", direccion_fisica, tamanio);
 
     void *destino = espacio_usuario + direccion_fisica;
     memcpy(destino, valor_a_escribir, tamanio);
-    //implementar chequeo de si se puede escribir dicho espacio 
+    // implementar chequeo de si se puede escribir dicho espacio
     return (void *)1;
 }
-void * leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio){
+void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio)
+{
     sleep_ms(valores_config->retardo_respuesta);
-    log_info(logger,"PID: <PID> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>",direccion_fisica,tamanio);
+    log_info(logger, "PID: <PID> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", direccion_fisica, tamanio);
 
     void *valor = malloc(tamanio);
     memcpy(valor, espacio_usuario + direccion_fisica, tamanio);
-    //implementar chequeo de si se puede leer dicho espacio
+    // implementar chequeo de si se puede leer dicho espacio
     return valor;
 }

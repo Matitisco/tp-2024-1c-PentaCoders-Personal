@@ -57,11 +57,10 @@ int cant_marcos;
 t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso);
 void eliminar_tabla_paginas(uint32_t pid);
 t_tabla_paginas *buscar_en_lista_global(int pid);
-int obtener_marco_libre();
+int obtener_posicion_marco_libre();
 uint32_t hay_marco_libre();
 t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
 void crear_y_agregar_tabla_a_lista_global(int pid);
-int *agarro_marco_que_este_libre();
 
 void crearHilos();
 config_memoria *configuracion_memoria();
@@ -114,8 +113,8 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
 int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina);
 void enviar_tamanio_pagina(int cpu);
 void liberar_marco(int nroMarco);
-int obtener_marco_libre();
-int *agarro_marco_que_este_libre();
+int obtener_posicion_marco_libre();
+
 void colocar_pagina_en_marco(t_pagina *pagina);
 t_tabla_paginas *buscar_en_lista_global(int pid);
 void eliminar_tabla_paginas(uint32_t pid);
