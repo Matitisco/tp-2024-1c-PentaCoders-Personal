@@ -146,10 +146,28 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
         }
     }
 }
-
+/* -- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
+int devolver_ejecucion_al_proceso_anterior(t_recurso *recurso)
+{
+	if (recurso->devolucion_signal==true)
+	{
+		return 1;
+	}
+	return 0;
+}
+*/
 void eliminar_proceso(t_pcb *proceso)
 {
     // liberar_archivos(proceso->archivosAsignados); PARA CUANDO HAGAMOS EL FILE SYSTEM
+
+    /* PARA DEVOLVER LA EJECUCION AL PROCESO QUE DESBLOQUEO por falta de recurso lo hago en liberar_recursos()
+
+    t_recurso recurso = list_find(proceso->recursosAsignados,devolver_ejecucion_al_proceso_anterior);
+    if(recurso.devolucion_signal==true){
+			recurso.devolucion_signal=false;
+			sem_post(b_transicion_blocked_ready);
+		}
+       */
     liberar_recursos(proceso);
     proceso->estado = EXIT;
 }
@@ -235,7 +253,7 @@ char *mostrar_motivo(motivoFinalizar motivo)
 
 void liberar_recursos(t_pcb *proceso)
 {   //TODO
-    /*
+    
     int tamanio = list_size(proceso->recursosAsignados);
     // se le asignan mal los recursos al proceso
     log_info(logger, "CANTIDAD DE RECURSOS ASIGNADOS QUE TIENE EL PROCESO: %d: %d", proceso->cde->pid, tamanio);
@@ -245,20 +263,21 @@ void liberar_recursos(t_pcb *proceso)
         t_recurso *recurso_pcb = list_get(proceso->recursosAsignados, i);
         char *nombre_rec = recurso_pcb->nombre;
         log_info(logger, "RECURSO A LIBERAR DEL PROCESO %d : %s", proceso->cde->pid, nombre_rec);
-
+        
         int cant_instancias;
-        sem_getvalue(&(recurso_pcb->instancias), &cant_instancias);
+        sem_getvalue(recurso_pcb->instancias, &cant_instancias);
 
-        log_info(logger, "INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO: %d : %d", nombre_rec, proceso->cde->pid, cant_instancias);
+        log_info(logger, "%d INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO <%d>", cant_instancias, nombre_rec, proceso->cde->pid);
         for (int i = 0; i < cant_instancias; i++)
         {
         
-            sem_wait(&(recurso_pcb->instancias));
-            int recursos_SO = cant_recursos_SO(valores_config->recursos);
+            sem_wait(recurso_pcb->instancias);
+            //int recursos_SO = cant_recursos_SO(valores_config->recursos);
+            int recursos_SO = list_size(valores_config->recursos);
             log_info(logger, "RECURSOS SO: %d", recursos_SO);
-            for (int i = 0; i < (recursos_SO - 1); i++)
+            for (int i = 0; i < (recursos_SO); i++)
             {
-                t_recurso *recurso_SO = valores_config->recursos[i];
+                t_recurso *recurso_SO = list_get(valores_config->recursos,i);
                 if (strcmp(recurso_SO->nombre, nombre_rec) == 0)
                 {
                     sem_post(&(recurso_SO->instancias));
@@ -270,7 +289,7 @@ void liberar_recursos(t_pcb *proceso)
         sem_destroy(recurso_pcb->instancias);
     }
     list_destroy(proceso->recursosAsignados);
-    */
+    
 }
 
 int cant_recursos_SO(t_recurso **recursos)
@@ -333,7 +352,7 @@ void mostrar_procesos(colaEstado *cola)
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 {
 
-    log_info(logger, "\033[1;32m \n Buscando el proceso <%d> en la cola %s \n \033[0m", pid_buscado, nombreCola); //
+    //log_info(logger, "\033[1;32m \n Buscando el proceso <%d> en la cola %s \n \033[0m", pid_buscado, nombreCola); //
 
     t_pcb *pcb_buscada = NULL;
 

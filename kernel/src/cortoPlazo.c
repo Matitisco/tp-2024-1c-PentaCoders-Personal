@@ -204,6 +204,7 @@ t_pcb *transicion_ready_exec()
     //sem_wait(contador_readys);
     t_pcb *proceso = transicion_generica(cola_ready_global,cola_exec_global,"corto");
     proceso->estado = EXEC;
+    //proceso->estado = BLOCKED;
     
     log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
 

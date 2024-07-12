@@ -43,4 +43,7 @@ void liberar_archivos(t_pcb *proceso);
 
 void *destroy_archivos(void *element);
 
+
+//int devolver_ejecucion_al_proceso_anterior(t_recurso *recurso); -- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
+
 #endif

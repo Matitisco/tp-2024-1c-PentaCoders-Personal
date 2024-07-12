@@ -37,6 +37,9 @@ typedef struct
 	char *nombre;
 	sem_t *instancias;
 	colaEstado *cola_bloqueados;
+	/*-- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
+	bool devolucion_signal;//guardo proceso que hizo signal y desbloqueo a un proceso que le faltaba este recurso
+	*/
 } t_recurso;
 
 typedef struct
@@ -186,7 +189,7 @@ void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);//no s
 void valorSemaforo(sem_t *semaforo);
 
 
-
+void agregar_al_principio_de_cola(t_pcb *pcb, colaEstado *cola_estado); //-- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
 
 bool existe_recurso2(char *nombre_recurso);
 
