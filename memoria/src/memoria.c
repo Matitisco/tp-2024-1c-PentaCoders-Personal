@@ -192,8 +192,11 @@ void pedido_frame_mmu(int cliente_cpu)
     destruir_buffer(buffer_mmu_cpu);
 
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
+    int cant_paginas_proceso = list_size(tabla->paginas_proceso);
 
-    if (pagina >= list_size(tabla->paginas_proceso)  )
+    printf("\033[38;2;255;105;180m EL proceso %d tiene %d paginas\033[0m\n",pid,cant_paginas_proceso);
+
+    if (pagina >= cant_paginas_proceso)
     {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
         return;
@@ -674,86 +677,69 @@ void liberar_marco(int nroMarco)
     list_replace(lista_global_marcos, nroMarco, NULL);
 }
 
-void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
-{
-    // Vemos cuantas paginas tenemos que agregar con este nuevo tamanio
-    int paginas_adicionales = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
-    log_info(logger, "CANTIDAD MARCOS A ASIGNAR: %d", paginas_adicionales);
-    int tamanio_anterior = tamanio_proceso(pid);
-    int paginas_actuales = (tamanio_anterior + valores_config->tam_pagina - 1) / valores_config->tam_pagina;
-
-    //  Verificar si hay suficientes marcos disponibles
-    hay_marcos_suficientes(paginas_adicionales, cliente_cpu);
-
+void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu) {
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
-
-    if (tabla_paginas == NULL)
-    {
+    if (!tabla_paginas) {
         log_error(logger, "PID: <%d> - NO SE ENCONTRO TABLA PAGINAS", pid);
         return;
     }
 
-    int marco_libre, j = 0;
+    int tam_pagina = valores_config->tam_pagina;
+    int cantidad_paginas_nuevas = tamanio / tam_pagina;
+    int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
 
-    t_list *tp_paginas_proceso = tabla_paginas->paginas_proceso;
+    printf("\033[38;2;255;105;180mCantidad de paginas actuales: %d\033[0m\n", cantidad_paginas_actuales);
+    printf("\033[38;2;255;105;180mCantidad de paginas nuevas: %d\033[0m\n", cantidad_paginas_nuevas);
 
-    for (int i = 0; i < cant_marcos; i++)
-    {
-        marco_libre = -1;
-        if (j == paginas_adicionales)
-        {
-            break;
-        }
-        while (j < (paginas_adicionales))
-        {
-            if (array_bitmap[i].bit_ocupado == 0)
-            {
-                marco_libre = i;
+    int paginas_adicionales = cantidad_paginas_nuevas - cantidad_paginas_actuales;
+    log_info(logger, "CANTIDAD MARCOS A ASIGNAR: %d", paginas_adicionales);
 
-                agregar_pagina(crear_pagina(1, marco_libre, pid), tp_paginas_proceso);
-                array_bitmap[i].bit_ocupado = 1;
-                j++;
-                break;
-            }
-            else
-            {
-                j++;
-                break;
-            }
-        }
+    if (paginas_adicionales > cantidad_marcos_libres()) {
+        log_error(logger, "NO HAY SUFICIENTES MARCOS DISPONIBLES");
+        enviar_op_code(cliente_cpu, OUT_OF_MEMORY);
+        return;
     }
 
-    for (int i = 0; i < list_size(tp_paginas_proceso); i++)
-    {
-        t_pagina *pagina = list_get(tp_paginas_proceso, i);
-        log_info(logger, "PAGINA: %d, PID:%d, MARCO:%d, VALIDEZ:%d ", i, pagina->pid, pagina->marco, pagina->bit_validez);
-    }
+    asignar_paginas_nuevas(tabla_paginas, paginas_adicionales, pid);
 
+    imprimir_paginas_proceso(tabla_paginas->paginas_proceso);
+
+    int tamanio_anterior = tamanio_proceso(pid);
     log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
     enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
 }
 
-void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu)
+void asignar_paginas_nuevas(t_tabla_paginas *tabla_paginas, int paginas_adicionales, uint32_t pid) {
+    t_list *tp_paginas_proceso = tabla_paginas->paginas_proceso;
+    for (int i = 0, asignadas = 0; i < cant_marcos && asignadas < paginas_adicionales; ++i) {
+        if (!array_bitmap[i].bit_ocupado) {
+            agregar_pagina(crear_pagina(1, i, pid), tp_paginas_proceso);
+            array_bitmap[i].bit_ocupado = 1;
+            ++asignadas;
+        }
+    }
+}
+
+
+int cantidad_marcos_libres()
 {
-    int marcos_disponibles = 0;
+    int marcos_libres = 0;
     for (int i = 0; i < cant_marcos; i++)
     {
         if (array_bitmap[i].bit_ocupado == 0)
-        { // si no esta ocupado
-            marcos_disponibles++;
+        {
+            marcos_libres++;
         }
     }
-    // 32
-    log_info(logger, "MARCOS DISPONIBLES: <%d>", marcos_disponibles);
-    if (paginas_adicionales > marcos_disponibles)
-    { // si hay mas paginas que  cant marcos le avisamos a cpu
-        enviar_op_code(cliente_cpu, OUT_OF_MEMORY);
-        log_error(logger, "OUT OF MEMORY");
-        return;
-    }
-    // Buscar la tabla de páginas del proceso correspondiente
+    log_info(logger, "MARCOS DISPONIBLES: <%d>", marcos_libres);
+    return marcos_libres;
 }
-
+void imprimir_paginas_proceso(t_list *tp_paginas_proceso){
+    for (int i = 0; i < list_size(tp_paginas_proceso); ++i) {
+        t_pagina *pagina = list_get(tp_paginas_proceso, i);
+        log_info(logger, "PAGINA: %d, PID:%d, MARCO:%d, VALIDEZ:%d", i, pagina->pid, pagina->marco, pagina->bit_validez);
+    }
+}
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
     int paginas_requeridas = (tamanio + valores_config->tam_pagina - 1) / valores_config->tam_pagina; // cant de paginas que tiene que tener con este nuevo tamanio

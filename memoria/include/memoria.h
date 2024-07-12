@@ -66,6 +66,8 @@ config_memoria *configuracion_memoria();
 void *recibirCPU();
 void *recibirKernel();
 void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu);
+int cantidad_marcos_libres();
+void imprimir_paginas_proceso(t_list *tp_paginas_proceso);
 void *recibir_interfaces_io();
 void inicializar_bitmap(int cant_marcos);
 void crear_marcos(int cant_marcos);
@@ -110,6 +112,7 @@ void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante);
 // resize
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
 void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
+void asignar_paginas_nuevas(t_tabla_paginas *tabla_paginas, int paginas_adicionales, uint32_t pid);
 
 // auxx de paginas
 int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina);
