@@ -160,11 +160,13 @@ void interfaz_no_conectada(int pid);
 void eliminar_proceso(t_pcb *proceso);
 t_pcb *buscarProceso(uint32_t pid);
 void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
+
 // FUNCIONES DE ENTRADA/SALIDA
 
 char *obtener_interfaz(enum_interfaz interfaz);
+_Bool interfaz_esta_en_lista(void *ptr);
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion);
-_Bool interfaz_esta_conectada(void *ptr);
+_Bool interfaz_esta_conectada(t_infoIO *informacion_interfaz);
 t_cde *iniciar_cde(char *PATH);
 void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid);
 void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid);

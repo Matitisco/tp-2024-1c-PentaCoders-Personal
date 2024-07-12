@@ -677,7 +677,6 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 				}
 				else
 				{
-
 					// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
 				}
 				break;
@@ -703,7 +702,6 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 				}
 				else
 				{
-
 					// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
 				}
 				break;

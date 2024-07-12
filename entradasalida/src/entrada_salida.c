@@ -220,4 +220,3 @@ void realizar_operacion(t_interfaz *interfaz)
 		break;
 	}
 }
-

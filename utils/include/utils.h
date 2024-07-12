@@ -40,7 +40,7 @@ typedef enum
 	LISTAR_ESTADOS,
 } opciones_menu;
 
-typedef enum
+	typedef enum
 {
 	SOLICITUD_INICIAR_PROCESO,
 	INICIAR_PROCESO_CORRECTO,
@@ -100,7 +100,8 @@ typedef enum
 	PEDIDO_FRAME,
 	PEDIDO_FRAME_CORRECTO,
 	PEDIDO_FRAME_INCORRECTO,
-	PEDIDO_ESCRITURA_DIALFS
+	PEDIDO_ESCRITURA_DIALFS,
+	CONFIRMAR_CONEXION
 } op_code;
 
 typedef enum
@@ -111,7 +112,8 @@ typedef enum
 	DIALFS,
 } enum_interfaz;
 
-typedef enum {
+typedef enum
+{
 	F_CREATE,
 	F_DELETE,
 	F_TRUNCATE,
