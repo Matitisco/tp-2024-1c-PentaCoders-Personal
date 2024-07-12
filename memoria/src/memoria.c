@@ -24,23 +24,14 @@ int main(int argc, char *argv[])
     logger = iniciar_logger("memoria.log", "MEMORIA");
     valores_config = configuracion_memoria();
 
-    lista_global_marcos = list_create(); // esta seria la tabla de marcos. Todos los marcos componen a la memoria
     lista_global_tablas = list_create();
-    cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; // va a ser la cantida de amrcos
-    espacio_usuario = malloc(valores_config->tam_memoria);
-    if (espacio_usuario == NULL)
-    {
-        log_error(logger, "ERROR ESPACIO USUARIO");
-    }
+    cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; 
+    crear_espacio_usuario();
+
     tabla_actual = malloc(sizeof(t_tabla_paginas));
 
     inicializar_bitmap(cant_marcos);
-    int i = 0;
-    while (i < cant_marcos)
-    {
-        list_add(lista_global_marcos, NULL); // creo mi lista de marcos-tabla. En principio todo en null
-        i++;
-    }
+    crear_marcos(cant_marcos);
 
     lista_contextos = list_create();
     lista_instrucciones = list_create();
@@ -49,11 +40,25 @@ int main(int argc, char *argv[])
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
-    pthread_join(hiloEspacioUsuario, NULL);
     destruirConfig(valores_config->config);
     destruirLog(logger);
 }
 
+void crear_marcos(int cant_marcos){
+    lista_global_marcos = list_create(); 
+    for (int i = 0; i < cant_marcos; i++)
+    {
+        list_add(lista_global_marcos, NULL); // creo mi lista de marcos-tabla. En principio todo en null
+    }
+}
+void crear_espacio_usuario()
+{
+    espacio_usuario = malloc(valores_config->tam_memoria);
+    if (espacio_usuario == NULL)
+    {
+        log_error(logger, "ERROR ESPACIO USUARIO");
+    }
+}
 void inicializar_bitmap(int cant_marcos)
 {
     array_bitmap = malloc(sizeof(t_bit_map) * cant_marcos);
@@ -180,12 +185,12 @@ void pedido_frame_mmu(int cliente_cpu)
 
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
 
-    if(list_size(tabla->tabla_paginas_proceso) <= pagina){
+    if(list_size(tabla->paginas_proceso) <= pagina){
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
         return;
     }
     
-    t_pagina *pagina_buscada = list_get(tabla->tabla_paginas_proceso, pagina);
+    t_pagina *pagina_buscada = list_get(tabla->paginas_proceso, pagina);
     int marco = pagina_buscada->marco;
 
     if (marco < 0)
@@ -205,7 +210,7 @@ void pedido_frame_mmu(int cliente_cpu)
 int tamanio_proceso(int pid)
 {
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // devuelve mi tabla de proceso
-    int cant_paginas_proceso = list_size(tabla_paginas->tabla_paginas_proceso);
+    int cant_paginas_proceso = list_size(tabla_paginas->paginas_proceso);
     return cant_paginas_proceso * valores_config->tam_pagina;
 }
 
@@ -445,10 +450,10 @@ void ejecutarMovIn(){
 void crear_y_agregar_tabla_a_lista_global(int pid)
 {
     t_tabla_paginas *tabla_proceso = malloc(sizeof(t_tabla_paginas));
-    tabla_proceso->tabla_paginas_proceso = list_create();
+    tabla_proceso->paginas_proceso = list_create();
     tabla_proceso->pid = pid;
     list_add(lista_global_tablas, tabla_proceso);
-    log_info(logger, "PID: <%d> - Tamaño : <%d>", pid, list_size(tabla_proceso->tabla_paginas_proceso));
+    log_info(logger, "PID: <%d> - Tamaño : <%d>", pid, list_size(tabla_proceso->paginas_proceso));
 }
 
     t_cde *armarCde(tipo_buffer * buffer)
@@ -701,18 +706,18 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas)
         int cant_paginas = 0;
         t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista global de  tabla del proceso
 
-    int tamanio_tabla_pag = list_size(tabla_paginas->tabla_paginas_proceso);
+    int tamanio_tabla_pag = list_size(tabla_paginas->paginas_proceso);
     for (int i = 0; i < tamanio_tabla_pag; i++)
     {
         // voy recorriendo el proceso la cantida de epaginas
-        t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, i);
+        t_pagina *pagina = list_get(tabla_paginas->paginas_proceso, i);
         if (pagina != NULL)
         {
             free(pagina);
             cant_paginas++; // voy contando las pag
         }
     }
-    list_destroy(tabla_paginas->tabla_paginas_proceso); // elimino todas las paginas
+    list_destroy(tabla_paginas->paginas_proceso); // elimino todas las paginas
     log_info(logger, "PID: <%d> - Tamaño: <%d> ", pid, cant_paginas);
 }
 
@@ -768,11 +773,11 @@ void colocar_pagina_en_marco(t_pagina *pagina)
 
 int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina_buscada)
 {
-    int cant_paginas = list_size(tabla->tabla_paginas_proceso);
+    int cant_paginas = list_size(tabla->paginas_proceso);
 
     for (int i = 0; i < cant_paginas; i++)
     {
-        if (list_get(tabla->tabla_paginas_proceso, i) == pagina_buscada)
+        if (list_get(tabla->paginas_proceso, i) == pagina_buscada)
         {
 
             return pagina_buscada->marco;
@@ -807,7 +812,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 
     int marco_libre, j = 0;
 
-    t_list *tp_paginas_proceso = tabla_paginas->tabla_paginas_proceso;
+    t_list *tp_paginas_proceso = tabla_paginas->paginas_proceso;
 
     for (int i = 0; i < cant_marcos; i++)
     {
@@ -876,9 +881,9 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         log_info(logger, "NO se encontro la tabla de paginas con pid %d", pid);
         return;
     }
-    int paginas_actuales = list_size(tabla_paginas->tabla_paginas_proceso); // cantida de paginas que hay jasta el momento
+    int paginas_actuales = list_size(tabla_paginas->paginas_proceso); // cantida de paginas que hay jasta el momento
                                                                             // Si el proceso tiene más páginas de las requeridas, liberar las excesivas desde el final
-    t_list *paginas = tabla_paginas->tabla_paginas_proceso;
+    t_list *paginas = tabla_paginas->paginas_proceso;
     while (paginas_actuales > paginas_requeridas)
     {
         t_pagina *pagina_a_eliminar = list_remove(paginas, paginas_actuales - 1);
@@ -895,7 +900,7 @@ void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32
 {
     usleep(valores_config->retardo_respuesta * 1000);
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
-    t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
+    t_pagina *pagina = list_get(tabla_paginas->paginas_proceso, numero_pagina);
     int marco = pagina->marco;
     log_info(logger, "PID: <%d> - Pagina: <%d> - Marco: <%d>", pid, numero_pagina, marco);
     void *valor = malloc(tamanio);
@@ -908,7 +913,7 @@ void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, vo
 {
     usleep(valores_config->retardo_respuesta * 1000);
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
-    t_pagina *pagina = list_get(tabla_paginas->tabla_paginas_proceso, numero_pagina);
+    t_pagina *pagina = list_get(tabla_paginas->paginas_proceso, numero_pagina);
     int marco = pagina->marco;
     log_info(logger, "PID: <%d> - Pagina: <%d> - Marco: <%d>", pid, numero_pagina, marco);
     void *destino = espacio_usuario + marco * valores_config->tam_pagina + offset;

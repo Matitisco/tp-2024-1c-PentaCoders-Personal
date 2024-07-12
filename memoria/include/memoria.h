@@ -27,13 +27,13 @@ typedef struct
 typedef struct
 {
 	int pid;
-	t_list *tabla_paginas_proceso;
+	t_list *paginas_proceso;
 } t_tabla_paginas;
 
 void *espacio_usuario;
 typedef struct
 {
-	int marco;		 // numeor de marco donde esta la pagina
+	int marco;		 // numero de marco donde esta la pagina
 	int bit_validez; // si esta en memoria
 	int pid;		 // la pagina conoce al proceso del cual es parte ?
 } t_pagina;
@@ -48,7 +48,7 @@ extern t_log *logger;
 
 int socket_cpu;
 int cliente_fd;
-pthread_t hiloCPU, hiloKernel, hiloIO, hiloEspacioUsuario;
+pthread_t hiloCPU, hiloKernel, hiloIO;
 
 /*Paginacion */
 t_list *list_tabla_paginas; // losta global de paginas y cada nodo tiene una tabla del proceso
@@ -70,6 +70,9 @@ void *recibirKernel();
 void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu);
 void *recibir_interfaces_io();
 void inicializar_bitmap(int cant_marcos);
+void crear_marcos(int cant_marcos);
+void crear_espacio_usuario();
+
 // void iniciar_sem_globales();
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
 void finalizar_proceso(int cliente_fd, tipo_buffer *buffer);
