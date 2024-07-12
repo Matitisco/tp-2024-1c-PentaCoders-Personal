@@ -149,6 +149,7 @@ void *levantar_kernel_interrupt()
 				break;
 			case SOLICITUD_EXIT:
 				log_info(logger, "Me llego una interrupcion para FINALIZAR_PROCESO");
+				interrupcion_exit = 1;
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
@@ -308,7 +309,7 @@ void execute(char **instruccion, t_cde *contextoProceso)
 	case EXIT:
 		interrupcion_rr = 0;
 		log_info(logger, "Instrucción Ejecutando: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
-		exec_exit(contextoProceso);
+		exec_exit(contextoProceso, SUCCESS);
 		actualizar_cde(contextoProceso);
 		break;
 	default:
@@ -348,14 +349,12 @@ void check_interrupt()
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		log_info(logger, "\nINTERRUPCION - BLOCK - \n");
 	} */
-	else if (interrupcion_exit)
+	else if (interrupcion_exit) // por parte del kernel
 	{
 		salida_exit = 0;
 		interrupcion_exit = 0;
 		log_info(logger, "Proceso %d Finalizado por Consola", cde_recibido->pid);
-		exec_exit(cde_recibido);
-		agregar_cde_buffer(buffer_cde, cde_recibido);
-		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 		log_info(logger, "\nINTERRUPCION - EXIT - \n");
 	}
 	else if (interrupcion_io)

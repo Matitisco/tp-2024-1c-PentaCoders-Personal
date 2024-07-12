@@ -19,7 +19,7 @@ void ejecutar_script(char *PATH)
         return NULL;
     }
 
-    string_append(&path_completo, ruta_acceso);    
+    string_append(&path_completo, ruta_acceso);
     string_append(&path_completo, "/../memoria/pruebas/checkpoint_3/scripts/");
     string_append(&path_completo, PATH);
 
@@ -93,9 +93,9 @@ void iniciar_proceso(char *PATH)
 
 void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
 {
-    
 
-    sem_wait(sem_finalizar_proceso); // CUANDO SE FINALIZA UN PROCESO SE QUEDA TRABADO 
+    //sem_wait(sem_finalizar_proceso); // CUANDO SE FINALIZA UN PROCESO SE QUEDA TRABADO
+
     if (motivo == SUCCESS)
     {
         finalizar_proceso_success(PID, motivo);
@@ -107,13 +107,12 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
 
         if (proceso == NULL) // NEW, READY, BLOCKED
         {
-            proceso = buscarProceso(PID); 
+            proceso = buscarProceso(PID);
         }
         else // EXEC
         {
-            enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT);   // Si esta en CPU le aviso que lo finalice
+            enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT); // Si esta en CPU le aviso que lo finalice
         }
-        
 
         enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
 
@@ -128,13 +127,11 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
         op_code codigo = recibir_op_code(socket_memoria);
         if (codigo == FINALIZAR_PROCESO)
 
-        {   
-            //printf("\033[1;34m ------------------ FINALIZAR PROCESO ------------------ \033[0m\n");
-            //proceso_estado();
-            sacar_proceso_cola(obtener_cola(proceso->estado),proceso->cde->pid);
-           
+        {
+            sacar_proceso_cola(obtener_cola(proceso->estado), proceso->cde->pid);
+
             eliminar_proceso(proceso);
-            
+
             log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
         }
         else
@@ -171,6 +168,7 @@ void eliminar_proceso(t_pcb *proceso)
 {
     liberar_archivos(proceso);
     liberar_recursos(proceso);
+    free(proceso->cde->registros); // se liberan los registros
     proceso->estado = EXIT;
 }
 
@@ -390,17 +388,16 @@ t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
 
         queue_push(colaAux, pcb);
     }
-        
 
     // Restaurar la cola original
     while (!queue_is_empty(colaAux))
     {
         queue_push(cola, queue_pop(colaAux));
     }
-    
-    //printf("\033[1;34m ------------------ FINALIZAR PROCESO ------------------ \033[0m\n");
-    //proceso_estado();
-    // Liberar memoria de la cola auxiliar y sus elementos
+
+    // printf("\033[1;34m ------------------ FINALIZAR PROCESO ------------------ \033[0m\n");
+    // proceso_estado();
+    //  Liberar memoria de la cola auxiliar y sus elementos
 
     while (!queue_is_empty(colaAux))
     {

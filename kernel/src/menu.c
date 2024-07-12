@@ -229,6 +229,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         break;
     case FINALIZAR_PROCESO_MENU:
         char *PID = readline("Ingrese el PID del Proceso a Finalizar: ");
+        //sem_post(sem_finalizar_proceso);
         finalizar_proceso(atoi(PID), INTERRUPTED_BY_USER);
         free(PID);
         break;

@@ -80,6 +80,6 @@ void exec_io_fs_delete();
 void exec_io_fs_truncate();
 void exec_io_fs_write();
 void exec_io_fs_read();
-void exec_exit(t_cde *cde);
+
 
 #endif
