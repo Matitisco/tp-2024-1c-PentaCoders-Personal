@@ -19,8 +19,12 @@ void ejecutar_script(char *PATH)
         return NULL;
     }
 
+    /*
     string_append(&path_completo, ruta_acceso);    
     string_append(&path_completo, "/../memoria/pruebas/checkpoint_3/scripts/");
+    string_append(&path_completo, PATH);
+    */  
+    string_append(&path_completo, "/home/nahuel/memoria/tp-2024-1c-PentaCoders/memoria/scripts_memoria/");
     string_append(&path_completo, PATH);
 
     FILE *archivo_script = fopen(path_completo, "r");

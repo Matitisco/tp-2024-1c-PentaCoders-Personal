@@ -38,6 +38,11 @@ uint32_t traducir_direccion_mmu(uint32_t direccion_logica){
     int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
     //int marco = obtener_frame_tlb(numero_pagina, cde_recibido->pid);
     int marco = enviar_peticion_frame(numero_pagina);
+    if (marco == -1)
+    {
+        return -1;
+    }
+    
     /*
     if(marco == -1){ //TLB MISS
         //marco = enviar_peticion_frame(numero_pagina);
@@ -87,6 +92,8 @@ int enviar_peticion_frame(int pagina)
     else if (respuesta_mmu == PEDIDO_FRAME_INCORRECTO)
     {
         log_info(logger, "PID: <%d> - ERROR OBTENER MARCO - Pagina: <%d>", cde_recibido->pid, pagina);
+        frame_buscado = -1;
+        //hay que finalizar el proceso o hacer un interrucion 
     }
 
     return frame_buscado;

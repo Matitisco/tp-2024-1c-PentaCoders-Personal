@@ -1,4 +1,5 @@
 #include "../include/cicloinstruccion.h"
+//#include "../include/cpu.h"
 
 t_registros *registros;
 
@@ -42,6 +43,12 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 {
     uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
+    if (direccion_fisica == -1)
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+        //interrupcion_exit = 1;
+        return;
+    }
     log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
@@ -83,7 +90,13 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
     uint32_t reg_valor = obtener_valor(datos);
     uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-
+    if (direccion_fisica == -1)
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+        //interrupcion_exit = 1;
+        return;
+    }
+    
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
     enviar_op_code(socket_memoria, SOLICITUD_ESCRITURA_CPU);

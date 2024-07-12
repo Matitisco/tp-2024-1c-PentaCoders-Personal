@@ -179,6 +179,12 @@ void pedido_frame_mmu(int cliente_cpu)
     destruir_buffer(buffer_mmu_cpu);
 
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
+
+    if(list_size(tabla->tabla_paginas_proceso) <= pagina){
+        enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
+        return;
+    }
+    
     t_pagina *pagina_buscada = list_get(tabla->tabla_paginas_proceso, pagina);
     int marco = pagina_buscada->marco;
 
