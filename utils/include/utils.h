@@ -19,6 +19,7 @@
 #include "registros.h"
 #include "sockets.h"
 typedef t_list t_lista_recursos;
+#define RUTA_RAIZ "/home/nahuel/memoria/tp-2024-1c-PentaCoders"
 
 typedef enum
 {

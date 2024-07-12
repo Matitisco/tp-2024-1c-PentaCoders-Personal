@@ -566,7 +566,7 @@ config_memoria *configuracion_memoria()
 {
     config_memoria *valores_config = malloc(sizeof(config_memoria));
 
-    valores_config->config = iniciar_config("memoria.config");
+    valores_config->config = iniciar_config(RUTA_RAIZ"/memoria/memoria.config");
     valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
     valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
     valores_config->path_instrucciones = config_get_string_value(valores_config->config, "PATH_INSTRUCCIONES");
