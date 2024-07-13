@@ -53,11 +53,13 @@ void iniciar_memoria()
     lista_instrucciones = list_create();
 
     cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; // va a ser la cantida de amrcos
-    espacio_usuario = malloc(valores_config->tam_memoria);
-    if (espacio_usuario == NULL)
-    {
-        log_error(logger, "ERROR ESPACIO USUARIO");
+
+    if (valores_config->tam_memoria % valores_config->tam_pagina != 0) {
+        log_error(logger, "Memoria no puede iniciar, el tamaño de página no es múltiplo del tamaño de memoria");
+        exit(EXIT_FAILURE);
     }
+    crear_espacio_usuario(valores_config->tam_memoria, logger);
+
     tabla_actual = malloc(sizeof(t_tabla_paginas));
 
     inicializar_bitmap(cant_marcos);
@@ -204,7 +206,6 @@ void *recibirCPU()
 
 void pedido_frame_mmu(int cliente_cpu)
 {
-
     tipo_buffer *buffer_mmu_cpu = recibir_buffer(cliente_cpu);
     int pid = leer_buffer_enteroUint32(buffer_mmu_cpu);
     int pagina = leer_buffer_enteroUint32(buffer_mmu_cpu);
@@ -213,7 +214,7 @@ void pedido_frame_mmu(int cliente_cpu)
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
     int cant_paginas_proceso = list_size(tabla->paginas_proceso);
 
-    printf("\033[38;2;255;105;180m EL proceso %d tiene %d paginas\033[0m\n", pid, cant_paginas_proceso);
+    printf_orange("El proceso %d tiene %d paginas", pid, cant_paginas_proceso);
 
     if (pagina >= cant_paginas_proceso)
     {
@@ -626,14 +627,14 @@ void eliminar_tabla_paginas(uint32_t pid)
 
     // Elimina todas las páginas y libera su memoria
     list_destroy_and_destroy_elements(tabla_paginas->paginas_proceso, (void *)destruir_pagina);
-
+    imprimir_estado_marcos();
     log_info(logger, "PID: <%d> - Tamaño: <%d> ", pid, cant_paginas);
 }
 
 void destruir_pagina(void *pagina)
 {
     t_pagina *pagina2 = (t_pagina *)pagina;
-    printf("Pagina destruida:marco:%d pid: %d\n", pagina2->marco, pagina2->pid);
+    liberar_marco(pagina2->marco);
     free(pagina2);
 }
 
@@ -698,9 +699,18 @@ int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina_busca
 
 void liberar_marco(int nroMarco)
 {
-    list_replace(lista_global_marcos, nroMarco, NULL);
+    array_bitmap[nroMarco].bit_ocupado = 0;
 }
-
+void imprimir_estado_marcos(){
+    printf_yellow("ESTADO DE LOS MARCOS");
+    printf_yellow("---------------------");
+    printf_yellow("|MARCO   | OCUPADO |");
+    for (int i = 0; i < cant_marcos; i++)
+    {
+        printf_yellow("|  %d      |    %d   |", i, array_bitmap[i].bit_ocupado);
+        printf_yellow("---------------------");
+    }
+}
 void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
@@ -714,8 +724,8 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     int cantidad_paginas_nuevas = tamanio / tam_pagina;
     int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
 
-    printf("\033[38;2;255;105;180mCantidad de paginas actuales: %d\033[0m\n", cantidad_paginas_actuales);
-    printf("\033[38;2;255;105;180mCantidad de paginas nuevas: %d\033[0m\n", cantidad_paginas_nuevas);
+    printf_green("Cantidad de paginas actuales: %d", cantidad_paginas_actuales);
+    printf_green("Cantidad de paginas nuevas: %d", cantidad_paginas_nuevas);
 
     int paginas_adicionales = cantidad_paginas_nuevas - cantidad_paginas_actuales;
     log_info(logger, "CANTIDAD MARCOS A ASIGNAR: %d", paginas_adicionales);
@@ -730,6 +740,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     asignar_paginas_nuevas(tabla_paginas, paginas_adicionales, pid);
 
     imprimir_paginas_proceso(tabla_paginas->paginas_proceso);
+    imprimir_estado_marcos();
 
     log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
     enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
@@ -764,10 +775,16 @@ int cantidad_marcos_libres()
 }
 void imprimir_paginas_proceso(t_list *tp_paginas_proceso)
 {
+    t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso)-1);
+    printf_yellow("      TABLA PROCESO %d",pagina2->pid);
+
+   printf_yellow("-------------------------------");
+   printf_yellow("|PAGINA   | MARCO  |  VALIDEZ |");
     for (int i = 0; i < list_size(tp_paginas_proceso); ++i)
     {
         t_pagina *pagina = list_get(tp_paginas_proceso, i);
-        log_info(logger, "PAGINA: %d, PID:%d, MARCO:%d, VALIDEZ:%d", i, pagina->pid, pagina->marco, pagina->bit_validez);
+        printf_yellow("|  %d      |    %d   |      %d   |", i, pagina->marco, pagina->bit_validez);
+        printf_yellow("-------------------------------");
     }
 }
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
@@ -799,9 +816,12 @@ void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar)
         // Siempre se elimina la última página debido a que la lista se reduce en cada iteración
         t_pagina *pagina_a_eliminar = list_remove(paginas, list_size(paginas) - 1);
         pagina_a_eliminar->bit_validez = 0; // Marcar como no válida
+        liberar_marco(pagina_a_eliminar->marco);
         free(pagina_a_eliminar);            // Liberar la memoria de la página
     }
+    imprimir_estado_marcos();
 }
+
 
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio)
 {

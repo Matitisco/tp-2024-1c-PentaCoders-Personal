@@ -113,4 +113,6 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
 t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso);
 int tamanio_proceso(int pid);
 
+void liberar_marco(int nroMarco);
+void imprimir_estado_marcos();
 #endif
