@@ -3,7 +3,7 @@
 // VARIABLES GLOBALES
 config_cpu *valores_config_cpu;
 int interrupcion_rr;
-int interrupcion_exit;
+
 int interrrupcion_fifo;
 int interrupcion_entrada_salida;
 int interrupcion_io;
@@ -14,6 +14,7 @@ int salida_exit;
 int desalojo_wait;
 int desalojo_signal;
 int tamanio_pagina;
+
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
 pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
@@ -22,9 +23,11 @@ pthread_mutex_t *mutex_cde_ejecutando;
 sem_t *sem_check_interrupt;
 sem_t *sem_interface;
 t_cde *cde_recibido;
+int interrupcion_exit;
 
 int main(int argc, char *argv[])
 {
+	interrupcion_exit = 0;
 	iniciar_modulo_cpu();
 
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
@@ -482,7 +485,7 @@ config_cpu *configurar_cpu()
 {
 	config_cpu *valores_config_cpu = malloc(sizeof(config_cpu));
 
-	valores_config_cpu->config = iniciar_config("cpu.config");
+	valores_config_cpu->config = iniciar_config(RUTA_RAIZ"/cpu/cpu.config");
 	valores_config_cpu->ip = config_get_string_value(valores_config_cpu->config, "IP_MEMORIA");
 	valores_config_cpu->puerto_memoria = config_get_string_value(valores_config_cpu->config, "PUERTO_MEMORIA");
 	valores_config_cpu->puerto_escucha_dispatch = config_get_string_value(valores_config_cpu->config, "PUERTO_ESCUCHA_DISPATCH");

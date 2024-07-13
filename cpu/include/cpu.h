@@ -14,6 +14,7 @@
 #include "../../kernel/include/kernel.h"
 
 // VARIABLES
+extern int interrupcion_exit;
 extern int socket_kernel_dispatch;
 extern int tamanio_pagina;
 extern int desalojo_wait;

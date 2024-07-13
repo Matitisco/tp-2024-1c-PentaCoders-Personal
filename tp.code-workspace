@@ -10,7 +10,8 @@
 			"string": "c",
 			"random": "c",
 			"hash_map": "c",
-			"algorithm": "c"
+			"algorithm": "c",
+			"cstdint": "c"
 		},
 		"C_Cpp.errorSquiggles": "disabled",
 	},

@@ -33,6 +33,30 @@ uint32_t direccion_logica_a_fisica(int direccion_logica)
         return direccion_fisica;
     }
 }
+uint32_t traducir_direccion_mmu(uint32_t direccion_logica){
+    int numero_pagina = calcular_pagina(direccion_logica);
+    int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
+    //int marco = obtener_frame_tlb(numero_pagina, cde_recibido->pid);
+    int marco = enviar_peticion_frame(numero_pagina);
+    if (marco == -1)
+    {
+        return -1;
+    }
+    
+    /*
+    if(marco == -1){ //TLB MISS
+        //marco = enviar_peticion_frame(numero_pagina);
+        log_info(logger, "PID: <%d> - TLB MISS - Pagina: <%d>", cde_recibido->pid, numero_pagina);
+    }
+    else{//TLB HIT
+        log_info(logger, "PID: <%d> - TLB HIT - Pagina: <%d>", cde_recibido->pid, numero_pagina);
+    }*/
+
+    int direccion_fisica = marco * tamanio_pagina + desplazamiento;
+    //hay que obtener el marco, o bien se lo pide a la TLB o a la memoria
+    //dada una pagina hay que obtener un frame
+    return direccion_fisica;
+}
 
 int calcular_pagina(int direccion_logica)
 {
@@ -57,15 +81,19 @@ int enviar_peticion_frame(int pagina)
         tipo_buffer *buffer_memoria_tlb = recibir_buffer(socket_memoria);
         frame_buscado = leer_buffer_enteroUint32(buffer_memoria_tlb);
         destruir_buffer(buffer_memoria_tlb);
+        /*
         if (TLB_HABILITADA)
         {
             tlb_agregar_entrada(cde_recibido->pid, pagina, frame_buscado);
         }
+        */
         log_info(logger, "PID: <%d> - OBTENER MARCO - Pagina: <%d> - Marco: <%d>", cde_recibido->pid, pagina, frame_buscado);
     }
     else if (respuesta_mmu == PEDIDO_FRAME_INCORRECTO)
     {
-        log_info(logger, "PID: <%d> - ERROR OBTENER MARCO - Paguna: <%d>", cde_recibido->pid, pagina);
+        log_info(logger, "PID: <%d> - ERROR OBTENER MARCO - Pagina: <%d>", cde_recibido->pid, pagina);
+        frame_buscado = -1;
+        //hay que finalizar el proceso o hacer un interrucion 
     }
 
     return frame_buscado;
