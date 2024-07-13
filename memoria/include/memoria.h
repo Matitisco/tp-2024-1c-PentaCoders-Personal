@@ -67,12 +67,12 @@ void *recibirKernel();
 void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu);
 void *recibir_interfaces_io();
 void inicializar_bitmap(int cant_marcos);
-void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
-void finalizar_proceso(int cliente_fd, tipo_buffer *buffer);
+void iniciar_proceso(int cliente_fd);
+void finalizar_proceso(int cliente_fd);
 char *obtener_ruta(char *nombre_archivo);
 void eliminar_proceso(int pid_a_eliminar);
 t_pcb *buscar_proceso_por_pid(int pid);
-void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos);
+void pedido_instruccion_cpu_dispatch(int cliente_fd);
 t_list *leerArchivoConInstrucciones(char *nombre_archivo);
 t_cde *obtener_contexto_en_ejecucion(int PID);
 t_instruccion *crearInstruccion(char *linea);
@@ -86,7 +86,6 @@ void element_destroyer(void *element);
 void destroyer_instruccion(void *element);
 void eliminar_cde(int pid);
 void liberar_registros(t_registros *registros);
-void finalizar_proceso(int kernel, tipo_buffer *buffer);
 
 void *destroy_instruccion(void *element);
 

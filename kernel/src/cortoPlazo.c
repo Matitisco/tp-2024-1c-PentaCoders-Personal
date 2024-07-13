@@ -48,7 +48,7 @@ void planificar_por_fifo()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
-        sem_wait(b_reanudar_corto_plazo);
+        // sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
         proceso = transicion_ready_exec();
         log_info(logger, "Se agrego el proceso <%d> y PC <%d> a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
@@ -65,12 +65,12 @@ void planificar_por_rr()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
-        sem_wait(b_reanudar_corto_plazo);
+        // sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
         proceso = transicion_ready_exec();
         proceso->estado = EXEC;
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por RR con Quantum: %d\n", proceso->cde->pid, QUANTUM);
-        inicio_quantum();
+        inicio_quantum(QUANTUM);
         enviar_a_cpu_cde(proceso->cde);
         if (habilitar_planificadores == 1)
         {
@@ -84,7 +84,7 @@ void planificar_por_vrr()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
-        sem_wait(b_reanudar_corto_plazo);
+        // sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
 
         if (hayProcesosEnEstado(cola_ready_plus))
@@ -183,7 +183,6 @@ void *transicion_blocked_ready()
 {
     while (1)
     {
-        valorSemaforo(b_transicion_blocked_ready);
         sem_wait(b_transicion_blocked_ready);
 
         t_pcb *proceso;
@@ -205,7 +204,7 @@ void *transicion_blocked_ready()
         }
         else
         {
-            proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto"); // READY+
+            proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto");
             proceso->estado = READY;
         }
 

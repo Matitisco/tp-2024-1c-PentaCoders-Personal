@@ -88,7 +88,7 @@ void ejecutar_comando(char *comando, int tokens)
     {
         if (tokens == 2)
         {
-            sem_post(sem_finalizar_proceso);
+            // sem_post(sem_finalizar_proceso);
             finalizar_proceso(atoi(strtok(NULL, "\0")), INTERRUPTED_BY_USER);
         }
         else
@@ -229,7 +229,6 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         break;
     case FINALIZAR_PROCESO_MENU:
         char *PID = readline("Ingrese el PID del Proceso a Finalizar: ");
-        //sem_post(sem_finalizar_proceso);
         finalizar_proceso(atoi(PID), INTERRUPTED_BY_USER);
         free(PID);
         break;
@@ -249,7 +248,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         break;
     default:
         printf("No es una opcion valida, ingrese otra vez\n");
-        iniciar_consola_interactiva(logger);
+        iniciar_consola_interactiva();
         break;
     }
 }

@@ -1,7 +1,7 @@
 #include "../include/operaciones.h"
 
 uint32_t PID_GLOBAL = 0;
-
+uint32_t pid_a_finalizar;
 // OPERACIONES
 
 void ejecutar_script(char *PATH)
@@ -91,76 +91,72 @@ void iniciar_proceso(char *PATH)
     }
 }
 
-void finalizar_proceso(uint32_t PID, motivoFinalizar motivo)
+void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
 {
+    pid_a_finalizar = pid;
+    t_pcb *proceso = list_find(cola_exec_global->estado, buscar_por_pid); // busca en EXEC
 
-    //sem_wait(sem_finalizar_proceso); // CUANDO SE FINALIZA UN PROCESO SE QUEDA TRABADO
-
-    if (motivo == SUCCESS)
+    if (proceso == NULL) // NEW, READY, READY+ y BLOCKED
     {
-        finalizar_proceso_success(PID, motivo);
+        proceso = buscar_pcb_en_colas(pid); // se fija en el resto
+        if (proceso == NULL)
+        {
+            log_warning(logger, "PID: <%d> - No existe o ya fue eliminado", pid);
+            return;
+        }
+    }
+    else // EXEC
+    {
+        enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT); // Si esta en CPU le aviso que lo finalice
+        sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
+        finalizar_proceso_final(proceso, pid, motivo);        // finaliza el proceso en memoria
         return;
+    }
+    finalizar_proceso_final(proceso, pid, motivo);
+    return;
+}
+
+void finalizar_proceso_final(t_pcb *proceso, int pid, motivoFinalizar motivo)
+{
+    enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, pid);
+    enviar_buffer(buffer, socket_memoria);
+    destruir_buffer(buffer);
+    agregar_a_estado(proceso, cola_exit_global);
+    op_code codigo = recibir_op_code(socket_memoria);
+    if (codigo == FINALIZAR_PROCESO)
+    {
+        transicion_generica_exit(proceso->cde->pid);
+        eliminar_proceso(proceso);
+
+        log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
     }
     else
     {
-        t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, cola_exec_global->nombreEstado);
-
-        if (proceso == NULL) // NEW, READY, BLOCKED
-        {
-            proceso = buscarProceso(PID);
-        }
-        else // EXEC
-        {
-            enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT); // Si esta en CPU le aviso que lo finalice
-        }
-
-        enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
-
-        tipo_buffer *buffer = crear_buffer();
-        agregar_buffer_para_enterosUint32(buffer, PID);
-        agregar_buffer_para_registros(buffer, proceso->cde->registros);
-        enviar_buffer(buffer, socket_memoria);
-        destruir_buffer(buffer);
-
-        agregar_a_estado(proceso, cola_exit_global);
-
-        op_code codigo = recibir_op_code(socket_memoria);
-        if (codigo == FINALIZAR_PROCESO)
-
-        {
-            sacar_proceso_cola(obtener_cola(proceso->estado), proceso->cde->pid);
-
-            eliminar_proceso(proceso);
-
-            log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
-        }
-        else
-        {
-            log_error(logger, "PID <%d> - ERROR Finalizar", PID);
-        }
+        log_error(logger, "PID <%d> - Error al finalizar el proceso", pid);
     }
 }
 
-void finalizar_proceso_success(uint32_t PID, motivoFinalizar motivo)
+void finalizar_proceso_success(uint32_t pid, motivoFinalizar motivo)
 {
     enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
-
+    pid_a_finalizar = pid;
     tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, PID);
-    agregar_buffer_para_registros(buffer, cde_interrumpido->registros);
+    agregar_buffer_para_enterosUint32(buffer, pid);
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
     op_code codigo = recibir_op_code(socket_memoria);
     if (codigo == FINALIZAR_PROCESO)
     {
-        t_pcb *proceso = buscarPCBEnColaPorPid(PID, cola_exec_global->estado, "EXEC");
+        t_pcb *proceso = list_find(cola_exec_global->estado, buscar_por_pid);
         eliminar_proceso(proceso);
 
-        log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", PID, mostrar_motivo(motivo));
+        log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", pid, mostrar_motivo(motivo));
     }
     else
     {
-        log_error(logger, "PID <%d> - ERROR Finalizar", PID);
+        log_error(logger, "PID <%d> - Error Finalizar", pid);
     }
 }
 
@@ -219,24 +215,22 @@ void proceso_estado()
 
 // FUNCIONES AUXILIARES OPERACIONES
 
-t_pcb *buscarProceso(uint32_t pid)
+bool buscar_por_pid(t_pcb *proceso)
 {
-    t_pcb *pcb_buscada;
-    colaEstado *colas[] = {cola_new_global, cola_ready_global, cola_ready_plus, cola_exec_global, cola_bloqueado_global, cola_exit_global};
-    for (int i = 0; i <= 5; i++)
+    return proceso->cde->pid == pid_a_finalizar;
+}
+
+t_pcb *buscar_pcb_en_colas(int pid)
+{
+    pid_a_finalizar = pid;
+    colaEstado *colas[5] = {cola_new_global, cola_ready_global, cola_ready_plus, cola_exec_global, cola_bloqueado_global};
+    for (int i = 0; i < 5; i++)
     {
-        if ((pcb_buscada = buscarPCBEnColaPorPid(pid, colas[i]->estado, colas[i]->nombreEstado)) != NULL)
-        {
-            return pcb_buscada;
-            break;
-        }
+        t_pcb *pcb = list_find(colas[i]->estado, buscar_por_pid);
+        if (pcb != NULL)
+            return pcb;
     }
-    if (pcb_buscada == NULL)
-    {
-        printf("No se pudo encontrar ningun PCB asociado al PID %u\n", pid);
-        return NULL;
-    }
-    return pcb_buscada;
+    return NULL;
 }
 
 char *mostrar_motivo(motivoFinalizar motivo)
@@ -325,11 +319,11 @@ void liberar_archivos(t_pcb *proceso)
     list_destroy_and_destroy_elements(proceso->archivosAsignados, destroy_archivos);*/
 }
 
-/* void destroy_archivos(void *element)
+void destroy_archivos(void *element)
 {
-    char *archivo = (char *)element;
-    free(archivo);
-} */
+    /*     char *archivo = (char *)element;
+        free(archivo); */
+}
 
 void modificar_grado_multiprogramacion(int valor)
 {
@@ -342,87 +336,14 @@ void modificar_grado_multiprogramacion(int valor)
 
 void mostrar_procesos(colaEstado *cola)
 {
-    log_info(logger, "PROCESOS: <%d> - COLA: <%s>", queue_size(cola->estado), cola->nombreEstado);
-
-    t_queue *cola_aux = queue_create();
-
-    while (!queue_is_empty(cola->estado))
-    {
-        t_pcb *pcb = queue_pop(cola->estado);
-        log_info(logger, "PID: <%d>", pcb->cde->pid);
-
-        queue_push(cola_aux, pcb);
-    }
-
-    while (!queue_is_empty(cola_aux))
-    {
-        queue_push(cola->estado, queue_pop(cola_aux));
-    }
+    log_info(logger, "PROCESOS: <%d> - COLA: <%s>", list_size(cola->estado), cola->nombreEstado);
+    list_iterate(cola->estado, imprimir_registro);
 }
 
-t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola)
+void imprimir_registro(void *element)
 {
-
-    log_info(logger, "\033[1;32m \n Buscando el proceso <%d> en la cola %s \n \033[0m", pid_buscado, nombreCola); //
-
-    t_pcb *pcb_buscada = NULL;
-
-    // Verificar si la lista está vacía
-    if (queue_is_empty(cola))
-    {
-        return NULL;
-    }
-
-    t_queue *colaAux = queue_create();
-    // Copiar los elementos a una cola auxiliar y mostrarlos
-
-    while (!queue_is_empty(cola)) // vacia la cola y mientras buscar el elemento
-    {
-        t_pcb *pcb = queue_pop(cola);
-
-        if (pcb->cde->pid == pid_buscado)
-        {
-            pcb_buscada = pcb;
-            log_info(logger, "PID PCB ENCONTRADA : %d  PC PCB ENCONTRADA: %d", pcb_buscada->cde->pid, pcb_buscada->cde->PC);
-        }
-
-        queue_push(colaAux, pcb);
-    }
-
-    // Restaurar la cola original
-    while (!queue_is_empty(colaAux))
-    {
-        queue_push(cola, queue_pop(colaAux));
-    }
-
-    // printf("\033[1;34m ------------------ FINALIZAR PROCESO ------------------ \033[0m\n");
-    // proceso_estado();
-    //  Liberar memoria de la cola auxiliar y sus elementos
-
-    while (!queue_is_empty(colaAux))
-    {
-        free(queue_pop(colaAux));
-    }
-
-    queue_destroy(colaAux);
-
-    if (pcb_buscada != NULL)
-    {
-        if (pcb_buscada->cde != NULL)
-        {
-            log_info(logger, "PID: <%d> Encontrado - Cola: <%s> \n", pcb_buscada->cde->pid, nombreCola);
-        }
-        else
-        {
-            log_info(logger, "El PCB encontrado no tiene un puntero válido a cde");
-        }
-    }
-    else
-    {
-        log_info(logger, "PID: <%d> No Encontrado - Cola: <%s>", pid_buscado, nombreCola);
-    }
-
-    return pcb_buscada;
+    t_pcb *pcb = (t_pcb *)element;
+    log_info(logger, "PID: <%d>", pcb->cde->pid);
 }
 
 t_pcb *crear_proceso(char *PATH)

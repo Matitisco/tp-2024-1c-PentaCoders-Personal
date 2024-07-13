@@ -27,8 +27,29 @@ int main(int argc, char *argv[])
     logger = iniciar_logger("memoria.log", "MEMORIA");
     valores_config = configuracion_memoria();
 
+    iniciar_memoria();
+
+    crearHilos();
+    pthread_join(hiloCpu, NULL);
+    pthread_join(hiloKernel, NULL);
+    pthread_join(hiloIO, NULL);
+    pthread_join(hiloEspacioUsuario, NULL);
+    liberar_conexion(cliente_cpu);
+    liberar_conexion(cliente_kernel);
+    config_destroy(valores_config->config);
+    free(valores_config->ip_memoria);
+    free(valores_config->path_instrucciones);
+    free(valores_config->puerto_memoria);
+    log_destroy(logger);
+}
+
+void iniciar_memoria()
+{
     lista_global_marcos = list_create(); // esta seria la tabla de marcos. Todos los marcos componen a la memoria
     lista_global_tablas = list_create();
+    lista_contextos = list_create();
+    lista_instrucciones = list_create();
+
     cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; // va a ser la cantida de amrcos
     espacio_usuario = malloc(valores_config->tam_memoria);
     if (espacio_usuario == NULL)
@@ -44,17 +65,6 @@ int main(int argc, char *argv[])
         list_add(lista_global_marcos, NULL); // creo mi lista de marcos-tabla. En principio todo en null
         i++;
     }
-
-    lista_contextos = list_create();
-    lista_instrucciones = list_create();
-
-    crearHilos();
-    pthread_join(hiloCpu, NULL);
-    pthread_join(hiloKernel, NULL);
-    pthread_join(hiloIO, NULL);
-    pthread_join(hiloEspacioUsuario, NULL);
-    destruirConfig(valores_config->config);
-    destruirLog(logger);
 }
 
 void inicializar_bitmap(int cant_marcos)
@@ -100,7 +110,6 @@ void *recibir_interfaces_io()
 
 void *recibirKernel()
 {
-    tipo_buffer *buffer = crear_buffer();
     while (1)
     {
         op_code cod_op = recibir_op_code(cliente_kernel);
@@ -114,10 +123,10 @@ void *recibirKernel()
         switch (cod_op)
         {
         case SOLICITUD_INICIAR_PROCESO:
-            iniciar_proceso(cliente_kernel, buffer);
+            iniciar_proceso(cliente_kernel);
             break;
         case SOLICITUD_FINALIZAR_PROCESO:
-            finalizar_proceso(cliente_kernel, buffer);
+            finalizar_proceso(cliente_kernel);
             break;
         default:
             log_warning(logger, "Operacion desconocida. No quieras meter la pata");
@@ -144,7 +153,7 @@ void *recibirCPU()
         switch (cod_op)
         {
         case PEDIDO_INSTRUCCION:
-            pedido_instruccion_cpu_dispatch(cliente_cpu, lista_contextos);
+            pedido_instruccion_cpu_dispatch(cliente_cpu);
             break;
         case ACCESO_ESPACIO_USUARIO:
             CLIENTE_ESPACIO_USUARIO = cliente_cpu;
@@ -421,8 +430,9 @@ void ejecutarMovIn(){
 }
 */
 
-void iniciar_proceso(int cliente_fd, tipo_buffer *buffer)
+void iniciar_proceso(int cliente_fd)
 {
+    tipo_buffer *buffer = crear_buffer();
     buffer = recibir_buffer(cliente_fd);
     t_cde *cde = armarCde(buffer);
     destruir_buffer(buffer);
@@ -468,7 +478,6 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
     string_append(&ruta_completa, valores_config->path_instrucciones);
     string_append(&ruta_completa, "/");
     string_append(&ruta_completa, nombre_archivo);
-    // ruta_completa = obtener_ruta(nombre_archivo);
 
     FILE *archivo = fopen(ruta_completa, "r");
 
@@ -488,24 +497,6 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
     return list_instrucciones;
 }
 
-char *obtener_ruta(char *nombre_archivo)
-{
-    char *ruta_completa = string_new();
-    char *ruta_acceso[1024];
-
-    if (getcwd(ruta_acceso, sizeof(ruta_acceso)) == NULL)
-    {
-        log_info(logger, "No se pudo obtener la raiz");
-        return NULL;
-    }
-    // TODO: esto debe tener configurada en realidad el path de config de memoria
-    string_append(&ruta_completa, ruta_acceso);
-    string_append(&ruta_completa, "/pruebas/checkpoint_3/archivos/");
-    string_append(&ruta_completa, nombre_archivo);
-
-    return ruta_completa;
-}
-
 void enviar_tamanio_pagina(int cpu)
 {
     tipo_buffer *buffer_con_tam_pagina = crear_buffer();
@@ -514,43 +505,43 @@ void enviar_tamanio_pagina(int cpu)
     destruir_buffer(buffer_con_tam_pagina);
 }
 
-void pedido_instruccion_cpu_dispatch(int cliente_fd, t_list *contextos)
+void pedido_instruccion_cpu_dispatch(int cpu_dispatch)
 {
     sleep_ms(valores_config->retardo_respuesta);
 
-    tipo_buffer *buffer = recibir_buffer(cliente_fd);
+    tipo_buffer *buffer = recibir_buffer(cpu_dispatch);
     uint32_t PID = leer_buffer_enteroUint32(buffer);
     uint32_t PC = leer_buffer_enteroUint32(buffer);
 
     t_cde *contexto = malloc(sizeof(t_cde));
-
     contexto = obtener_contexto_en_ejecucion(PID);
 
     tipo_buffer *buffer_instruccion = crear_buffer();
     char *instruccion = string_new();
     instruccion = list_get(contexto->lista_instrucciones, PC);
 
-    enviar_op_code(cliente_fd, ENVIAR_INSTRUCCION_CORRECTO);
+    enviar_op_code(cpu_dispatch, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
 
-    enviar_buffer(buffer_instruccion, cliente_fd);
+    enviar_buffer(buffer_instruccion, cpu_dispatch);
     destruir_buffer(buffer_instruccion);
-    destruir_buffer(buffer);
     log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
-    free(instruccion);
+
+    destruir_buffer(buffer);
 }
 
 // FINALIZAR PROCESO
 
-void finalizar_proceso(int kernel, tipo_buffer *buffer)
+void finalizar_proceso(int socket_kernel)
 {
-    buffer = recibir_buffer(kernel);
+    tipo_buffer *buffer = recibir_buffer(socket_kernel);
     uint32_t pid = leer_buffer_enteroUint32(buffer);
 
     eliminar_cde(pid);
     eliminar_tabla_paginas(pid);
 
-    enviar_op_code(kernel, FINALIZAR_PROCESO);
+    enviar_op_code(socket_kernel, FINALIZAR_PROCESO);
+    destruir_buffer(buffer);
 }
 
 t_cde *obtener_contexto_en_ejecucion(int pid)
@@ -571,18 +562,20 @@ void eliminar_cde(int pid)
     pid_a_buscar_o_eliminar = pid;
 
     t_cde *cde = obtener_contexto_en_ejecucion(pid);
-
-    list_remove_by_condition(lista_contextos, estaElContextoConCiertoPID);
     list_destroy_and_destroy_elements(cde->lista_instrucciones, element_destroyer);
+    list_remove_by_condition(lista_contextos, estaElContextoConCiertoPID);
 
-    //free(cde->path);
-    //free(cde);
+    free(cde->path);
+    free(cde);
 }
 
 void element_destroyer(void *element)
 {
-    log_info(logger, "Elemento eliminado: %s", element);
-    free(element);
+    char *valor = (char *)element;
+    log_info(logger, "Elemento eliminado: %s", valor);
+    free(valor);
+    // hacer free daba error, ya que antes se liberaba una vez que enviaba la instruccion a cpu, funcion de arriba
+    // ahora solo se debe hacer free aca y anda :D
 }
 
 // CONFIGURACION DE LA MEMORIA

@@ -457,9 +457,7 @@ void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
 {
     interrupcion_io = 1;
     buffer_instruccion_io = crear_buffer();
-
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
-
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_GENERICA);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_GEN_SLEEP);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, unidades_trabajo);
@@ -547,7 +545,6 @@ void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_tama
 void exec_exit(t_cde *cde, motivoFinalizar motivo)
 {
     salida_exit = 0;
-
     enviar_op_code(socket_kernel_dispatch, FINALIZAR_PROCESO);
     tipo_buffer *buffer = crear_buffer();
     agregar_cde_buffer(buffer, cde);

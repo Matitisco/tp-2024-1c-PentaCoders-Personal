@@ -575,7 +575,8 @@ void mover_archivo_al_final_del_fs(char *nombre_archivo)
         primer_bloque_libre++;
     }
     // Actualizar la metadata del archivo con los nuevos bloques
-    actualizar_metadata_archivo(nombre_archivo, bloques_archivo);
+    //TODO ACUTALIZAR METADA ARCHIVO
+    //actualizar_metadata_archivo(nombre_archivo, bloques_archivo);
     // Sincronizar el bitarray y los bloques mapeados con el sistema de archivos
     msync(bitarray_pointer, bitarray->size, MS_SYNC);
     msync(bloquesMapeado, total_bloques * tam_bloque, MS_SYNC);

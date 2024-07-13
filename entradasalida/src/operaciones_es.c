@@ -1,6 +1,15 @@
 #include "../include/operaciones_es.h"
 
-int conexion_kernel, conexion_memoria, estoy_libre;
+/*
+Cada interfaz en la vida real tiene diferentes velocidades,
+por lo que para simplificar esto en nuestro TP vamos a tener en
+la configuración del módulo el Tiempo de unidad de trabajo, este valor
+luego se va a multiplicar por otro valor que va a estar dado según el
+tipo de interfaz que tengamos, en este TP vamos a trabajar con 4 tipos
+de Interfaces: Genéricas, STDIN, STDOUT y DialFS.
+
+
+*/
 
 void realizar_operacion_gen(t_interfaz *interfaz)
 {
@@ -13,7 +22,7 @@ void realizar_operacion_gen(t_interfaz *interfaz)
 
     if (instruccion == IO_GEN_SLEEP)
     {
-        sleep_ms(unidades_tiempo);
+        sleep_ms(unidades_tiempo * interfaz->tiempo_unidad_trabajo);
         log_info(logger, "PID: <%d> - Operacion: <IO_GEN_SLEEP>", pid);
     }
     else
@@ -41,13 +50,13 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
         t_list *lista_enteros = truncar_y_convertir(texto_ingresado, pid, tamanio);
         int cant_enteros = list_size(lista_enteros);
 
-        enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
-        enviar_cod_enum(conexion_memoria, PEDIDO_ESCRITURA);
-        enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
+        enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
+        enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
+        enviar_op_code(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
 
         enviar_buffer_stdin_memoria(direccion_fisica, pid, cant_enteros, lista_enteros);
 
-        op_code codigo_memoria = recibir_operacion(conexion_memoria);
+        op_code codigo_memoria = recibir_op_code(conexion_memoria);
         if (codigo_memoria == OK)
         {
             log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
@@ -75,9 +84,9 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
     int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
     if (sol_operacion == IO_STDOUT_WRITE)
     {
-        enviar_cod_enum(conexion_memoria, ACCESO_ESPACIO_USUARIO);
-        enviar_cod_enum(conexion_memoria, PEDIDO_LECTURA);
-        enviar_cod_enum(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
+        enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
+        enviar_op_code(conexion_memoria, PEDIDO_LECTURA);
+        enviar_op_code(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
 
         tipo_buffer *buffer_a_memoria = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
@@ -87,7 +96,7 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
 
         destruir_buffer(buffer_a_memoria);
 
-        op_code codigo_memoria = recibir_operacion(conexion_memoria);
+        op_code codigo_memoria = recibir_op_code(conexion_memoria);
         if (codigo_memoria == OK)
         {
             char *texto_reconstruido = malloc(limitante_cadena);

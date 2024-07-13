@@ -25,7 +25,7 @@ typedef t_list t_lista_recursos;
 typedef struct
 {
 	char *nombreEstado;
-	t_queue *estado;
+	t_list *estado;
 	pthread_mutex_t *mutex_estado;
 	sem_t *contador;
 
@@ -123,7 +123,7 @@ config_kernel *inicializar_config_kernel();
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
-void sacar_proceso_cola(colaEstado *cola_estado, uint32_t pid);
+
 
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion);
 void evaluar_planificacion(char *planificador);
@@ -166,7 +166,7 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
 char *obtener_interfaz(enum_interfaz interfaz);
 _Bool interfaz_esta_en_lista(void *ptr);
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion);
-_Bool interfaz_esta_conectada(t_infoIO *informacion_interfaz);
+_Bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz);
 t_cde *iniciar_cde(char *PATH);
 void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid);
 void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid);

@@ -21,6 +21,7 @@ extern int desalojo_signal;
 extern int interrupcion_io;
 extern int salida_exit;
 extern int TLB_HABILITADA;
+extern sem_t *sem_interface;
 extern t_cde *cde_recibido;
 extern t_registros *registros;
 extern tipo_buffer *buffer_instruccion_io;
@@ -80,6 +81,6 @@ void exec_io_fs_delete();
 void exec_io_fs_truncate();
 void exec_io_fs_write();
 void exec_io_fs_read();
-
+void exec_exit(t_cde *cde, motivoFinalizar motivo);
 
 #endif

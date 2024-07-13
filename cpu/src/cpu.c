@@ -7,7 +7,6 @@ int interrupcion_exit;
 int interrrupcion_fifo;
 int interrupcion_entrada_salida;
 int interrupcion_io;
-int CONEXION_A_MEMORIA;
 int socket_memoria;
 int socket_kernel_dispatch;
 int socket_kernel_interrupt;
@@ -21,6 +20,7 @@ pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
 tipo_buffer *buffer_instruccion_io;
 pthread_mutex_t *mutex_cde_ejecutando;
 sem_t *sem_check_interrupt;
+sem_t *sem_interface;
 t_cde *cde_recibido;
 
 int main(int argc, char *argv[])
@@ -31,7 +31,15 @@ int main(int argc, char *argv[])
 	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
 	pthread_join(hilo_CPU_CLIENTE, NULL);
 
-	// terminar_programa(CONEXION_A_MEMORIA, logger, valores_config_cpu->config);
+	log_destroy(logger);
+	config_destroy(valores_config_cpu->config);
+	free(valores_config_cpu->algoritmo_tlb);
+	free(valores_config_cpu->ip);
+	free(valores_config_cpu->puerto_escucha_dispatch);
+	free(valores_config_cpu->puerto_escucha_interrupt);
+	free(valores_config_cpu->puerto_memoria);
+	free(valores_config_cpu);
+	liberar_conexion(socket_memoria);
 }
 
 void iniciar_modulo_cpu()
@@ -55,8 +63,10 @@ void iniciar_semaforos_CPU()
 {
 	mutex_cde_ejecutando = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 	sem_check_interrupt = (sem_t *)malloc(sizeof(sem_t));
+	sem_interface = (sem_t *)malloc(sizeof(sem_t));
 	sem_init(mutex_cde_ejecutando, 0, 0);
 	sem_init(sem_check_interrupt, 0, 1);
+	sem_init(sem_interface, 0, 0);
 }
 
 void crear_hilos_CPU()
@@ -103,10 +113,9 @@ void *levantar_kernel_dispatch()
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 			cde_recibido = leer_cde(buffer_cde);
 			salida_exit = 1;
-
+			printf("------------------------------\n");
 			while (salida_exit)
 			{
-				printf("------------------------------\n");
 				char *linea_instruccion = fetch(cde_recibido);
 				log_info(logger, "PID: <%d> - FETCH - Program Counter: <%d>", cde_recibido->pid, cde_recibido->PC);
 				cde_recibido->PC++;
@@ -134,7 +143,6 @@ void *levantar_kernel_interrupt()
 		if (salida_exit)
 		{
 			op_code codigo = recibir_op_code(socket_kernel_interrupt);
-			log_info(logger, "Me llego una interrupcion");
 
 			if (codigo == -1)
 			{
@@ -148,8 +156,8 @@ void *levantar_kernel_interrupt()
 				interrupcion_rr = 1;
 				break;
 			case SOLICITUD_EXIT:
-				log_info(logger, "Me llego una interrupcion para FINALIZAR_PROCESO");
 				interrupcion_exit = 1;
+				log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR POR CONSOLA");
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
@@ -198,7 +206,7 @@ char *fetch(t_cde *contexto)
 	}
 	else
 	{
-		log_error(logger, "CPU: <ENVIO_INSTRUCCION_INCORRECTO>");
+		log_error(logger, "CPU - ENVIO INSTRUCCION INCORRECTO");
 		return NULL;
 	}
 }
@@ -325,62 +333,63 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		interrupcion_rr = 0;
-		log_info(logger, "\nINTERRUPCION - FIN DE QUANTUM - \n");
 		if (interrupcion_io)
 		{
 			interrupcion_io = 0;
+			log_info(logger, "INTERRUPCION - IO");
 			agregar_cde_buffer(buffer_cde, cde_recibido);
-			enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
-			enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
+			enviar_buffer(buffer_cde, socket_kernel_dispatch); // enviamos proceso interrumpido
+		}
+		else if (interrupcion_exit)
+		{
+			interrupcion_exit = 0;
+			log_info(logger, "INTERRUPCION - INTERRUPTED_BY_USER");
+			enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
+			exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 		}
 		else
 		{
+			log_info(logger, "INTERRUPCION - FIN DE QUANTUM");
 			enviar_op_code(socket_kernel_dispatch, FIN_DE_QUANTUM);
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		}
 	}
-	/* else if (interrrupcion_fifo)
-	{
-		salida_exit = 0;
-		interrrupcion_fifo = 0;
-		// enviar_cod_enum(socket_kernel_dispatch, BLOQUEADO_POR_IO);
-		agregar_cde_buffer(buffer_cde, cde_recibido);
-		enviar_buffer(buffer_cde, socket_kernel_dispatch);
-		log_info(logger, "\nINTERRUPCION - BLOCK - \n");
-	} */
 	else if (interrupcion_exit) // por parte del kernel
 	{
-		salida_exit = 0;
+		// salida_exit = 0;
 		interrupcion_exit = 0;
-		log_info(logger, "Proceso %d Finalizado por Consola", cde_recibido->pid);
+		log_info(logger, "INTERRUPCION - INTERRUPTED_BY_USER");
+		enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 		exec_exit(cde_recibido, INTERRUPTED_BY_USER);
-		log_info(logger, "\nINTERRUPCION - EXIT - \n");
 	}
 	else if (interrupcion_io)
 	{
 		salida_exit = 0;
 		interrupcion_io = 0;
+		log_info(logger, "INTERRUPCION - IO");
 		agregar_cde_buffer(buffer_cde, cde_recibido);
-		enviar_buffer(buffer_cde, socket_kernel_dispatch);			  // enviamos proceso interrumpido
-		enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch); // enviamos info de interfaz y su instruccion a ejecutar
+		enviar_buffer(buffer_cde, socket_kernel_dispatch); // enviamos proceso interrumpido
 		destruir_buffer(buffer_instruccion_io);
 	}
 	else if (desalojo_signal)
 	{
 		salida_exit = 0;
 		desalojo_signal = 0;
+		log_info(logger, "INTERRUPCION - SIGNAL");
 	}
 	else if (desalojo_wait)
 	{
 		salida_exit = 0;
 		desalojo_wait = 0;
+		log_info(logger, "INTERRUPCION - WAIT");
 	}
 	else
 	{
-		log_info(logger, "No hay interrupciones");
+		log_info(logger, "NO HAY INTERRUPCIONES");
 	}
 	destruir_buffer(buffer_cde);
+	return;
 }
 
 void actualizar_cde(t_cde *contexto)

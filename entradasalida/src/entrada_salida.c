@@ -66,6 +66,11 @@ void arrancar_interfaz(t_interfaz *interfaz)
 				enviar_op_code(conexion_kernel, NO_ESTOY_LIBRE);
 			}
 		}
+		else if (consulta_kernel == CONFIRMAR_CONEXION)
+		{
+			enviar_op_code(conexion_kernel, OK);
+			log_info(logger, "ESTA KERNEL CONECTADO");
+		}
 		else
 		{
 			log_error(logger, "ERROR - CONSULTA KERNEL DESCONOCIDA");

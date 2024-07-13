@@ -25,7 +25,10 @@ void modificar_grado_multiprogramacion(int valor);
 void mostrar_procesos(colaEstado *cola);
 
 colaEstado *obtener_cola(t_estados estado);
-
+void imprimir_registro(void *element);
+void destroy_archivos(void *element);
+t_pcb *buscar_pcb_en_colas(int pid);
+bool buscar_por_pid(t_pcb *proceso);
 // Funciones de busuqeda del proceso
 char *mostrar_motivo(motivoFinalizar motivo);
 uint32_t mostrarPID(t_pcb *proceso);
@@ -39,6 +42,7 @@ t_cde *iniciar_cde(char *PATH);
 // LIBERAR RECURSOS/ARCHIVOS
 void liberar_recursos(t_pcb *proceso);
 void liberar_archivos(t_pcb *proceso);
-void *destroy_archivos(void *element);
+
+void finalizar_proceso_final(t_pcb *proceso, int pid, motivoFinalizar motivo);
 
 #endif
