@@ -1,5 +1,4 @@
 #include "../include/cicloinstruccion.h"
-//#include "../include/cpu.h"
 
 t_registros *registros;
 
@@ -9,33 +8,41 @@ void exec_set(char *registro, uint32_t valor)
     {
         registros->AX = valor;
     }
-    if (strcmp(registro, "BX") == 0)
+    else if (strcmp(registro, "BX") == 0)
     {
         registros->BX = valor;
     }
-    if (strcmp(registro, "CX") == 0)
+    else if (strcmp(registro, "CX") == 0)
     {
         registros->CX = valor;
     }
-    if (strcmp(registro, "DX") == 0)
+    else if (strcmp(registro, "DX") == 0)
     {
         registros->DX = valor;
     }
-    if (strcmp(registro, "EAX") == 0)
+    else if (strcmp(registro, "EAX") == 0)
     {
         registros->EAX = valor;
     }
-    if (strcmp(registro, "EBX") == 0)
+    else if (strcmp(registro, "EBX") == 0)
     {
         registros->EBX = valor;
     }
-    if (strcmp(registro, "ECX") == 0)
+    else if (strcmp(registro, "ECX") == 0)
     {
         registros->ECX = valor;
     }
-    if (strcmp(registro, "EDX") == 0)
+    else if (strcmp(registro, "EDX") == 0)
     {
         registros->EDX = valor;
+    }
+    else if (strcmp(registro, "PC") == 0)
+    {
+        cde_recibido->PC = 0;
+    }
+    else
+    {
+        log_error(logger, "No es un registro o el PC");
     }
 }
 
@@ -46,7 +53,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     if (direccion_fisica == -1)
     {
         log_error(logger, "DIRECCION INCORRECTA");
-        //interrupcion_exit = 1;
+        // interrupcion_exit = 1;
         return;
     }
     log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
@@ -93,10 +100,10 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
     if (direccion_fisica == -1)
     {
         log_error(logger, "DIRECCION INCORRECTA");
-        //interrupcion_exit = 1;
+        // interrupcion_exit = 1;
         return;
     }
-    
+
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
     enviar_op_code(socket_memoria, SOLICITUD_ESCRITURA_CPU);
@@ -280,7 +287,6 @@ void exec_resize(char *tamanio, t_cde *cde)
         return;
     }
 }
-
 
 void exec_copy_string(char *tamanio, t_cde *cde)
 {

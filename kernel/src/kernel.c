@@ -97,7 +97,7 @@ void crear_hilos()
 {
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
-	pthread_create(&hiloConsola, NULL, (void *)iniciar_consola_interactiva2, NULL);
+	pthread_create(&hiloConsola, NULL, (void *)iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
@@ -308,8 +308,6 @@ void levantar_CPU_Dispatch()
 		{
 		case FINALIZAR_PROCESO:
 
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
 			tipo_buffer *buffer_cpu_fin = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			motivoFinalizar motivo = leer_buffer_enteroUint32(buffer_cpu_fin);
@@ -324,6 +322,8 @@ void levantar_CPU_Dispatch()
 			{
 				log_info(logger, "El Proceso Ya Fue Interrumpido y Finalizado");
 			}
+			sem_post(b_reanudar_largo_plazo);
+			sem_post(b_reanudar_corto_plazo);
 			break;
 
 		case EXIT_SUCCESS:
@@ -333,10 +333,10 @@ void levantar_CPU_Dispatch()
 
 		case FIN_DE_QUANTUM:
 
-			pthread_cancel(hiloQuantum);
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
-			log_info(logger, "Desalojo proceso por fin de Quantum: %d", cde_interrumpido->pid);
+			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid);
+			pthread_cancel(hiloQuantum);
 			sem_post(b_transicion_exec_ready);
 			break;
 
@@ -346,8 +346,6 @@ void levantar_CPU_Dispatch()
 			// 1-OpCode INSTRUCCION_INTERFAZ
 			// 2-Datos de la Interfaz enviados por la instruccion
 			// 3-CDE Enviado por el Check Interrupt
-
-			log_info(logger, "Operacion - Ejecutar Instruccion IO");
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // DATOS DE INTERFAZ
 
@@ -468,6 +466,7 @@ void levantar_CPU_Dispatch()
 }
 
 // MANEJO DE INTERFACES DE ENTRADA/SALIDA
+
 _Bool interfaz_esta_en_lista(void *ptr)
 {
 	t_infoIO *interfaz = (t_infoIO *)ptr;
@@ -482,7 +481,6 @@ _Bool interfaz_esta_conectada(t_infoIO *informacion_interfaz)
 
 void *levantarIO()
 {
-	/*
 	while (1)
 	{
 		socket_disp_io = esperar_cliente(logger, "Kernel", "Interfaz IO", servidor_para_io); // se conecta una io al kernel
@@ -521,13 +519,40 @@ void *levantarIO()
 		}
 	}
 	return NULL;
-	*/
 }
 
 _Bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz)
 {
-	op_code cod_op = CONFIRMAR_CONEXION;
-	return (send(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), 0) == -1) || (recv(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), MSG_WAITALL) == -1);
+	op_code cod_op_envio = CONFIRMAR_CONEXION;
+	op_code cod_op_recibida;
+
+	// Enviar mensaje de confirmación de conexión
+	int bytes_enviados = send(informacion_interfaz->cliente_io, &cod_op_envio, sizeof(uint32_t), 0);
+	if (bytes_enviados == -1)
+	{
+		return true; // Error al enviar mensaje
+	}
+
+	// Recibir respuesta de la interfaz
+	int bytes_recibidos = recv(informacion_interfaz->cliente_io, &cod_op_recibida, sizeof(uint32_t), MSG_WAITALL);
+
+	// Analizar la respuesta recibida
+	if (bytes_recibidos == -1)
+	{
+		return true; // Error al recibir respuesta
+	}
+	else if (bytes_recibidos == 0)
+	{
+		return true; // La interfaz se ha cerrado
+	}
+	else if (cod_op_recibida == OK)
+	{
+		return false; // Conexión confirmada
+	}
+	else
+	{
+		return true; // Respuesta incorrecta
+	}
 }
 
 char *obtener_interfaz(enum_interfaz interfaz)
@@ -548,87 +573,86 @@ char *obtener_interfaz(enum_interfaz interfaz)
 	{
 		return "DIALFS";
 	}
-	return "NO SE ENTIENDE LA INTERFAZ ENVIADA";
+	return NULL;
 }
 
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion)
-{ /*
-	 op_code operacion_desde_cpu_dispatch = leer_buffer_enteroUint32(buffer_con_instruccion);
-	 log_info(logger, "Solicitud IO Recibida: <%d>", operacion_desde_cpu_dispatch);
-	 t_tipoDeInstruccion instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion);
-	 log_info(logger, "Instruccion IO a Ejecutar: <%d> ", instruccion_interfaz);
+{
+	op_code operacion_desde_cpu_dispatch = leer_buffer_enteroUint32(buffer_con_instruccion);
+	t_tipoDeInstruccion instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion);
 
-	 t_infoIO *informacion_interfaz;
-	 uint32_t tamanioRegistro;
-	 uint32_t direccion_fisica;
+	t_infoIO *informacion_interfaz;
+	uint32_t tamanioRegistro;
+	uint32_t direccion_fisica;
 
-	 switch (operacion_desde_cpu_dispatch)
-	 {
-	 case SOLICITUD_INTERFAZ_GENERICA:
+	switch (operacion_desde_cpu_dispatch)
+	{
+	case SOLICITUD_INTERFAZ_GENERICA:
 
-		 uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
-		 nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
+		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 
-		 informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 
-		 if (interfaz_no_esta_conectada(informacion_interfaz))
-		 {
-			 interfaz_no_conectada(pid);
-		 }
-		 else
-		 {
-			 log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			 interfaz_conectada_generica(unidades_trabajo, instruccion_interfaz, informacion_interfaz, pid);
-		 }
-		 break;
+		if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
+		{
+			interfaz_no_conectada(pid);
+		}
+		else
+		{
+			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+			interfaz_conectada_generica(unidades_trabajo, instruccion_interfaz, informacion_interfaz, pid);
+		}
+		break;
 
-	 case SOLICITUD_INTERFAZ_STDIN:
+	case SOLICITUD_INTERFAZ_STDIN:
 
-		 instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDIN_READ
-		 tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
-		 direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
-		 nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDIN_READ
+		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
+		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+		informacion_interfaz = list_find(lista_interfaces, interfaz_no_esta_conectada);
 
-		 informacion_interfaz = list_find(lista_interfaces, interfaz_no_esta_conectada);
+		if (informacion_interfaz == NULL)
+		{
+			interfaz_no_conectada(pid);
+		}
+		else
+		{
+			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+			interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
+		}
+		break;
 
-		 if (informacion_interfaz == NULL)
-		 {
-			 interfaz_no_conectada(pid);
-		 }
-		 else
-		 {
-			 log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			 interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
-		 }
-		 break;
+	case SOLICITUD_INTERFAZ_STDOUT:
 
-	 case SOLICITUD_INTERFAZ_STDOUT:
+		instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDOUT_WRITE
+		log_info(logger, "INSTURCCION A EJECUTAR STDOUT: %d", instruccion_interfaz);
+		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
+		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+		informacion_interfaz = list_find(lista_interfaces, interfaz_no_esta_conectada);
 
-		 instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDOUT_WRITE
-		 log_info(logger, "INSTURCCION A EJECUTAR STDOUT: %d", instruccion_interfaz);
-		 tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
-		 direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
-		 nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		if (informacion_interfaz == NULL)
+		{
+			interfaz_no_conectada(pid);
+		}
+		else
+		{
+			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
+			interfaz_conectada_stdout(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
+		}
+		break;
 
-		 informacion_interfaz = list_find(lista_interfaces, interfaz_no_esta_conectada);
-
-		 if (informacion_interfaz == NULL)
-		 {
-			 interfaz_no_conectada(pid);
-		 }
-		 else
-		 {
-			 log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			 interfaz_conectada_stdout(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
-		 }
-		 break;
-
-	 case SOLICITUD_INTERFAZ_DIALFS:
-
-	 default:
-		 log_error(logger, "ERROR - Solicitud Interfaz Enviada Por CPU");
-		 break;
-	 }*/
+	case SOLICITUD_INTERFAZ_DIALFS:
+		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+	default:
+		log_error(logger, "ERROR - Solicitud Interfaz Enviada Por CPU");
+		break;
+	}
 }
 
 /* void dial_fs()
@@ -794,9 +818,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 void interfaz_no_conectada(int pid)
 {
-	log_error(logger, "La interfaz %s no se encuentra conectada", nombre_IO);
+	log_error(logger, "PID: <%d> - INTERFAZ: <%s> NO CONECTADA", pid, nombre_IO);
 	finalizar_proceso(pid, INVALID_INTERFACE);
-	sem_post(b_largo_plazo_exit);
 }
 
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid)

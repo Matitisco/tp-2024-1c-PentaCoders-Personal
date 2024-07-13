@@ -2,7 +2,6 @@
 
 uint32_t PID_GLOBAL = 0;
 uint32_t pid_a_finalizar;
-// OPERACIONES
 
 void ejecutar_script(char *PATH)
 {
@@ -13,10 +12,9 @@ void ejecutar_script(char *PATH)
     char *path_completo = string_new();
     char directorioActual[1024];
     chdir("..");
-    getcwd(directorioActual, sizeof(directorioActual)); // /kernel
+    getcwd(directorioActual, sizeof(directorioActual));
     strcat(directorioActual, "/memoria/scripts_kernel/");
     strcat(directorioActual, PATH);
-
 
     FILE *archivo_script = fopen(directorioActual, "r");
 
@@ -118,7 +116,6 @@ void finalizar_proceso_final(t_pcb *proceso, int pid, motivoFinalizar motivo)
     agregar_buffer_para_enterosUint32(buffer, pid);
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
-    agregar_a_estado(proceso, cola_exit_global);
     op_code codigo = recibir_op_code(socket_memoria);
     if (codigo == FINALIZAR_PROCESO)
     {
@@ -240,7 +237,7 @@ char *mostrar_motivo(motivoFinalizar motivo)
     }
     else if (motivo == INVALID_INTERFACE) // NO SE PUDO CONECTAR A UNA INTERFAZ
     {
-        return "INVALID_WRITE";
+        return "INVALID_INTERFACE";
     }
     else if (motivo == OUT_OF_MEMORY_END) // OUT OF MEMORY DE MEMORIA
     {
