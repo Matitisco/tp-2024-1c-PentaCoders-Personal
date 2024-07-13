@@ -177,7 +177,7 @@ void iniciar_consola_interactiva2()
         sleep(1);
         sem_post(binario_menu_lp); // Habilita largo plazo
 
-        char *entrada = readline("\033[1;32mkernel\033[0m:\033[1;34m~\033[0m$ ");
+        char *entrada = readline("\033[1;32mPentaOS\033[0m:\033[1;34m~\033[0m$ ");
         add_history(entrada);
 
         int tokens = contar_tokens(entrada);

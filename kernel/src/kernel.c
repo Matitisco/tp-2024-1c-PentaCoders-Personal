@@ -101,7 +101,7 @@ void crear_hilos()
 
 	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
 	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
-	pthread_create(&hiloConsola, NULL, (void *)iniciar_consola_interactiva, NULL);
+	pthread_create(&hiloConsola, NULL, (void *)iniciar_consola_interactiva2, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
@@ -271,11 +271,8 @@ t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
 	return pcb;
 }
 
-void sacar_proceso_cola(colaEstado *cola_estado, uint32_t pid) // si llega acá es porque el proceso si está en la cola recibida
-{															   // se quiere sacar procesos hasta que el proceso sacado sea el del pid recibido
-
-	// printf("\033[0;33m\n Sacar Proceso Cola %s\n \033[0m",cola_estado->nombreEstado);
-	// proceso_estado();
+void sacar_proceso_cola(colaEstado *cola_estado, uint32_t pid) 
+{															   
 	sem_wait(cola_estado->contador);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	t_pcb *pcb = queue_pop(cola_estado->estado); // lo quita por fifo y no necesariamente el proceso a finalizar es el primero
@@ -285,8 +282,6 @@ void sacar_proceso_cola(colaEstado *cola_estado, uint32_t pid) // si llega acá 
 	{
 		queue_push(cola_auxiliar, pcb);
 	}
-	// printf("\033[1;34m ------------------ FINALIZAR PROCESO COLA %s ------------------ \033[0m\n",cola_estado->nombreEstado);
-	// proceso_estado();
 
 	while (!queue_is_empty(cola_estado->estado)) // lo va sacando hasta llegar al proceso
 	{

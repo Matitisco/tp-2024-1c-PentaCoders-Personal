@@ -13,16 +13,6 @@
 #include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
 
-typedef struct
-{
-	t_config *config;
-	char *ip_memoria;
-	char *puerto_memoria;
-	int tam_memoria;
-	int tam_pagina;
-	char *path_instrucciones;
-	int retardo_respuesta;
-} config_memoria;
 
 typedef struct
 {
@@ -30,7 +20,7 @@ typedef struct
 	t_list *paginas_proceso;
 } t_tabla_paginas;
 
-void *espacio_usuario;
+
 typedef struct
 {
 	int marco;		 // numero de marco donde esta la pagina
@@ -71,7 +61,6 @@ void imprimir_paginas_proceso(t_list *tp_paginas_proceso);
 void *recibir_interfaces_io();
 void inicializar_bitmap(int cant_marcos);
 void crear_marcos(int cant_marcos);
-void crear_espacio_usuario();
 
 // void iniciar_sem_globales();
 void iniciar_proceso(int cliente_fd, tipo_buffer *buffer);
@@ -99,8 +88,6 @@ void *destroy_instruccion(void *element);
 // espacio de usuario
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio);
 void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio);
-void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio);
-void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio);
 
 char *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario();

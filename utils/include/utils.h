@@ -18,8 +18,21 @@
 #include <assert.h>
 #include "registros.h"
 #include "sockets.h"
+
+#include "printf_color.h"
+
 typedef t_list t_lista_recursos;
 #define RUTA_RAIZ "/home/nahuel/memoria/tp-2024-1c-PentaCoders"
+typedef struct
+{
+	t_config *config;
+	char *ip_memoria;
+	char *puerto_memoria;
+	int tam_memoria;
+	int tam_pagina;
+	char *path_instrucciones;
+	int retardo_respuesta;
+} config_memoria;
 
 typedef enum
 {
