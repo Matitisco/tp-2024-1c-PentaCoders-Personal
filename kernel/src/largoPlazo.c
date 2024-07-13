@@ -10,17 +10,36 @@ void *largo_plazo()
         sem_wait(GRADO_MULTIPROGRAMACION);
         sem_wait(b_reanudar_largo_plazo);
         t_pcb *proceso = transicion_new_a_ready();
-        log_info(logger, "PID: %d - Estado Anterior: NEW - Estado Actual: READY \n", proceso->cde->pid);
+        log_info(logger, "PID: %d - Estado Anterior: <NEW> - Estado Actual: <READY>", proceso->cde->pid);
+        log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
         if (habilitar_planificadores == 1)
         {
             sem_post(b_reanudar_largo_plazo);
         }
     }
 }
+
+char *lista_pid()
+{
+    char *pids_en_ready = string_new();
+    for (int i = 0; i < list_size(cola_ready_global->estado); i++)
+    {
+        t_pcb *pcb = list_get(cola_ready_global->estado, i);
+        char *pid = string_itoa(pcb->cde->pid);
+        strcat(pids_en_ready, pid);
+        if (i != list_size(cola_ready_global->estado) - 1)
+        {
+            strcat(pids_en_ready, ",");
+        }
+    }
+    return pids_en_ready;
+}
+
 // NEW -> READY
 t_pcb *transicion_new_a_ready()
 {
     t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, " ");
+    proceso->estado = READY;
     return proceso;
 }
 // EXEC -> EXIT

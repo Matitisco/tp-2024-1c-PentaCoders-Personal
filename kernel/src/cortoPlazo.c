@@ -48,7 +48,6 @@ void planificar_por_fifo()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
-        // sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
         proceso = transicion_ready_exec();
         log_info(logger, "Se agrego el proceso <%d> y PC <%d> a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
@@ -65,17 +64,16 @@ void planificar_por_rr()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
-        // sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
         proceso = transicion_ready_exec();
         proceso->estado = EXEC;
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por RR con Quantum: %d\n", proceso->cde->pid, QUANTUM);
-        inicio_quantum(QUANTUM);
         enviar_a_cpu_cde(proceso->cde);
         if (habilitar_planificadores == 1)
         {
             sem_post(b_reanudar_corto_plazo);
         }
+        inicio_quantum(QUANTUM);
     }
 }
 
@@ -84,24 +82,24 @@ void planificar_por_vrr()
     t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
-        // sem_wait(b_reanudar_corto_plazo);
         sem_wait(b_exec_libre);
 
         if (hayProcesosEnEstado(cola_ready_plus))
         {
             proceso = transicion_generica(cola_ready_plus, cola_exec_global, "corto");
             proceso->estado = EXEC;
-            inicio_quantum(proceso->quantum);
             log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por VRR con Quantum: %d\n", proceso->cde->pid, proceso->quantum);
+            enviar_a_cpu_cde(proceso->cde);
+            inicio_quantum(proceso->quantum);
         }
         else
         {
             proceso = transicion_ready_exec();
             proceso->estado = EXEC;
-            inicio_quantum(QUANTUM);
             log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por VRR con Quantum Normal: %d\n", proceso->cde->pid, QUANTUM);
+            enviar_a_cpu_cde(proceso->cde);
+            inicio_quantum(QUANTUM);
         }
-        enviar_a_cpu_cde(proceso->cde);
         timer = temporal_create();
         if (habilitar_planificadores == 1)
         {
@@ -115,22 +113,15 @@ void planificar_por_vrr()
 void inicio_quantum(int quantum)
 {
     quantum_usable = quantum;
-    log_info(logger, "Inicio de QUANTUM");
     pthread_create(&hiloQuantum, NULL, hilo_quantum, NULL);
     pthread_detach(&hiloQuantum);
-    sem_post(sem_quantum);
 }
 
 void *hilo_quantum()
 {
-    while (1)
-    {
-        sem_wait(sem_quantum);
-        sleep_ms(quantum_usable);
-        enviar_op_code(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
-    }
+    sleep_ms(quantum_usable);
+    enviar_op_code(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
 }
-
 // TRANSICIONES
 
 // READY -> EXEC
@@ -153,7 +144,7 @@ void *transicion_exec_ready()
         sem_post(contador_readys);
         sem_post(b_exec_libre);
 
-        log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
+        log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <READY>", proceso->cde->pid);
     }
 }
 // EXEC -> BLOCKED
@@ -173,9 +164,8 @@ void *transicion_exec_blocked()
             tiempo_transcurrido = temporal_gettime(timer);
             temporal_destroy(timer);
         }
-
-        log_info(logger, "Se bloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         proceso->estado = BLOCKED;
+        log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <BLOCKED>", proceso->cde->pid);
     }
 }
 // BLOCKED -> READY
@@ -205,12 +195,10 @@ void *transicion_blocked_ready()
         else
         {
             proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto");
+            valorSemaforo(cola_bloqueado_global->contador);
             proceso->estado = READY;
         }
-
-        proceso->cde = cde_interrumpido;
-
-        log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
+        log_info(logger, "PID: <%d> - Estado Anterior: <BLOCKED> - Estado Actual: <READY>", proceso->cde->pid);
     }
 }
 
@@ -258,7 +246,7 @@ int hayProcesosEnEstado(colaEstado *cola_estado)
 
 void enviar_a_cpu_cde(t_cde *cde)
 {
-    log_info(logger, "Proceso A Enviar: <%d>", cde->pid);
+    // log_info(logger, "Proceso A Enviar: <%d>", cde->pid);
     enviar_op_code(socket_cpu_dispatch, EJECUTAR_PROCESO);
     enviar_cde(socket_cpu_dispatch, cde);
 }

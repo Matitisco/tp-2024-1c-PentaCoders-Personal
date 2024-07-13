@@ -14,7 +14,7 @@ void detener_planificacion();
 void iniciar_planificacion();
 void grado_multiprogramacion(int valor);
 void proceso_estado();
-
+void transicion_generica_exit(uint32_t pid);
 // AUXILIARES
 void renaudar_corto_plazo();
 void renaudar_largo_plazo();

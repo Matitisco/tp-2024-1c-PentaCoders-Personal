@@ -336,6 +336,7 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		interrupcion_rr = 0;
+		log_info(logger, "INTERRUPCION - FIN DE QUANTUM");
 		if (interrupcion_io)
 		{
 			interrupcion_io = 0;
@@ -352,7 +353,6 @@ void check_interrupt()
 		}
 		else
 		{
-			log_info(logger, "INTERRUPCION - FIN DE QUANTUM");
 			enviar_op_code(socket_kernel_dispatch, FIN_DE_QUANTUM);
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
@@ -484,8 +484,16 @@ t_tipoDeInstruccion obtener_instruccion(char *instruccion)
 config_cpu *configurar_cpu()
 {
 	config_cpu *valores_config_cpu = malloc(sizeof(config_cpu));
-
-	valores_config_cpu->config = iniciar_config("cpu.config");
+	char directorioActual[1024];
+	getcwd(directorioActual, sizeof(directorioActual));
+	char *ultimo_dir = basename(directorioActual);
+	if (strcmp(ultimo_dir, "bin") == 0)
+	{
+		chdir("..");
+		getcwd(directorioActual, sizeof(directorioActual));
+	}
+	strcat(directorioActual, "/cpu.config");
+	valores_config_cpu->config = iniciar_config(directorioActual);
 	valores_config_cpu->ip = config_get_string_value(valores_config_cpu->config, "IP_MEMORIA");
 	valores_config_cpu->puerto_memoria = config_get_string_value(valores_config_cpu->config, "PUERTO_MEMORIA");
 	valores_config_cpu->puerto_escucha_dispatch = config_get_string_value(valores_config_cpu->config, "PUERTO_ESCUCHA_DISPATCH");

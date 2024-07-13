@@ -494,7 +494,6 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
         list_add(list_instrucciones, token);
     }
     fclose(archivo);
-    // free(directorioActual);
     return list_instrucciones;
 }
 
