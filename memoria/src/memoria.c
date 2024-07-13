@@ -585,6 +585,12 @@ config_memoria *configuracion_memoria()
     config_memoria *valores_config = malloc(sizeof(config_memoria));
     char directorioActual[1024];
     getcwd(directorioActual, sizeof(directorioActual));
+    char *ultimo_dir = basename(directorioActual);
+    if (strcmp(ultimo_dir, "bin") == 0)
+    {
+        chdir("..");
+        getcwd(directorioActual, sizeof(directorioActual));
+    }
     strcat(directorioActual, "/memoria.config");
     valores_config->config = iniciar_config(directorioActual);
     valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");

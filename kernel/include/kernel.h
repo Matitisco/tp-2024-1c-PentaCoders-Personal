@@ -9,10 +9,7 @@
 #include <commons/temporal.h>
 #include <semaphore.h>
 #include <pthread.h>
-
-// #include "cortoPlazo.h"
-// #include "menu.h"
-// #include "operaciones.h"
+#include <libgen.h>
 
 #include "../../utils/include/utils.h"
 #include "../../utils/include/registros.h"

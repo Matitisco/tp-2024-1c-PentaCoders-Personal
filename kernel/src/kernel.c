@@ -184,7 +184,15 @@ config_kernel *inicializar_config_kernel()
 	config_kernel *configuracion = (config_kernel *)malloc(sizeof(config_kernel));
 	char directorioActual[1024];
 	getcwd(directorioActual, sizeof(directorioActual));
+	char *ultimo_dir = basename(directorioActual);
+
+	if (strcmp(ultimo_dir, "bin") == 0)
+	{
+		chdir("..");
+		getcwd(directorioActual, sizeof(directorioActual));
+	}
 	strcat(directorioActual, "/kernel.config");
+
 	configuracion->config = iniciar_config(directorioActual);
 
 	configuracion->ip_memoria = config_get_string_value(configuracion->config, "IP_MEMORIA");
