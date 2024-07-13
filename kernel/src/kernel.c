@@ -66,7 +66,7 @@ int interruptor_switch_readys;
 sem_t *b_switch_readys;
 
 sem_t *contador_readys;
-char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL}; 
+char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
 
 int main(int argc, char *argv[])
 {
@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
 }
 
 void iniciar_kernel()
-{	
-	
+{
+
 	habilitar_planificadores = 0;
 	inicializarEstados();
 	logger = iniciar_logger("kernel.log", "KERNEL");
@@ -293,16 +293,17 @@ config_kernel *inicializar_config_kernel()
 
 	t_lista_recursos *recursos = list_create(); // lista con elementos de tipo t_recurso
 
-	for (int i = 0; i < tamanio; i++) {// voy creando tantos recursos según hayan en el config->  [RA,RB,RC] -> {"RA", "RB", "RC", NULL }
-		t_recurso* recurso = malloc(sizeof(t_recurso));
+	for (int i = 0; i < tamanio; i++)
+	{ // voy creando tantos recursos según hayan en el config->  [RA,RB,RC] -> {"RA", "RB", "RC", NULL }
+		t_recurso *recurso = malloc(sizeof(t_recurso));
 		recurso->nombre = strdup(lista_recursos[i]);
-		
+
 		recurso->instancias = malloc(sizeof(sem_t));
 		int instancias = atoi(instancias_recursos_str[i]); // cant de instancias del recurso
 		sem_init(recurso->instancias, 0, instancias);
 
 		recurso->cola_bloqueados = constructorColaEstado("BLOCK_RECURSO");
-		list_add(recursos,recurso);
+		list_add(recursos, recurso);
 	}
 	configuracion->recursos = recursos;
 	// Libero los arrays
@@ -351,28 +352,30 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 	sem_post(cola_estado->contador);
 }
 
-//NO SE USA -- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
-void agregar_al_principio_de_cola(t_pcb *pcb, colaEstado *cola_estado){
+// NO SE USA -- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
+void agregar_al_principio_de_cola(t_pcb *pcb, colaEstado *cola_estado)
+{
 
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	t_queue *cola_aux = queue_create();
 	queue_push(cola_aux, pcb);
 
-	while (!queue_is_empty(cola_estado->estado)) {
-        void *pcb = queue_pop(cola_estado->estado);
-        queue_push(cola_aux, pcb);
-    }
+	while (!queue_is_empty(cola_estado->estado))
+	{
+		void *pcb = queue_pop(cola_estado->estado);
+		queue_push(cola_aux, pcb);
+	}
 
-	while (!queue_is_empty(cola_aux)) {
-        void *pcb = queue_pop(cola_aux);
-        queue_push(cola_estado->estado, pcb);
-    }
+	while (!queue_is_empty(cola_aux))
+	{
+		void *pcb = queue_pop(cola_aux);
+		queue_push(cola_estado->estado, pcb);
+	}
 	pthread_mutex_unlock(cola_estado->mutex_estado);
 
 	queue_destroy(cola_aux);
 
 	sem_post(cola_estado->contador);
-
 }
 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
@@ -469,12 +472,16 @@ void *levantar_CPU_Dispatch()
 			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
 			destruir_buffer(buffer_cpu);
 
+			// sem_post(b_transicion_exec_blocked);
+
 			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
 			{
 				printf("\033[0;33m\n Existe el recurso: %s \n \033[0m", nombre_recurso_recibido);
 
 				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
 				wait_instancia_recurso2(recurso); // el SO pierde uno del recurso llamado
+
+				// sem_post(b_transicion_blocked_ready);
 				/*
 				int valor_instancias;
 
@@ -505,7 +512,7 @@ void *levantar_CPU_Dispatch()
 			}
 			imprimir_recursos();
 			break;
-		case SIGNAL_RECURSO: // un proceso libera un recurso
+		case SIGNAL_RECURSO:
 			printf("\033[0;33m\n SIGNAL_RECURSO \n \033[0m");
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
@@ -513,14 +520,15 @@ void *levantar_CPU_Dispatch()
 			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
 			destruir_buffer(buffer_cpu);
 
-
 			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
 			{
-				//printf("\033[0;33m\n Existe el recurso: %s \n \033[0m", nombre_recurso_recibido);
+				// printf("\033[0;33m\n Existe el recurso: %s \n \033[0m", nombre_recurso_recibido);
 
 				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
 
 				signal_instancia_recurso(recurso);
+
+				enviar_a_cpu_cde(cde_interrumpido);
 
 				imprimir_recursos();
 
@@ -781,44 +789,46 @@ _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 	return 0;
 }
 
-void signal_instancia_recurso(t_recurso * recurso) //Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo. 
+void signal_instancia_recurso(t_recurso *recurso) // Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo.
 {
-	//sem_getvalue(recurso->instancias, &valor);
-	sem_post(recurso->instancias);// sumo 1 al contador de las instancias global
-	
+	// sem_getvalue(recurso->instancias, &valor);
+	sem_post(recurso->instancias); // sumo 1 al contador de las instancias global
+
 	int proceso_en_espera;
 	sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);
 
-	if(proceso_en_espera>0){
+	if (proceso_en_espera > 0)
+	{
+		
+		t_pcb *proceso = queue_pop(recurso->cola_bloqueados->estado);//matar este proceso asi no queda en memoria
 		mostrar_procesos(recurso->cola_bloqueados);
-		//recurso->devolucion_signal = true; -- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
-		t_pcb* proceso = transicion_generica(recurso->cola_bloqueados,cola_ready_global,"");
-		proceso->estado=READY;
-		proceso->cde = cde_interrumpido;
-
 
 		mostrar_procesos(cola_ready_global);
 		mostrar_procesos(cola_exec_global);
 		mostrar_procesos(cola_bloqueado_global);
-
+		sem_post(b_transicion_blocked_ready);
+		// proceso->estado=READY;
+		// proceso->cde = cde_interrumpido;
+		mostrar_procesos(cola_ready_global);
+		mostrar_procesos(cola_exec_global);
+		mostrar_procesos(cola_bloqueado_global);
 	}
-
 }
-// no se puede liberar un recurso que no se está consumiendo
 
-void wait_instancia_recurso2(t_recurso * recurso) // si entra acá es porque el recurso existe
+// ¿? SE LE PUEDE TERMINAR EL QUANTUM, ahi pasarlo de exec a ready
+void wait_instancia_recurso2(t_recurso *recurso) // si entra acá es porque el recurso existe
 {
 	int valor;
 	sem_getvalue(recurso->instancias, &valor);
 
-	proceso_interrumpido = buscarProceso(cde_interrumpido->pid); //PCB
+	proceso_interrumpido = buscarProceso(cde_interrumpido->pid); // PCB
 
 	if (valor > 0) // Si habia instancias del recurso, puedo restar y asignar a un proceso
 	{
 
-		sem_wait(recurso->instancias); // RESTO instancia de recursos al SO
+		sem_wait(recurso->instancias);																					  // RESTO instancia de recursos al SO
 		t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso); // si no lo encuentra devuelve NULL
-		
+
 		// SUMO instancia de recurso al PROCESO (esta reteniendo)
 		if (recurso_buscado == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
 		{
@@ -837,40 +847,35 @@ void wait_instancia_recurso2(t_recurso * recurso) // si entra acá es porque el 
 			sem_post(recurso_buscado->instancias);
 			log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
 		}
-		//valorSemaforo(b_transicion_blocked_ready);
-		//proceso_estado();
+		// valorSemaforo(b_transicion_blocked_ready);
+		// proceso_estado();
+		enviar_a_cpu_cde(cde_interrumpido);
 		mostrar_procesos(cola_ready_global);
 		mostrar_procesos(cola_exec_global);
 		mostrar_procesos(cola_bloqueado_global);
-		//sem_post(b_transicion_blocked_ready);
-		//sem_post(b_transicion_blocked_ready);
-	}// recurso_del_proceso->cola_bloqueados->contador
-	else	// mando proceso a cola de bloqueados correspondiente al recurso
+		
+	} 
+	else // mando proceso a cola de bloqueados correspondiente al recurso
 	{
-		proceso_interrumpido = transicion_generica(cola_exec_global, recurso->cola_bloqueados,"");
-		proceso_interrumpido->estado=BLOCKED;
-		//cde_interrumpido->PC--; -- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
-		//proceso_interrumpido->cde = cde_interrumpido;//?
+
+		mostrar_procesos(cola_bloqueado_global);
+		sem_post(b_transicion_exec_blocked);
+		agregar_a_estado(proceso_interrumpido, recurso->cola_bloqueados);
+
+		mostrar_procesos(cola_bloqueado_global);
+		// proceso_interrumpido = transicion_generica(cola_exec_global, recurso->cola_bloqueados,"");
+		// proceso_interrumpido->estado=BLOCKED;
+		// proceso_interrumpido->cde = cde_interrumpido;//?
 		mostrar_procesos(recurso->cola_bloqueados);
-
-		log_info(logger, "PID: <%d> - Bloqueado por: <%s> con %d procesos en espera",proceso_interrumpido->cde->pid,nombre_recurso_recibido,(valor-1));
-
-		/* -- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
-		//hacerlo en una funcion DEVOLVER EJECUCION AL PROCESO QUE PETICIONO EL SIGNAL (PROCESO ANTERIOR)
-		if(recurso->devolucion_signal==true){
-
-			recurso->devolucion_signal=false;
-			sem_post(b_transicion_blocked_ready);
-		}*/
-		imprimir_recursos();
+		log_info(logger, "PID: <%d> - Bloqueado por: <%s> con procesos en espera", proceso_interrumpido->cde->pid, nombre_recurso_recibido);		
 	}
-
 }
 
-void imprimir_recursos(){
+void imprimir_recursos()
+{
 	for (size_t i = 0; i < list_size(valores_config->recursos); i++)
 	{
-		t_recurso * recurso = list_get(valores_config->recursos,i);
+		t_recurso *recurso = list_get(valores_config->recursos, i);
 		int valor;
 		sem_getvalue(recurso->instancias, &valor);
 		log_info(logger, "Recurso: %s - Cant: %d", recurso->nombre, valor);
@@ -881,4 +886,43 @@ void imprimir_recursos(){
 RECURSOS:
 
 - Liberar recursos retenidos por WAIT cuando llega a EXIT
+
+
+
+RC=1, RA=1
+
+PROCESO 0
+W RC
+W RC
+W RA
+
+PROCESO 1
+S RC
+S RA
+
+P0 W RC
+PO W RC
+se bloquea P0
+P1 entra a exec
+P1 S RC (aca se desbloquea P0)
+P1 S RA
+P1 EXIT
+P0 RA
+P0 EXIT
+
+
+---------------------------------------- ERRORES ----------------------------------
+Primero ejecuto proceso "consumidor". Cuando se bloqueas ejecuto proceso "productor", y en el primer SIGNAL que hace
+ocurre un error en la 809
+
+				t_pcb *proceso = queue_pop(recurso->cola_bloqueados->estado);
+				mostrar_procesos(recurso->cola_bloqueados); no hay procesos en cola
+
+				mostrar_procesos(cola_ready_global); no hay procesos en cola
+				mostrar_procesos(cola_exec_global); pid 1
+				mostrar_procesos(cola_bloqueado_global); pid 0 (hasta aca, anda bien)
+LINEA 809:		sem_post(b_transicion_blocked_ready);
+				mostrar_procesos(cola_ready_global); MAL, muestra pid 1, deberia ser pid 0
+				mostrar_procesos(cola_exec_global); pid 1
+				mostrar_procesos(cola_bloqueado_global); no hay procesos en cola
 */

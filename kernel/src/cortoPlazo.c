@@ -11,13 +11,6 @@ char* plani = "corto";
 
 int quantum_usable;
 
-
-
-
-
-
-
-
 // CORTO PLAZO
 void *corto_plazo()
 {
@@ -61,10 +54,7 @@ void planificar_por_fifo()
     {
 
         sem_wait(b_exec_libre);
-        
-
         proceso = transicion_ready_exec();
-
         proceso->estado = EXEC;
 
         enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO);
@@ -81,29 +71,18 @@ void planificar_por_rr()
 
     while (1)
     {
-       
-
+    
         sem_wait(b_exec_libre);
-        
         proceso = transicion_ready_exec();
-
-        
 
         log_info(logger, "Proceso a enviar: %d", proceso->cde->pid);
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por ROUND ROBIN con quantum: %d\n", proceso->cde->pid, QUANTUM);
 
-
         inicio_quantum();
-        
         enviar_a_cpu_cde(proceso->cde);
 
     }
 }
-
-
-
-
-
 
 void planificar_por_vrr()
 {
@@ -204,7 +183,6 @@ t_pcb *transicion_ready_exec()
     //sem_wait(contador_readys);
     t_pcb *proceso = transicion_generica(cola_ready_global,cola_exec_global,"corto");
     proceso->estado = EXEC;
-    //proceso->estado = BLOCKED;
     
     log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
 

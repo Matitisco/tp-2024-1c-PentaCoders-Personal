@@ -280,7 +280,8 @@ void liberar_recursos(t_pcb *proceso)
                 t_recurso *recurso_SO = list_get(valores_config->recursos,i);
                 if (strcmp(recurso_SO->nombre, nombre_rec) == 0)
                 {
-                    sem_post(&(recurso_SO->instancias));
+                    //sem_post(&(recurso_SO->instancias)); //GUARDA ACA ME PUTEA -abort
+                    sem_post(recurso_SO->instancias);//probar con esto
                 }
             }
         
