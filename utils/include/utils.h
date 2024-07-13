@@ -22,7 +22,6 @@
 #include "printf_color.h"
 
 typedef t_list t_lista_recursos;
-#define RUTA_RAIZ "/home/utnso/tp-2024-1c-PentaCoders"
 typedef struct
 {
 	t_config *config;

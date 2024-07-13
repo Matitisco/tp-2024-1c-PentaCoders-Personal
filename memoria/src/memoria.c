@@ -474,16 +474,16 @@ t_cde *armarCde(tipo_buffer *buffer)
 t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 {
     t_list *list_instrucciones = list_create();
-    char *ruta_completa = string_new();
-    string_append(&ruta_completa, valores_config->path_instrucciones);
-    // string_append(&ruta_completa, "/");
-    string_append(&ruta_completa, nombre_archivo);
+    char directorioActual[1024];
+    getcwd(directorioActual, sizeof(directorioActual));
+    strcat(directorioActual, valores_config->path_instrucciones);
+    strcat(directorioActual, nombre_archivo);
 
-    FILE *archivo = fopen(ruta_completa, "r");
+    FILE *archivo = fopen(directorioActual, "r");
 
     if (archivo == NULL)
     {
-        log_error(logger, "No se pudo abrir el archivo: <%s>", ruta_completa);
+        log_error(logger, "No se pudo abrir el archivo: <%s>", directorioActual);
         return NULL;
     }
     char linea_instruccion[1024];
@@ -493,7 +493,7 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
         list_add(list_instrucciones, token);
     }
     fclose(archivo);
-    free(ruta_completa);
+    // free(directorioActual);
     return list_instrucciones;
 }
 
@@ -583,8 +583,10 @@ void element_destroyer(void *element)
 config_memoria *configuracion_memoria()
 {
     config_memoria *valores_config = malloc(sizeof(config_memoria));
-
-    valores_config->config = iniciar_config(RUTA_RAIZ "/memoria/memoria.config");
+    char directorioActual[1024];
+    getcwd(directorioActual, sizeof(directorioActual));
+    strcat(directorioActual, "/memoria.config");
+    valores_config->config = iniciar_config(directorioActual);
     valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
     valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
     valores_config->path_instrucciones = config_get_string_value(valores_config->config, "PATH_INSTRUCCIONES");

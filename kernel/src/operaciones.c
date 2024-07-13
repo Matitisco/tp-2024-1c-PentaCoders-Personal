@@ -11,27 +11,17 @@ void ejecutar_script(char *PATH)
     char linea[1024];
 
     char *path_completo = string_new();
-    char *ruta_acceso[1024];
+    char directorioActual[1024];
+    chdir("..");
+    getcwd(directorioActual, sizeof(directorioActual)); // /kernel
+    strcat(directorioActual, "/memoria/scripts_kernel/");
+    strcat(directorioActual, PATH);
 
-    if (getcwd(ruta_acceso, sizeof(ruta_acceso)) == NULL)
-    {
-        log_info(logger, "No se pudo obtener la raiz");
-        return NULL;
-    }
-
-    /*
-    string_append(&path_completo, ruta_acceso);    
-    string_append(&path_completo, "/../memoria/pruebas/checkpoint_3/scripts/");
-    string_append(&path_completo, PATH);
-    */  
-    string_append(&path_completo, "/home/nahuel/memoria/tp-2024-1c-PentaCoders/memoria/scripts_memoria/");
-    string_append(&path_completo, PATH);
-
-    FILE *archivo_script = fopen(path_completo, "r");
+    FILE *archivo_script = fopen(directorioActual, "r");
 
     if (archivo_script == NULL)
     {
-        log_info(logger, "No se pudo leer el script con PATH: %s", path_completo);
+        log_info(logger, "No se pudo leer el script con PATH: %s", directorioActual);
         iniciar_consola_interactiva();
     }
     while (fgets(linea, sizeof(linea), archivo_script) != NULL)
