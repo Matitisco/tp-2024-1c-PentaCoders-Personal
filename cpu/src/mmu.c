@@ -33,11 +33,13 @@ uint32_t direccion_logica_a_fisica(int direccion_logica)
         return direccion_fisica;
     }
 }
-uint32_t traducir_direccion_mmu(uint32_t direccion_logica){
+uint32_t traducir_direccion_mmu(uint32_t direccion_logica)
+{
     int numero_pagina = calcular_pagina(direccion_logica);
     int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
     int marco = obtener_frame(numero_pagina);
-    if(marco == -1){
+    if (marco == -1)
+    {
         return -1;
     }
     int direccion_fisica = marco * tamanio_pagina + desplazamiento;
@@ -48,7 +50,6 @@ int calcular_pagina(int direccion_logica)
 {
     return floor(direccion_logica / tamanio_pagina);
 }
-
 
 int enviar_peticion_frame(int pagina)
 {
@@ -80,13 +81,14 @@ int enviar_peticion_frame(int pagina)
     {
         log_info(logger, "PID: <%d> - ERROR OBTENER MARCO - Pagina: <%d>", cde_recibido->pid, pagina);
         frame_buscado = -1;
-        //hay que finalizar el proceso o hacer una interrupcion 
+        // hay que finalizar el proceso o hacer una interrupcion
     }
 
     return frame_buscado;
 }
-int obtener_frame(int pagina){
-    //hacer logica tlb
+int obtener_frame(int pagina)
+{
+    // hacer logica tlb
     /*
     /*
     if(marco == -1){ //TLB MISS
@@ -96,11 +98,12 @@ int obtener_frame(int pagina){
     else{//TLB HIT
         log_info(logger, "PID: <%d> - TLB HIT - Pagina: <%d>", cde_recibido->pid, numero_pagina);
     }*/
-    
+
     return pedir_frame_memoria(cde_recibido->pid, pagina);
 }
 
-int pedir_frame_memoria(int pid, int nroPagina){
+int pedir_frame_memoria(int pid, int nroPagina)
+{
     int frame_pedido;
     enviar_op_code(socket_memoria, PEDIDO_FRAME);
 
@@ -109,7 +112,7 @@ int pedir_frame_memoria(int pid, int nroPagina){
     agregar_buffer_para_enterosUint32(buffer, nroPagina);
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
-    
+
     op_code respuesta_mmu = recibir_op_code(socket_memoria);
     if (respuesta_mmu == PEDIDO_FRAME_CORRECTO)
     {

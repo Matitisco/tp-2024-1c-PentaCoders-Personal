@@ -238,6 +238,7 @@ void pedido_frame_mmu(int cliente_cpu)
     if (marco == -1)
     {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
+        log_error(logger, "No Se Pudo Encontrar El Frame");
     }
     else
     {

@@ -10,8 +10,11 @@ int main(int argc, char *argv[])
 
 void iniciar_modulo_io()
 {
+	printf("--------------------------");
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
+	printf("--------------------------");
 	char *path_configuracion = readline("Ingrese el nombre del archivo con la configuracion de la interfaz (sin '.config'): ");
+	printf("--------------------------");
 	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
 	strcat(path_configuracion, ".config");
 	levantar_interfaz(nombre_interfaz, path_configuracion);
@@ -85,6 +88,12 @@ void conectarse_kernel(t_interfaz *interfaz)
 {
 	conexion_kernel = levantarCliente(logger, "KERNEL", interfaz->ip_kernel, string_itoa(interfaz->puerto_kernel));
 
+	if (conexion_kernel == 0)
+	{
+		log_error(logger, "No pude conectarme al Kernel o esta apagado");
+		exit(1);
+	}
+
 	enviar_op_code(conexion_kernel, SOLICITUD_CONEXION_IO);
 	tipo_buffer *buffer_interfaz_kernel = crear_buffer();
 	agregar_buffer_para_enterosUint32(buffer_interfaz_kernel, interfaz->tipo_interfaz);
@@ -107,6 +116,12 @@ void conectarse_kernel(t_interfaz *interfaz)
 void conectarse_memoria(t_interfaz *interfaz)
 {
 	conexion_memoria = levantarCliente(logger, "MEMORIA", interfaz->ip_memoria, string_itoa(interfaz->puerto_memoria));
+
+	if (conexion_memoria == 0)
+	{
+		log_error(logger, "No pude conectarme a Memoria o esta apagada");
+		exit(1);
+	}
 }
 
 t_interfaz *crear_interfaz(config_io *config, char *nombre)
