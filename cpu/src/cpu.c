@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 	free(valores_config_cpu->puerto_escucha_interrupt);
 	free(valores_config_cpu->puerto_memoria);
 	free(valores_config_cpu);
+	free(registros);
 	liberar_conexion(socket_memoria);
 }
 
@@ -123,7 +124,9 @@ void *levantar_kernel_dispatch()
 				log_info(logger, "PID: <%d> - FETCH - Program Counter: <%d>", cde_recibido->pid, cde_recibido->PC);
 				cde_recibido->PC++;
 				char **array_instruccion = decode(linea_instruccion);
+				free(linea_instruccion); // agregado
 				execute(array_instruccion, cde_recibido);
+				free(array_instruccion);
 				check_interrupt();
 				printf("------------------------------\n");
 			}
@@ -131,7 +134,7 @@ void *levantar_kernel_dispatch()
 			destruir_buffer(buffer_cde);
 			break;
 		default:
-			log_warning(logger, "Operacion desconocida. No quieras meter la pata");
+			log_error(logger, "DISPATCH - Operacion Desconocida");
 			break;
 		}
 	}
@@ -160,12 +163,9 @@ void *levantar_kernel_interrupt()
 				break;
 			case SOLICITUD_EXIT:
 				interrupcion_exit = 1;
-				log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR POR CONSOLA");
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
-				log_error(logger, "Finalizando modulo.");
-				exit(1);
 				break;
 			}
 		}
@@ -347,7 +347,7 @@ void check_interrupt()
 		else if (interrupcion_exit)
 		{
 			interrupcion_exit = 0;
-			log_info(logger, "INTERRUPCION - INTERRUPTED_BY_USER");
+			log_info(logger, "INTERRUPCION - EXIT CONSOLA");
 			enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 			exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 		}
@@ -358,11 +358,10 @@ void check_interrupt()
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		}
 	}
-	else if (interrupcion_exit) // por parte del kernel
+	else if (interrupcion_exit)
 	{
-		// salida_exit = 0;
 		interrupcion_exit = 0;
-		log_info(logger, "INTERRUPCION - INTERRUPTED_BY_USER");
+		log_info(logger, "INTERRUPCION - EXIT CONSOLA");
 		enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 		exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 	}
@@ -372,7 +371,7 @@ void check_interrupt()
 		interrupcion_io = 0;
 		log_info(logger, "INTERRUPCION - IO");
 		agregar_cde_buffer(buffer_cde, cde_recibido);
-		enviar_buffer(buffer_cde, socket_kernel_dispatch); // enviamos proceso interrumpido
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		destruir_buffer(buffer_instruccion_io);
 	}
 	else if (desalojo_signal)

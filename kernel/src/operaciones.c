@@ -15,7 +15,7 @@ void ejecutar_script(char *PATH)
     getcwd(directorioActual, sizeof(directorioActual));
     strcat(directorioActual, "/memoria/scripts_kernel/");
     strcat(directorioActual, PATH);
-
+    
     FILE *archivo_script = fopen(directorioActual, "r");
 
     if (archivo_script == NULL)

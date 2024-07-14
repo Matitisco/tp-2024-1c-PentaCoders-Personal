@@ -28,7 +28,7 @@ void levantar_bitmap()
     }
     else
     {
-        bitarray = bitarray_create_with_mode(bmap, valores_config->block_count, MSB_FIRST);
+        bitarray = bitarray_create_with_mode(bmap, config_interfaz->block_count, MSB_FIRST);
     }
 }
 
@@ -39,7 +39,7 @@ void levantar_archivo_bloques()
 
     FILE *fbloques = fopen(path_arch_bloques, "w+");
 
-    int tamArchivoBloques = valores_config->block_size * valores_config->block_count;
+    int tamArchivoBloques = config_interfaz->block_size * config_interfaz->block_count;
 
     archivos_fs = list_create();
     int file_descriptor;
@@ -153,7 +153,7 @@ void crear_archivo(char *nombre_archivo, uint32_t pid)
 char *obtener_ruta_archivo(char *nombre_archivo)
 {
     char *ruta_fcb_buscado = string_new();
-    string_append(&ruta_fcb_buscado, valores_config->path_base_dialfs);
+    string_append(&ruta_fcb_buscado, config_interfaz->path_base_dialfs);
     string_append(&ruta_fcb_buscado, nombre_archivo);
     string_append(&ruta_fcb_buscado, ".dat");
 
@@ -173,7 +173,7 @@ void eliminar_archivo(char *nombre_archivo, uint32_t pid)
 {
     t_config *metadata_buscado = buscar_meta_data(nombre_archivo);
     int tamanio_archivo = config_get_int_value(metadata_buscado, "TAMANIO_ARCHIVO");
-    int tamanio_bloque = valores_config->block_size;
+    int tamanio_bloque = config_interfaz->block_size;
     int cant_bloques_ocupados = tamanio_archivo / tamanio_bloque;
     int posicion_inicial = config_get_int_value(metadata_buscado, "BLOQUE_INICIAL");
 
@@ -223,8 +223,8 @@ void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
         t_config *metadata = buscar_meta_data(nombre_archivo);
         int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
         int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
-        int tamanio_bloque = valores_config->block_size;
-        int cantidad_bloques = tamanio_archivo / valores_config->block_size;
+        int tamanio_bloque = config_interfaz->block_size;
+        int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
         /*
         puntero este apunta a una direccion a un byte entonces
         puntero/tam bloque veo que bloque estoy
@@ -235,7 +235,7 @@ void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
         FILE *fbloques = fopen(path_arch_bloques, "w+");
         fseek(fbloques, offset, SEEK_SET);                 // nos posicionamos al puntero de1
         fwrite(&texto_reconstruido, tamanio, 1, fbloques); // escribimoos la cadena
-        sleep_ms(valores_config->tiempo_unidad_trabajo);
+        sleep_ms(config_interfaz->tiempo_unidad_trabajo);
         log_info(logger, "PID: <%d> - Operacion: <IO_DIALFS_WRITE>", pid);
     }
     else if (codigo_memoria == ERROR_PEDIDO_LECTURA)
@@ -255,8 +255,8 @@ void leer_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
     t_config *metadata = buscar_meta_data(nombre_archivo);
     int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
     int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
-    int tamanio_bloque = valores_config->block_size;
-    int cantidad_bloques = tamanio_archivo / valores_config->block_size;
+    int tamanio_bloque = config_interfaz->block_size;
+    int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
     long bloques_a_desplazarse = puntero_archivo / tamanio_bloque;
     long offset = (bloque_inicial + bloques_a_desplazarse) + puntero_archivo;
     FILE *fbloques = fopen(path_arch_bloques, "r+");
@@ -276,7 +276,7 @@ void leer_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
     op_code codigo_memoria = recibir_op_code(conexion_memoria);
     if (codigo_memoria == OK)
     {
-        sleep_ms(valores_config->tiempo_unidad_trabajo);
+        sleep_ms(config_interfaz->tiempo_unidad_trabajo);
         log_info(logger, "PID: %d - Leer Archivo:  %s - Tamanio a Leer: %u - Puntero Archivo: %s", pid, nombre_archivo, tamanio, puntero_archivo);
     }
     else if (codigo_memoria == ERROR_PEDIDO_ESCRITURA)
@@ -296,15 +296,15 @@ void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio)
     uint32_t bloque_inicial = config_get_int_value(archivo_meta_data_buscado, "BLOQUE_INICIAL");
 
     config_save_in_file(archivo_meta_data_buscado, ruta_fcb_buscado);
-    uint32_t cantidad_bloques_agregar = (nuevo_tamanio - tamanio_archivo_anterior) / valores_config->block_size;
+    uint32_t cantidad_bloques_agregar = (nuevo_tamanio - tamanio_archivo_anterior) / config_interfaz->block_size;
 
     if (nuevo_tamanio > tamanio_archivo_anterior) // hay que amplar archiv
     {
-        ampliar_archivo(nombre_archivo, archivo_meta_data_buscado, tamanio_a_aplicar, tamanio_archivo_anterior, cantidad_bloques_agregar, valores_config->block_size, bloque_inicial); // TODO FALTAN TODOS LOS PARAMETROS OJO
+        ampliar_archivo(nombre_archivo, archivo_meta_data_buscado, tamanio_a_aplicar, tamanio_archivo_anterior, cantidad_bloques_agregar, config_interfaz->block_size, bloque_inicial); // TODO FALTAN TODOS LOS PARAMETROS OJO
     }
     else
     {
-        reducir_archivo(archivo_meta_data_buscado, tamanio_archivo_anterior, tamanio_a_aplicar, valores_config->block_size);
+        reducir_archivo(archivo_meta_data_buscado, tamanio_archivo_anterior, tamanio_a_aplicar, config_interfaz->block_size);
     }
 
     config_destroy(archivo_meta_data_buscado);
@@ -318,7 +318,7 @@ void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, 
     {
         if (espacio_disponible_es_contiguo(cantidad_bloques_agregar, tamanio_bloque, bloque_inicial, tamanio_archivo_anterior))
         {
-            for (int i = 0; i < (tamanio_a_aplicar - tamanio_archivo_anterior) / valores_config->block_size; i++)
+            for (int i = 0; i < (tamanio_a_aplicar - tamanio_archivo_anterior) / config_interfaz->block_size; i++)
             {
                 int bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
                 int bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
@@ -353,8 +353,8 @@ void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, 
 
 void reducir_archivo(t_config *archivo_metadata_buscado, uint32_t tamanio_archivo_anterior, uint32_t tamanio_a_aplicar, uint32_t tamanio_bloque)
 {
-    uint32_t bloques_a_eliminar = tamanio_archivo_anterior - tamanio_a_aplicar / valores_config->block_size;
-    uint32_t bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / valores_config->block_size;
+    uint32_t bloques_a_eliminar = tamanio_archivo_anterior - tamanio_a_aplicar / config_interfaz->block_size;
+    uint32_t bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / config_interfaz->block_size;
     uint32_t bloque_final_reducido = bloque_final_sin_ampliar - bloques_a_eliminar;
 
     for (int i = bloque_final_sin_ampliar; i < bloque_final_reducido; i--)
@@ -368,7 +368,7 @@ void reducir_archivo(t_config *archivo_metadata_buscado, uint32_t tamanio_archiv
 
 _Bool hay_espacio_disponible(uint32_t cant_bloques_agregar)
 {
-    int total_bloques = valores_config->block_count;
+    int total_bloques = config_interfaz->block_count;
     int bloques_ocupados = contar_bloques_ocupados_bitarray();
     int bloques_disponibles = total_bloques - bloques_ocupados;
     return cant_bloques_agregar <= bloques_disponibles;
@@ -485,7 +485,7 @@ int *obtener_bloques_archivo(char *nombre_archivo)
 {
     t_config *metadata = buscar_meta_data(nombre_archivo);
     int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
-    int cantidad_bloques = tamanio_archivo / valores_config->block_size;
+    int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
 
     int *bloques = malloc(cantidad_bloques * sizeof(int));
     for (int i = 0; i < cantidad_bloques; i++)
@@ -546,8 +546,8 @@ _Bool buscar_arch_por_nombre(t_archivo_data *archivo)
 
 void mover_archivo_al_final_del_fs(char *nombre_archivo)
 {
-    int total_bloques = valores_config->block_count;
-    int tam_bloque = valores_config->block_size;
+    int total_bloques = config_interfaz->block_count;
+    int tam_bloque = config_interfaz->block_size;
     int *bloques_archivo;
     int cantidad_bloques_archivo;
 
@@ -590,13 +590,13 @@ int obtener_cantidad_bloques_archivo(char *nombre_archivo)
 {
     t_config *metadata = buscar_meta_data(nombre_archivo);
     int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
-    int cantidad_bloques = tamanio_archivo / valores_config->block_size;
+    int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
     return cantidad_bloques;
 }
 
 void desplazar_archivos_y_eliminar_bloques_libres()
 {
-    int total_bloques = valores_config->block_count;
+    int total_bloques = config_interfaz->block_count;
     t_queue *lista_bloques_libres = queue_create();
     for (int i = 0; i < total_bloques; i++)
     {
@@ -625,7 +625,7 @@ void desplazar_archivos_y_eliminar_bloques_libres()
 
 void mover_bloque(int origen, int destino)
 {
-    int tamano_bloque = valores_config->block_size;
+    int tamano_bloque = config_interfaz->block_size;
     char *contenido_bloque = malloc(tamano_bloque);
 
     // Leer el contenido del bloque de origen
@@ -649,7 +649,7 @@ void actualizar_metadata_archivo(int nuevo_bloque_inicial)
     {
         t_config *metadata = buscar_meta_data(archivo->nombre_archivo);
         int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
-        int cantidad_bloques = tamanio_archivo / valores_config->block_size;
+        int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
         config_set_value(metadata, "BLOQUE_INICIAL", nuevo_bloque_string);
         config_save(metadata);
     }

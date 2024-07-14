@@ -1,6 +1,6 @@
 #include "../include/entrada_salida.h"
 
-config_io *valores_config;
+config_io *config_interfaz;
 
 int main(int argc, char *argv[])
 {
@@ -15,17 +15,20 @@ void iniciar_modulo_io()
 	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
 	strcat(path_configuracion, ".config");
 	levantar_interfaz(nombre_interfaz, path_configuracion);
+	free(nombre_interfaz);
+	free(path_configuracion);
 }
 
 void liberar_modulo_io()
 {
 	log_destroy(logger);
-	config_destroy(valores_config->config);
+	config_destroy(config_interfaz->config);
+	free(config_interfaz);
 }
 
 void levantar_interfaz(char *nombre, char *PATH)
 {
-	config_io *config_interfaz = inicializar_config_IO(PATH);
+	inicializar_config_IO(PATH);
 	estoy_libre = 1;
 	t_interfaz *interfaz = crear_interfaz(config_interfaz, nombre);
 	if (interfaz == NULL)
@@ -166,41 +169,54 @@ enum_interfaz asignar_interfaz(char *nombre_Interfaz)
 	return -1;
 }
 
-config_io *inicializar_config_IO(char *PATH)
+void inicializar_config_IO(char *PATH)
 {
-	valores_config = malloc(sizeof(config_io));
+	config_interfaz = malloc(sizeof(config_io));
 
-	valores_config->config = iniciar_config(PATH);
-	valores_config->tipo_interfaz = config_get_string_value(valores_config->config, "TIPO_INTERFAZ");
-	valores_config->ip_kernel = config_get_string_value(valores_config->config, "IP_KERNEL");
-	valores_config->puerto_kernel = atoi(config_get_string_value(valores_config->config, "PUERTO_KERNEL"));
+	char directorioActual[2048];
+	getcwd(directorioActual, sizeof(directorioActual));
+	char *ultimo_dir = basename(directorioActual);
+	if (strcmp(ultimo_dir, "bin") == 0)
+	{
+		chdir("..");
+		getcwd(directorioActual, sizeof(directorioActual));
+	}
+	else
+	{
+		getcwd(directorioActual, sizeof(directorioActual));
+	}
+	strcat(directorioActual, PATH);
 
-	if (strcmp(valores_config->tipo_interfaz, "GENERICA") == 0)
+	config_interfaz->config = iniciar_config(PATH);
+	config_interfaz->tipo_interfaz = config_get_string_value(config_interfaz->config, "TIPO_INTERFAZ");
+	config_interfaz->ip_kernel = config_get_string_value(config_interfaz->config, "IP_KERNEL");
+	config_interfaz->puerto_kernel = atoi(config_get_string_value(config_interfaz->config, "PUERTO_KERNEL"));
+
+	if (strcmp(config_interfaz->tipo_interfaz, "GENERICA") == 0)
 	{
-		valores_config->tiempo_unidad_trabajo = config_get_int_value(valores_config->config, "TIEMPO_UNIDAD_TRABAJO");
+		config_interfaz->tiempo_unidad_trabajo = config_get_int_value(config_interfaz->config, "TIEMPO_UNIDAD_TRABAJO");
 	}
-	if (strcmp(valores_config->tipo_interfaz, "STDIN") == 0)
+	if (strcmp(config_interfaz->tipo_interfaz, "STDIN") == 0)
 	{
-		valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP_MEMORIA");
-		valores_config->puerto_memoria = atoi(config_get_string_value(valores_config->config, "PUERTO_MEMORIA"));
+		config_interfaz->ip_memoria = config_get_string_value(config_interfaz->config, "IP_MEMORIA");
+		config_interfaz->puerto_memoria = atoi(config_get_string_value(config_interfaz->config, "PUERTO_MEMORIA"));
 	}
-	if (strcmp(valores_config->tipo_interfaz, "STDOUT") == 0)
+	if (strcmp(config_interfaz->tipo_interfaz, "STDOUT") == 0)
 	{
-		valores_config->tiempo_unidad_trabajo = config_get_int_value(valores_config->config, "TIEMPO_UNIDAD_TRABAJO");
-		valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP_MEMORIA");
-		valores_config->puerto_memoria = atoi(config_get_string_value(valores_config->config, "PUERTO_MEMORIA"));
+		config_interfaz->tiempo_unidad_trabajo = config_get_int_value(config_interfaz->config, "TIEMPO_UNIDAD_TRABAJO");
+		config_interfaz->ip_memoria = config_get_string_value(config_interfaz->config, "IP_MEMORIA");
+		config_interfaz->puerto_memoria = atoi(config_get_string_value(config_interfaz->config, "PUERTO_MEMORIA"));
 	}
-	if (strcmp(valores_config->tipo_interfaz, "DIALFS") == 0)
+	if (strcmp(config_interfaz->tipo_interfaz, "DIALFS") == 0)
 	{
-		valores_config->tiempo_unidad_trabajo = config_get_int_value(valores_config->config, "TIEMPO_UNIDAD_TRABAJO");
-		valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP_MEMORIA");
-		valores_config->puerto_memoria = atoi(config_get_string_value(valores_config->config, "PUERTO_MEMORIA"));
-		valores_config->path_base_dialfs = config_get_string_value(valores_config->config, "PATH_BASE_DIALFS");
-		valores_config->block_size = config_get_int_value(valores_config->config, "BLOCK_SIZE");
-		valores_config->block_count = config_get_int_value(valores_config->config, "BLOCK_COUNT");
-		valores_config->retraso_compactacion = config_get_int_value(valores_config->config, "RETRASO_COMPACTACION");
+		config_interfaz->tiempo_unidad_trabajo = config_get_int_value(config_interfaz->config, "TIEMPO_UNIDAD_TRABAJO");
+		config_interfaz->ip_memoria = config_get_string_value(config_interfaz->config, "IP_MEMORIA");
+		config_interfaz->puerto_memoria = atoi(config_get_string_value(config_interfaz->config, "PUERTO_MEMORIA"));
+		config_interfaz->path_base_dialfs = config_get_string_value(config_interfaz->config, "PATH_BASE_DIALFS");
+		config_interfaz->block_size = config_get_int_value(config_interfaz->config, "BLOCK_SIZE");
+		config_interfaz->block_count = config_get_int_value(config_interfaz->config, "BLOCK_COUNT");
+		config_interfaz->retraso_compactacion = config_get_int_value(config_interfaz->config, "RETRASO_COMPACTACION");
 	}
-	return valores_config;
 }
 
 void realizar_operacion(t_interfaz *interfaz)

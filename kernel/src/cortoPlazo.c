@@ -195,7 +195,6 @@ void *transicion_blocked_ready()
         else
         {
             proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto");
-            valorSemaforo(cola_bloqueado_global->contador);
             proceso->estado = READY;
         }
         log_info(logger, "PID: <%d> - Estado Anterior: <BLOCKED> - Estado Actual: <READY>", proceso->cde->pid);
