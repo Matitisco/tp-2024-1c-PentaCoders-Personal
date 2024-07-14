@@ -100,7 +100,7 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
     if (direccion_fisica == -1)
     {
         log_error(logger, "DIRECCION INCORRECTA");
-        // interrupcion_exit = 1;
+        interrupcion_exit = 1;
         return;
     }
 
@@ -291,10 +291,10 @@ void exec_resize(char *tamanio, t_cde *cde)
 void exec_copy_string(char *tamanio, t_cde *cde)
 {
     // LEER STRING
-
-    uint32_t direccion_logica_SI = cde->registros->SI; // SET SI 0
+    uint32_t direccion_logica_SI = registros->SI;
     uint32_t direccion_fisica_SI = direccion_logica_a_fisica(direccion_logica_SI);
     log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica_SI);
+
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
     enviar_op_code(socket_memoria, LECTURA_CPU);
@@ -302,7 +302,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
     tipo_buffer *buffer_copy_string = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer_copy_string, direccion_fisica_SI);
     agregar_buffer_para_enterosUint32(buffer_copy_string, cde->pid);
-    agregar_buffer_para_enterosUint32(buffer_copy_string, sizeof(cde->registros->SI));
+    agregar_buffer_para_enterosUint32(buffer_copy_string, direccion_logica_SI);
 
     enviar_buffer(buffer_copy_string, socket_memoria);
     destruir_buffer(buffer_copy_string);
@@ -326,7 +326,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
 
     // ESCRIBIR STRING LEIDO
 
-    uint32_t tamanio_string = sizeof(atoi(tamanio));
+    uint32_t tamanio_string = atoi(tamanio);
     uint32_t direccion_logica_DI = cde->registros->DI;
     uint32_t direccion_fisica_DI = direccion_logica_a_fisica(direccion_logica_DI);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
@@ -384,11 +384,9 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
     interrupcion_io = 1;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
-    uint32_t tamanio = sizeof(reg_tamanio);
-
+    int tamanio = obtener_valor(reg_tamanio);
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
-
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
@@ -402,7 +400,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
     interrupcion_io = 1;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
-    uint32_t tamanio = sizeof(atoi(reg_tamanio));
+    uint32_t tamanio = obtener_valor(reg_tamanio);
 
     buffer_instruccion_io = crear_buffer();
 
@@ -413,6 +411,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
     agregar_buffer_para_string(buffer_instruccion_io, interfaz);
+    enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
 }
 
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
@@ -420,6 +419,7 @@ void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
     interrupcion_io = 1;
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
+
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_GENERICA);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_GEN_SLEEP);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, unidades_trabajo);

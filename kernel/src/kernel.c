@@ -301,9 +301,10 @@ void levantar_CPU_Dispatch()
 
 	while (1)
 	{
-		op_code cod = recibir_op_code(socket_cpu_dispatch);
+		log_info(logger, "Espera codigo");
+		op_code cod = recibir_op_code(socket_cpu_dispatch);	
 		tipo_buffer *buffer_cpu;
-
+		log_info(logger, "CODIGO RECIBIDO %d", cod);
 		switch (cod)
 		{
 		case FINALIZAR_PROCESO:
@@ -346,6 +347,7 @@ void levantar_CPU_Dispatch()
 			// 1-OpCode INSTRUCCION_INTERFAZ
 			// 2-Datos de la Interfaz enviados por la instruccion
 			// 3-CDE Enviado por el Check Interrupt
+			log_info(logger, "Llego una interfaz");
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // DATOS DE INTERFAZ
 
@@ -608,42 +610,42 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 	case SOLICITUD_INTERFAZ_STDIN:
 
-		instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDIN_READ
+		log_info(logger, "INSTRUCION INTERFAZ: %d", instruccion_interfaz);
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		log_info(logger, "DIRECION FISICA: %d", direccion_fisica);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
-		informacion_interfaz = list_find(lista_interfaces, interfaz_no_esta_conectada);
+		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 
-		if (informacion_interfaz == NULL)
+		if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 		{
 			interfaz_no_conectada(pid);
 		}
 		else
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
+			interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz, pid);
 		}
 		break;
 
 	case SOLICITUD_INTERFAZ_STDOUT:
 
-		instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion); // IO_STDOUT_WRITE
 		log_info(logger, "INSTURCCION A EJECUTAR STDOUT: %d", instruccion_interfaz);
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
-		informacion_interfaz = list_find(lista_interfaces, interfaz_no_esta_conectada);
+		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 
-		if (informacion_interfaz == NULL)
+		if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 		{
 			interfaz_no_conectada(pid);
 		}
 		else
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_stdout(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz->cliente_io, pid);
+			interfaz_conectada_stdout(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz, pid);
 		}
 		break;
 
@@ -859,11 +861,11 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 	}
 }
 
-void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid)
+void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, t_infoIO *io, int pid)
 {
-	enviar_op_code(socket_io, CONSULTAR_DISPONIBILDAD);
+	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
 
-	op_code operacion_io = recibir_op_code(socket_io);
+	op_code operacion_io = recibir_op_code(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
 	if (operacion_io == ESTOY_LIBRE)
@@ -872,26 +874,37 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_reg);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
-		enviar_buffer(buffer_interfaz, socket_io);
-		operacion_io = recibir_op_code(socket_io);
+		enviar_buffer(buffer_interfaz, io->cliente_io);
+		operacion_io = recibir_op_code(io->cliente_io);
 
 		if (operacion_io == CONCLUI_OPERACION)
 		{
+			log_info(logger, "La Interfaz Concluyo su Operacion");
 			sem_post(b_transicion_blocked_ready);
-			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+			if (list_is_empty(io->procesos_espera))
+			{
+				log_info(logger, "No hay procesos en espera");
+			}
+			else
+			{
+				t_cde *cde_espera = list_remove(io->procesos_espera, 0); // obtengo el que esta esperando mas tiempo
+				log_info(logger, "El proceso que estaba en espera es el proceso PID: %d", cde_espera->pid);
+			}
 		}
 	}
 	else
 	{
-		// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
+		log_info(logger, "Interfaz Ocupada");
+		list_add(io->procesos_espera, cde_interrumpido);
+		log_info(logger, "Se agrego el proceso: %d a la lista de pendientes de la interfaz %s", pid, io->nombre_io);
 	}
 }
 
-void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, int socket_io, int pid)
+void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica,t_infoIO* io, int pid)
 {
-	enviar_op_code(socket_io, CONSULTAR_DISPONIBILDAD);
+	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
 
-	op_code operacion_io = recibir_op_code(socket_io);
+	op_code operacion_io = recibir_op_code(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
 	if (operacion_io == ESTOY_LIBRE)
@@ -900,19 +913,30 @@ void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int t
 		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_reg);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
-		enviar_buffer(buffer_interfaz, socket_io);
+		enviar_buffer(buffer_interfaz, io->cliente_io);
 
-		operacion_io = recibir_op_code(socket_io);
+		operacion_io = recibir_op_code(io->cliente_io);
 
 		if (operacion_io == CONCLUI_OPERACION)
 		{
+			log_info(logger, "La Interfaz Concluyo su Operacion");
 			sem_post(b_transicion_blocked_ready);
-			// fijarnos si hay proceso bloqueados en la lista de interfaz y enviarlos
+			if (list_is_empty(io->procesos_espera))
+			{
+				log_info(logger, "No hay procesos en espera");
+			}
+			else
+			{
+				t_cde *cde_espera = list_remove(io->procesos_espera, 0); // obtengo el que esta esperando mas tiempo
+				log_info(logger, "El proceso que estaba en espera es el proceso PID: %d", cde_espera->pid);
+			}
 		}
 	}
 	else
 	{
-		// mandar a bloquear el proceso a la lista de bloqueados de la interfaz
+		log_info(logger, "Interfaz Ocupada");
+		list_add(io->procesos_espera, cde_interrumpido);
+		log_info(logger, "Se agrego el proceso: %d a la lista de pendientes de la interfaz %s", pid, io->nombre_io);
 	}
 }
 

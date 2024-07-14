@@ -7,8 +7,6 @@ la configuración del módulo el Tiempo de unidad de trabajo, este valor
 luego se va a multiplicar por otro valor que va a estar dado según el
 tipo de interfaz que tengamos, en este TP vamos a trabajar con 4 tipos
 de Interfaces: Genéricas, STDIN, STDOUT y DialFS.
-
-
 */
 
 void realizar_operacion_gen(t_interfaz *interfaz)
@@ -47,14 +45,18 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     if (instruccion == IO_STDIN_READ)
     {
         char *texto_ingresado = readline("Ingrese un texto por teclado: ");
-        t_list *lista_enteros = truncar_y_convertir(texto_ingresado, pid, tamanio);
-        int cant_enteros = list_size(lista_enteros);
+        char *texto_truncado = truncar_texto(texto_ingresado, tamanio);
 
         enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
         enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
         enviar_op_code(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
 
-        enviar_buffer_stdin_memoria(direccion_fisica, pid, cant_enteros, lista_enteros);
+        tipo_buffer *buffer_stdin = crear_buffer();
+        agregar_buffer_para_enterosUint32(buffer_stdin, direccion_fisica);
+        agregar_buffer_para_enterosUint32(buffer_stdin, pid);
+        agregar_buffer_para_string(buffer_stdin, texto_truncado);
+        enviar_buffer(buffer_stdin, conexion_memoria);
+        destruir_buffer(buffer_stdin);
 
         op_code codigo_memoria = recibir_op_code(conexion_memoria);
         if (codigo_memoria == OK)
@@ -78,8 +80,8 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
     sleep_ms(interfaz->tiempo_unidad_trabajo);
     tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
     t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
-    int limitante_cadena = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, se lo envio a la memoria para que
-    log_info(logger, "TAMANIO A LEER %d", limitante_cadena);
+    int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, se lo envio a la memoria para que
+    log_info(logger, "TAMANIO A LEER %d", tamanio);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a pedirle a memoria que busque el dato
     int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
     if (sol_operacion == IO_STDOUT_WRITE)
@@ -91,7 +93,7 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
         tipo_buffer *buffer_a_memoria = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
         agregar_buffer_para_enterosUint32(buffer_a_memoria, pid);
-        agregar_buffer_para_enterosUint32(buffer_a_memoria, limitante_cadena);
+        agregar_buffer_para_enterosUint32(buffer_a_memoria, tamanio);
         enviar_buffer(buffer_a_memoria, conexion_memoria);
 
         destruir_buffer(buffer_a_memoria);
@@ -99,15 +101,9 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
         op_code codigo_memoria = recibir_op_code(conexion_memoria);
         if (codigo_memoria == OK)
         {
-            char *texto_reconstruido = malloc(limitante_cadena);
             tipo_buffer *lectura = recibir_buffer(conexion_memoria);
-            for (int i = 0; i < limitante_cadena; i++)
-            {
-                int entero_valor = leer_buffer_enteroUint32(lectura);
-                int_a_char_y_concatenar_a_string(entero_valor, texto_reconstruido);
-                log_info(logger, "Valor hallado en Direccion Fisica <%d> : %s", direccion_fisica, string_itoa(entero_valor));
-            }
-            log_info(logger, "VALOR: %s", texto_reconstruido);
+            char *texto_recibido = leer_buffer_string(lectura);
+            log_info(logger, "Texto hallado: %s", texto_recibido);
             destruir_buffer(lectura);
 
             log_info(logger, "PID: <%d> - Operacion: <IO_STDOUT_WRITE>", pid);
@@ -172,25 +168,9 @@ void int_a_char_y_concatenar_a_string(int valor, char *cadena)
     cadena[longitud_cadena + 1] = '\0';
 }
 
-t_list *truncar_y_convertir(char *texto_ingresado, int pid, int tamanio)
+char *truncar_texto(char *texto_ingresado, int tamanio)
 {
     char *nuevo_texto;
     truncar_valor(&nuevo_texto, texto_ingresado, tamanio);
-    log_info(logger, "PID: <%d> - Texto Truncado: '%s'", pid, nuevo_texto);
-    return convertir_a_numeros(nuevo_texto);
-}
-
-void enviar_buffer_stdin_memoria(int direccion_fisica, int pid, int cant_enteros, t_list *lista_enteros)
-{
-    tipo_buffer *buffer_stdin_memoria = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer_stdin_memoria, direccion_fisica);
-    agregar_buffer_para_enterosUint32(buffer_stdin_memoria, pid);
-    agregar_buffer_para_enterosUint32(buffer_stdin_memoria, cant_enteros);
-    for (int i = 0; i < cant_enteros; i++)
-    {
-        int *valor = list_get(lista_enteros, i);
-        agregar_buffer_para_enterosUint32(buffer_stdin_memoria, *valor);
-    }
-    enviar_buffer(buffer_stdin_memoria, conexion_memoria);
-    destruir_buffer(buffer_stdin_memoria);
+    return nuevo_texto;
 }

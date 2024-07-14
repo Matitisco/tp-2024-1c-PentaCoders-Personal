@@ -115,6 +115,7 @@ void *levantar_kernel_dispatch()
 
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 			cde_recibido = leer_cde(buffer_cde);
+			registros = cde_recibido->registros;
 			salida_exit = 1;
 			printf("------------------------------\n");
 			while (salida_exit)
@@ -228,100 +229,100 @@ void execute(char **instruccion, t_cde *contextoProceso)
 	case SET:
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_set(instruccion[1], atoi((instruccion[2])));
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case MOV_IN:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_mov_in(instruccion[1], instruccion[2], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case MOV_OUT:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_mov_out(instruccion[1], instruccion[2], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case SUM:
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_sum(instruccion[1], instruccion[2]);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case SUB:
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_sub(instruccion[1], instruccion[2]);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case JNZ:
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_jnz(instruccion[1], atoi((instruccion[2])), contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case RESIZE:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		exec_resize(instruccion[1], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case COPY_STRING:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		exec_copy_string(instruccion[1], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case WAIT:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		exec_wait(instruccion[1], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case SIGNAL:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
 		exec_signal(instruccion[1], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case IO_GEN_SLEEP:
 		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_io_gen_sleep(instruccion[1], atoi((instruccion[2])));
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case IO_STDIN_READ:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		exec_io_stdin_read(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case IO_STDOUT_WRITE:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		exec_io_stdout_write(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		break;
 	case IO_FS_CREATE:
 		exec_io_fs_create(instruccion[1], instruccion[2], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case IO_FS_DELETE:
 		exec_io_fs_delete(instruccion[1], instruccion[2], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case IO_FS_TRUNCATE:
 		exec_io_fs_truncate(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s ", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
 	case IO_FS_WRITE:
 		exec_io_fs_write(instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
 
 		break;
 	case IO_FS_READ:
 		exec_io_fs_read(instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5], contextoProceso);
-		actualizar_cde(contextoProceso);
+		actualizar_cde();
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
 
 		break;
 	case EXIT:
 		interrupcion_rr = 0;
 		log_info(logger, "Instrucción Ejecutando: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
+		actualizar_cde();
 		exec_exit(contextoProceso, SUCCESS);
-		actualizar_cde(contextoProceso);
 		break;
 	default:
 		log_info(logger, "No encontre la instruccion");
@@ -353,6 +354,7 @@ void check_interrupt()
 		}
 		else
 		{
+			log_info(logger, "INTERRUPCION - OCURRIO FIN DE QUANTUM");
 			enviar_op_code(socket_kernel_dispatch, FIN_DE_QUANTUM);
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
@@ -395,9 +397,9 @@ void check_interrupt()
 	return;
 }
 
-void actualizar_cde(t_cde *contexto)
+void actualizar_cde()
 {
-	contexto->registros = registros;
+	cde_recibido->registros = registros;
 }
 
 t_tipoDeInstruccion obtener_instruccion(char *instruccion)

@@ -35,6 +35,12 @@ typedef struct
 	int bit_ocupado;  // esta libre o no el marco
 } t_bit_map;
 
+typedef struct{
+    int socket_io;
+    char* nombre_io;
+}t_info_io_memoria;
+
+
 extern t_log *logger;
 
 int socket_cpu;
@@ -59,7 +65,7 @@ void *recibirKernel();
 void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu);
 int cantidad_marcos_libres();
 void imprimir_paginas_proceso(t_list *tp_paginas_proceso);
-void *recibir_interfaces_io();
+void *recibir_interfaz_io();
 void inicializar_bitmap(int cant_marcos);
 void iniciar_proceso(int cliente_fd);
 void finalizar_proceso(int cliente_fd);
@@ -115,4 +121,5 @@ int tamanio_proceso(int pid);
 
 void liberar_marco(int nroMarco);
 void imprimir_estado_marcos();
+void *conexiones_io();
 #endif

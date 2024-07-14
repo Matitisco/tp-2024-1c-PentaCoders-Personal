@@ -55,8 +55,6 @@ void realizar_operacion_stdin(t_interfaz *interfaz);
 void realizar_operacion_stdout(t_interfaz *interfaz);
 void realizar_operacion_dialfs(t_interfaz *interfaz);
 
-
-
 void iniciar_modulo_io();
 void liberar_modulo_io();
 
