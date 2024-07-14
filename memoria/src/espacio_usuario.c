@@ -26,7 +26,7 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, config_mem
     return valor;
 }
 
-void crear_espacio_usuario(int tam_memoria)
+void crear_espacio_usuario(int tam_memoria, t_log *logger)
 {
     espacio_usuario = malloc(tam_memoria);
     if (espacio_usuario == NULL)

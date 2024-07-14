@@ -35,6 +35,12 @@ typedef struct
 	int bit_ocupado;  // esta libre o no el marco
 } t_bit_map;
 
+typedef struct{
+    int socket_io;
+    char* nombre_io;
+}t_info_io_memoria;
+
+
 extern t_log *logger;
 
 int socket_cpu;
@@ -59,7 +65,7 @@ void *recibirKernel();
 void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu);
 int cantidad_marcos_libres();
 void imprimir_paginas_proceso(t_list *tp_paginas_proceso);
-void *recibir_interfaces_io();
+void *recibir_interfaz_io();
 void inicializar_bitmap(int cant_marcos);
 void iniciar_proceso(int cliente_fd);
 void finalizar_proceso(int cliente_fd);
@@ -100,7 +106,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu);
 void asignar_paginas_nuevas(t_tabla_paginas *tabla_paginas, int paginas_adicionales, uint32_t pid);
 void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar);
 // auxx de paginas
-int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina);
+int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, int nroPagina);
 void enviar_tamanio_pagina(int cpu);
 void liberar_marco(int nroMarco);
 int obtener_posicion_marco_libre();
@@ -113,4 +119,7 @@ t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
 t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso);
 int tamanio_proceso(int pid);
 
+void liberar_marco(int nroMarco);
+void imprimir_estado_marcos();
+void *conexiones_io();
 #endif
