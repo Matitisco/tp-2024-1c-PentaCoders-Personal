@@ -190,6 +190,9 @@ void *recibirCPU()
             {
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
+            imprimir_paginas_proceso(tabla_actual->paginas_proceso);
+            imprimir_estado_marcos();
+
             break;
         case PEDIDO_FRAME:
             pedido_frame_mmu(cliente_cpu);
@@ -212,20 +215,15 @@ void pedido_frame_mmu(int cliente_cpu)
     destruir_buffer(buffer_mmu_cpu);
 
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
-    int cant_paginas_proceso = list_size(tabla->paginas_proceso);
-
-    printf_orange("El proceso %d tiene %d paginas", pid, cant_paginas_proceso);
-
-    if (pagina >= cant_paginas_proceso)
-    {
+    if(tabla == NULL){
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
+        log_error(logger, "PID: <%d> - NO SE ENCONTRO TABLA PAGINAS", pid);
         return;
+
     }
+    int marco = consultar_marco_de_una_pagina(tabla, pagina);
 
-    t_pagina *pagina_buscada = list_get(tabla->paginas_proceso, pagina);
-    int marco = pagina_buscada->marco;
-
-    if (marco < 0)
+    if (marco == -1)
     {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
     }
@@ -437,8 +435,6 @@ void iniciar_proceso(int cliente_fd)
     buffer = recibir_buffer(cliente_fd);
     t_cde *cde = armarCde(buffer);
     destruir_buffer(buffer);
-    // agrego una tabla vacio de paginas asociada al proceso, auna lista de tablas globales
-    crear_y_agregar_tabla_a_lista_global(cde->pid);
 
     cde->lista_instrucciones = leerArchivoConInstrucciones(cde->path);
     if (cde->path == NULL || cde->lista_instrucciones == NULL)
@@ -447,6 +443,7 @@ void iniciar_proceso(int cliente_fd)
     }
     else
     {
+        crear_y_agregar_tabla_a_lista_global(cde->pid);
         list_add(lista_contextos, cde);
         list_add(lista_instrucciones, cde->lista_instrucciones);
         enviar_op_code(cliente_fd, INICIAR_PROCESO_CORRECTO);
@@ -639,18 +636,14 @@ void destruir_pagina(void *pagina)
 
 t_tabla_paginas *buscar_en_lista_global(int pid)
 {
-    int cantidad_tablas = list_size(lista_global_tablas); // 1
+    int cantidad_tablas = list_size(lista_global_tablas);
 
     for (int i = 0; i < cantidad_tablas; i++)
     {
-        if (i > list_size(lista_global_tablas))
-        {
-            break;
-        }
-
         tabla_actual = list_get(lista_global_tablas, i);
         if (tabla_actual->pid == pid)
-        {
+        {   
+            printf_green("Tabla encontrada");
             return tabla_actual;
         }
     }
@@ -681,19 +674,15 @@ int obtener_posicion_marco_libre()
     return -1;
 }
 
-int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, t_pagina *pagina_buscada)
+int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, int nroPagina)
 {
-    int cant_paginas = list_size(tabla->paginas_proceso);
-
-    for (int i = 0; i < cant_paginas; i++)
+    int nroUltimaPagina = list_size(tabla->paginas_proceso) - 1;
+    if (nroPagina > nroUltimaPagina || nroPagina < 0)
     {
-        if (list_get(tabla->paginas_proceso, i) == pagina_buscada)
-        {
-
-            return pagina_buscada->marco;
-        }
+        return -1;
     }
-    return -1;
+    t_pagina *pagina = list_get(tabla->paginas_proceso, nroPagina);
+    return pagina->marco;
 }
 
 void liberar_marco(int nroMarco)
@@ -738,9 +727,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 
     asignar_paginas_nuevas(tabla_paginas, paginas_adicionales, pid);
 
-    imprimir_paginas_proceso(tabla_paginas->paginas_proceso);
-    imprimir_estado_marcos();
-
+    
     log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
     enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
 }
@@ -802,7 +789,6 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 
     t_list *paginas = tabla_paginas->paginas_proceso;
     eliminar_paginas(paginas, cantidad_paginas_a_eliminar);
-    imprimir_paginas_proceso(tabla_paginas->paginas_proceso);
 
     log_info(logger, "PID: %d - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", pid, tamanio_anterior, tamanio);
     enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
@@ -818,7 +804,6 @@ void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar)
         liberar_marco(pagina_a_eliminar->marco);
         free(pagina_a_eliminar);            // Liberar la memoria de la página
     }
-    imprimir_estado_marcos();
 }
 
 
