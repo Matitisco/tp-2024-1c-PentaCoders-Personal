@@ -37,9 +37,9 @@ typedef struct
 	char *nombre;
 	sem_t *instancias;
 	colaEstado *cola_bloqueados;
-	/*-- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
-	bool devolucion_signal;//guardo proceso que hizo signal y desbloqueo a un proceso que le faltaba este recurso
-	*/
+	//-- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
+	bool bloqueado;//guardo proceso que hizo signal y desbloqueo a un proceso que le faltaba este recurso
+	
 } t_recurso;
 
 typedef struct
