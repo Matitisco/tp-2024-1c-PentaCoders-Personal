@@ -1,47 +1,38 @@
 #ifndef TLB_H_
 #define TLB_H_
-
+#include <commons/temporal.h>
+#include <commons/collections/list.h>
 #include "cpu.h"
 
 // ESTRUCTURAS
-typedef struct
-{
-    int *pid;
-    int *pagina;
-    int *marco;
-    char *ultima_referencia;
+typedef struct {
+    int pid;
+    int nro_pagina;
+    int nro_marco;
+    int last_reference; //tiempo en ms para usar para el algoritmo
+} t_entrada_tlb;
+typedef enum {FIFO, LRU} algoritmo_reemplazo_tlb;
 
-} tlb_entrada;
+typedef struct {
+    t_list *entradas_tlb;
+    int size_tlb;
+    algoritmo_reemplazo_tlb algoritmo;
+} t_tlb;
 
-typedef struct
-{
-    int pos_entrada;
-    int estaba_cargada;
-} entrada_tipo;
-
-typedef struct
-{
-    tlb_entrada *entradas;
-    char *algoritmo;
-    int cant_entradas;
-} tlb_tabla;
 
 // TLB
-void tlb_iniciar(char *algoritmo, int cant_entradas);
-void tlb_crear(char *algoritmo, int cant_entradas);
-int tlb_consultar_df_pagina(int pagina_buscada, int desplazamiento);
-void tlb_agregar_entrada(int pid, int pagina, int marco);
-
-// ALGORITMOS TLB
-void tlb_reemplazar(tlb_entrada *entrada);
-void tlb_reemplazo_fifo(tlb_entrada *entrada);
-void tlb_reemplazo_lru(tlb_entrada *entrada);
+t_tlb *crear_tlb(int size_tlb, algoritmo_reemplazo_tlb algoritmo);
+t_entrada_tlb *crear_entrada_tlb(int pid, int nro_pagina, int nro_marco);
 
 // ENTRADAS
-entrada_tipo entrada_obtener(int pid, int pagina, int marco);
-tlb_entrada *entrada_crear(int pid, int pagina, int marco);
+void reemplazar_entrada_tlb(t_tlb *tlb, t_entrada_tlb *entrada);
+void agregar_entrada_a_tlb(t_tlb *tlb, t_entrada_tlb *entrada);
+int obtener_marco_tlb(t_tlb *tlb, int pid, int nro_pagina);
 
 // AUXILIARES
 int obtener_tiempo_en_miliSegundos(char *tiempo);
+bool tlb_llena(t_tlb *tlb);
+static void* entrada_tlb_last_reference_min(t_entrada_tlb* entrada1, t_entrada_tlb* entrada2);
+void imprimir_tlb(t_tlb * tlb);
 
 #endif

@@ -25,6 +25,8 @@ sem_t *sem_interface;
 t_cde *cde_recibido;
 int interrupcion_exit;
 
+
+
 int main(int argc, char *argv[])
 {
 	interrupcion_exit = 0;
@@ -42,6 +44,7 @@ int main(int argc, char *argv[])
 	free(valores_config_cpu->puerto_escucha_interrupt);
 	free(valores_config_cpu->puerto_memoria);
 	free(valores_config_cpu);
+	eliminar_tlb();
 	liberar_conexion(socket_memoria);
 }
 
@@ -50,7 +53,8 @@ void iniciar_modulo_cpu()
 	logger = iniciar_logger("cpu.log", "CPU");
 	valores_config_cpu = configurar_cpu();
 
-	tlb_iniciar(valores_config_cpu->algoritmo_tlb, valores_config_cpu->cantidad_entradas_tlb);
+	tlb_iniciar(valores_config_cpu->algoritmo_tlb, valores_config_cpu->cantidad_entradas_tlb, &TLB_HABILITADA);
+	
 
 	iniciar_registros_sistema();
 
@@ -116,7 +120,7 @@ void *levantar_kernel_dispatch()
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 			cde_recibido = leer_cde(buffer_cde);
 			salida_exit = 1;
-			printf("------------------------------\n");
+			printf_yellow("------------------------------\n");
 			while (salida_exit)
 			{
 				char *linea_instruccion = fetch(cde_recibido);
@@ -125,7 +129,7 @@ void *levantar_kernel_dispatch()
 				char **array_instruccion = decode(linea_instruccion);
 				execute(array_instruccion, cde_recibido);
 				check_interrupt();
-				printf("------------------------------\n");
+				printf_yellow("------------------------------\n");
 			}
 
 			destruir_buffer(buffer_cde);
@@ -160,7 +164,7 @@ void *levantar_kernel_interrupt()
 				break;
 			case SOLICITUD_EXIT:
 				interrupcion_exit = 1;
-				log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR POR CONSOLA");
+				log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR");
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");

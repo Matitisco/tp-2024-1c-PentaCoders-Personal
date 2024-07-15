@@ -13,6 +13,7 @@
 #include "../../utils/include/registros.h"
 #include "../../kernel/include/kernel.h"
 
+
 // VARIABLES
 extern int interrupcion_exit;
 extern int socket_kernel_dispatch;
@@ -41,7 +42,6 @@ typedef struct
 
 // INICIALIZACION
 void iniciar_modulo_cpu();
-void tlb_iniciar(char *algoritmo, int cant_entradas);
 void iniciar_semaforos_CPU();
 void iniciar_registros_sistema();
 void recibir_tamanio_pagina(int socket_memoria);

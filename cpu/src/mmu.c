@@ -1,38 +1,9 @@
 #include "../include/mmu.h"
+#include "../include/tlb.h"
 
 int TLB_HABILITADA;
 
-uint32_t direccion_logica_a_fisica(int direccion_logica)
-{
-    log_info(logger, "DIRECCION LOGICA: %d", direccion_logica);
-    int numero_pagina = calcular_pagina(direccion_logica); // 1
-    log_info(logger, "NUMERO PAGINA A BUSCAR : %d", numero_pagina);
-    int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina; // 0
 
-    if (TLB_HABILITADA)
-    {
-        int direccion_fisica = tlb_consultar_df_pagina(numero_pagina, desplazamiento);
-
-        if (direccion_fisica == -1)
-        {
-            log_info(logger, "PID: <%d> - TLB MISS - Pagina: <%d>", cde_recibido->pid, numero_pagina);
-            int marco = enviar_peticion_frame(numero_pagina);
-            int direccion_fisica = marco * tamanio_pagina + desplazamiento;
-            return direccion_fisica;
-        }
-        else
-        {
-            log_info(logger, "PID: <%d> - TLB HIT - Pagina: <%d>", cde_recibido->pid, numero_pagina);
-            return direccion_fisica;
-        }
-    }
-    else
-    {
-        int marco = enviar_peticion_frame(numero_pagina);
-        int direccion_fisica = marco * tamanio_pagina + desplazamiento;
-        return direccion_fisica;
-    }
-}
 uint32_t traducir_direccion_mmu(uint32_t direccion_logica){
     int numero_pagina = calcular_pagina(direccion_logica);
     int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
@@ -49,55 +20,25 @@ int calcular_pagina(int direccion_logica)
     return floor(direccion_logica / tamanio_pagina);
 }
 
-
-int enviar_peticion_frame(int pagina)
-{
-    int frame_buscado;
-
-    enviar_op_code(socket_memoria, PEDIDO_FRAME);
-
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, cde_recibido->pid);
-    agregar_buffer_para_enterosUint32(buffer, pagina);
-    enviar_buffer(buffer, socket_memoria);
-    destruir_buffer(buffer);
-
-    op_code respuesta_mmu = recibir_op_code(socket_memoria);
-    if (respuesta_mmu == PEDIDO_FRAME_CORRECTO)
-    {
-        tipo_buffer *buffer_memoria_tlb = recibir_buffer(socket_memoria);
-        frame_buscado = leer_buffer_enteroUint32(buffer_memoria_tlb);
-        destruir_buffer(buffer_memoria_tlb);
-        /*
-        if (TLB_HABILITADA)
-        {
-            tlb_agregar_entrada(cde_recibido->pid, pagina, frame_buscado);
-        }
-        */
-        log_info(logger, "PID: <%d> - OBTENER MARCO - Pagina: <%d> - Marco: <%d>", cde_recibido->pid, pagina, frame_buscado);
-    }
-    else if (respuesta_mmu == PEDIDO_FRAME_INCORRECTO)
-    {
-        log_info(logger, "PID: <%d> - ERROR OBTENER MARCO - Pagina: <%d>", cde_recibido->pid, pagina);
-        frame_buscado = -1;
-        //hay que finalizar el proceso o hacer una interrupcion 
-    }
-
-    return frame_buscado;
-}
 int obtener_frame(int pagina){
-    //hacer logica tlb
-    /*
-    /*
-    if(marco == -1){ //TLB MISS
-        //marco = enviar_peticion_frame(numero_pagina);
-        log_info(logger, "PID: <%d> - TLB MISS - Pagina: <%d>", cde_recibido->pid, numero_pagina);
+    int frame;
+    if (TLB_HABILITADA)
+    {
+        frame = obtener_marco_tlb(tlb_cpu, cde_recibido->pid, pagina);
+        if(frame == -1){//TLB MISS
+            log_info(logger, "PID: <%d> - TLB MISS - Pagina: <%d>", cde_recibido->pid, pagina);
+            frame = pedir_frame_memoria(cde_recibido->pid, pagina);
+            agregar_entrada_a_tlb(tlb_cpu, crear_entrada_tlb(cde_recibido->pid, pagina, frame));
+        }
+        else{//TLB HIT
+            log_info(logger, "PID: <%d> - TLB HIT - Pagina: <%d>", cde_recibido->pid, pagina);
+        }
+        imprimir_tlb(tlb_cpu);
     }
-    else{//TLB HIT
-        log_info(logger, "PID: <%d> - TLB HIT - Pagina: <%d>", cde_recibido->pid, numero_pagina);
-    }*/
-    
-    return pedir_frame_memoria(cde_recibido->pid, pagina);
+    else{
+        frame = pedir_frame_memoria(cde_recibido->pid, pagina);
+    }
+    return frame;
 }
 
 int pedir_frame_memoria(int pid, int nroPagina){
@@ -125,3 +66,4 @@ int pedir_frame_memoria(int pid, int nroPagina){
     }
     return frame_pedido;
 }
+

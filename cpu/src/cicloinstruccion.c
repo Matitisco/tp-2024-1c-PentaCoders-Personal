@@ -263,7 +263,7 @@ void exec_jnz(char *registro, uint32_t numeroInstruccion, t_cde *cde)
 
 void exec_resize(char *tamanio, t_cde *cde)
 {
-    enviar_op_code(socket_memoria, RESIZE_EXTEND);
+    enviar_op_code(socket_memoria, RESIZE_OP);
     uint32_t tamanioValor = atoi(tamanio);
     tipo_buffer *buffer = crear_buffer();
 
@@ -293,7 +293,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
     // LEER STRING
 
     uint32_t direccion_logica_SI = cde->registros->SI; // SET SI 0
-    uint32_t direccion_fisica_SI = direccion_logica_a_fisica(direccion_logica_SI);
+    uint32_t direccion_fisica_SI = traducir_direccion_mmu(direccion_logica_SI);
     log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica_SI);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
@@ -328,7 +328,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
 
     uint32_t tamanio_string = sizeof(atoi(tamanio));
     uint32_t direccion_logica_DI = cde->registros->DI;
-    uint32_t direccion_fisica_DI = direccion_logica_a_fisica(direccion_logica_DI);
+    uint32_t direccion_fisica_DI = traducir_direccion_mmu(direccion_logica_DI);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
     enviar_op_code(socket_memoria, SOLICITUD_ESCRITURA_CPU);
@@ -383,7 +383,7 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
 {
     interrupcion_io = 1;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
-    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     uint32_t tamanio = sizeof(reg_tamanio);
 
     buffer_instruccion_io = crear_buffer();
@@ -401,7 +401,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
 {
     interrupcion_io = 1;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
-    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     uint32_t tamanio = sizeof(atoi(reg_tamanio));
 
     buffer_instruccion_io = crear_buffer();
@@ -470,7 +470,7 @@ void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char *reg_
 void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_tamanio, char *reg_direccion, uint32_t puntero_archivo, t_cde *cde)
 {
     uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);
-    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
@@ -490,7 +490,7 @@ void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_tam
 void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_tamanio, char *reg_direccion, char *puntero_archivo, t_cde *cde)
 {
     uint32_t direccion_logica = obtener_valor_origen(reg_direccion, cde);
-    uint32_t direccion_fisica = direccion_logica_a_fisica(direccion_logica);
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);

@@ -28,6 +28,6 @@ void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_tama
 
 uint32_t obtener_valor_origen(char *origen, t_cde *cde);
 uint32_t obtener_valor(char *origen);
-uint32_t direccion_logica_a_fisica(int direccion_logica);
+
 
 #endif

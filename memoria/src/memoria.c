@@ -177,18 +177,20 @@ void *recibirCPU()
             CLIENTE_ESPACIO_USUARIO = cliente_cpu;
             acceso_a_espacio_usuario();
             break;
-        case RESIZE_EXTEND:
+        case RESIZE_OP:
             tipo_buffer *buffer_cpu = recibir_buffer(cliente_cpu);
             uint32_t nuevo_tamanio = leer_buffer_enteroUint32(buffer_cpu);
             t_cde *cde = leer_cde(buffer_cpu);
-            int tamanio = tamanio_proceso(cde->pid);
-            if (tamanio > nuevo_tamanio)
-            {
+            int tamanio_actual = tamanio_proceso(cde->pid);
+            if (tamanio_actual > nuevo_tamanio)
+            {   
+                log_info(logger, "PID: %d - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 reducir_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
             else
             {
-                ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
+                log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
+                ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);                
             }
             imprimir_paginas_proceso(tabla_actual->paginas_proceso);
             imprimir_estado_marcos();
@@ -217,7 +219,7 @@ void pedido_frame_mmu(int cliente_cpu)
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
     if(tabla == NULL){
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
-        log_error(logger, "PID: <%d> - NO SE ENCONTRO TABLA PAGINAS", pid);
+        log_error(logger, "PID: <%d> - NO SE ENCONTRO LA TABLA DE PAGINAS", pid);
         return;
 
     }
@@ -234,6 +236,7 @@ void pedido_frame_mmu(int cliente_cpu)
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_CORRECTO);
         enviar_buffer(buffer_memoria_mmu, cliente_cpu);
         destruir_buffer(buffer_memoria_mmu);
+        log_info(logger,"PID: <%d> - Pagina: <%d> - Marco: <%d>",pid,pagina,marco);
     }
 }
 
@@ -707,7 +710,6 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         log_error(logger, "PID: <%d> - NO SE ENCONTRO TABLA PAGINAS", pid);
         return;
     }
-    int tamanio_anterior = tamanio_proceso(pid);
     int tam_pagina = valores_config->tam_pagina;
     int cantidad_paginas_nuevas = tamanio / tam_pagina;
     int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
@@ -727,8 +729,6 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 
     asignar_paginas_nuevas(tabla_paginas, paginas_adicionales, pid);
 
-    
-    log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", pid, tamanio_anterior, tamanio);
     enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
 }
 
@@ -761,6 +761,7 @@ int cantidad_marcos_libres()
 }
 void imprimir_paginas_proceso(t_list *tp_paginas_proceso)
 {
+    if(!list_is_empty(tp_paginas_proceso)){
     t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso)-1);
     printf_yellow("      TABLA PROCESO %d",pagina2->pid);
 
@@ -771,6 +772,10 @@ void imprimir_paginas_proceso(t_list *tp_paginas_proceso)
         t_pagina *pagina = list_get(tp_paginas_proceso, i);
         printf_yellow("|  %d      |    %d   |      %d   |", i, pagina->marco, pagina->bit_validez);
         printf_yellow("-------------------------------");
+    } 
+    }
+    else{
+        printf_yellow("      TABLA PROCESO %d VACÍA",pid_a_buscar_o_eliminar);
     }
 }
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
@@ -781,7 +786,6 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         log_info(logger, "NO se encontro la tabla de paginas con pid %d", pid);
         return;
     }
-    int tamanio_anterior = tamanio_proceso(pid);
     int tam_pagina = valores_config->tam_pagina;
     int paginas_post_resize = tamanio / tam_pagina;
     int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
@@ -790,7 +794,6 @@ void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     t_list *paginas = tabla_paginas->paginas_proceso;
     eliminar_paginas(paginas, cantidad_paginas_a_eliminar);
 
-    log_info(logger, "PID: %d - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", pid, tamanio_anterior, tamanio);
     enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
 }
 
