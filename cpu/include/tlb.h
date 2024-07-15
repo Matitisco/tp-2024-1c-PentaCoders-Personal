@@ -19,7 +19,7 @@ typedef struct {
     algoritmo_reemplazo_tlb algoritmo;
 } t_tlb;
 
-
+extern t_tlb * tlb_cpu;
 // TLB
 t_tlb *crear_tlb(int size_tlb, algoritmo_reemplazo_tlb algoritmo);
 t_entrada_tlb *crear_entrada_tlb(int pid, int nro_pagina, int nro_marco);

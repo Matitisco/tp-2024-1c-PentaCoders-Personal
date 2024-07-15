@@ -13,7 +13,7 @@ void realizar_operacion_dialfs(t_interfaz *interfaz);
 t_list *convertir_a_numeros(char *texto);
 void truncar_valor(char **valor_nuevo, char *valor_viejo, int limitante);
 void int_a_char_y_concatenar_a_string(int valor, char *cadena);
-t_list *truncar_y_convertir(char *texto_ingresado, int pid, int tamanio);
+char *truncar_texto(char *texto_ingresado, int tamanio);
 void enviar_buffer_stdin_memoria(int direccion_fisica, int pid, int cant_enteros, t_list *lista_enteros);
 void instrucciones_dialfs();
 #endif

@@ -8,7 +8,7 @@ pthread_t hiloIO;
 
 config_memoria *valores_config;
 void *espacio_usuario;
-
+int socket_io;
 int server_fd;
 int PID_buscado;
 int cliente_cpu;
@@ -21,6 +21,7 @@ t_list *lista_contextos;
 t_list *lista_instrucciones;
 t_list *lista_global_tablas;
 t_list *lista_global_marcos;
+t_list *lista_io;
 t_tabla_paginas *tabla_actual;
 t_bit_map *array_bitmap;
 
@@ -51,10 +52,12 @@ void iniciar_memoria()
     lista_global_tablas = list_create();
     lista_contextos = list_create();
     lista_instrucciones = list_create();
+    lista_io = list_create();
 
     cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; // va a ser la cantida de amrcos
 
-    if (valores_config->tam_memoria % valores_config->tam_pagina != 0) {
+    if (valores_config->tam_memoria % valores_config->tam_pagina != 0)
+    {
         log_error(logger, "Memoria no puede iniciar, el tamaño de página no es múltiplo del tamaño de memoria");
         exit(EXIT_FAILURE);
     }
@@ -104,14 +107,23 @@ void crearHilos()
 
     pthread_create(&hiloCpu, NULL, recibirCPU, NULL);
     pthread_create(&hiloKernel, NULL, recibirKernel, NULL);
-    pthread_create(&hiloIO, NULL, recibir_interfaces_io, NULL);
+    pthread_create(&hiloIO, NULL, conexiones_io, NULL);
 }
 
-void *recibir_interfaces_io()
+void *conexiones_io()
 {
     while (1)
     {
-        int dispositivo_io = esperar_cliente(logger, "Memoria", "Interfaz IO", server_fd); // lo dejamos en el hilo para que se conecten varias
+        socket_io = esperar_cliente(logger, "Memoria", "Interfaz IO", server_fd);
+        pthread_create(&hiloIO, NULL, recibir_interfaz_io, NULL);
+    }
+}
+
+void *recibir_interfaz_io()
+{
+    int dispositivo_io = socket_io;
+    while (1)
+    {
         op_code codigo_io = recibir_op_code(dispositivo_io);
         switch (codigo_io)
         {
@@ -217,17 +229,18 @@ void pedido_frame_mmu(int cliente_cpu)
     destruir_buffer(buffer_mmu_cpu);
 
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
-    if(tabla == NULL){
+    if (tabla == NULL)
+    {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
         log_error(logger, "PID: <%d> - NO SE ENCONTRO LA TABLA DE PAGINAS", pid);
         return;
-
     }
     int marco = consultar_marco_de_una_pagina(tabla, pagina);
 
     if (marco == -1)
     {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
+        log_error(logger, "No Se Pudo Encontrar El Frame");
     }
     else
     {
@@ -303,34 +316,19 @@ void *acceso_a_espacio_usuario()
 
 void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
 {
-    int resultado;
     uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer);
-    uint32_t cant_caracteres = leer_buffer_enteroUint32(buffer);
-
+    char *texto_a_guardar = leer_buffer_string(buffer);
+    log_info(logger, "PID : %d", pid_ejecutando);
     uint32_t numero_marco = direccion_fisica / valores_config->tam_pagina;
     uint32_t offset = direccion_fisica % valores_config->tam_pagina;
 
-    for (int i = 0; i < cant_caracteres; i++)
-    {
-        uint32_t valor = leer_buffer_enteroUint32(buffer);
-        resultado = (uint32_t)escribir_memoria(numero_marco, offset, pid_ejecutando, &valor, sizeof(valor));
-        if (resultado == -1)
-        {
-            log_error(logger, "ERROR AL ESCRIBIR EL VALOR %d", valor);
-        }
-        else
-        {
-            log_info(logger, "Se escribio el valor: %d", valor);
-            log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%d> ", pid_ejecutando, direccion_fisica, cant_caracteres);
-        }
-        offset += sizeof(valor);
-    }
+    int resultado = escribir_espacio_usuario(direccion_fisica, &texto_a_guardar, sizeof(texto_a_guardar), valores_config, logger);
+
     if (resultado != -1)
     {
+        log_info(logger, "Se escribio el valor: %s", texto_a_guardar);
         enviar_op_code(cliente_solicitante, OK);
-        agregar_buffer_para_enterosUint32(buffer, resultado);
-        enviar_buffer(buffer, cliente_solicitante);
     }
     else
     {
@@ -368,36 +366,17 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
 {
     uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
-    uint32_t limite = leer_buffer_enteroUint32(buffer_lectura);
+    uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
 
-    uint32_t numero_marco = direccion_fisica / valores_config->tam_pagina;
-    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
+    void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, valores_config, logger);
 
-    tipo_buffer *buffer_stdout = crear_buffer();
-    int valor;
-    int *valor_void;
-
-    for (int i = 0; i < limite; i++)
-    {
-        valor_void = leer_memoria(numero_marco, offset, pid_ejecutando, sizeof(limite));
-        if (valor_void != NULL)
-        {
-            agregar_buffer_para_enterosUint32(buffer_stdout, *valor_void);
-            log_info(logger, "SE LEYO EL VALOR : %d", *valor_void);
-        }
-        else
-        {
-            log_error(logger, "ERROR AL TRAER EL VALOR");
-        }
-        offset += (sizeof(limite));
-    }
-
-    if ((valor_void) != NULL)
+    if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
-        log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%d>", pid_ejecutando, direccion_fisica, limite);
-        enviar_buffer(buffer_stdout, cliente_solicitante);
-        destruir_buffer(buffer_stdout);
+        tipo_buffer *buffer = crear_buffer();
+        agregar_buffer_para_string(buffer, valor_leido);
+        log_info(logger, "SE LEYO EL VALOR : %s", valor_leido);
+        enviar_buffer(buffer, cliente_solicitante);
     }
     else
     {
@@ -645,7 +624,7 @@ t_tabla_paginas *buscar_en_lista_global(int pid)
     {
         tabla_actual = list_get(lista_global_tablas, i);
         if (tabla_actual->pid == pid)
-        {   
+        {
             printf_green("Tabla encontrada");
             return tabla_actual;
         }
@@ -692,7 +671,8 @@ void liberar_marco(int nroMarco)
 {
     array_bitmap[nroMarco].bit_ocupado = 0;
 }
-void imprimir_estado_marcos(){
+void imprimir_estado_marcos()
+{
     printf_yellow("ESTADO DE LOS MARCOS");
     printf_yellow("---------------------");
     printf_yellow("|MARCO   | OCUPADO |");
@@ -765,8 +745,8 @@ void imprimir_paginas_proceso(t_list *tp_paginas_proceso)
     t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso)-1);
     printf_yellow("      TABLA PROCESO %d",pagina2->pid);
 
-   printf_yellow("-------------------------------");
-   printf_yellow("|PAGINA   | MARCO  |  VALIDEZ |");
+    printf_yellow("-------------------------------");
+    printf_yellow("|PAGINA   | MARCO  |  VALIDEZ |");
     for (int i = 0; i < list_size(tp_paginas_proceso); ++i)
     {
         t_pagina *pagina = list_get(tp_paginas_proceso, i);
@@ -805,10 +785,9 @@ void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar)
         t_pagina *pagina_a_eliminar = list_remove(paginas, list_size(paginas) - 1);
         pagina_a_eliminar->bit_validez = 0; // Marcar como no válida
         liberar_marco(pagina_a_eliminar->marco);
-        free(pagina_a_eliminar);            // Liberar la memoria de la página
+        free(pagina_a_eliminar); // Liberar la memoria de la página
     }
 }
-
 
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio)
 {

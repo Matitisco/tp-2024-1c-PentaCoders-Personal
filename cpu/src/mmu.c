@@ -8,7 +8,8 @@ uint32_t traducir_direccion_mmu(uint32_t direccion_logica){
     int numero_pagina = calcular_pagina(direccion_logica);
     int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
     int marco = obtener_frame(numero_pagina);
-    if(marco == -1){
+    if (marco == -1)
+    {
         return -1;
     }
     int direccion_fisica = marco * tamanio_pagina + desplazamiento;
@@ -41,7 +42,8 @@ int obtener_frame(int pagina){
     return frame;
 }
 
-int pedir_frame_memoria(int pid, int nroPagina){
+int pedir_frame_memoria(int pid, int nroPagina)
+{
     int frame_pedido;
     enviar_op_code(socket_memoria, PEDIDO_FRAME);
 
@@ -50,7 +52,7 @@ int pedir_frame_memoria(int pid, int nroPagina){
     agregar_buffer_para_enterosUint32(buffer, nroPagina);
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
-    
+
     op_code respuesta_mmu = recibir_op_code(socket_memoria);
     if (respuesta_mmu == PEDIDO_FRAME_CORRECTO)
     {

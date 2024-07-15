@@ -60,7 +60,7 @@ char *fetch(t_cde *contexto);
 char **decode(char *linea_de_instrucion);
 t_tipoDeInstruccion obtener_instruccion(char *instruccion);
 void execute(char **instruccion, t_cde *contextoProceso);
-void actualizar_cde(t_cde *contexto);
+void actualizar_cde();
 void check_interrupt();
 
 // INSTRUCCIONES

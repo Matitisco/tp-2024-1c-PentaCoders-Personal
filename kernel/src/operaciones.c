@@ -2,16 +2,25 @@
 
 uint32_t PID_GLOBAL = 0;
 uint32_t pid_a_finalizar;
+int primera_ejecucion = 1;
 
 void ejecutar_script(char *PATH)
 {
-    char *linea_script = string_new();
     char **lineas_script = string_array_new();
     char linea[1024];
 
-    char *path_completo = string_new();
     char directorioActual[1024];
-    chdir("..");
+    char *ultimo_dir = basename(directorioActual);
+    if (primera_ejecucion)
+    {
+        if (strcmp(ultimo_dir, "bin") == 0)
+        {
+            chdir("..");
+        }
+        chdir("..");
+        primera_ejecucion = 0;
+    }
+
     getcwd(directorioActual, sizeof(directorioActual));
     strcat(directorioActual, "/memoria/scripts_kernel/");
     strcat(directorioActual, PATH);
@@ -54,7 +63,6 @@ void ejecutar_script(char *PATH)
         }
     }
     free(lineas_script);
-    free(linea_script);
     fclose(archivo_script);
 }
 

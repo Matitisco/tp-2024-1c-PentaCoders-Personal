@@ -17,7 +17,7 @@ t_config *iniciar_config(char *config_path)
 	nuevo_config = config_create(config_path);
 	if (nuevo_config == NULL)
 	{
-		printf("\nNo se pudo leer la config\n");
+		log_error(logger, "No se pudo leer la config");
 		exit(2);
 	}
 	return nuevo_config;
