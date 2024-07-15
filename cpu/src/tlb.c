@@ -114,7 +114,6 @@ void tlb_iniciar( char *algoritmo, int cant_entradas, int *TLB_HABILITADA)
         *TLB_HABILITADA = 1;//true
         printf_purple("TLB HABILITADA\n");
         imprimir_tlb(tlb_cpu);
-        obtener_marco_tlb(tlb_cpu,1, 2);
     }
 }
 void eliminar_tlb(){
