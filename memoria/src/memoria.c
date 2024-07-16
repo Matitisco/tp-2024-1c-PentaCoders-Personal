@@ -127,6 +127,7 @@ void *recibir_interfaz_io()
         op_code codigo_io = recibir_op_code(dispositivo_io);
         switch (codigo_io)
         {
+        sleep_ms(valores_config->retardo_respuesta);
         case ACCESO_ESPACIO_USUARIO:
             CLIENTE_ESPACIO_USUARIO = dispositivo_io;
             acceso_a_espacio_usuario();
@@ -182,6 +183,7 @@ void *recibirCPU()
 
         switch (cod_op)
         {
+        sleep_ms(valores_config->retardo_respuesta);
         case PEDIDO_INSTRUCCION:
             pedido_instruccion_cpu_dispatch(cliente_cpu);
             break;
@@ -204,7 +206,7 @@ void *recibirCPU()
                 log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
-            imprimir_paginas_proceso(tabla_actual->paginas_proceso);
+            imprimir_tabla_de_paginas_proceso(tabla_actual);
             imprimir_estado_marcos();
 
             break;
@@ -435,8 +437,6 @@ void enviar_tamanio_pagina(int cpu)
 
 void pedido_instruccion_cpu_dispatch(int cpu_dispatch)
 {
-    sleep_ms(valores_config->retardo_respuesta);
-
     tipo_buffer *buffer = recibir_buffer(cpu_dispatch);
     uint32_t PID = leer_buffer_enteroUint32(buffer);
     uint32_t PC = leer_buffer_enteroUint32(buffer);
@@ -530,12 +530,10 @@ config_memoria *configuracion_memoria()
     return valores_config;
 }
 
-t_pagina *crear_pagina(int bit_validez, int marco, int pidProceso)
+t_pagina *crear_pagina(int marco)
 {
     t_pagina *pagina = malloc(sizeof(t_pagina));
     pagina->marco = marco;
-    pagina->bit_validez = 1;
-    pagina->pid = pidProceso;
     return pagina;
 }
 
@@ -589,7 +587,6 @@ void colocar_pagina_en_marco(t_pagina *pagina)
         log_info(logger, "No hay ningun marco libre, OUT OF MEMORY");
         // puede ser que debamos finalizar el proceso
     }
-    pagina->bit_validez = 1; // esta en memoria fisica , o sea tiene un marco
     pagina->marco = marco_libre;
 }
 
@@ -669,7 +666,7 @@ void asignar_paginas_nuevas(t_tabla_paginas *tabla_paginas, int paginas_adiciona
     {
         if (!array_bitmap[i].bit_ocupado)
         {
-            agregar_pagina(crear_pagina(1, i, pid), tp_paginas_proceso);
+            agregar_pagina(crear_pagina(i), tp_paginas_proceso);
             array_bitmap[i].bit_ocupado = 1;
             ++asignadas;
         }
@@ -689,25 +686,24 @@ int cantidad_marcos_libres()
     log_info(logger, "MARCOS DISPONIBLES: <%d>", marcos_libres);
     return marcos_libres;
 }
-void imprimir_paginas_proceso(t_list *tp_paginas_proceso)
-{
-    if (!list_is_empty(tp_paginas_proceso))
-    {
-        t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso) - 1);
-        printf_yellow("      TABLA PROCESO %d", pagina2->pid);
+void imprimir_tabla_de_paginas_proceso(t_tabla_paginas *tabla_paginas_proceso)
+{//t_tabla_paginas
+    t_list *tp_paginas_proceso = tabla_paginas_proceso->paginas_proceso;
+    if(!list_is_empty(tp_paginas_proceso)){
+    t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso)-1);
+    printf_yellow("      TABLA PROCESO %d",tabla_paginas_proceso->pid);
 
-        printf_yellow("-------------------------------");
-        printf_yellow("|PAGINA   | MARCO  |  VALIDEZ |");
-        for (int i = 0; i < list_size(tp_paginas_proceso); ++i)
-        {
-            t_pagina *pagina = list_get(tp_paginas_proceso, i);
-            printf_yellow("|  %d      |    %d   |      %d   |", i, pagina->marco, pagina->bit_validez);
-            printf_yellow("-------------------------------");
-        }
-    }
-    else
+    printf_yellow("--------------------");
+    printf_yellow("|PAGINA   | MARCO  |");
+    for (int i = 0; i < list_size(tp_paginas_proceso); ++i)
     {
-        printf_yellow("      TABLA PROCESO %d VACÍA", pid_a_buscar_o_eliminar);
+        t_pagina *pagina = list_get(tp_paginas_proceso, i);
+        printf_yellow("|  %d      |    %d   |", i, pagina->marco);
+        printf_yellow("--------------------");
+    } 
+    }
+    else{
+        printf_yellow("      TABLA PROCESO %d VACÍA",tabla_paginas_proceso->pid);
     }
 }
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
@@ -735,7 +731,6 @@ void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar)
     {
         // Siempre se elimina la última página debido a que la lista se reduce en cada iteración
         t_pagina *pagina_a_eliminar = list_remove(paginas, list_size(paginas) - 1);
-        pagina_a_eliminar->bit_validez = 0; // Marcar como no válida
         liberar_marco(pagina_a_eliminar->marco);
         free(pagina_a_eliminar); // Liberar la memoria de la página
     }
@@ -743,7 +738,6 @@ void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar)
 
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio)
 {
-    usleep(valores_config->retardo_respuesta * 1000);
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     t_pagina *pagina = list_get(tabla_paginas->paginas_proceso, numero_pagina);
     int marco = pagina->marco;
@@ -756,7 +750,6 @@ void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32
 
 void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio)
 {
-    usleep(valores_config->retardo_respuesta * 1000);
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     t_pagina *pagina = list_get(tabla_paginas->paginas_proceso, numero_pagina);
     int marco = pagina->marco;

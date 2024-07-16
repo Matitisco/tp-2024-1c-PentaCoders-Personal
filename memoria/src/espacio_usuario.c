@@ -7,7 +7,6 @@ extern void *espacio_usuario; // espacio_usuario está definido en otro lugar
 
 
 void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio,config_memoria *valores_config,t_log *logger) {
-    sleep_ms(valores_config->retardo_respuesta);
     log_info(logger, "PID: <PID> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", direccion_fisica, tamanio);
 
     void *destino = espacio_usuario + direccion_fisica;
@@ -17,7 +16,6 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
 }
 
 void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, config_memoria *valores_config,t_log *logger) {
-    sleep_ms(valores_config->retardo_respuesta);
     log_info(logger, "PID: <PID> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", direccion_fisica, tamanio);
 
     void *valor = malloc(tamanio);
