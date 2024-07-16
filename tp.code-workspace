@@ -11,7 +11,9 @@
 			"random": "c",
 			"hash_map": "c",
 			"algorithm": "c",
-			"cstdint": "c"
+			"cstdint": "c",
+			"*.tcc": "c",
+			"cmath": "c"
 		},
 		"C_Cpp.errorSquiggles": "disabled",
 	},

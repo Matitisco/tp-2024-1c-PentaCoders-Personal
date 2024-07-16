@@ -6,7 +6,7 @@
 // INSTRUCCIONES
 
 void exec_set(char *registro, uint32_t valor);
-void exec_mov_in(char *datos, char *direccion, t_cde *cde);
+void exec_mov_in(char *datos, char *direccion, char *tamanio, t_cde *cde);
 void exec_mov_out(char *direccion, char *datos, t_cde *cde);
 void exec_sum(char *destino, char *origen);
 void exec_sub(char *destino, char *origen);

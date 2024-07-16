@@ -7,6 +7,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include <libgen.h>
+#include <math.h>
 
 #include "../../utils/include/serializacion.h"
 #include "../include/conexiones.h"

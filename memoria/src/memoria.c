@@ -195,14 +195,14 @@ void *recibirCPU()
             t_cde *cde = leer_cde(buffer_cpu);
             int tamanio_actual = tamanio_proceso(cde->pid);
             if (tamanio_actual > nuevo_tamanio)
-            {   
+            {
                 log_info(logger, "PID: %d - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 reducir_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
             else
             {
                 log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
-                ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);                
+                ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
             imprimir_paginas_proceso(tabla_actual->paginas_proceso);
             imprimir_estado_marcos();
@@ -249,7 +249,7 @@ void pedido_frame_mmu(int cliente_cpu)
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_CORRECTO);
         enviar_buffer(buffer_memoria_mmu, cliente_cpu);
         destruir_buffer(buffer_memoria_mmu);
-        log_info(logger,"PID: <%d> - Pagina: <%d> - Marco: <%d>",pid,pagina,marco);
+        log_info(logger, "PID: <%d> - Pagina: <%d> - Marco: <%d>", pid, pagina, marco);
     }
 }
 
@@ -387,22 +387,18 @@ void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
 void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante)
 {
     uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer_lectura);
-    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica); // 32
+    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
 
-    // uint32_t numero_pagina = direccion_fisica / valores_config->tam_pagina;
-    // uint32_t offset = direccion_fisica % valores_config->tam_pagina;
-
     void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, valores_config, logger);
-    uint32_t valor = *(uint32_t *)valor_leido;
 
     if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
         tipo_buffer *buffer = crear_buffer();
-        agregar_buffer_para_enterosUint32(buffer, valor);
-        log_info(logger, "SE LEYO EL VALOR : %u", valor);
+        agregar_buffer_para_enterosUint32(buffer, valor_leido);
+        log_info(logger, "SE LEYO EL VALOR : %u", valor_leido);
         enviar_buffer(buffer, cliente_solicitante);
     }
     else
@@ -690,8 +686,9 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
         log_error(logger, "PID: <%d> - NO SE ENCONTRO TABLA PAGINAS", pid);
         return;
     }
-    int tam_pagina = valores_config->tam_pagina;
-    int cantidad_paginas_nuevas = tamanio / tam_pagina;
+    float f_tamanio = tamanio;
+    float tam_pagina = valores_config->tam_pagina;
+    double cantidad_paginas_nuevas = ceil(f_tamanio / tam_pagina);
     int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
 
     printf_green("Cantidad de paginas actuales: %d", cantidad_paginas_actuales);
@@ -741,21 +738,23 @@ int cantidad_marcos_libres()
 }
 void imprimir_paginas_proceso(t_list *tp_paginas_proceso)
 {
-    if(!list_is_empty(tp_paginas_proceso)){
-    t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso)-1);
-    printf_yellow("      TABLA PROCESO %d",pagina2->pid);
-
-    printf_yellow("-------------------------------");
-    printf_yellow("|PAGINA   | MARCO  |  VALIDEZ |");
-    for (int i = 0; i < list_size(tp_paginas_proceso); ++i)
+    if (!list_is_empty(tp_paginas_proceso))
     {
-        t_pagina *pagina = list_get(tp_paginas_proceso, i);
-        printf_yellow("|  %d      |    %d   |      %d   |", i, pagina->marco, pagina->bit_validez);
+        t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso) - 1);
+        printf_yellow("      TABLA PROCESO %d", pagina2->pid);
+
         printf_yellow("-------------------------------");
-    } 
+        printf_yellow("|PAGINA   | MARCO  |  VALIDEZ |");
+        for (int i = 0; i < list_size(tp_paginas_proceso); ++i)
+        {
+            t_pagina *pagina = list_get(tp_paginas_proceso, i);
+            printf_yellow("|  %d      |    %d   |      %d   |", i, pagina->marco, pagina->bit_validez);
+            printf_yellow("-------------------------------");
+        }
     }
-    else{
-        printf_yellow("      TABLA PROCESO %d VACÍA",pid_a_buscar_o_eliminar);
+    else
+    {
+        printf_yellow("      TABLA PROCESO %d VACÍA", pid_a_buscar_o_eliminar);
     }
 }
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
