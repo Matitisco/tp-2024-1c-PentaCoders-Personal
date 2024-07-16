@@ -42,6 +42,11 @@ typedef enum
 	INTERRUPTED_BY_USER
 } motivoFinalizar;
 
+typedef enum {
+	STRING,
+	INTEGER
+} tipoDato;
+
 typedef enum
 {
 	EJECUTAR_SCRIPT,

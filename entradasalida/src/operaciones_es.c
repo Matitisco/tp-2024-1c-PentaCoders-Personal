@@ -38,6 +38,7 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     t_tipoDeInstruccion instruccion = leer_buffer_enteroUint32(buffer_stdin);
     int tamanio = leer_buffer_enteroUint32(buffer_stdin);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
+    log_info(logger, "DIRECCIONES FISICAS %d", direccion_fisica);
     int pid = leer_buffer_enteroUint32(buffer_stdin);
     log_info(logger, "CANT DE BYTES A COPIAR: %d", tamanio);
     destruir_buffer(buffer_stdin);
@@ -46,14 +47,15 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     {
         char *texto_ingresado = readline("Ingrese un texto por teclado: ");
         char *texto_truncado = truncar_texto(texto_ingresado, tamanio);
+        log_info(logger, "TEXTO A ENVIAR A MEMORIA : %s", texto_truncado);
 
         enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
         enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
-        enviar_op_code(conexion_memoria, SOLICITUD_INTERFAZ_STDIN);
-
         tipo_buffer *buffer_stdin = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer_stdin, direccion_fisica);
         agregar_buffer_para_enterosUint32(buffer_stdin, pid);
+        agregar_buffer_para_enterosUint32(buffer_stdin, tamanio);
+        agregar_buffer_para_enterosUint32(buffer_stdin, STRING);
         agregar_buffer_para_string(buffer_stdin, texto_truncado);
         enviar_buffer(buffer_stdin, conexion_memoria);
         destruir_buffer(buffer_stdin);
@@ -83,17 +85,18 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
     int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, se lo envio a la memoria para que
     log_info(logger, "TAMANIO A LEER %d", tamanio);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a pedirle a memoria que busque el dato
+    log_info(logger, "DIRECCIONES FISICAS %d", direccion_fisica);
     int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
     if (sol_operacion == IO_STDOUT_WRITE)
     {
         enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
         enviar_op_code(conexion_memoria, PEDIDO_LECTURA);
-        enviar_op_code(conexion_memoria, SOLICITUD_INTERFAZ_STDOUT);
 
         tipo_buffer *buffer_a_memoria = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer_a_memoria, direccion_fisica);
         agregar_buffer_para_enterosUint32(buffer_a_memoria, pid);
         agregar_buffer_para_enterosUint32(buffer_a_memoria, tamanio);
+        agregar_buffer_para_enterosUint32(buffer_a_memoria, STRING);
         enviar_buffer(buffer_a_memoria, conexion_memoria);
 
         destruir_buffer(buffer_a_memoria);

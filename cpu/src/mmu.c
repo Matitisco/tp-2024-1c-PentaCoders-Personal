@@ -3,8 +3,8 @@
 
 int TLB_HABILITADA;
 
-
-uint32_t traducir_direccion_mmu(uint32_t direccion_logica){
+uint32_t traducir_direccion_mmu(uint32_t direccion_logica)
+{
     int numero_pagina = calcular_pagina(direccion_logica);
     int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
     int marco = obtener_frame(numero_pagina);
@@ -21,22 +21,26 @@ int calcular_pagina(int direccion_logica)
     return floor(direccion_logica / tamanio_pagina);
 }
 
-int obtener_frame(int pagina){
+int obtener_frame(int pagina)
+{
     int frame;
     if (TLB_HABILITADA)
     {
         frame = obtener_marco_tlb(tlb_cpu, cde_recibido->pid, pagina);
-        if(frame == -1){//TLB MISS
+        if (frame == -1)
+        { // TLB MISS
             log_info(logger, "PID: <%d> - TLB MISS - Pagina: <%d>", cde_recibido->pid, pagina);
             frame = pedir_frame_memoria(cde_recibido->pid, pagina);
             agregar_entrada_a_tlb(tlb_cpu, crear_entrada_tlb(cde_recibido->pid, pagina, frame));
         }
-        else{//TLB HIT
+        else
+        { // TLB HIT
             log_info(logger, "PID: <%d> - TLB HIT - Pagina: <%d>", cde_recibido->pid, pagina);
         }
         imprimir_tlb(tlb_cpu);
     }
-    else{
+    else
+    {
         frame = pedir_frame_memoria(cde_recibido->pid, pagina);
     }
     return frame;
@@ -68,4 +72,3 @@ int pedir_frame_memoria(int pid, int nroPagina)
     }
     return frame_pedido;
 }
-

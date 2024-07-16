@@ -267,45 +267,14 @@ void *acceso_a_espacio_usuario()
     switch (codigo)
     {
     case PEDIDO_ESCRITURA:
-        solicitud = recibir_op_code(CLIENTE_ESPACIO_USUARIO);
-
-        if (solicitud == SOLICITUD_INTERFAZ_STDIN)
-        {
-            tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
-            escritura_interfaz(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
-        }
-
-        else if (solicitud == SOLICITUD_ESCRITURA_CPU)
-        {
-            tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
-            escritura_cpu(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
-        }
-        else if (solicitud == SOLICITUD_ESCRITURA_DIALFS)
-        {
-            tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
-            escritura_cpu(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
-        }
+        tipo_buffer *buffer_escritura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
+        escritura(buffer_escritura, CLIENTE_ESPACIO_USUARIO);
+        destruir_buffer(buffer_escritura);
         break;
-
     case PEDIDO_LECTURA:
-        solicitud = recibir_op_code(CLIENTE_ESPACIO_USUARIO);
-
-        if (solicitud == SOLICITUD_INTERFAZ_STDOUT)
-        {
-            tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
-            lectura_interfaz(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
-        }
-        else if (solicitud == LECTURA_CPU)
-        {
-            tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
-            lectura_cpu(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
-            destruir_buffer(buffer_lectura);
-        }
-        else if (solicitud == LECTURA_DIALFS)
-        {
-            tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
-            lectura_interfaz(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
-        }
+        tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
+        lectura(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
+        destruir_buffer(buffer_lectura);
         break;
     default:
         log_error(logger, "ERROR - ACCESO ESPACIO USUARIO");
@@ -314,92 +283,76 @@ void *acceso_a_espacio_usuario()
     return (void *)1;
 }
 
-void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante)
+void escritura(tipo_buffer *buffer, int cliente_solicitante)
 {
     uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
-    uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer);
-    char *texto_a_guardar = leer_buffer_string(buffer);
-    log_info(logger, "PID : %d", pid_ejecutando);
-    uint32_t numero_marco = direccion_fisica / valores_config->tam_pagina;
-    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
-
-    int resultado = escribir_espacio_usuario(direccion_fisica, &texto_a_guardar, sizeof(texto_a_guardar), valores_config, logger);
-
-    if (resultado != -1)
-    {
-        log_info(logger, "Se escribio el valor: %s", texto_a_guardar);
-        enviar_op_code(cliente_solicitante, OK);
-    }
-    else
-    {
-        enviar_op_code(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
-    }
-
-    destruir_buffer(buffer);
-}
-
-void escritura_cpu(tipo_buffer *buffer, int cliente_solicitante)
-{
-    uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
-    uint32_t valor_a_escribir = leer_buffer_enteroUint32(buffer);
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer);
+    tipoDato tipo_dato = leer_buffer_enteroUint32(buffer);
+    int resultado;
+    uint32_t valor_a_escribir;
+    char *valor_string = string_new();
 
-    uint32_t numero_marco = direccion_fisica / valores_config->tam_pagina;
-    uint32_t offset = direccion_fisica % valores_config->tam_pagina;
-    // chequear si dicho pid puede ecribir
-    int resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio, valores_config, logger);
+    if (tipo_dato == INTEGER)
+    {
+        valor_a_escribir = leer_buffer_enteroUint32(buffer);
+        resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio, valores_config, logger);
+    }
+
+    else if (tipo_dato == STRING)
+    {
+        valor_string = leer_buffer_string(buffer);
+        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, valores_config, logger);
+    }
 
     if (resultado != -1)
     {
-        log_info(logger, "Se escribio el valor: %d", valor_a_escribir);
+        if (tipo_dato == INTEGER)
+            log_info(logger, "Se escribio el valor: %d", valor_a_escribir);
+        else if (tipo_dato == STRING)
+            log_info(logger, "Se escribio el valor: %s", valor_string);
+
         enviar_op_code(cliente_solicitante, OK);
     }
     else
     {
         enviar_op_code(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
     }
-    destruir_buffer(buffer);
 }
 
-void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante)
+void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
 {
+
     uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
+    tipoDato tipo_dato = leer_buffer_enteroUint32(buffer_lectura);
 
     void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, valores_config, logger);
+    char *valor_char = string_new();
+    int valor_int;
 
     if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
         tipo_buffer *buffer = crear_buffer();
-        agregar_buffer_para_string(buffer, valor_leido);
-        log_info(logger, "SE LEYO EL VALOR : %s", valor_leido);
+        if (tipo_dato == STRING)
+        {
+            valor_char = (char *)valor_leido;
+            agregar_buffer_para_string(buffer, valor_leido);
+            log_info(logger, "SE LEYO EL VALOR STRING: %s", valor_char);
+        }
+        else if (tipo_dato == INTEGER)
+        {
+            valor_int = *(int *)valor_leido;
+            agregar_buffer_para_enterosUint32(buffer, valor_leido);
+            log_info(logger, "SE LEYO EL VALOR ENTERO: %d", valor_int);
+        }
+
+        // log_info(logger, "SE LEYO EL VALOR : %d", valor_leido);
+
         enviar_buffer(buffer, cliente_solicitante);
-    }
-    else
-    {
-        enviar_op_code(cliente_solicitante, ERROR_PEDIDO_LECTURA);
-    }
-}
-
-void lectura_cpu(tipo_buffer *buffer_lectura, int cliente_solicitante)
-{
-    uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer_lectura);
-    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
-    uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
-    uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
-
-    void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, valores_config, logger);
-
-    if (valor_leido != NULL)
-    {
-        enviar_op_code(cliente_solicitante, OK);
-        tipo_buffer *buffer = crear_buffer();
-        agregar_buffer_para_enterosUint32(buffer, valor_leido);
-        log_info(logger, "SE LEYO EL VALOR : %u", valor_leido);
-        enviar_buffer(buffer, cliente_solicitante);
+        destruir_buffer(buffer);
     }
     else
     {
