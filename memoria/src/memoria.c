@@ -127,6 +127,7 @@ void *recibir_interfaz_io()
         op_code codigo_io = recibir_op_code(dispositivo_io);
         switch (codigo_io)
         {
+        sleep_ms(valores_config->retardo_respuesta);
         case ACCESO_ESPACIO_USUARIO:
             CLIENTE_ESPACIO_USUARIO = dispositivo_io;
             acceso_a_espacio_usuario();
@@ -182,6 +183,7 @@ void *recibirCPU()
 
         switch (cod_op)
         {
+        sleep_ms(valores_config->retardo_respuesta);
         case PEDIDO_INSTRUCCION:
             pedido_instruccion_cpu_dispatch(cliente_cpu);
             break;
@@ -486,8 +488,6 @@ void enviar_tamanio_pagina(int cpu)
 
 void pedido_instruccion_cpu_dispatch(int cpu_dispatch)
 {
-    sleep_ms(valores_config->retardo_respuesta);
-
     tipo_buffer *buffer = recibir_buffer(cpu_dispatch);
     uint32_t PID = leer_buffer_enteroUint32(buffer);
     uint32_t PC = leer_buffer_enteroUint32(buffer);
@@ -788,7 +788,6 @@ void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar)
 
 void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio)
 {
-    usleep(valores_config->retardo_respuesta * 1000);
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     t_pagina *pagina = list_get(tabla_paginas->paginas_proceso, numero_pagina);
     int marco = pagina->marco;
@@ -801,7 +800,6 @@ void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32
 
 void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio)
 {
-    usleep(valores_config->retardo_respuesta * 1000);
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
     t_pagina *pagina = list_get(tabla_paginas->paginas_proceso, numero_pagina);
     int marco = pagina->marco;
