@@ -25,8 +25,6 @@ typedef struct
 typedef struct
 {
 	int marco;		 // numero de marco donde esta la pagina
-	int bit_validez; // si esta en memoria
-	int pid;		 // la pagina conoce al proceso del cual es parte ?
 } t_pagina;
 
 typedef struct
@@ -50,8 +48,7 @@ pthread_t hiloCPU, hiloKernel, hiloIO;
 t_list *list_tabla_paginas;
 
 int cant_marcos;
-t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso);
-
+t_pagina *crear_pagina(int marco);
 t_tabla_paginas *buscar_en_lista_global(int pid);
 int obtener_posicion_marco_libre();
 uint32_t hay_marco_libre();
@@ -64,7 +61,7 @@ void *recibirCPU();
 void *recibirKernel();
 void hay_marcos_suficientes(int paginas_adicionales, int cliente_cpu);
 int cantidad_marcos_libres();
-void imprimir_paginas_proceso(t_list *tp_paginas_proceso);
+void imprimir_tabla_de_paginas_proceso(t_tabla_paginas *tabla_paginas_proceso);
 void *recibir_interfaz_io();
 void inicializar_bitmap(int cant_marcos);
 void iniciar_proceso(int cliente_fd);
@@ -116,7 +113,6 @@ t_tabla_paginas *buscar_en_lista_global(int pid);
 void eliminar_tabla_paginas(uint32_t pid);
 void destruir_pagina(void *pagina);
 t_list *agregar_pagina(t_pagina *pagina, t_list *list_paginas);
-t_pagina *crear_pagina(int bit_presencia, int marco, int pidProceso);
 int tamanio_proceso(int pid);
 
 void liberar_marco(int nroMarco);

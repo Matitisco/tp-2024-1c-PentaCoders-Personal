@@ -13,7 +13,7 @@ int obtener_tiempo_en_miliSegundos(char *tiempo)
     int miliSegundos = atoi(nueva_hora[3]) + segundos * 1000;
 
     string_array_destroy(nueva_hora);
-
+    free(tiempo);
     return miliSegundos;
 }
 
