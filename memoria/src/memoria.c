@@ -272,10 +272,14 @@ void *acceso_a_espacio_usuario_cpu()
         t_write_memoria *escribir = leer_t_write_memoria_buffer(buffer);
         int resultado = escribir_espacio_usuario(escribir->direccion_fisica, escribir->stream, escribir->size, logger);
 
-        uint32_t valor = *(uint32_t *)escribir->stream;
+        char* valor_string = (char *)escribir->stream;
+        for (size_t i = 0; i < escribir->size; i++)
+        {
+            printf("%c", valor_string[i]);
+        }
+        printf("\n");
         if (resultado != -1)
         {
-            log_info(logger, "Se escribio el valor: %d", valor);
             enviar_op_code(CLIENTE_ESPACIO_USUARIO, OK);
         }
         else

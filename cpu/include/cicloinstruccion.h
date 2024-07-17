@@ -30,4 +30,5 @@ uint32_t obtener_valor_origen(char *origen, t_cde *cde);
 uint32_t obtener_valor(char *origen);
 
 void escribir_memoria(uint32_t direccion_fisica, int size, void* dato ,int pid);
+uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, int pid);
 #endif
