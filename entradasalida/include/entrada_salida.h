@@ -48,4 +48,8 @@ enum_interfaz asignar_interfaz(char *nombre_Interfaz);
 void inicializar_config_IO(char *PATH);
 void realizar_operacion(t_interfaz *interfaz);
 
+// ARRANQUE FILESYSTEM
+void levantar_bitmap();
+void levantar_archivo_bloques();
+
 #endif

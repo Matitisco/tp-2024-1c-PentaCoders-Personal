@@ -10,7 +10,11 @@ int bloque_inicial_archivo;
 
 void levantar_bitmap()
 {
-    int bitmap = open("/src/bitmap.dat", O_RDWR);
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    strcat(cwd, "/dialfs/bitmap.dat");
+
+    int bitmap = open(cwd, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 
     struct stat mystat;
 
@@ -18,16 +22,27 @@ void levantar_bitmap()
     {
         log_info(logger, "Error al establecer fstat");
         close(bitmap);
+        return;
     }
 
-    void *bmap = mmap(NULL, mystat.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, bitmap, 0);
+    size_t tamanio_bitmap = config_interfaz->block_count / 8;
+
+    if (ftruncate(bitmap, tamanio_bitmap) != 0)
+    {
+        log_error(logger, "Error al truncar el archivo bitmap.dat");
+        close(bitmap);
+        return;
+    }
+
+    void *bmap = mmap(NULL, tamanio_bitmap, PROT_READ | PROT_WRITE, MAP_SHARED, bitmap, 0);
 
     if (bmap == MAP_FAILED)
     {
-        log_error(logger, "Error al mapear a memoria");
+        log_error(logger, "Error al mapear a memoria del bitmap");
     }
     else
     {
+        log_info(logger, "Bitmap creado con direccion de memoria en %p", bmap);
         bitarray = bitarray_create_with_mode(bmap, config_interfaz->block_count, MSB_FIRST);
     }
 }
@@ -35,9 +50,9 @@ void levantar_bitmap()
 void levantar_archivo_bloques()
 {
 
-    char *path_arch_bloques = obtener_ruta_archivo("bloques");
+    path_arch_bloques = obtener_ruta_archivo("bloques.dat");
 
-    FILE *fbloques = fopen(path_arch_bloques, "w+");
+    FILE *fbloques = fopen(path_arch_bloques, "wb+");
 
     int tamArchivoBloques = config_interfaz->block_size * config_interfaz->block_count;
 
@@ -45,7 +60,7 @@ void levantar_archivo_bloques()
     int file_descriptor;
     if (fbloques == NULL)
     {
-        fbloques = fopen(path_arch_bloques, "r+");
+        fbloques = fopen(path_arch_bloques, "rb+");
         file_descriptor = fileno(fbloques);
         ftruncate(file_descriptor, tamArchivoBloques);
     }
@@ -62,7 +77,7 @@ void levantar_archivo_bloques()
 
     if (bloquesMapeado == MAP_FAILED)
     {
-        log_error(logger, "Error al mapear a memoria");
+        log_error(logger, "Error al mapear a memoria el de bloques");
     }
 }
 
@@ -78,12 +93,11 @@ t_config *crear_meta_data_archivo(char *nombre_archivo)
     int tamanio = 0;
     txt_write_in_file(meta_data_archivo, "BLOQUE_INICIAL="); // escribimos en el archivo el bloque
     txt_write_in_file(meta_data_archivo, num_bloque_inicial);
-    txt_write_in_file(meta_data_archivo, "TAMANIO_ARCHIVO\n");
+    txt_write_in_file(meta_data_archivo, "\n");
+    txt_write_in_file(meta_data_archivo, "TAMANIO_ARCHIVO=");
     txt_write_in_file(meta_data_archivo, string_itoa(tamanio));
 
     free(num_bloque_inicial);
-
-    fclose(meta_data_archivo);
 
     t_config *meta_data_archivo_config = config_create(rutaArchivo);
 
@@ -94,44 +108,57 @@ t_config *crear_meta_data_archivo(char *nombre_archivo)
     archivo->nombre_archivo = nombre_archivo;
     archivo->tamanio = tamanio;
     list_add(archivos_fs, archivo);
+    fclose(meta_data_archivo);
     return meta_data_archivo_config;
 }
 
 void instrucciones_dialfs()
 {
-    while (1)
+    tipo_buffer *buffer_dialfs = recibir_buffer(conexion_kernel);
+    t_tipoDeInstruccion codigo = leer_buffer_enteroUint32(buffer_dialfs);
+    uint32_t pid = leer_buffer_enteroUint32(buffer_dialfs);
+    char *nombre_archivo;
+    uint32_t nuevo_tamanio;
+    uint32_t tamanio;
+    uint32_t direccion_fisica;
+    uint32_t puntero_archivo;
+    switch (codigo)
     {
-        operacion_dialfs codigo = recibir_op_code(conexion_kernel);
-        tipo_buffer *buffer_dialfs = recibir_buffer(conexion_kernel);
-        char *nombre_archivo = leer_buffer_string(buffer_dialfs);
-        uint32_t pid = leer_buffer_enteroUint32(buffer_dialfs);
-
-        switch (codigo)
-        {
-        case F_CREATE:
-            log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_CREATE);
-            crear_archivo(nombre_archivo, pid);
-            break;
-        case F_TRUNCATE:
-            log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_TRUNCATE);
-            truncar_archivo(nombre_archivo, buffer_dialfs, pid);
-            break;
-        case F_READ:
-            log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_READ);
-            leer_archivo(nombre_archivo, buffer_dialfs, pid);
-            break;
-        case F_WRITE:
-            log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_WRITE);
-            escribir_archivo(nombre_archivo, buffer_dialfs, pid);
-            break;
-        case F_DELETE:
-            log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_DELETE);
-            eliminar_archivo(nombre_archivo, pid);
-            break;
-        default:
-            log_error(logger, "Error, la operacion no existe");
-            break;
-        }
+    case IO_FS_CREATE:
+        nombre_archivo = leer_buffer_string(buffer_dialfs);
+        log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_CREATE);
+        crear_archivo(nombre_archivo, pid);
+        break;
+    case IO_FS_TRUNCATE:
+        nuevo_tamanio = leer_buffer_enteroUint32(buffer_dialfs);
+        nombre_archivo = leer_buffer_string(buffer_dialfs);
+        log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_TRUNCATE);
+        truncar_archivo(nombre_archivo, nuevo_tamanio, pid);
+        break;
+    case IO_FS_READ:
+        tamanio = leer_buffer_enteroUint32(buffer_dialfs);
+        direccion_fisica = leer_buffer_enteroUint32(buffer_dialfs);
+        puntero_archivo = leer_buffer_enteroUint32(buffer_dialfs);
+        nombre_archivo = leer_buffer_string(buffer_dialfs);
+        log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_READ);
+        leer_archivo(nombre_archivo, tamanio, direccion_fisica, puntero_archivo, pid);
+        break;
+    case IO_FS_WRITE:
+        tamanio = leer_buffer_enteroUint32(buffer_dialfs);
+        direccion_fisica = leer_buffer_enteroUint32(buffer_dialfs);
+        puntero_archivo = leer_buffer_enteroUint32(buffer_dialfs);
+        nombre_archivo = leer_buffer_string(buffer_dialfs);
+        log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_WRITE);
+        escribir_archivo(nombre_archivo, tamanio, direccion_fisica, puntero_archivo, pid);
+        break;
+    case IO_FS_DELETE:
+        nombre_archivo = leer_buffer_string(buffer_dialfs);
+        log_info(logger, " PID: %d- OPERACION A REALIZAR : %d", pid, F_DELETE);
+        eliminar_archivo(nombre_archivo, pid);
+        break;
+    default:
+        log_error(logger, "Error, la operacion no existe");
+        break;
     }
 }
 
@@ -141,12 +168,12 @@ void crear_archivo(char *nombre_archivo, uint32_t pid)
 
     if (meta_data_archivo)
     {
-        enviar_op_code(conexion_kernel, CREAR_ARCHIVO_OK);
+        log_info(logger, "PID: %d - Crear Archivo: %s", pid, nombre_archivo);
     }
     else
     {
+        log_error(logger, "ERROR AL CREAR EL ARCHIVO");
         enviar_op_code(conexion_kernel, ERROR_CREAR_ARCHIVO_OK);
-        log_info(logger, "PID: %d - Crear Archivo: %s", pid, nombre_archivo);
     }
 }
 
@@ -154,18 +181,16 @@ char *obtener_ruta_archivo(char *nombre_archivo)
 {
     char *ruta_fcb_buscado = string_new();
     string_append(&ruta_fcb_buscado, config_interfaz->path_base_dialfs);
+    string_append(&ruta_fcb_buscado, "/");
     string_append(&ruta_fcb_buscado, nombre_archivo);
-    string_append(&ruta_fcb_buscado, ".dat");
 
     return ruta_fcb_buscado;
 }
 
-void truncar_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
+void truncar_archivo(char *nombre_archivo, int nuevo_tamanio, uint32_t pid)
 {
-    uint32_t nuevo_tamanio = leer_buffer_enteroUint32(buffer);
     cambiar_tamanio_archivo(nombre_archivo, nuevo_tamanio);
 
-    // enviar_codigo(socket_kernel, CAMBIAR_TAMANIO_OK);
     log_info(logger, "PID: %d - Truncar Archivo: %s> -Tamaño: %d", pid, nombre_archivo, nuevo_tamanio);
 }
 
@@ -174,7 +199,13 @@ void eliminar_archivo(char *nombre_archivo, uint32_t pid)
     t_config *metadata_buscado = buscar_meta_data(nombre_archivo);
     int tamanio_archivo = config_get_int_value(metadata_buscado, "TAMANIO_ARCHIVO");
     int tamanio_bloque = config_interfaz->block_size;
-    int cant_bloques_ocupados = tamanio_archivo / tamanio_bloque;
+    int cant_bloques_ocupados;
+
+    if (tamanio_archivo == 0)
+        cant_bloques_ocupados = 1;
+    else
+        cant_bloques_ocupados = tamanio_archivo / tamanio_bloque;
+
     int posicion_inicial = config_get_int_value(metadata_buscado, "BLOQUE_INICIAL");
 
     log_info(logger, "ARCHIVO: %s - BLOQUES OCUPADOS: %d", nombre_archivo, cant_bloques_ocupados);
@@ -184,42 +215,34 @@ void eliminar_archivo(char *nombre_archivo, uint32_t pid)
         liberarBloque(posicion_inicial + i); // marcamos los bloques libres en el bitarray
     }
 
+    // ahora liberamos los bloques como tal
+
     char *ruta_archivo = obtener_ruta_archivo(nombre_archivo);
     remove(ruta_archivo); // eliminamos archivo
     free(ruta_archivo);
     log_info(logger, "PID: %d - Eliminar archivo: %s", pid, nombre_archivo);
 }
 
-void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
+void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fisica, uint32_t puntero_archivo, uint32_t pid)
 {
-    uint32_t tamanio = leer_buffer_enteroUint32(buffer);
-    uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
-    uint32_t puntero_archivo = leer_buffer_enteroUint32(buffer);
-
+    enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(conexion_memoria, PEDIDO_LECTURA);
-    enviar_op_code(conexion_memoria, SOLICITUD_DIALFS);
 
     tipo_buffer *buffer_memoria = crear_buffer();
 
-    agregar_buffer_para_string(buffer_memoria, nombre_archivo);
     agregar_buffer_para_enterosUint32(buffer_memoria, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer_memoria, pid);
     agregar_buffer_para_enterosUint32(buffer_memoria, tamanio);
-
-    destruir_buffer(buffer);
-
+    agregar_buffer_para_enterosUint32(buffer_memoria, STRING);
+    enviar_buffer(buffer_memoria, conexion_memoria);
     // LEER EN MEMORIA EL VALOR
     op_code codigo_memoria = recibir_op_code(conexion_memoria);
     if (codigo_memoria == OK)
     {
-        char *texto_reconstruido = malloc(tamanio);
-        tipo_buffer *lectura = recibir_buffer(conexion_memoria);
-        for (int i = 0; i < tamanio; i++)
-        {
-            int entero_valor = leer_buffer_enteroUint32(lectura);
-            int_a_char_y_concatenar_a_string(entero_valor, texto_reconstruido);
-            log_info(logger, "Valor hallado en Direccion Fisica <%d> : %s", direccion_fisica, string_itoa(entero_valor));
-        }
-        log_info(logger, "Texto a Escribir en el Archivo: %s", texto_reconstruido);
+        tipo_buffer *buffer_recibido = recibir_buffer(conexion_memoria);
+        char *texto_leido = leer_buffer_string(buffer_recibido);
+        log_info(logger, "Texto a Escribir en el Archivo: %s", texto_leido);
+
         t_config *metadata = buscar_meta_data(nombre_archivo);
         int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
         int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
@@ -233,8 +256,8 @@ void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
         long bloques_a_desplazarse = puntero_archivo / tamanio_bloque;
         long offset = (bloque_inicial + bloques_a_desplazarse) + puntero_archivo;
         FILE *fbloques = fopen(path_arch_bloques, "w+");
-        fseek(fbloques, offset, SEEK_SET);                 // nos posicionamos al puntero de1
-        fwrite(&texto_reconstruido, tamanio, 1, fbloques); // escribimoos la cadena
+        fseek(fbloques, offset, SEEK_SET);          // nos posicionamos al puntero de1
+        fwrite(&texto_leido, tamanio, 1, fbloques); // escribimoos la cadena
         sleep_ms(config_interfaz->tiempo_unidad_trabajo);
         log_info(logger, "PID: <%d> - Operacion: <IO_DIALFS_WRITE>", pid);
     }
@@ -246,11 +269,8 @@ void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
     log_info(logger, "PID: %d - Escribir:  %s - Tamanio a Leer: %d - Puntero Archivo: %d", pid, nombre_archivo, tamanio, puntero_archivo);
 }
 
-void leer_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
+void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fisica, uint32_t puntero_archivo, uint32_t pid)
 {
-    uint32_t tamanio = leer_buffer_enteroUint32(buffer);
-    uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
-    uint32_t puntero_archivo = leer_buffer_enteroUint32(buffer);
     void *valor_a_leer;
     t_config *metadata = buscar_meta_data(nombre_archivo);
     int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
@@ -264,13 +284,14 @@ void leer_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid)
     fread(valor_a_leer, tamanio, 1, fbloques);
     tipo_buffer *buffer_memoria = crear_buffer();
 
+    enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
-    enviar_op_code(conexion_memoria, SOLICITUD_DIALFS);
-    enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA_DIALFS);
 
     agregar_buffer_para_enterosUint32(buffer_memoria, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer_memoria, pid);
     agregar_buffer_para_enterosUint32(buffer_memoria, tamanio);
-    agregar_buffer_para_string(buffer_memoria, nombre_archivo);
+    agregar_buffer_para_enterosUint32(buffer_memoria, STRING);
+    agregar_buffer_para_string(buffer_memoria, valor_a_leer);
     enviar_buffer(buffer_memoria, conexion_memoria);
     destruir_buffer(buffer_memoria);
     op_code codigo_memoria = recibir_op_code(conexion_memoria);
@@ -331,6 +352,7 @@ void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, 
                 config_save(archivo_meta_data_buscado);
             }
         }
+
         else
         {
             compactar(nombre_archivo);
@@ -341,7 +363,7 @@ void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, 
                 bitarray_set_bit(bitarray, nuevo_blpque); // nos posicionamos al final y asignamos los blqoues al archivo TODO
             } */
             msync(bitarray->bitarray, bitarray->size, MS_SYNC);
-            config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
+            config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", string_itoa(tamanio_a_aplicar));
             config_save(archivo_meta_data_buscado);
         }
     }
@@ -471,12 +493,12 @@ int liberarBloque(uint32_t bit)
     {
         bitarray_clean_bit(bitarray, bit);
     }
-    int sync = msync(bitarray_pointer, bitarray->size, MS_SYNC);
+    int sync = msync(bitarray, bitarray->size, MS_SYNC);
     if (sync == -1)
     {
         log_error(logger, "");
     }
-    log_info(logger, "Acceso a Bitmap - Bloque: %d - Estado: %d", bit, 0);
+    log_info(logger, "Acceso a Bitmap - Bloque: %d - Estado: %d", bit, 1);
 
     return 0;
 }
@@ -575,8 +597,8 @@ void mover_archivo_al_final_del_fs(char *nombre_archivo)
         primer_bloque_libre++;
     }
     // Actualizar la metadata del archivo con los nuevos bloques
-    //TODO ACUTALIZAR METADA ARCHIVO
-    //actualizar_metadata_archivo(nombre_archivo, bloques_archivo);
+    // TODO ACUTALIZAR METADA ARCHIVO
+    // actualizar_metadata_archivo(nombre_archivo, bloques_archivo);
     // Sincronizar el bitarray y los bloques mapeados con el sistema de archivos
     msync(bitarray_pointer, bitarray->size, MS_SYNC);
     msync(bloquesMapeado, total_bloques * tam_bloque, MS_SYNC);

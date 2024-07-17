@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h
+#include <pthread.h>
 #include <math.h>
 
 #include "../../utils/include/utils.h"
@@ -22,8 +22,10 @@ extern int tamanio_pagina;
 extern int desalojo_wait;
 extern int desalojo_signal;
 extern int interrupcion_io;
+extern int interrupcion_fs;
 extern int salida_exit;
 extern int TLB_HABILITADA;
+extern char* nombre_archivo_a_enviar;
 extern sem_t *sem_interface;
 extern t_cde *cde_recibido;
 extern t_registros *registros;
@@ -47,6 +49,7 @@ void iniciar_semaforos_CPU();
 void iniciar_registros_sistema();
 void recibir_tamanio_pagina(int socket_memoria);
 config_cpu *configurar_cpu();
+void tlb_iniciar(char *algoritmo, int cant_entradas);
 
 // CONEXIONES Y SERVIDORES
 void levantar_conexion_a_memoria();
@@ -66,7 +69,7 @@ void check_interrupt();
 
 // INSTRUCCIONES
 void exec_set(char *registro, uint32_t valor);
-void exec_mov_in(char *datos, char *direccion, char *tamanio, t_cde *cde);
+void exec_mov_in(char *datos, char *direccion, t_cde *cde);
 void exec_mov_out(char *direccion, char *datos, t_cde *cde);
 void exec_sum(char *destino, char *origen);
 void exec_sub(char *destino, char *origen);

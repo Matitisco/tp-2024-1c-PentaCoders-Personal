@@ -44,6 +44,8 @@ typedef enum
 
 typedef enum {
 	STRING,
+	UINT32_T,
+	UINT8_T,
 	INTEGER
 } tipoDato;
 

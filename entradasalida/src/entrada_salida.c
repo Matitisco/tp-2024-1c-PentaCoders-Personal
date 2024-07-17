@@ -56,6 +56,12 @@ void arrancar_interfaz(t_interfaz *interfaz)
 		conectarse_kernel(interfaz);
 		conectarse_memoria(interfaz);
 	}
+	if (interfaz->tipo_interfaz == DIALFS)
+	{
+		levantar_archivo_bloques();
+		levantar_bitmap();
+		
+	}
 	while (1)
 	{
 		op_code consulta_kernel = recibir_op_code(conexion_kernel);

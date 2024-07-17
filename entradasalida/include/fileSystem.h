@@ -34,10 +34,10 @@ typedef struct
 
 // INSTRUCCIONES DIALFS
 void crear_archivo(char *nombre_archivo, uint32_t pid);
-void truncar_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid);
+void truncar_archivo(char *nombre_archivo, int nuevo_tamanio, uint32_t pid);
 void eliminar_archivo(char *nombre_archivo, uint32_t pid);
-void escribir_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid);
-void leer_archivo(char *nombre_archivo, tipo_buffer *buffer, uint32_t pid);
+void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fisica, uint32_t puntero_archivo, uint32_t pid);
+void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fisica, uint32_t puntero_archivo, uint32_t pid);
 void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio);
 void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, uint32_t tamanio_a_aplicar, uint32_t tamanio_archivo_anterior, uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial);
 void reducir_archivo(t_config *archivo_metadata_buscado, uint32_t tamanio_archivo_anterior, uint32_t tamanio_a_aplicar, uint32_t tamanio_bloque);

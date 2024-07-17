@@ -7,6 +7,7 @@ int interrupcion_rr;
 int interrrupcion_fifo;
 int interrupcion_entrada_salida;
 int interrupcion_io;
+int interrupcion_fs;
 int socket_memoria;
 int socket_kernel_dispatch;
 int socket_kernel_interrupt;
@@ -14,7 +15,7 @@ int salida_exit;
 int desalojo_wait;
 int desalojo_signal;
 int tamanio_pagina;
-
+char *nombre_archivo_a_enviar;
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
 pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
@@ -24,8 +25,6 @@ sem_t *sem_check_interrupt;
 sem_t *sem_interface;
 t_cde *cde_recibido;
 int interrupcion_exit;
-
-
 
 int main(int argc, char *argv[])
 {
@@ -54,8 +53,7 @@ void iniciar_modulo_cpu()
 	logger = iniciar_logger("cpu.log", "CPU");
 	valores_config_cpu = configurar_cpu();
 
-	tlb_iniciar(valores_config_cpu->algoritmo_tlb, valores_config_cpu->cantidad_entradas_tlb, &TLB_HABILITADA);
-	
+	tlb_iniciar(valores_config_cpu->algoritmo_tlb, valores_config_cpu->cantidad_entradas_tlb);
 
 	iniciar_registros_sistema();
 
@@ -238,7 +236,7 @@ void execute(char **instruccion, t_cde *contextoProceso)
 		break;
 	case MOV_IN:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
-		exec_mov_in(instruccion[1], instruccion[2],4, contextoProceso);
+		exec_mov_in(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde();
 		break;
 	case MOV_OUT:
@@ -297,31 +295,29 @@ void execute(char **instruccion, t_cde *contextoProceso)
 		actualizar_cde();
 		break;
 	case IO_FS_CREATE:
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_io_fs_create(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde();
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case IO_FS_DELETE:
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_io_fs_delete(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde();
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		break;
 	case IO_FS_TRUNCATE:
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s ", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		exec_io_fs_truncate(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
 		actualizar_cde();
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s ", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		break;
 	case IO_FS_WRITE:
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
 		exec_io_fs_write(instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5], contextoProceso);
 		actualizar_cde();
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
-
 		break;
 	case IO_FS_READ:
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
 		exec_io_fs_read(instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5], contextoProceso);
 		actualizar_cde();
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
-
 		break;
 	case EXIT:
 		interrupcion_rr = 0;
@@ -330,7 +326,7 @@ void execute(char **instruccion, t_cde *contextoProceso)
 		exec_exit(contextoProceso, SUCCESS);
 		break;
 	default:
-		log_info(logger, "No encontre la instruccion");
+		log_error(logger, "No encontre la instruccion");
 		break;
 	}
 }
@@ -349,6 +345,18 @@ void check_interrupt()
 			log_info(logger, "INTERRUPCION - IO");
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch); // enviamos proceso interrumpido
+		}
+		else if (interrupcion_fs)
+		{
+			interrupcion_fs = 0;
+			log_info(logger, "INTERRUPCION - FS");
+			agregar_cde_buffer(buffer_cde, cde_recibido);
+			enviar_buffer(buffer_cde, socket_kernel_dispatch);
+			destruir_buffer(buffer_instruccion_io);
+			tipo_buffer *buffer_archivo = crear_buffer();
+			agregar_buffer_para_string(buffer_archivo, nombre_archivo_a_enviar);
+			enviar_buffer(buffer_archivo, socket_kernel_dispatch);
+			destruir_buffer(buffer_archivo);
 		}
 		else if (interrupcion_exit)
 		{
@@ -380,6 +388,19 @@ void check_interrupt()
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		destruir_buffer(buffer_instruccion_io);
+	}
+	else if (interrupcion_fs)
+	{
+		salida_exit = 0;
+		interrupcion_fs = 0;
+		log_info(logger, "INTERRUPCION - FS");
+		agregar_cde_buffer(buffer_cde, cde_recibido);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
+		destruir_buffer(buffer_instruccion_io);
+		tipo_buffer *buffer_archivo = crear_buffer();
+		agregar_buffer_para_string(buffer_archivo, nombre_archivo_a_enviar);
+		enviar_buffer(buffer_archivo, socket_kernel_dispatch);
+		destruir_buffer(buffer_archivo);
 	}
 	else if (desalojo_signal)
 	{

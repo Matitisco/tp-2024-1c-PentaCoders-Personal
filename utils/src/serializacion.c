@@ -117,7 +117,7 @@ char *leer_buffer_string(tipo_buffer *buffer)
 
     tamanio = leer_buffer_enteroUint32(buffer);
     cadena = malloc((tamanio) + 1);
-    memcpy(cadena, buffer->stream + buffer->offset, (tamanio));
+    memcpy(cadena, buffer->stream + buffer->offset, tamanio);
     buffer->offset += tamanio;
 
     *(cadena + tamanio) = '\0';
