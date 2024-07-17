@@ -15,17 +15,15 @@
 #include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
 
-
 typedef struct
 {
 	int pid;
 	t_list *paginas_proceso;
 } t_tabla_paginas;
 
-
 typedef struct
 {
-	int marco;		 // numero de marco donde esta la pagina
+	int marco; // numero de marco donde esta la pagina
 } t_pagina;
 
 typedef struct
@@ -34,11 +32,11 @@ typedef struct
 	int bit_ocupado;  // esta libre o no el marco
 } t_bit_map;
 
-typedef struct{
-    int socket_io;
-    char* nombre_io;
-}t_info_io_memoria;
-
+typedef struct
+{
+	int socket_io;
+	char *nombre_io;
+} t_info_io_memoria;
 
 extern t_log *logger;
 
@@ -88,11 +86,10 @@ void liberar_registros(t_registros *registros);
 void *destroy_instruccion(void *element);
 
 // espacio de usuario
-void *leer_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, uint32_t tamanio);
-void *escribir_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t pid, void *valor_a_escribir, uint32_t tamanio);
 
 char *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario();
+void *acceso_a_espacio_usuario_cpu();
 void pedido_frame_mmu(int cliente_cpu);
 void escritura_interfaz(tipo_buffer *buffer, int cliente_solicitante);
 void lectura_interfaz(tipo_buffer *buffer_lectura, int cliente_solicitante);

@@ -42,7 +42,8 @@ typedef enum
 	INTERRUPTED_BY_USER
 } motivoFinalizar;
 
-typedef enum {
+typedef enum
+{
 	STRING,
 	UINT32_T,
 	UINT8_T,
@@ -60,7 +61,7 @@ typedef enum
 	LISTAR_ESTADOS,
 } opciones_menu;
 
-	typedef enum
+typedef enum
 {
 	SOLICITUD_INICIAR_PROCESO,
 	INICIAR_PROCESO_CORRECTO,

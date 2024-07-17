@@ -12,11 +12,18 @@
 
 typedef struct
 {
-    uint32_t size;
-    uint32_t offset;
-    void *stream;
+	uint32_t size;
+	uint32_t offset;
+	void *stream;
 
 } tipo_buffer;
+typedef struct
+{
+	int size;
+	void *stream;
+	u_int32_t direccion_fisica;
+	int pid;
+} t_write_memoria;
 
 // BUFFERS
 tipo_buffer *crear_buffer();
@@ -34,5 +41,10 @@ uint8_t leer_buffer_enteroUint8(tipo_buffer *buffer);
 char *leer_buffer_string(tipo_buffer *buffer);
 t_registros *leer_buffer_registros(tipo_buffer *buffer);
 t_cde *leer_cde(tipo_buffer *buffer);
+
+t_write_memoria *leer_t_write_memoria_buffer(tipo_buffer *buffer);
+void agregar_t_write_memoria_buffer(tipo_buffer *buffer, t_write_memoria *escribir);
+void free_t_write_memoria(t_write_memoria *escribir);
+t_write_memoria *crear_t_write_memoria(int size, void *stream, u_int32_t direccion_fisica, int pid);
 
 #endif

@@ -685,45 +685,65 @@ void exec_exit(t_cde *cde, motivoFinalizar motivo)
 
 void *obtener_valor(char *origen)
 {
-    if (strcmp(origen, "AX") == 0)
+    uint32_t dl_del_byte_inicial_dato = direccion_logica;
+    uint32_t dl_del_byte_final_dato = direccion_logica + size - 1;
+    int pagina_del_byte_inicial = calcular_pagina(direccion_logica);
+    int pagina_del_byte_final = calcular_pagina(dl_del_byte_final_dato);
+    uint32_t direccion_fisica;
+    if (pagina_del_byte_inicial == pagina_del_byte_final)
     {
-        return registros->AX;
+        // Si el dato cabe en una sola página, se escribe directamente.
+        direccion_fisica = traducir_direccion_mmu(direccion_logica);
+        if (direccion_fisica == -1)
+        {
+            log_error(logger, "DIRECCION INCORRECTA");
+            // interrupcion_exit = 1;
+            return -1;
+        }
+        escribir_memoria(direccion_fisica, size, dato, pid);
     }
-    if (strcmp(origen, "BX") == 0)
+    else
     {
-        return registros->BX;
+        // Si el dato cruza el límite de la página, se divide la escritura.
+        uint32_t dl_byte_final_pagina = (pagina_del_byte_inicial + 1) * tamanio_pagina - 1;
+        int cant_bytes = dl_byte_final_pagina - dl_del_byte_inicial_dato + 1;
+
+        // Escribir la primera parte del dato que cabe en la página actual.
+        direccion_fisica = traducir_direccion_mmu(dl_del_byte_inicial_dato);
+        if (direccion_fisica == -1)
+        {
+            log_error(logger, "DIRECCION INCORRECTA");
+            // interrupcion_exit = 1;
+            return -1;
+        }
+        escribir_memoria(direccion_fisica, cant_bytes, dato, pid);
+        // Llamada recursiva para escribir el resto del dato en la siguiente página.
+        // Nota: se usar (char*) por una cuestion aritmetica de punteros, para sumar de a bytes
+        escribir_dato_memoria(dl_byte_final_pagina + 1, (char *)dato + cant_bytes, size - cant_bytes, pid);
     }
-    if (strcmp(origen, "CX") == 0)
+
+    return direccion_fisica;
+}
+
+void escribir_memoria(uint32_t direccion_fisica, int size, void *dato, int pid)
+{ // esta función no implementa chequeo de pagina, simplemente escribe
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
+    tipo_buffer *buffer = crear_buffer();
+
+    t_write_memoria *escribir = crear_t_write_memoria(size, dato, direccion_fisica, pid);
+    agregar_t_write_memoria_buffer(buffer, escribir);
+
+    enviar_buffer(buffer, socket_memoria);
+    free_t_write_memoria(escribir);
+    destruir_buffer(buffer);
+    op_code escritura_memoria = recibir_op_code(socket_memoria);
+    if (escritura_memoria == OK)
     {
-        return registros->CX;
+        log_info(logger, "PID: <%d> - escritura correcta en memoria", pid);
     }
-    if (strcmp(origen, "SI") == 0)
+    else
     {
-        return registros->SI;
+        log_error(logger, "DIRECCION INCORRECTA");
     }
-    if (strcmp(origen, "DX") == 0)
-    {
-        return registros->DX;
-    }
-    if (strcmp(origen, "DI") == 0)
-    {
-        return registros->DI;
-    }
-    if (strcmp(origen, "EAX") == 0)
-    {
-        return registros->EAX;
-    }
-    if (strcmp(origen, "EBX") == 0)
-    {
-        return registros->EBX;
-    }
-    if (strcmp(origen, "ECX") == 0)
-    {
-        return registros->ECX;
-    }
-    if (strcmp(origen, "EDX") == 0)
-    {
-        return registros->EDX;
-    }
-    return 0;
 }
