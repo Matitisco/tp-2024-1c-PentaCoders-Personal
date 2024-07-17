@@ -6,8 +6,8 @@
 extern void *espacio_usuario; // espacio_usuario está definido en otro lugar
 
 
-void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio,t_log *logger) {
-    log_info(logger, "PID: <PID> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", direccion_fisica, tamanio);
+void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio,t_log *logger, int pid) {
+    log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", pid,direccion_fisica, tamanio);
 
     void *destino = espacio_usuario + direccion_fisica;
     memcpy(destino, valor_a_escribir, tamanio);
@@ -15,8 +15,8 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
     return (void *)1;
 }
 
-void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio,t_log *logger) {
-    log_info(logger, "PID: <PID> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", direccion_fisica, tamanio);
+void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio,t_log *logger, int pid) {
+    log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", pid,direccion_fisica, tamanio);
 
     void *valor = malloc(tamanio);
     memcpy(valor, espacio_usuario + direccion_fisica, tamanio);

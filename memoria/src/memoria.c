@@ -270,7 +270,7 @@ void *acceso_a_espacio_usuario_cpu()
     case PEDIDO_ESCRITURA:
         tipo_buffer *buffer = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
         t_write_memoria *escribir = leer_t_write_memoria_buffer(buffer);
-        int resultado = escribir_espacio_usuario(escribir->direccion_fisica, escribir->stream, escribir->size, logger);
+        int resultado = escribir_espacio_usuario(escribir->direccion_fisica, escribir->stream, escribir->size, logger, escribir->pid);
 
         char* valor_string = (char *)escribir->stream;
         for (size_t i = 0; i < escribir->size; i++)
@@ -336,13 +336,13 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
     if (tipo_dato == INTEGER)
     {
         valor_a_escribir = leer_buffer_enteroUint32(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio, logger);
+        resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio, logger, pid_ejecutando);
     }
 
     else if (tipo_dato == STRING)
     {
         valor_string = leer_buffer_string(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, logger);
+        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, logger,pid_ejecutando);
     }
 
     if (resultado != -1)
@@ -368,7 +368,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
     tipoDato tipo_dato = leer_buffer_enteroUint32(buffer_lectura);
 
-    void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger);
+    void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
     char *valor_char = string_new();
     int valor_int;
 
