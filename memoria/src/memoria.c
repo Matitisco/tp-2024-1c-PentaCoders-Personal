@@ -127,7 +127,7 @@ void *recibir_interfaz_io()
         op_code codigo_io = recibir_op_code(dispositivo_io);
         switch (codigo_io)
         {
-        sleep_ms(valores_config->retardo_respuesta);
+            sleep_ms(valores_config->retardo_respuesta);
         case ACCESO_ESPACIO_USUARIO:
             CLIENTE_ESPACIO_USUARIO = dispositivo_io;
             acceso_a_espacio_usuario();
@@ -183,13 +183,13 @@ void *recibirCPU()
 
         switch (cod_op)
         {
-        sleep_ms(valores_config->retardo_respuesta);
+            sleep_ms(valores_config->retardo_respuesta);
         case PEDIDO_INSTRUCCION:
             pedido_instruccion_cpu_dispatch(cliente_cpu);
             break;
         case ACCESO_ESPACIO_USUARIO:
             CLIENTE_ESPACIO_USUARIO = cliente_cpu;
-            acceso_a_espacio_usuario();
+            acceso_a_espacio_usuario_cpu();
             break;
         case RESIZE_OP:
             tipo_buffer *buffer_cpu = recibir_buffer(cliente_cpu);
@@ -261,7 +261,41 @@ int tamanio_proceso(int pid)
     int cant_paginas_proceso = list_size(tabla_paginas->paginas_proceso);
     return cant_paginas_proceso * valores_config->tam_pagina;
 }
+void *acceso_a_espacio_usuario_cpu()
+{
+    op_code codigo, solicitud;
+    codigo = recibir_op_code(CLIENTE_ESPACIO_USUARIO);
+    switch (codigo)
+    {
+    case PEDIDO_ESCRITURA:
+        tipo_buffer *buffer = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
+        t_write_memoria *escribir = leer_t_write_memoria_buffer(buffer);
+        int resultado = escribir_espacio_usuario(escribir->direccion_fisica, escribir->stream, escribir->size, logger);
 
+        uint32_t valor = *(uint32_t *)escribir->stream;
+        if (resultado != -1)
+        {
+            log_info(logger, "Se escribio el valor: %d", valor);
+            enviar_op_code(CLIENTE_ESPACIO_USUARIO, OK);
+        }
+        else
+        {
+            enviar_op_code(CLIENTE_ESPACIO_USUARIO, ERROR_PEDIDO_LECTURA);
+        }
+
+        free_t_write_memoria(escribir);
+        break;
+    case PEDIDO_LECTURA:
+        tipo_buffer *buffer_lectura = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
+        lectura(buffer_lectura, CLIENTE_ESPACIO_USUARIO);
+        destruir_buffer(buffer_lectura);
+        break;
+    default:
+        log_error(logger, "ERROR - ACCESO ESPACIO USUARIO");
+        break;
+    }
+    return (void *)1;
+}
 void *acceso_a_espacio_usuario()
 {
     op_code codigo, solicitud;
@@ -298,13 +332,13 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
     if (tipo_dato == INTEGER)
     {
         valor_a_escribir = leer_buffer_enteroUint32(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio, valores_config, logger);
+        resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio, logger);
     }
 
     else if (tipo_dato == STRING)
     {
         valor_string = leer_buffer_string(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, valores_config, logger);
+        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, logger);
     }
 
     if (resultado != -1)
@@ -330,7 +364,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
     tipoDato tipo_dato = leer_buffer_enteroUint32(buffer_lectura);
 
-    void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, valores_config, logger);
+    void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger);
     char *valor_char = string_new();
     int valor_int;
 
@@ -642,7 +676,7 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
 
     printf_green("Cantidad de paginas actuales: %d", cantidad_paginas_actuales);
-    printf_green("Cantidad de paginas nuevas: %d", cantidad_paginas_nuevas);
+    printf_green("Cantidad de paginas nuevas: %f", cantidad_paginas_nuevas);
 
     int paginas_adicionales = cantidad_paginas_nuevas - cantidad_paginas_actuales;
     log_info(logger, "CANTIDAD MARCOS A ASIGNAR: %d", paginas_adicionales);
@@ -687,23 +721,25 @@ int cantidad_marcos_libres()
     return marcos_libres;
 }
 void imprimir_tabla_de_paginas_proceso(t_tabla_paginas *tabla_paginas_proceso)
-{//t_tabla_paginas
+{ // t_tabla_paginas
     t_list *tp_paginas_proceso = tabla_paginas_proceso->paginas_proceso;
-    if(!list_is_empty(tp_paginas_proceso)){
-    t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso)-1);
-    printf_yellow("      TABLA PROCESO %d",tabla_paginas_proceso->pid);
-
-    printf_yellow("--------------------");
-    printf_yellow("|PAGINA   | MARCO  |");
-    for (int i = 0; i < list_size(tp_paginas_proceso); ++i)
+    if (!list_is_empty(tp_paginas_proceso))
     {
-        t_pagina *pagina = list_get(tp_paginas_proceso, i);
-        printf_yellow("|  %d      |    %d   |", i, pagina->marco);
+        t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso) - 1);
+        printf_yellow("      TABLA PROCESO %d", tabla_paginas_proceso->pid);
+
         printf_yellow("--------------------");
-    } 
+        printf_yellow("|PAGINA   | MARCO  |");
+        for (int i = 0; i < list_size(tp_paginas_proceso); ++i)
+        {
+            t_pagina *pagina = list_get(tp_paginas_proceso, i);
+            printf_yellow("|  %d      |    %d   |", i, pagina->marco);
+            printf_yellow("--------------------");
+        }
     }
-    else{
-        printf_yellow("      TABLA PROCESO %d VACÍA",tabla_paginas_proceso->pid);
+    else
+    {
+        printf_yellow("      TABLA PROCESO %d VACÍA", tabla_paginas_proceso->pid);
     }
 }
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)

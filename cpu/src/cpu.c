@@ -238,7 +238,7 @@ void execute(char **instruccion, t_cde *contextoProceso)
 		break;
 	case MOV_IN:
 		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
-		exec_mov_in(instruccion[1], instruccion[2],4, contextoProceso);
+		exec_mov_in(instruccion[1], instruccion[2],"4", contextoProceso);
 		actualizar_cde();
 		break;
 	case MOV_OUT:

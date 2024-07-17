@@ -72,15 +72,56 @@ double obtenerMantisa(double x)
     return mantisa;
 }
 
-¿
+void escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, int pid) // la idea es implementar acá el chequeo de pagina haciendo uso de escribir memoria
+{
+}
+void escribir_memoria(uint32_t direccion_fisica, int size, void *dato, int pid)
+{ // esta función no implementa chequeo de pagina, simplemente escribe
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
+    tipo_buffer *buffer = crear_buffer();
+
+    t_write_memoria *escribir = crear_t_write_memoria(size, dato, direccion_fisica, pid);
+    agregar_t_write_memoria_buffer(buffer, escribir);
+
+    enviar_buffer(buffer, socket_memoria);
+    free_t_write_memoria(escribir);
+    destruir_buffer(buffer);
+}
+
+void exec_mov_out(char *direccion, char *datos, t_cde *cde)
+{
+    uint32_t reg_valor = obtener_valor(datos);
+    uint32_t direccion_logica = obtener_valor(direccion);
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
+    if (direccion_fisica == -1)
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+        interrupcion_exit = 1;
+        return;
+    }
+    // proximamente se implementará el chequeo de paginas
+
+    escribir_memoria(direccion_fisica, sizeof(reg_valor), &reg_valor, cde->pid);
+
+    op_code escritura_memoria = recibir_op_code(socket_memoria);
+    if (escritura_memoria == OK)
+    {
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
+    }
+    else
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+    }
+}
 
 void exec_mov_in(char *datos, char *direccion, char *tamanio, t_cde *cde)
 {
     uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica); //1
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica); // 1
 
     // enviamos la primera direccion fisica encontrada y guardamos lo que retorna
-    
+
     /* float posicion_pagina = direccion_logica / tamanio_pagina; //2
 
     double itamanio = atof(tamanio);
@@ -93,7 +134,6 @@ void exec_mov_in(char *datos, char *direccion, char *tamanio, t_cde *cde)
         //enviar()
         //guardar()
     } */
-    
 
     if (direccion_fisica == -1)
     {
@@ -129,40 +169,6 @@ void exec_mov_in(char *datos, char *direccion, char *tamanio, t_cde *cde)
     {
         log_error(logger, "DIRECCION INCORRECTA");
         // exec_exit(cde); Ver si esto esta bien
-    }
-    destruir_buffer(buffer);
-}
-
-void exec_mov_out(char *direccion, char *datos, t_cde *cde)
-{
-    uint32_t reg_valor = obtener_valor(datos);
-    uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-    if (direccion_fisica == -1)
-    {
-        log_error(logger, "DIRECCION INCORRECTA");
-        interrupcion_exit = 1;
-        return;
-    }
-
-    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
-    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
-    agregar_buffer_para_enterosUint32(buffer, cde->pid);
-    agregar_buffer_para_enterosUint32(buffer, sizeof(reg_valor));
-    agregar_buffer_para_enterosUint32(buffer, INTEGER);
-    agregar_buffer_para_enterosUint32(buffer, reg_valor);
-    enviar_buffer(buffer, socket_memoria);
-
-    op_code escritura_memoria = recibir_op_code(socket_memoria);
-    if (escritura_memoria == OK)
-    {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
-    }
-    else
-    {
-        log_error(logger, "DIRECCION INCORRECTA");
     }
     destruir_buffer(buffer);
 }
@@ -242,63 +248,63 @@ void exec_sub(char *destino, char *origen)
 }
 
 void exec_jnz(char *registro, uint32_t numeroInstruccion, t_cde *cde)
-{
-    if (strcmp(registro, "AX") == 0)
-    {
-        if (registros->AX != 0)
-        {
-            registros->PC = numeroInstruccion;
-        }
-    }
-    if (strcmp(registro, "BX") == 0)
-    {
-        if (registros->BX != 0)
-        {
-            registros->PC = numeroInstruccion;
-        }
-    }
-    if (strcmp(registro, "CX") == 0)
-    {
-        if (registros->CX != 0)
-        {
-            registros->PC = numeroInstruccion;
-        }
-    }
-    if (strcmp(registro, "DX") == 0)
-    {
-        if (registros->DX != 0)
-        {
-            registros->PC = numeroInstruccion;
-        }
-    }
-    if (strcmp(registro, "EAX") == 0)
-    {
-        if (registros->EAX != 0)
-        {
-            registros->PC = numeroInstruccion;
-        }
-    }
-    if (strcmp(registro, "EBX") == 0)
-    {
-        if (registros->EBX != 0)
-        {
-            registros->PC = numeroInstruccion;
-        }
-    }
-    if (strcmp(registro, "ECX") == 0)
-    {
-        if (registros->ECX != 0)
-        {
-            registros->PC = numeroInstruccion;
-        }
-    }
-    if (strcmp(registro, "EDX") == 0)
-    {
-        if (registros->EDX != 0)
-        {
-            registros->PC = numeroInstruccion;
-        }
-    }
+{ /*
+     if (strcmp(registro, "AX") == 0)
+     {
+         if (registros->AX != 0)
+         {
+             registros->PC = numeroInstruccion;
+         }
+     }
+     if (strcmp(registro, "BX") == 0)
+     {
+         if (registros->BX != 0)
+         {
+             registros->PC = numeroInstruccion;
+         }
+     }
+     if (strcmp(registro, "CX") == 0)
+     {
+         if (registros->CX != 0)
+         {
+             registros->PC = numeroInstruccion;
+         }
+     }
+     if (strcmp(registro, "DX") == 0)
+     {
+         if (registros->DX != 0)
+         {
+             registros->PC = numeroInstruccion;
+         }
+     }
+     if (strcmp(registro, "EAX") == 0)
+     {
+         if (registros->EAX != 0)
+         {
+             registros->PC = numeroInstruccion;
+         }
+     }
+     if (strcmp(registro, "EBX") == 0)
+     {
+         if (registros->EBX != 0)
+         {
+             registros->PC = numeroInstruccion;
+         }
+     }
+     if (strcmp(registro, "ECX") == 0)
+     {
+         if (registros->ECX != 0)
+         {
+             registros->PC = numeroInstruccion;
+         }
+     }
+     if (strcmp(registro, "EDX") == 0)
+     {
+         if (registros->EDX != 0)
+         {
+             registros->PC = numeroInstruccion;
+         }
+     }*/
 }
 
 void exec_resize(char *tamanio, t_cde *cde)

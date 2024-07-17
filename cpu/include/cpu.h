@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h
+#include <pthread.h>
 #include <math.h>
 
 #include "../../utils/include/utils.h"
