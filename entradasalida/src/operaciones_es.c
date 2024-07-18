@@ -37,16 +37,16 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     tipo_buffer *buffer_stdin = recibir_buffer(conexion_kernel);
     t_tipoDeInstruccion instruccion = leer_buffer_enteroUint32(buffer_stdin);
     int tamanio = leer_buffer_enteroUint32(buffer_stdin);
-    int cant_dirs_fisicas = leer_buffer_enteroUint32(buffer_stdin);
-    int direccion_fisica;
-    t_list *dirs_fisicas = list_create();
+    int direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
+    int pid = leer_buffer_enteroUint32(buffer_stdin);
+    //int cant_dirs_fisicas = leer_buffer_enteroUint32(buffer_stdin);
+    /*t_list *dirs_fisicas = list_create();
     for (int i = 0; i < cant_dirs_fisicas; i++)
     {
         direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
         list_add(dirs_fisicas, direccion_fisica);
         log_info(logger, "DIRECCION FISICAS %d", direccion_fisica);
-    }
-    int pid = leer_buffer_enteroUint32(buffer_stdin);
+    } */
     log_info(logger, "CANT DE BYTES A COPIAR: %d", tamanio);
     destruir_buffer(buffer_stdin);
 
@@ -56,7 +56,28 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
         char *texto_truncado = truncar_texto(texto_ingresado, tamanio);
         log_info(logger, "TEXTO A ENVIAR A MEMORIA : %s", texto_truncado);
 
-        for (int i = 0; i < cant_dirs_fisicas; i++)
+        enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
+        enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
+        tipo_buffer *buffer_stdin = crear_buffer();
+        agregar_buffer_para_enterosUint32(buffer_stdin, direccion_fisica);
+        agregar_buffer_para_enterosUint32(buffer_stdin, pid);
+        agregar_buffer_para_enterosUint32(buffer_stdin, tamanio);
+        agregar_buffer_para_enterosUint32(buffer_stdin, STRING);
+        agregar_buffer_para_string(buffer_stdin, texto_truncado);
+        enviar_buffer(buffer_stdin, conexion_memoria);
+        destruir_buffer(buffer_stdin);
+
+        op_code codigo_memoria = recibir_op_code(conexion_memoria);
+        if (codigo_memoria == OK)
+        {
+            log_info(logger, "Se escribio correctamente en la pagina en memoria");
+        }
+        else if (codigo_memoria == ERROR_PEDIDO_ESCRITURA)
+        {
+            log_error(logger, "PID: <%d> - ERROR Operacion: <IO_STDIN_READ>", pid);
+        }
+
+        /* for (int i = 0; i < cant_dirs_fisicas; i++)
         {
             enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
             enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
@@ -79,7 +100,7 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
             {
                 log_error(logger, "PID: <%d> - ERROR Operacion: <IO_STDIN_READ>", pid);
             }
-        }
+        } */
         log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
     }
     else

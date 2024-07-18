@@ -348,7 +348,7 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
     else if (tipo_dato == STRING)
     {
         valor_string = leer_buffer_string(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, logger, pid_ejecutando);
+        resultado = escribir_espacio_usuario(direccion_fisica, valor_string, tamanio, logger, pid_ejecutando);
     }
 
     if (resultado != -1)
