@@ -660,6 +660,19 @@ int obtener_posicion_marco_libre()
     return -1;
 }
 
+int consultar_pagina_de_un_marco(t_tabla_paginas *tabla, int marco)
+{
+    for (int i = 0; i < list_size(tabla->paginas_proceso); i++)
+    {
+        t_pagina *pagina = list_get(tabla->paginas_proceso, i);
+        if (pagina->marco == marco)
+        {
+            return 1;
+        }
+    }
+    return -1;
+}
+
 int consultar_marco_de_una_pagina(t_tabla_paginas *tabla, int nroPagina)
 {
     int nroUltimaPagina = list_size(tabla->paginas_proceso) - 1;
