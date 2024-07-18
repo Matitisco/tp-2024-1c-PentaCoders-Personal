@@ -472,20 +472,16 @@ void *levantar_CPU_Dispatch()
 			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
 			destruir_buffer(buffer_cpu);
 
-			// sem_post(b_transicion_exec_blocked);
-
 			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
 			{
-				printf("\033[0;33m\n Existe el recurso: %s \n \033[0m", nombre_recurso_recibido);
-
 				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido); //R SO
 				wait_instancia_recurso2(recurso); // el SO pierde uno del recurso llamado
+				proceso_estado();
 			}
 			else
 			{
 				printf("\033[38;2;255;105;180m \n No existe el recurso: %s a continuacion se muestra en donde esta el proceso: \n \033[0m", nombre_recurso_recibido);
 				proceso_estado();
-
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
@@ -500,36 +496,15 @@ void *levantar_CPU_Dispatch()
 			destruir_buffer(buffer_cpu);
 
 			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
-			{
-				// printf("\033[0;33m\n Existe el recurso: %s \n \033[0m", nombre_recurso_recibido);
-
+			{				
 				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido); //recurso del SO
-
 				signal_instancia_recurso(recurso);
-
-
+				proceso_estado();
 				imprimir_recursos();
-
-				/*
-
-				// sem_wait(recurso_buscado->instancias);
-
-				int valor_instancias;
-
-				sem_getvalue(recurso->instancias, &valor_instancias);
-				log_info(logger, "Recurso: %s Instancias Restantes: %d", recurso->nombre, valor_instancias);
-
-				// recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
-
-				sem_post(b_transicion_blocked_ready);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
-				*/
 			}
 			else // el recurso no existe
 			{
 				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
-
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
@@ -767,29 +742,14 @@ _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 	return 0;
 }
 
-void signal_instancia_recurso(t_recurso *recurso) // Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo.
+void signal_instancia_recurso(t_recurso *recurso) 
 {
-	// sem_getvalue(recurso->instancias, &valor);
-
 	int proceso_en_espera;
 	sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);//R SO
 
 	if (proceso_en_espera > 0)
 	{
-		
-		
-		//recurso->bloqueado=false;
-		
-		mostrar_procesos(cola_ready_global);
-		mostrar_procesos(cola_exec_global);
-		mostrar_procesos(cola_bloqueado_global);
 		sem_post(b_transicion_blocked_ready);
-		// proceso->estado=READY;
-		// proceso->cde = cde_interrumpido;
-		mostrar_procesos(cola_ready_global);
-		mostrar_procesos(cola_exec_global);
-		mostrar_procesos(cola_bloqueado_global);
-
 
 		//poner semaforo? Que pasa si la transicion llega mas tarde? 254 cortoPlazo.c
 		//sem_wait(b_desbloquear_proceso)
@@ -797,7 +757,7 @@ void signal_instancia_recurso(t_recurso *recurso) // Si llegó aca existe el rec
 		mostrar_procesos(recurso->cola_bloqueados);
 	}else{
 	}
-			enviar_a_cpu_cde(cde_interrumpido);
+	enviar_a_cpu_cde(cde_interrumpido);
 	sem_post(recurso->instancias); //R SO
 
 }
@@ -832,29 +792,12 @@ void wait_instancia_recurso2(t_recurso *recurso) {
 			sem_post(recurso_buscado->instancias);//Cant de instancias que retiene el proceso
 			log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
 		}
-		// valorSemaforo(b_transicion_blocked_ready);
-		// proceso_estado();
-		enviar_a_cpu_cde(cde_interrumpido);
-		mostrar_procesos(cola_ready_global);
-		mostrar_procesos(cola_exec_global);
-		mostrar_procesos(cola_bloqueado_global);
-		
+		enviar_a_cpu_cde(cde_interrumpido);		
 	} 
 	else // mando proceso a cola de bloqueados correspondiente al recurso
 	{
-
-		mostrar_procesos(cola_bloqueado_global);
 		sem_post(b_transicion_exec_blocked);
 		agregar_a_estado(proceso_interrumpido, recurso->cola_bloqueados);//R SO
-
-		mostrar_procesos(cola_bloqueado_global);
-		// proceso_interrumpido = transicion_generica(cola_exec_global, recurso->cola_bloqueados,"");
-		// proceso_interrumpido->estado=BLOCKED;
-
-		//recurso_buscado->bloqueado=true;
-
-		// proceso_interrumpido->cde = cde_interrumpido;//?
-		mostrar_procesos(recurso->cola_bloqueados);
 		log_info(logger, "PID: <%d> - Bloqueado por: <%s> con procesos en espera", proceso_interrumpido->cde->pid, nombre_recurso_recibido);		
 	}
 }
@@ -871,12 +814,6 @@ void imprimir_recursos()
 }
 
 /*
-RECURSOS:
-
-- Liberar recursos retenidos por WAIT cuando llega a EXIT
-
-
-
 RC=1, RA=1
 
 PROCESO 0
@@ -890,8 +827,8 @@ S RA
 
 P0 W RC
 PO W RC
-se bloquea P0
-P1 entra a exec
+(se bloquea P0)
+(P1 entra a exec)
 P1 S RC (aca se desbloquea P0)
 P1 S RA
 P1 EXIT
@@ -900,7 +837,5 @@ P0 EXIT
 
 
 ---------------------------------------- ERRORES ----------------------------------
-Primero ejecuto proceso "consumidor". Cuando se bloquea ejecuto proceso "productor", parece que desbloquea bien al proceso
-anterior pero cuando finaliza el actual tira un error de ¿transicion ready a exec? Pareceria que no esta el proceso
-consumidor en la cola de Ready
+Primero ejecuto proceso "consumidor". Cuando se bloquea ejecuto proceso "productor", parece que desbloquea bien al proceso anterior pero cuando finaliza el actual tira un error de ¿transicion ready a exec? Pareceria que no esta el proceso consumidor en la cola de Ready
 */

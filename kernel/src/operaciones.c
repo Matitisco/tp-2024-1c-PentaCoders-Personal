@@ -186,7 +186,6 @@ void iniciar_planificacion()
 void detener_planificacion()
 {
     habilitar_planificadores = 0;
-
     estado_planificacion = PLANIFICACION_PAUSADA;
 }
 

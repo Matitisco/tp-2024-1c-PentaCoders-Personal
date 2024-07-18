@@ -251,9 +251,11 @@ _Bool esta_bloqueado_por_falta_de_recurso(t_recurso *recurso){
     
     int proceso_en_espera;
 	sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);
+    int instanciaLogger;
+    sem_getvalue(recurso->instancias,&instanciaLogger);
     //sem_post(b_desbloquear_proceso);
 
-    log_info(logger,"%s tiene %d instancias y %d proceso en espera en %d",recurso->nombre,recurso->instancias,proceso_en_espera);
+    log_info(logger,"%s tiene %d instancias y %d proceso en espera en %d",recurso->nombre,instanciaLogger,proceso_en_espera);
 
     if (proceso_en_espera > 0){
         return 1;
@@ -283,15 +285,11 @@ void *transicion_blocked_ready() // mover a largo plazo
             proceso = transicion_generica(cola_bloqueado_global,cola_ready_global, "corto"); //READY+
             proceso->estado = READY;
         }
-        
-        log_info(logger,"SE SACO DE BLOCK A: <%d>",proceso->cde->pid);
-
                
         if (proceso->recursosAsignados!=NULL)
         {            
             //busco en los recursos del SO
             t_recurso *recurso_bloqueante = list_find(valores_config->recursos, esta_bloqueado_por_falta_de_recurso);
-            //log_info(logger, "existe recurso con proceso en espera: %s",recurso_bloqueante->nombre);
             if(recurso_bloqueante==NULL){   //Para que en el manejo de recurso no le cambie el cde al proceso bloqueado x recurso
                 proceso->cde = cde_interrumpido;
             }
