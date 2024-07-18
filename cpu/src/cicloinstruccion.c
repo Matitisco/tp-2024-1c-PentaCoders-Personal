@@ -190,166 +190,38 @@ void exec_jnz(char *registro, uint32_t numeroInstruccion, t_cde *cde)
     }
 }
 
-/*
-    double paginas_necesarias = ceil((double)tamanio_registro / (double)tamanio_pagina);
-    int numero_pagina = calcular_pagina(direccion_logica);
-    int paginas_totales_necesarias = numero_pagina + paginas_necesarias;
-
-    direccion_logica = numero_pagina * tamanio_pagina;
-    direccion_fisica = traducir_direccion_mmu(direccion_logica); */
-
-/* while (numero_pagina < paginas_totales_necesarias)
-   {
-       numero_pagina++;
-       direccion_logica = numero_pagina * tamanio_pagina;
-       direccion_fisica = traducir_direccion_mmu(direccion_logica);
-
-       enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
-       enviar_op_code(socket_memoria, PEDIDO_LECTURA);
-
-       tipo_buffer *buffer = crear_buffer();
-       agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
-       agregar_buffer_para_enterosUint32(buffer, cde->pid);
-       agregar_buffer_para_enterosUint32(buffer, tamanio_registro);
-       agregar_buffer_para_enterosUint32(buffer, INTEGER);
-
-       // direccion que se envia a la memoria y con la cual esta debe buscar el valor y guardarlo
-       enviar_buffer(buffer, socket_memoria);
-
-       op_code lectura_memoria = recibir_op_code(socket_memoria);
-       if (lectura_memoria == OK)
-       {
-           tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
-           uint32_t valor = leer_buffer_enteroUint32(buffer_valor);
-           exec_set(datos, valor);
-           destruir_buffer(buffer_valor);
-           log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor);
-       }
-       else
-       {
-           log_error(logger, "DIRECCION INCORRECTA");
-       }
-       destruir_buffer(buffer);
-   } */
-
 // INSTRUCCIONES DE MEMORIA
-
-/* void exec_mov_in(char *datos, char *direccion, t_cde *cde)
-{
-    uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-
-    uint32_t tamanio_registro = sizeof(obtener_valor(direccion));
-    // 64/8 = 8 bytes
-    log_info(logger, "TAMAÑO REGISTRO: %d",tamanio_registro);
-    log_info(logger, "SIZE UINT32 %d",sizeof(uint32_t));
-     log_info(logger, "SIZE UINT8 %d",sizeof(uint8_t));
-    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
-    enviar_op_code(socket_memoria, PEDIDO_LECTURA);
-
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
-    agregar_buffer_para_enterosUint32(buffer, cde->pid);
-
-    if (tamanio_registro == sizeof(uint32_t))
-    {
-        agregar_buffer_para_enterosUint32(buffer, UINT32_T);
-        agregar_buffer_para_enterosUint32(buffer, (uint32_t)tamanio_registro);
-    }
-    else if (tamanio_registro == sizeof(uint8_t))
-    {
-        agregar_buffer_para_enterosUint32(buffer, UINT8_T);
-        agregar_buffer_para_enterosUint8(buffer, (uint8_t)tamanio_registro);
-    }
-    enviar_buffer(buffer, socket_memoria);
-
-    op_code lectura_memoria = recibir_op_code(socket_memoria);
-    if (lectura_memoria == OK)
-    {
-        tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
-        tipoDato tipo_valor = leer_buffer_enteroUint32(buffer_valor);
-        uint32_t valor_32;
-        uint8_t valor_8;
-        if (tipo_valor == UINT32_T)
-        {
-            valor_32 = leer_buffer_enteroUint32(buffer_valor);
-            exec_set(datos, valor_32);
-            log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%u>", cde->pid, direccion_fisica, valor_32);
-        }
-        else if (tipo_valor == UINT8_T)
-        {
-            valor_8 = leer_buffer_enteroUint8(buffer_valor);
-            exec_set(datos, valor_8);
-            log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%u>", cde->pid, direccion_fisica, valor_8);
-        }
-        destruir_buffer(buffer_valor);
-    }
-    else
-    {
-        log_error(logger, "DIRECCION INCORRECTA");
-    }
-    destruir_buffer(buffer);
-}
-
-void exec_mov_out(char *direccion, char *datos, t_cde *cde)
-{
-    void *valor_a_escribir = obtener_valor(datos);
-    uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-    uint32_t tamanio_registro = sizeof(valor_a_escribir);
-    log_info(logger, "TAMAÑO REGISTRO: %d",tamanio_registro);
-    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
-    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
-    agregar_buffer_para_enterosUint32(buffer, cde->pid);
-
-    if (tamanio_registro == sizeof(uint8_t))
-    {
-        agregar_buffer_para_enterosUint32(buffer, UINT8_T);
-        agregar_buffer_para_enterosUint8(buffer, tamanio_registro);
-        agregar_buffer_para_enterosUint8(buffer, valor_a_escribir);
-    }
-
-    else if (tamanio_registro == sizeof(uint32_t))
-    {
-        agregar_buffer_para_enterosUint32(buffer, UINT32_T);
-        agregar_buffer_para_enterosUint32(buffer, tamanio_registro);
-        agregar_buffer_para_enterosUint32(buffer, valor_a_escribir);
-    }
-    enviar_buffer(buffer, socket_memoria);
-
-    op_code escritura_memoria = recibir_op_code(socket_memoria);
-    if (escritura_memoria == OK)
-    {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%u>", cde->pid, direccion_fisica, valor_a_escribir);
-    }
-    else
-    {
-        log_error(logger, "DIRECCION INCORRECTA");
-    }
-    destruir_buffer(buffer);
-}
- */
 
 void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 {
     uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica); // 1
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
 
     log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
 
-    uint32_t int_tamanio = atoi(obtener_valor(direccion));
-    log_info(logger, "TAMANIO A ENVIAR %d", int_tamanio);
+    uint8_t valor8;
+    uint32_t valor32;
+    size_t int_tamanio;
+    if (strcmp(direccion, "AX") == 0 || strcmp(direccion, "BX") == 0 || strcmp(direccion, "CX") == 0 || strcmp(direccion, "DX") == 0)
+
+    {
+        valor8 = (uint8_t)obtener_valor(datos);
+        int_tamanio = sizeof(valor8);
+    }
+    else
+    {
+        valor32 = (uint32_t)obtener_valor(datos);
+        int_tamanio = sizeof(valor32);
+    }
+
+    log_info(logger, "TAMANIO A ENVIAR %zu", int_tamanio);
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
     agregar_buffer_para_enterosUint32(buffer, cde->pid);
     agregar_buffer_para_enterosUint32(buffer, int_tamanio);
     agregar_buffer_para_enterosUint32(buffer, INTEGER);
-
-    // direccion que se envia a la memoria y con la cual esta debe buscar el valor y guardarlo
     enviar_buffer(buffer, socket_memoria);
 
     op_code lectura_memoria = recibir_op_code(socket_memoria);
@@ -365,41 +237,21 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     {
         log_error(logger, "DIRECCION INCORRECTA");
     }
+
     destruir_buffer(buffer);
 }
 
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
-    uint32_t reg_valor = obtener_valor(datos);
+
+    void *reg_valor = obtener_valor(datos);
     uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-    if (direccion_fisica == -1)
-    {
-        log_error(logger, "DIRECCION INCORRECTA");
-        interrupcion_exit = 1;
-        return;
-    }
+    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, sizeof(reg_valor), cde->pid);
 
-    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
-    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
-    agregar_buffer_para_enterosUint32(buffer, cde->pid);
-    agregar_buffer_para_enterosUint32(buffer, sizeof(reg_valor));
-    agregar_buffer_para_enterosUint32(buffer, INTEGER);
-    agregar_buffer_para_enterosUint32(buffer, reg_valor);
-    enviar_buffer(buffer, socket_memoria);
-
-    op_code escritura_memoria = recibir_op_code(socket_memoria);
-    if (escritura_memoria == OK)
+    if (direccion_fisica != 1)
     {
         log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
     }
-    else
-    {
-        log_error(logger, "DIRECCION INCORRECTA");
-    }
-    destruir_buffer(buffer);
 }
 
 void exec_resize(char *tamanio, t_cde *cde)
@@ -420,11 +272,13 @@ void exec_resize(char *tamanio, t_cde *cde)
         enviar_op_code(socket_kernel_dispatch, OUT_OF_MEMORY);
         tipo_buffer *buffer_out_memory = crear_buffer();
         agregar_cde_buffer(buffer_out_memory, cde);
-        enviar_buffer(buffer, socket_kernel_dispatch);
+        enviar_buffer(buffer_out_memory, socket_kernel_dispatch);
         destruir_buffer(buffer_out_memory);
+        return;
     }
     else if (resize_memoria == RESIZE_EXITOSO)
     {
+        log_info(logger, "PID: <%d> - RESIZE CORRECTO", cde->pid);
         return;
     }
 }
@@ -628,7 +482,7 @@ void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char *reg_
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
 }
 
-void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo,  char *reg_direccion,char *reg_tamanio, char *puntero_archivo, t_cde *cde)
+void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_direccion, char *reg_tamanio, char *puntero_archivo, t_cde *cde)
 {
     interrupcion_fs = 1;
     nombre_archivo_a_enviar = nombre_archivo;
@@ -649,7 +503,7 @@ void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo,  char *reg_di
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
 }
 
-void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo,  char *reg_direccion,char *reg_tamanio, char *puntero_archivo, t_cde *cde)
+void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_direccion, char *reg_tamanio, char *puntero_archivo, t_cde *cde)
 {
     interrupcion_fs = 1;
     nombre_archivo_a_enviar = nombre_archivo;
@@ -685,6 +539,123 @@ void exec_exit(t_cde *cde, motivoFinalizar motivo)
 
 void *obtener_valor(char *origen)
 {
+    if (strcmp(origen, "AX") == 0)
+    {
+        return registros->AX;
+    }
+    if (strcmp(origen, "BX") == 0)
+    {
+        return registros->BX;
+    }
+    if (strcmp(origen, "CX") == 0)
+    {
+        return registros->CX;
+    }
+    if (strcmp(origen, "SI") == 0)
+    {
+        return registros->SI;
+    }
+
+    if (strcmp(origen, "DX") == 0)
+    {
+        return registros->DX;
+    }
+    if (strcmp(origen, "DI") == 0)
+    {
+        return registros->DI;
+    }
+    if (strcmp(origen, "EAX") == 0)
+    {
+        return registros->EAX;
+    }
+    if (strcmp(origen, "EBX") == 0)
+    {
+        return registros->EBX;
+    }
+    if (strcmp(origen, "ECX") == 0)
+    {
+        return registros->ECX;
+    }
+    if (strcmp(origen, "EDX") == 0)
+    {
+        return registros->EDX;
+    }
+    return 0;
+}
+
+uint32_t leer_dato_memoria(uint32_t direccion_logica, int size, int pid)
+{
+    uint32_t dl_del_byte_inicial_dato = direccion_logica;
+    uint32_t dl_del_byte_final_dato = direccion_logica + size - 1;
+    int pagina_del_byte_inicial = calcular_pagina(direccion_logica);
+    int pagina_del_byte_final = calcular_pagina(dl_del_byte_final_dato);
+    uint32_t direccion_fisica;
+
+    if (pagina_del_byte_inicial == pagina_del_byte_final)
+    {
+        // Si el dato cabe en una sola página, se lee directamente.
+        direccion_fisica = traducir_direccion_mmu(direccion_logica);
+        if (direccion_fisica == -1)
+        {
+            log_error(logger, "DIRECCION INCORRECTA");
+            // interrupcion_exit = 1;
+            return -1;
+        }
+        return leer_memoria(direccion_fisica, size, pid);
+    }
+    else
+    {
+        // Si el dato cruza el límite de la página, se divide la lectura.
+        uint32_t dl_byte_final_pagina = (pagina_del_byte_inicial + 1) * tamanio_pagina - 1;
+        int cant_bytes = dl_byte_final_pagina - dl_del_byte_inicial_dato + 1;
+
+        // Leer la primera parte del dato que cabe en la página actual.
+        direccion_fisica = traducir_direccion_mmu(dl_del_byte_inicial_dato);
+        if (direccion_fisica == -1)
+        {
+            log_error(logger, "DIRECCION INCORRECTA");
+            // interrupcion_exit = 1;
+            return -1;
+        }
+        uint32_t valor = leer_memoria(direccion_fisica, cant_bytes, pid);
+        // Llamada recursiva para leer el resto del dato en la siguiente página.
+        // Nota: se usar (char*) por una cuestion aritmetica de punteros, para sumar de a bytes
+        return valor + leer_dato_memoria(dl_byte_final_pagina + 1, size - cant_bytes, pid); // Ejemplo de como va leyendo: 0-1023 | 1024-2047 | 2048-3071
+    }
+}
+
+uint32_t leer_memoria(uint32_t direccion_fisica, int size, int pid)
+{
+
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_LECTURA);
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer, pid);
+    agregar_buffer_para_enterosUint32(buffer, size);
+    agregar_buffer_para_enterosUint32(buffer, INTEGER);
+    enviar_buffer(buffer, socket_memoria);
+    op_code lectura_memoria = recibir_op_code(socket_memoria);
+    uint32_t valor;
+    if (lectura_memoria == OK)
+    {
+        tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
+        valor = leer_buffer_enteroUint32(buffer_valor);
+        destruir_buffer(buffer_valor);
+        log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%d>", pid, direccion_fisica, valor);
+        return valor;
+    }
+    else
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+        return -1;
+    }
+}
+
+// FUNCIONES PARA ESCRIBIR
+
+uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, int pid)
+{
     uint32_t dl_del_byte_inicial_dato = direccion_logica;
     uint32_t dl_del_byte_final_dato = direccion_logica + size - 1;
     int pagina_del_byte_inicial = calcular_pagina(direccion_logica);
@@ -719,7 +690,7 @@ void *obtener_valor(char *origen)
         escribir_memoria(direccion_fisica, cant_bytes, dato, pid);
         // Llamada recursiva para escribir el resto del dato en la siguiente página.
         // Nota: se usar (char*) por una cuestion aritmetica de punteros, para sumar de a bytes
-        escribir_dato_memoria(dl_byte_final_pagina + 1, (char *)dato + cant_bytes, size - cant_bytes, pid);
+        escribir_dato_memoria(dl_byte_final_pagina + 1, dato + cant_bytes, size - cant_bytes, pid);
     }
 
     return direccion_fisica;
@@ -740,7 +711,7 @@ void escribir_memoria(uint32_t direccion_fisica, int size, void *dato, int pid)
     op_code escritura_memoria = recibir_op_code(socket_memoria);
     if (escritura_memoria == OK)
     {
-        log_info(logger, "PID: <%d> - escritura correcta en memoria", pid);
+        log_info(logger, "PID: <%d> - Escritura correcta en memoria", pid);
     }
     else
     {

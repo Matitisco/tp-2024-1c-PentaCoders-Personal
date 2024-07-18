@@ -455,8 +455,12 @@ void levantar_CPU_Dispatch()
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu);
+			sem_post(sem_finalizar_proceso);
 			finalizar_proceso(cde_interrumpido->pid, OUT_OF_MEMORY_END);
 			sem_post(b_largo_plazo_exit);
+			sem_post(b_reanudar_largo_plazo);
+			sem_post(b_reanudar_corto_plazo);
+
 			break;
 
 		default:

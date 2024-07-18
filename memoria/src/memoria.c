@@ -1,6 +1,5 @@
 
 #include "../include/memoria.h"
-#include "../include/espacio_usuario.h"
 
 pthread_t hiloCpu;
 pthread_t hiloKernel;
@@ -16,7 +15,7 @@ int cliente_kernel;
 int dispositivo_io;
 int CLIENTE_ESPACIO_USUARIO;
 int pid_a_buscar_o_eliminar;
-
+int cant_marcos;
 t_list *lista_contextos;
 t_list *lista_instrucciones;
 t_list *lista_global_tablas;
@@ -278,7 +277,7 @@ void *acceso_a_espacio_usuario_cpu()
         t_write_memoria *escribir = leer_t_write_memoria_buffer(buffer);
         int resultado = escribir_espacio_usuario(escribir->direccion_fisica, escribir->stream, escribir->size, logger, escribir->pid);
 
-        char* valor_string = (char *)escribir->stream;
+        char *valor_string = (char *)escribir->stream;
         for (size_t i = 0; i < escribir->size; i++)
         {
             printf("%c", valor_string[i]);
@@ -342,13 +341,14 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
     if (tipo_dato == INTEGER)
     {
         valor_a_escribir = leer_buffer_enteroUint32(buffer);
+        log_info(logger, "VALOR A ESCRIBIR %d", valor_a_escribir);
         resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio, logger, pid_ejecutando);
     }
 
     else if (tipo_dato == STRING)
     {
         valor_string = leer_buffer_string(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, logger,pid_ejecutando);
+        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, logger, pid_ejecutando);
     }
 
     if (resultado != -1)
@@ -377,7 +377,8 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
     char *valor_char = string_new();
     int valor_int;
-
+    uint32_t valor32;
+    uint8_t valor8;
     if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
@@ -390,12 +391,19 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
         }
         else if (tipo_dato == INTEGER)
         {
-            valor_int = *(int *)valor_leido;
-            agregar_buffer_para_enterosUint32(buffer, valor_leido);
-            log_info(logger, "SE LEYO EL VALOR ENTERO: %d", valor_int);
+            if (tamanio == 4)
+            {
+                valor32 = *(uint32_t *)valor_leido;
+                agregar_buffer_para_enterosUint32(buffer, valor32);
+                log_info(logger, "SE LEYO EL VALOR DE 4 bytes: %d", valor32);
+            }
+            else if (tamanio == 1)
+            {
+                valor8 = *(uint8_t *)valor_leido;
+                agregar_buffer_para_enterosUint32(buffer, valor8);
+                log_info(logger, "SE LEYO EL VALOR de 1 byte: %d", valor8);
+            }
         }
-
-        // log_info(logger, "SE LEYO EL VALOR : %d", valor_leido);
 
         enviar_buffer(buffer, cliente_solicitante);
         destruir_buffer(buffer);
@@ -406,117 +414,6 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     }
 }
 
-/* void escritura(tipo_buffer *buffer, int cliente_solicitante)
-{
-    uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer);
-    uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer);
-    tipoDato tipo_dato = leer_buffer_enteroUint32(buffer);
-
-    uint32_t valor_a_escribir_32;
-    uint8_t valor_a_escribir_8;
-    uint32_t tamanio_32;
-    uint8_t tamanio_8;
-    void *resultado;
-    char *valor_string = string_new();
-
-    if (tipo_dato == UINT32_T)
-    {
-        tamanio_32 = leer_buffer_enteroUint32(buffer);
-        valor_a_escribir_32 = leer_buffer_enteroUint32(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir_32, tamanio_32, valores_config, logger);
-    }
-    else if (tipo_dato == UINT8_T)
-    {
-        tamanio_8 = leer_buffer_enteroUint8(buffer);
-        valor_a_escribir_8 = leer_buffer_enteroUint8(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir_8, tamanio_8, valores_config, logger);
-    }
-    else if (tipo_dato == STRING)
-    {
-        tamanio_32 = leer_buffer_enteroUint32(buffer);
-        valor_string = leer_buffer_string(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio_32, valores_config, logger);
-    }
-
-    if (resultado != -1)
-    {
-        if (tipo_dato == UINT32_T)
-            log_info(logger, "Se escribio el valor: %u", valor_a_escribir_32);
-        else if (tipo_dato == STRING)
-            log_info(logger, "Se escribio el valor: %s", valor_string);
-        else if (tipo_dato == UINT8_T)
-            log_info(logger, "Se escribio el valor: %u", valor_a_escribir_8);
-        enviar_op_code(cliente_solicitante, OK);
-    }
-    else
-    {
-        enviar_op_code(cliente_solicitante, ERROR_PEDIDO_ESCRITURA);
-    }
-}
-
-void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
-{
-    uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer_lectura);
-    uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
-    tipoDato tipo_a_leer = leer_buffer_enteroUint32(buffer_lectura);
-
-    void *valor_leido;
-    uint32_t tamanio_32;
-    uint8_t tamanio_8;
-    int tamanio;
-    if (tipo_a_leer == UINT32_T)
-    {
-        tamanio_32 = leer_buffer_enteroUint32(buffer_lectura); // tiene que ser para uint8 y uint 32
-        valor_leido = leer_espacio_usuario(direccion_fisica, tamanio_32, valores_config, logger);
-    }
-    else if (tipo_a_leer == UINT8_T)
-    {
-        tamanio_8 = leer_buffer_enteroUint8(buffer_lectura);
-        valor_leido = leer_espacio_usuario(direccion_fisica, tamanio_8, valores_config, logger);
-    }
-    else if (tipo_a_leer == STRING)
-    {
-        tamanio = leer_buffer_string(buffer_lectura);
-        valor_leido = leer_espacio_usuario(direccion_fisica, 0, valores_config, logger);
-    }
-
-    char *valor_char = string_new();
-    int valor_int;
-
-    if (valor_leido != NULL)
-    {
-        enviar_op_code(cliente_solicitante, OK);
-        tipo_buffer *buffer = crear_buffer();
-        if (tipo_a_leer == STRING)
-        {
-            valor_char = (char *)valor_leido;
-            agregar_buffer_para_enterosUint32(buffer, STRING);
-            agregar_buffer_para_string(buffer, valor_leido);
-            log_info(logger, "SE LEYO EL VALOR STRING: %s", valor_char);
-        }
-        else if (tipo_a_leer == UINT32_T)
-        {
-            valor_int = *(int *)valor_leido;
-            agregar_buffer_para_enterosUint32(buffer, UINT32_T);
-            agregar_buffer_para_enterosUint32(buffer, valor_leido);
-            log_info(logger, "SE LEYO EL VALOR ENTERO: %d", valor_int);
-        }
-        else if (tipo_a_leer == UINT8_T)
-        {
-            valor_int = *(int *)valor_leido;
-            agregar_buffer_para_enterosUint32(buffer, UINT8_T);
-            agregar_buffer_para_enterosUint8(buffer, valor_leido);
-            log_info(logger, "SE LEYO EL VALOR ENTERO: %d", valor_int);
-        }
-        enviar_buffer(buffer, cliente_solicitante);
-        destruir_buffer(buffer);
-    }
-    else
-    {
-        enviar_op_code(cliente_solicitante, ERROR_PEDIDO_LECTURA);
-    }
-}
- */
 // INICIO DE PROCESO
 
 void iniciar_proceso(int cliente_fd)
@@ -897,10 +794,4 @@ void eliminar_paginas(t_list *paginas, int cantidad_a_eliminar)
         liberar_marco(pagina_a_eliminar->marco);
         free(pagina_a_eliminar); // Liberar la memoria de la página
     }
-}
-int tamanio_proceso(int pid)
-{
-    t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // devuelve mi tabla de proceso
-    int cant_paginas_proceso = list_size(tabla_paginas->paginas_proceso);
-    return cant_paginas_proceso * valores_config->tam_pagina;
 }

@@ -164,6 +164,11 @@ t_cde *leer_cde(tipo_buffer *buffer)
 }
 void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
 {
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);
+    agregar_buffer_para_enterosUint32(buffer, cde->PC);
+    agregar_buffer_para_registros(buffer, cde->registros);
+}
+
 void free_t_write_memoria(t_write_memoria *escribir)
 {
     free(escribir->stream);
@@ -197,6 +202,7 @@ void agregar_t_write_memoria_buffer(tipo_buffer *buffer, t_write_memoria *escrib
 
     buffer->size = nuevo_tamano;
 }
+
 t_write_memoria *leer_t_write_memoria_buffer(tipo_buffer *buffer)
 {
     t_write_memoria *escribir = malloc(sizeof(t_write_memoria));
@@ -210,9 +216,6 @@ t_write_memoria *leer_t_write_memoria_buffer(tipo_buffer *buffer)
     memcpy(&escribir->pid, buffer->stream + buffer->offset, sizeof(int));
     buffer->offset += sizeof(int);
     return escribir;
-}    agregar_buffer_para_enterosUint32(buffer, cde->pid);
-    agregar_buffer_para_enterosUint32(buffer, cde->PC);
-    agregar_buffer_para_registros(buffer, cde->registros);
 }
 
 t_write_memoria *crear_t_write_memoria(int size, void *stream, u_int32_t direccion_fisica, int pid)
@@ -223,54 +226,5 @@ t_write_memoria *crear_t_write_memoria(int size, void *stream, u_int32_t direcci
     memcpy(escribir->stream, stream, size);
     escribir->direccion_fisica = direccion_fisica;
     escribir->pid = pid;
-    return escribir;
-}
-
-void free_t_write_memoria(t_write_memoria *escribir)
-{
-    free(escribir->stream);
-    free(escribir);
-}
-void agregar_t_write_memoria_buffer(tipo_buffer *buffer, t_write_memoria *escribir)
-{
-    if (buffer == NULL || escribir == NULL)
-    {
-        // Manejar el error adecuadamente, por ejemplo, retornar o imprimir un error.
-        return;
-    }
-
-    size_t nuevo_tamano = buffer->size + sizeof(int) + escribir->size + sizeof(u_int32_t) + sizeof(int);
-    void *temp_stream = realloc(buffer->stream, nuevo_tamano);
-    if (temp_stream == NULL)
-    {
-        // Manejar el error de realloc, por ejemplo, liberar recursos o imprimir un error.
-        return;
-    }
-    buffer->stream = temp_stream;
-
-    memcpy(buffer->stream + buffer->offset, &escribir->size, sizeof(int));
-    buffer->offset += sizeof(int);
-    memcpy(buffer->stream + buffer->offset, escribir->stream, escribir->size);
-    buffer->offset += escribir->size;
-    memcpy(buffer->stream + buffer->offset, &escribir->direccion_fisica, sizeof(u_int32_t));
-    buffer->offset += sizeof(u_int32_t);
-    memcpy(buffer->stream + buffer->offset, &escribir->pid, sizeof(int));
-    buffer->offset += sizeof(int);
-
-    buffer->size = nuevo_tamano;
-}
-
-t_write_memoria *leer_t_write_memoria_buffer(tipo_buffer *buffer)
-{
-    t_write_memoria *escribir = malloc(sizeof(t_write_memoria));
-    memcpy(&escribir->size, buffer->stream + buffer->offset, sizeof(int));
-    buffer->offset += sizeof(int);
-    escribir->stream = malloc(escribir->size);
-    memcpy(escribir->stream, buffer->stream + buffer->offset, escribir->size);
-    buffer->offset += escribir->size;
-    memcpy(&escribir->direccion_fisica, buffer->stream + buffer->offset, sizeof(u_int32_t));
-    buffer->offset += sizeof(u_int32_t);
-    memcpy(&escribir->pid, buffer->stream + buffer->offset, sizeof(int));
-    buffer->offset += sizeof(int);
     return escribir;
 }

@@ -14,6 +14,7 @@
 #include "../../utils/include/utils.h"
 #include "../../utils/include/registros.h"
 #include "../../utils/include/instrucciones.h"
+#include "espacio_usuario.h"
 
 typedef struct
 {
@@ -39,14 +40,12 @@ typedef struct
 } t_info_io_memoria;
 
 extern t_log *logger;
+extern config_memoria *valores_config;
+extern pthread_t hiloCPU, hiloKernel, hiloIO;
 
-int socket_cpu;
-int cliente_fd;
-pthread_t hiloCPU, hiloKernel, hiloIO;
+extern t_list *list_tabla_paginas;
 
-t_list *list_tabla_paginas;
-
-int cant_marcos;
+extern int cant_marcos;
 t_pagina *crear_pagina(int marco);
 t_tabla_paginas *buscar_en_lista_global(int pid);
 int obtener_posicion_marco_libre();

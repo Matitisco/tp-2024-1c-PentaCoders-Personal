@@ -12,5 +12,5 @@ int calcular_pagina(int direccion_logica);
 int obtener_frame(int pagina);
 int pedir_frame_memoria(int pid, int nroPagina);
 
-void tlb_iniciar(t_tlb * tlb, char *algoritmo, int cant_entradas, int *TLB_HABILITADA);
+void tlb_iniciar(char *algoritmo, int cant_entradas);
 #endif
