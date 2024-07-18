@@ -25,10 +25,7 @@ int chequear_lectura_escritura_en_espacio_usuario(int direccion_fisica, int pid)
 {
     int marco = direccion_fisica / valores_config->tam_pagina;
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
-    if(tabla == NULL){
-        return -1;
-    }
-    int pagina = consultar_pagina_de_un_marco(tabla, marco);
+    int pagina = consultar_marco_de_una_pagina(tabla, marco);
     return pagina;
 }
 
