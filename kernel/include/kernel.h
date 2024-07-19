@@ -33,6 +33,9 @@ typedef struct
 	char *nombre;
 	sem_t *instancias;
 	colaEstado *cola_bloqueados;
+	//-- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
+	bool bloqueado;//guardo proceso que hizo signal y desbloqueo a un proceso que le faltaba este recurso
+	
 } t_recurso;
 
 typedef struct
@@ -185,5 +188,7 @@ void valorSemaforo(sem_t *semaforo);
 bool existe_recurso2(char *nombre_recurso);
 
 t_recurso *obtener_recurso(char *nombre_recurso);
+
+void imprimir_recursos();
 
 #endif

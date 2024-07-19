@@ -257,3 +257,138 @@ void enviar_cde(int conexion, t_cde *cde)
     enviar_buffer(buffer, socket_cpu_dispatch);
     destruir_buffer(buffer);
 }
+/*
+void enviar_a_cpu_cde(t_cde *cde)
+{
+    log_info(logger, "Proceso a enviar: %d", cde->pid);
+    enviar_cod_enum(socket_cpu_dispatch, EJECUTAR_PROCESO);
+    enviar_cde(socket_cpu_dispatch, cde);
+}
+
+t_pcb *transicion_ready_exec()
+{
+    //sem_wait(contador_readys);
+    t_pcb *proceso = transicion_generica(cola_ready_global,cola_exec_global,"corto");
+    proceso->estado = EXEC;
+    
+    log_info(logger, "PROCESO SACADO DE READY: %d", proceso->cde->pid);
+
+    return proceso;
+}
+
+void inicio_quantum(int quantum)
+{
+    quantum_usable = quantum;
+    log_info(logger, "Inicio de QUANTUM");
+    pthread_create(&hiloQuantum, NULL, hilo_quantum, NULL);
+    pthread_detach(&hiloQuantum);
+    sem_post(sem_quantum);
+}
+
+void *hilo_quantum()
+{
+    while (1)
+    {
+        sem_wait(sem_quantum);
+        sleep_ms(quantum_usable);
+        enviar_cod_enum(socket_cpu_interrupt, PROCESO_INTERRUMPIDO_QUANTUM);
+    }
+}
+
+void *transicion_exec_ready()
+{ // Falta ver el tema del motivo para que sea generico segun el caso
+    while (1)
+    {
+        sem_wait(b_transicion_exec_ready);
+       
+        //desbloquearSiReadysVacios();
+        t_pcb* proceso = transicion_generica(cola_exec_global,cola_ready_global,"corto");
+        proceso->cde = cde_interrumpido;
+        proceso->estado = READY;    // es un puntero y puedo cambiar sus cosas desde aca
+        
+        sem_post(contador_readys);
+        sem_post(b_exec_libre);
+
+
+        log_info(logger, "Se desalojo el proceso %d - Motivo:", proceso->cde->pid);
+    }
+}
+
+void *transicion_exec_blocked() // mover a largo plazo
+{
+    while (1)
+    {
+        sem_wait(b_transicion_exec_blocked);
+        sem_post(b_exec_libre);
+    
+        t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "corto");
+        proceso->cde = cde_interrumpido;
+        if(strcmp(valores_config->algoritmo_planificacion, "FIFO") != 0){
+            temporal_stop(timer);
+            tiempo_transcurrido = temporal_gettime(timer);
+            temporal_destroy(timer);
+        } //INVENTO DE JOACO, ES SOLO PARA PROBAR RECURSOS
+
+        log_info(logger, "Se bloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
+        proceso->estado = BLOCKED;
+    }
+}
+
+_Bool esta_bloqueado_por_falta_de_recurso(t_recurso *recurso){
+    
+    int proceso_en_espera;
+	sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);
+    int instanciaLogger;
+    sem_getvalue(recurso->instancias,&instanciaLogger);
+    //sem_post(b_desbloquear_proceso);
+
+    log_info(logger,"%s tiene %d instancias y %d proceso en espera en %d",recurso->nombre,instanciaLogger,proceso_en_espera);
+
+    if (proceso_en_espera > 0){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
+void *transicion_blocked_ready() // mover a largo plazo
+{
+    while (1)
+    {
+        valorSemaforo(b_transicion_blocked_ready);
+        sem_wait(b_transicion_blocked_ready);
+        
+        t_pcb *proceso;
+        //desbloquearSiReadysVacios();
+                                            //PARA PROBAR MANEJO DE RECURSOS - JOACO
+        if( tiempo_transcurrido < QUANTUM && strcmp(valores_config->algoritmo_planificacion, "FIFO") != 0){    //&& tiempo_transcurrido > 500 ??
+
+            proceso = transicion_generica(cola_bloqueado_global,cola_ready_plus, "corto"); //READY+
+            proceso->estado = READY_PLUS;
+            proceso->quantum = QUANTUM - tiempo_transcurrido;
+            log_info(logger, "El proceso tiene un quantum restante de %d", proceso->quantum);
+        }
+        else{
+            proceso = transicion_generica(cola_bloqueado_global,cola_ready_global, "corto"); //READY+
+            proceso->estado = READY;
+        }
+               
+        if (proceso->recursosAsignados!=NULL)
+        {            
+            //busco en los recursos del SO
+            t_recurso *recurso_bloqueante = list_find(valores_config->recursos, esta_bloqueado_por_falta_de_recurso);
+            if(recurso_bloqueante==NULL){   //Para que en el manejo de recurso no le cambie el cde al proceso bloqueado x recurso
+                proceso->cde = cde_interrumpido;
+            }
+        }else{
+            proceso->cde = cde_interrumpido;
+        }
+        
+        sem_post(contador_readys);
+
+        log_info(logger, "Se desbloqueo el proceso %d y PC %d", proceso->cde->pid, proceso->cde->PC);
+        
+    }
+}
+
+*/
