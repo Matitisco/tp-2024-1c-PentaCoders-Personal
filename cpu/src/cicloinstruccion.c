@@ -253,6 +253,47 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
         log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
     }
 }
+/* 
+void exec_mov_out(char *direccion, char *datos, t_cde *cde)
+{
+    void *valor_a_escribir = obtener_valor(datos);
+    uint32_t direccion_logica = obtener_valor(direccion);
+    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
+    uint32_t tamanio_registro = sizeof(valor_a_escribir);
+    log_info(logger, "TAMAÑO REGISTRO: %d",tamanio_registro);
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer, cde->pid);
+
+    if (tamanio_registro == sizeof(uint8_t))
+    {
+        agregar_buffer_para_enterosUint32(buffer, UINT8_T);
+        agregar_buffer_para_enterosUint8(buffer, tamanio_registro);
+        agregar_buffer_para_enterosUint8(buffer, valor_a_escribir);
+    }
+
+    else if (tamanio_registro == sizeof(uint32_t))
+    {
+        agregar_buffer_para_enterosUint32(buffer, UINT32_T);
+        agregar_buffer_para_enterosUint32(buffer, tamanio_registro);
+        agregar_buffer_para_enterosUint32(buffer, valor_a_escribir);
+    }
+    enviar_buffer(buffer, socket_memoria);
+
+    op_code escritura_memoria = recibir_op_code(socket_memoria);
+    if (escritura_memoria == OK)
+    {
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%u>", cde->pid, direccion_fisica, valor_a_escribir);
+    }
+    else
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+    }
+    destruir_buffer(buffer);
+} */
+
 
 void exec_resize(char *tamanio, t_cde *cde)
 {
@@ -405,6 +446,7 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio_registro);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio_pagina);
     // agregar_buffer_para_enterosUint32(buffer_instruccion_io, paginas_necesarias);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
     // numero_pagina++;
@@ -671,7 +713,7 @@ uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, 
             // interrupcion_exit = 1;
             return -1;
         }
-        escribir_memoria(direccion_fisica, size, dato, pid);
+        escribir_memoria(socket_memoria, direccion_fisica, size, dato, pid);
     }
     else
     {
@@ -687,7 +729,7 @@ uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, 
             // interrupcion_exit = 1;
             return -1;
         }
-        escribir_memoria(direccion_fisica, cant_bytes, dato, pid);
+        escribir_memoria(socket_memoria, direccion_fisica, cant_bytes, dato, pid);
         // Llamada recursiva para escribir el resto del dato en la siguiente página.
         // Nota: se usar (char*) por una cuestion aritmetica de punteros, para sumar de a bytes
         escribir_dato_memoria(dl_byte_final_pagina + 1, dato + cant_bytes, size - cant_bytes, pid);
@@ -695,8 +737,8 @@ uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, 
 
     return direccion_fisica;
 }
-
-void escribir_memoria(uint32_t direccion_fisica, int size, void *dato, int pid)
+/* 
+void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
 { // esta función no implementa chequeo de pagina, simplemente escribe
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
@@ -717,4 +759,4 @@ void escribir_memoria(uint32_t direccion_fisica, int size, void *dato, int pid)
     {
         log_error(logger, "DIRECCION INCORRECTA");
     }
-}
+} */

@@ -31,22 +31,80 @@ void realizar_operacion_gen(t_interfaz *interfaz)
     estoy_libre = 1;
 }
 
+
+void enviar_a_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
+{ // esta función no implementa chequeo de pagina, simplemente escribe
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
+    tipo_buffer *buffer = crear_buffer();
+    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
+    agregar_buffer_para_enterosUint32(buffer, pid);
+    agregar_buffer_para_enterosUint32(buffer, size);
+    agregar_buffer_para_enterosUint32(buffer, STRING);
+    agregar_buffer_para_string(buffer, dato);
+    enviar_buffer(buffer, conexion_memoria);
+    destruir_buffer(buffer);
+    op_code escritura_memoria = recibir_op_code(socket_memoria);
+    if (escritura_memoria == OK)
+    {
+        log_info(logger, "PID: <%d> - Escritura correcta en memoria", pid);
+    }
+    else
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+    }
+}
+
+uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, void *dato, int size, int pid)
+{
+    uint32_t df_del_byte_inicial_dato = direccion_fisica;
+    uint32_t df_del_byte_final_dato = direccion_fisica + size - 1;
+    
+    int calcular_marco(int dir_fisica){ floor(direccion_fisica / tamanio_marco);}
+    
+    int marco_del_byte_inicial = calcular_marco(df_del_byte_inicial_dato);
+    int marco_del_byte_final = calcular_marco(df_del_byte_final_dato);
+   
+    if (marco_del_byte_inicial == marco_del_byte_final)
+    {
+        // Si el dato cabe en una sola página, se escribe directamente.
+        if (direccion_fisica == -1)
+        {
+            log_error(logger, "DIRECCION INCORRECTA");
+            // interrupcion_exit = 1;
+            return -1;
+        }
+        enviar_a_memoria(conexion_memoria ,direccion_fisica, size, dato, pid);
+    }
+    else
+    {
+        // Si el dato cruza el límite de la página, se divide la escritura.
+        // Leo 1 mas por cada iteracion
+        uint32_t df_byte_final_marco = (marco_del_byte_inicial + 1) * tamanio_marco - 1;
+        int cant_bytes = df_byte_final_marco - df_del_byte_inicial_dato + 1;
+
+        // Escribir la primera parte del dato que cabe en la página actual.
+        
+        enviar_a_memoria(conexion_memoria, direccion_fisica, cant_bytes, dato, pid);
+        // Llamada recursiva para escribir el resto del dato en la siguiente página.
+        // Nota: se usar (char*) por una cuestion aritmetica de punteros, para sumar de a bytes
+        escribir_dato_memoria(df_byte_final_marco + 1, tamanio_marco, dato + cant_bytes, size - cant_bytes, pid);
+    }
+
+    return direccion_fisica;
+}
+
+
 void realizar_operacion_stdin(t_interfaz *interfaz)
 {
     sleep_ms(interfaz->tiempo_unidad_trabajo);
     tipo_buffer *buffer_stdin = recibir_buffer(conexion_kernel);
     t_tipoDeInstruccion instruccion = leer_buffer_enteroUint32(buffer_stdin);
     int tamanio = leer_buffer_enteroUint32(buffer_stdin);
+    int tamanio_marco = leer_buffer_enteroUint32(buffer_stdin);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
     int pid = leer_buffer_enteroUint32(buffer_stdin);
-    //int cant_dirs_fisicas = leer_buffer_enteroUint32(buffer_stdin);
-    /*t_list *dirs_fisicas = list_create();
-    for (int i = 0; i < cant_dirs_fisicas; i++)
-    {
-        direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
-        list_add(dirs_fisicas, direccion_fisica);
-        log_info(logger, "DIRECCION FISICAS %d", direccion_fisica);
-    } */
+    
     log_info(logger, "CANT DE BYTES A COPIAR: %d", tamanio);
     destruir_buffer(buffer_stdin);
 
@@ -56,7 +114,9 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
         char *texto_truncado = truncar_texto(texto_ingresado, tamanio);
         log_info(logger, "TEXTO A ENVIAR A MEMORIA : %s", texto_truncado);
 
-        enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
+
+        escribir_dato_memoria(direccion_fisica, tamanio_marco, texto_truncado, tamanio, pid);
+        /* enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
         enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
         tipo_buffer *buffer_stdin = crear_buffer();
         agregar_buffer_para_enterosUint32(buffer_stdin, direccion_fisica);
@@ -65,7 +125,7 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
         agregar_buffer_para_enterosUint32(buffer_stdin, STRING);
         agregar_buffer_para_string(buffer_stdin, texto_truncado);
         enviar_buffer(buffer_stdin, conexion_memoria);
-        destruir_buffer(buffer_stdin);
+        destruir_buffer(buffer_stdin); 
 
         op_code codigo_memoria = recibir_op_code(conexion_memoria);
         if (codigo_memoria == OK)
@@ -75,7 +135,7 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
         else if (codigo_memoria == ERROR_PEDIDO_ESCRITURA)
         {
             log_error(logger, "PID: <%d> - ERROR Operacion: <IO_STDIN_READ>", pid);
-        }
+        }*/
 
         /* for (int i = 0; i < cant_dirs_fisicas; i++)
         {
