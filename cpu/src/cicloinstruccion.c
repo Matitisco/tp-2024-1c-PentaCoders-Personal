@@ -1,5 +1,6 @@
 #include "../include/cicloinstruccion.h"
 
+
 t_registros *registros;
 
 // INSTRUCCIONES DE REGISTROS
@@ -243,7 +244,6 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
-
     void *reg_valor = obtener_valor(datos);
     uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, 1, cde->pid);
@@ -253,6 +253,7 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
         log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
     }
 }
+
 /* 
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
@@ -580,48 +581,28 @@ void exec_exit(t_cde *cde, motivoFinalizar motivo)
 
 void *obtener_valor(char *origen)
 {
-    if (strcmp(origen, "AX") == 0)
-    {
+    if (strcmp(origen, "AX") == 0) {
         return registros->AX;
-    }
-    if (strcmp(origen, "BX") == 0)
-    {
+    } else if (strcmp(origen, "BX") == 0) {
         return registros->BX;
-    }
-    if (strcmp(origen, "CX") == 0)
-    {
+    } else if (strcmp(origen, "CX") == 0) {
         return registros->CX;
-    }
-    if (strcmp(origen, "SI") == 0)
-    {
-        return registros->SI;
-    }
-
-    if (strcmp(origen, "DX") == 0)
-    {
+    } else if (strcmp(origen, "DX") == 0) {
         return registros->DX;
-    }
-    if (strcmp(origen, "DI") == 0)
-    {
+    } else if (strcmp(origen, "SI") == 0) {
+        return registros->SI;
+    } else if (strcmp(origen, "DI") == 0) {
         return registros->DI;
-    }
-    if (strcmp(origen, "EAX") == 0)
-    {
+    } else if (strcmp(origen, "EAX") == 0) {
         return registros->EAX;
-    }
-    if (strcmp(origen, "EBX") == 0)
-    {
+    } else if (strcmp(origen, "EBX") == 0) {
         return registros->EBX;
-    }
-    if (strcmp(origen, "ECX") == 0)
-    {
+    } else if (strcmp(origen, "ECX") == 0) {
         return registros->ECX;
-    }
-    if (strcmp(origen, "EDX") == 0)
-    {
+    } else if (strcmp(origen, "EDX") == 0) {
         return registros->EDX;
     }
-    return 0;
+    return NULL;
 }
 
 uint32_t leer_dato_memoria(uint32_t direccion_logica, int size, int pid)
@@ -736,7 +717,7 @@ uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, 
 
     return direccion_fisica;
 }
-/* 
+/*
 void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
 { // esta función no implementa chequeo de pagina, simplemente escribe
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
@@ -758,4 +739,5 @@ void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, v
     {
         log_error(logger, "DIRECCION INCORRECTA");
     }
-} */
+} 
+*/

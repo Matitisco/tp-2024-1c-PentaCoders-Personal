@@ -54,10 +54,11 @@ int chequear_lectura_escritura_en_espacio_usuario(int direccion_fisica, int pid)
 {
     int marco = direccion_fisica / valores_config->tam_pagina;
     t_tabla_paginas *tabla = buscar_en_lista_global(pid);
-    if(tabla == NULL){
+    if (tabla == NULL)
+    {
         return -1;
     }
-    int pagina = consultar_pagina_de_un_marco(tabla, marco);
+    int pagina = consultar_marco_de_una_pagina(tabla, marco);
     return pagina;
 }
 
@@ -119,8 +120,9 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
     if (pagina != -1)
     {
         log_info(logger, "Se accedio al espacio de lectura del proceso");
+
         void *valor = malloc(tamanio);
-        memcpy(valor, espacio_usuario + direccion_fisica, tamanio);         //<--- La funcion es esto, lo demas son chequeos
+        memcpy(valor, espacio_usuario + direccion_fisica, tamanio); //<--- La funcion es esto, lo demas son chequeos
         return valor;
     }
     else
@@ -134,8 +136,109 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
 void crear_espacio_usuario(int tam_memoria, t_log *logger)
 {
     espacio_usuario = malloc(tam_memoria);
+    memset(espacio_usuario, ' ', tam_memoria);
     if (espacio_usuario == NULL)
     {
         log_error(logger, "ERROR ESPACIO USUARIO");
+    }
+}
+
+int contarDigitos(int numero)
+{
+    if (numero == 0)
+    {
+        return 1; // Caso especial para el número 0
+    }
+    return (int)log10(numero) + 1; // Usa logaritmo base 10 y suma 1
+}
+void insertarStringEnPosicion(char *destino, const char *fuente, int posicion)
+{
+    int longitudFuente = strlen(fuente);
+    memcpy(destino + posicion, fuente, longitudFuente);
+}
+
+int imprimir_linea_guiones(int tam_memoria, int tam_pagina)
+{
+    int cant_marcos = tam_memoria / tam_pagina;
+
+    int tamanio_celda_marco = strlen(" Marco ");
+    int digitos = contarDigitos(cant_marcos - 1);
+    if (digitos > tamanio_celda_marco)
+    {
+        tamanio_celda_marco = digitos;
+    }
+
+    int longitud_ocupado = strlen(" OCUPADO ") + 2;
+    int longitud_contenido = tam_pagina + 1;
+
+    int longitud_total = tamanio_celda_marco + 1 + longitud_ocupado + longitud_contenido;
+
+    char *linea_guiones = malloc(longitud_total + 1);
+
+    memset(linea_guiones, '-', longitud_total);
+    linea_guiones[longitud_total] = '\0';
+
+    printf_yellow("%s", linea_guiones);
+    free(linea_guiones);
+    return longitud_total;
+}
+
+void imprimir_espacio_usuario(void *espacio_usuario, int tam_memoria, int tam_pagina, t_bit_map *array_bitmap)
+{
+    printf_yellow("     ESPACIO DE USUARIO");
+    int longitud_total = imprimir_linea_guiones(tam_memoria, tam_pagina);
+
+    if (tam_pagina > 11)
+    {
+        char *celda_contanido = malloc(tam_pagina+1);
+        celda_contanido[tam_pagina] = '\0';
+        memset(celda_contanido, ' ', tam_pagina);
+        insertarStringEnPosicion(celda_contanido, " CONTENIDO ", 0);
+        printf_yellow("| Marco | OCUPADO |%s|",celda_contanido);
+    }
+    else
+    {
+        printf_yellow("| Marco | OCUPADO | CONTENIDO |");
+    }
+    imprimir_linea_guiones(tam_memoria, tam_pagina);
+    int cant_marcos = tam_memoria / tam_pagina;
+
+    int tamanio_celda_marco = strlen(" Marco ");
+    int digitos = contarDigitos(cant_marcos - 1);
+    if (digitos > tamanio_celda_marco)
+    {
+        tamanio_celda_marco = digitos;
+    }
+
+    for (int i = 0; i < cant_marcos; ++i)
+    {
+        char *celda_marco = malloc(tamanio_celda_marco + 1);
+
+        memset(celda_marco, ' ', tamanio_celda_marco); // Llenar con espacios
+        celda_marco[tamanio_celda_marco] = '\0';       // Terminador nulo
+
+        char *contenido_marco = malloc(tam_pagina + 1);
+        contenido_marco[tam_pagina] = '\0';
+        memcpy(contenido_marco, (char *)espacio_usuario + i * tam_pagina, tam_pagina);
+
+        char *nro_marco = malloc(digitos + 1);
+        sprintf(nro_marco, "%d", i);
+        insertarStringEnPosicion(celda_marco, nro_marco, 2);
+
+        printf("\033[93m|%s|    %d    |", celda_marco, array_bitmap[i].bit_ocupado);
+        for (int a = 0; a < tam_pagina; a++) // imprimo uno a uno los bytes ese marco, pero como caracter
+        {
+            char caracter;
+            memcpy(&caracter, (char *)espacio_usuario + i * tam_pagina + a, 1);
+            printf("%c", caracter);
+        }
+        printf("|");
+        printf("\033[0m\n"); // Resetear color
+        // printf_yellow("|%s|    %d    |%s|", celda_marco, array_bitmap[i].bit_ocupado, contenido_marco);
+        imprimir_linea_guiones(tam_memoria, tam_pagina);
+
+        free(contenido_marco);
+        free(nro_marco);
+        free(celda_marco);
     }
 }
