@@ -1,5 +1,6 @@
 #include "../include/cicloinstruccion.h"
 
+
 t_registros *registros;
 
 // INSTRUCCIONES DE REGISTROS
@@ -243,14 +244,23 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
-
-    void *reg_valor = obtener_valor(datos);
+    RegistroValor reg_valor = obtener_registro(datos);
     uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, sizeof(reg_valor), cde->pid);
+    printf("TAMANIO: %d\n", reg_valor.size);
+
+    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, reg_valor.valor, reg_valor.size, cde->pid);
 
     if (direccion_fisica != 1)
-    {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
+    {   
+        if (reg_valor.size == 1)
+        {
+            uint8_t valor_casteado = *(uint8_t*)reg_valor.valor;
+            log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor_casteado);
+        }
+        else if(reg_valor.size == 4){
+            uint32_t valor_casteado = *(uint32_t*)reg_valor.valor;
+            log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor_casteado);
+        }
     }
 }
 
@@ -539,48 +549,68 @@ void exec_exit(t_cde *cde, motivoFinalizar motivo)
 
 void *obtener_valor(char *origen)
 {
-    if (strcmp(origen, "AX") == 0)
-    {
+    if (strcmp(origen, "AX") == 0) {
         return registros->AX;
-    }
-    if (strcmp(origen, "BX") == 0)
-    {
+    } else if (strcmp(origen, "BX") == 0) {
         return registros->BX;
-    }
-    if (strcmp(origen, "CX") == 0)
-    {
+    } else if (strcmp(origen, "CX") == 0) {
         return registros->CX;
-    }
-    if (strcmp(origen, "SI") == 0)
-    {
-        return registros->SI;
-    }
-
-    if (strcmp(origen, "DX") == 0)
-    {
+    } else if (strcmp(origen, "DX") == 0) {
         return registros->DX;
-    }
-    if (strcmp(origen, "DI") == 0)
-    {
+    } else if (strcmp(origen, "SI") == 0) {
+        return registros->SI;
+    } else if (strcmp(origen, "DI") == 0) {
         return registros->DI;
-    }
-    if (strcmp(origen, "EAX") == 0)
-    {
+    } else if (strcmp(origen, "EAX") == 0) {
         return registros->EAX;
-    }
-    if (strcmp(origen, "EBX") == 0)
-    {
+    } else if (strcmp(origen, "EBX") == 0) {
         return registros->EBX;
-    }
-    if (strcmp(origen, "ECX") == 0)
-    {
+    } else if (strcmp(origen, "ECX") == 0) {
         return registros->ECX;
-    }
-    if (strcmp(origen, "EDX") == 0)
-    {
+    } else if (strcmp(origen, "EDX") == 0) {
         return registros->EDX;
     }
-    return 0;
+    return NULL;
+}
+
+RegistroValor obtener_registro(char *origen) {
+    RegistroValor reg;
+    if (strcmp(origen, "AX") == 0) {
+        reg.valor = &registros->AX;
+        reg.size = sizeof(registros->AX);
+    } else if (strcmp(origen, "BX") == 0) {
+        reg.valor = &registros->BX;
+        reg.size = sizeof(registros->BX);
+    } else if (strcmp(origen, "CX") == 0) {
+        reg.valor = &registros->CX;
+        reg.size = sizeof(registros->CX);
+    } else if (strcmp(origen, "DX") == 0) {
+        reg.valor = &registros->DX;
+        reg.size = sizeof(registros->DX);
+    } else if (strcmp(origen, "SI") == 0) {
+        reg.valor = &registros->SI;
+        reg.size = sizeof(registros->SI);
+    } else if (strcmp(origen, "DI") == 0) {
+        reg.valor = &registros->DI;
+        reg.size = sizeof(registros->DI);
+    } else if (strcmp(origen, "EAX") == 0) {
+        reg.valor = &registros->EAX;
+        reg.size = sizeof(registros->EAX);
+    } else if (strcmp(origen, "EBX") == 0) {
+        reg.valor = &registros->EBX;
+        reg.size = sizeof(registros->EBX);
+    } else if (strcmp(origen, "ECX") == 0) {
+        reg.valor = &registros->ECX;
+        reg.size = sizeof(registros->ECX);
+    } else if (strcmp(origen, "EDX") == 0) {
+        reg.valor = &registros->EDX;
+        reg.size = sizeof(registros->EDX);
+    } else {
+        // Caso en que no se encuentra el registro
+        reg.valor = NULL;
+        reg.size = 0;
+    }
+    return reg;
 }
 
 uint32_t leer_dato_memoria(uint32_t direccion_logica, int size, int pid)

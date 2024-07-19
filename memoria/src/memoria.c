@@ -1,4 +1,3 @@
-
 #include "../include/memoria.h"
 
 pthread_t hiloCpu;
@@ -71,6 +70,8 @@ void iniciar_memoria()
     lista_instrucciones = list_create();
 
     crearHilos();
+
+
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
@@ -212,7 +213,7 @@ void *recibirCPU()
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
             imprimir_tabla_de_paginas_proceso(tabla_actual);
-            imprimir_estado_marcos();
+            imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
 
             break;
         case PEDIDO_FRAME:
@@ -276,13 +277,14 @@ void *acceso_a_espacio_usuario_cpu()
         tipo_buffer *buffer = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
         t_write_memoria *escribir = leer_t_write_memoria_buffer(buffer);
         int resultado = escribir_espacio_usuario(escribir->direccion_fisica, escribir->stream, escribir->size, logger, escribir->pid);
-
+        /* esto es para imprimir como char lo escrito
         char *valor_string = (char *)escribir->stream;
         for (size_t i = 0; i < escribir->size; i++)
         {
             printf("%c", valor_string[i]);
         }
         printf("\n");
+        */
         if (resultado != -1)
         {
             enviar_op_code(CLIENTE_ESPACIO_USUARIO, OK);
@@ -610,7 +612,7 @@ void eliminar_tabla_paginas(uint32_t pid)
 
     // Elimina todas las páginas y libera su memoria
     list_destroy_and_destroy_elements(tabla_paginas->paginas_proceso, (void *)destruir_pagina);
-    imprimir_estado_marcos();
+    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     log_info(logger, "PID: <%d> - Tamaño: <%d> ", pid, cant_paginas);
 }
 

@@ -25,8 +25,13 @@ void exec_exit(t_cde *cde, motivoFinalizar motivo);
 void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo,  char *reg_direccion,char *reg_tamanio, char *puntero_archivo, t_cde *cde);
 
 // AUXILIARES
+typedef struct {
+    void* valor;
+    int size;
+} RegistroValor;
 
 void* obtener_valor(char *origen);
+RegistroValor obtener_registro(char *origen);
 
 void escribir_memoria(uint32_t direccion_fisica, int size, void* dato ,int pid);
 uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, int pid);
