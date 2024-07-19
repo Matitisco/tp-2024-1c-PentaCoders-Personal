@@ -350,7 +350,7 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
     else if (tipo_dato == STRING)
     {
         valor_string = leer_buffer_string(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, logger, pid_ejecutando);
+        resultado = escribir_espacio_usuario(direccion_fisica, valor_string, tamanio, logger, pid_ejecutando);
     }
 
     if (resultado != -1)
@@ -657,19 +657,6 @@ int obtener_posicion_marco_libre()
         if (array_bitmap[i].bit_ocupado == 0)
         {
             return i;
-        }
-    }
-    return -1;
-}
-
-int consultar_pagina_de_un_marco(t_tabla_paginas *tabla, int marco)
-{
-    for (int i = 0; i < list_size(tabla->paginas_proceso); i++)
-    {
-        t_pagina *pagina = list_get(tabla->paginas_proceso, i);
-        if (pagina->marco == marco)
-        {
-            return 1;
         }
     }
     return -1;

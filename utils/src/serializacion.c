@@ -203,6 +203,31 @@ void agregar_t_write_memoria_buffer(tipo_buffer *buffer, t_write_memoria *escrib
     buffer->size = nuevo_tamano;
 }
 
+
+void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
+{ // esta función no implementa chequeo de pagina, simplemente escribe
+    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
+    tipo_buffer *buffer = crear_buffer();
+
+    t_write_memoria *escribir = crear_t_write_memoria(size, dato, direccion_fisica, pid);
+    agregar_t_write_memoria_buffer(buffer, escribir);
+
+    enviar_buffer(buffer, socket_memoria);
+    free_t_write_memoria(escribir);
+    destruir_buffer(buffer);
+    op_code escritura_memoria = recibir_op_code(socket_memoria);
+    if (escritura_memoria == OK)
+    {
+        log_info(logger, "PID: <%d> - Escritura correcta en memoria", pid);
+    }
+    else
+    {
+        log_error(logger, "DIRECCION INCORRECTA");
+    }
+}
+
+
 t_write_memoria *leer_t_write_memoria_buffer(tipo_buffer *buffer)
 {
     t_write_memoria *escribir = malloc(sizeof(t_write_memoria));

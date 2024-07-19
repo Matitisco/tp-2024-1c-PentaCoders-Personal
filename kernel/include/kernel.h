@@ -33,6 +33,9 @@ typedef struct
 	char *nombre;
 	sem_t *instancias;
 	colaEstado *cola_bloqueados;
+	//-- LOGICA EXTRA, MALINTERPRETE EL ENUNCIADO --
+	bool bloqueado;//guardo proceso que hizo signal y desbloqueo a un proceso que le faltaba este recurso
+	
 } t_recurso;
 
 typedef struct
@@ -165,7 +168,7 @@ _Bool interfaz_esta_en_lista(void *ptr);
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion);
 _Bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz);
 t_cde *iniciar_cde(char *PATH);
-void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, t_infoIO *io, int pid);
+void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int tamanio_marco, int dir_fisica, t_infoIO *io, int pid);
 void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica,t_infoIO* io, int pid);
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid);
 void atender_interrupciones();
@@ -185,5 +188,7 @@ void valorSemaforo(sem_t *semaforo);
 bool existe_recurso2(char *nombre_recurso);
 
 t_recurso *obtener_recurso(char *nombre_recurso);
+
+void imprimir_recursos();
 
 #endif
