@@ -363,7 +363,9 @@ void exec_copy_string(char *tamanio, t_cde *cde)
     uint32_t tamanio_string = atoi(tamanio);
     uint32_t direccion_logica_DI = registros->DI;
     uint32_t direccion_fisica_DI = traducir_direccion_mmu(direccion_logica_DI);
-    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
+    
+    escribir_memoria(socket_memoria, direccion_fisica_DI, tamanio_string, valor, cde->pid);
+    /* enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
     tipo_buffer *buffer_DI = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer_DI, direccion_fisica_DI);
@@ -371,7 +373,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
     agregar_buffer_para_enterosUint32(buffer_DI, tamanio_string);
     agregar_buffer_para_enterosUint32(buffer_DI, STRING);
     agregar_buffer_para_string(buffer_DI, valor);
-    enviar_buffer(buffer_DI, socket_memoria);
+    enviar_buffer(buffer_DI, socket_memoria); 
 
     op_code escritura_memoria = recibir_op_code(socket_memoria);
     if (escritura_memoria == OK)
@@ -382,7 +384,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
     {
         log_error(logger, "DIRECCION INCORRECTA");
     }
-    destruir_buffer(buffer_DI);
+    destruir_buffer(buffer_DI);*/
 }
 
 // INSTRUCCIONES MANEJO DE RECURSOS
