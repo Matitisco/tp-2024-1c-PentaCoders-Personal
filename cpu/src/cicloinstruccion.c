@@ -244,24 +244,13 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
-    RegistroValor reg_valor = obtener_registro(datos);
+    void *reg_valor = obtener_valor(datos);
     uint32_t direccion_logica = obtener_valor(direccion);
-
-    printf("TAMANIO: %d\n", reg_valor.size);
-
-    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, reg_valor.valor, reg_valor.size, cde->pid);
+    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, 1, cde->pid);
 
     if (direccion_fisica != 1)
-    {   
-        if (reg_valor.size == 1)
-        {
-            uint8_t valor_casteado = *(uint8_t*)reg_valor.valor;
-            log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor_casteado);
-        }
-        else if(reg_valor.size == 4){
-            uint32_t valor_casteado = *(uint32_t*)reg_valor.valor;
-            log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor_casteado);
-        }
+    {
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
     }
 }
 
@@ -619,46 +608,6 @@ void *obtener_valor(char *origen)
     return NULL;
 }
 
-RegistroValor obtener_registro(char *origen) {
-    RegistroValor reg;
-    if (strcmp(origen, "AX") == 0) {
-        reg.valor = &registros->AX;
-        reg.size = sizeof(registros->AX);
-    } else if (strcmp(origen, "BX") == 0) {
-        reg.valor = &registros->BX;
-        reg.size = sizeof(registros->BX);
-    } else if (strcmp(origen, "CX") == 0) {
-        reg.valor = &registros->CX;
-        reg.size = sizeof(registros->CX);
-    } else if (strcmp(origen, "DX") == 0) {
-        reg.valor = &registros->DX;
-        reg.size = sizeof(registros->DX);
-    } else if (strcmp(origen, "SI") == 0) {
-        reg.valor = &registros->SI;
-        reg.size = sizeof(registros->SI);
-    } else if (strcmp(origen, "DI") == 0) {
-        reg.valor = &registros->DI;
-        reg.size = sizeof(registros->DI);
-    } else if (strcmp(origen, "EAX") == 0) {
-        reg.valor = &registros->EAX;
-        reg.size = sizeof(registros->EAX);
-    } else if (strcmp(origen, "EBX") == 0) {
-        reg.valor = &registros->EBX;
-        reg.size = sizeof(registros->EBX);
-    } else if (strcmp(origen, "ECX") == 0) {
-        reg.valor = &registros->ECX;
-        reg.size = sizeof(registros->ECX);
-    } else if (strcmp(origen, "EDX") == 0) {
-        reg.valor = &registros->EDX;
-        reg.size = sizeof(registros->EDX);
-    } else {
-        // Caso en que no se encuentra el registro
-        reg.valor = NULL;
-        reg.size = 0;
-    }
-    return reg;
-}
-
 uint32_t leer_dato_memoria(uint32_t direccion_logica, int size, int pid)
 {
     uint32_t dl_del_byte_inicial_dato = direccion_logica;
@@ -771,7 +720,7 @@ uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, 
 
     return direccion_fisica;
 }
-
+/*
 void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
 { // esta función no implementa chequeo de pagina, simplemente escribe
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
@@ -794,3 +743,4 @@ void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, v
         log_error(logger, "DIRECCION INCORRECTA");
     }
 } 
+*/
