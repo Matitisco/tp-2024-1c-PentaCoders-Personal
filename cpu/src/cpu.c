@@ -334,6 +334,7 @@ void execute(char **instruccion, t_cde *contextoProceso)
 void check_interrupt()
 {
 	tipo_buffer *buffer_cde = crear_buffer();
+	tipo_buffer *buffer_instruccion_io = crear_buffer();
 	if (interrupcion_rr)
 	{
 		salida_exit = 0;
@@ -407,12 +408,16 @@ void check_interrupt()
 		salida_exit = 0;
 		desalojo_signal = 0;
 		log_info(logger, "INTERRUPCION - SIGNAL");
+		agregar_cde_buffer(buffer_cde, cde_recibido);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	}
 	else if (desalojo_wait)
 	{
 		salida_exit = 0;
 		desalojo_wait = 0;
 		log_info(logger, "INTERRUPCION - WAIT");
+		agregar_cde_buffer(buffer_cde, cde_recibido);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	}
 	else
 	{

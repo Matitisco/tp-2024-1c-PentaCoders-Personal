@@ -396,7 +396,6 @@ void exec_wait(char *recurso, t_cde *cde)
     tipo_buffer *buffer_recurso;
     buffer_recurso = crear_buffer();
     desalojo_wait = 1;
-    agregar_cde_buffer(buffer_recurso, cde);
     agregar_buffer_para_string(buffer_recurso, recurso);
     enviar_buffer(buffer_recurso, socket_kernel_dispatch);
 
@@ -410,10 +409,8 @@ void exec_signal(char *recurso, t_cde *cde)
     tipo_buffer *buffer_recurso;
     buffer_recurso = crear_buffer();
     desalojo_signal = 1;
-    agregar_cde_buffer(buffer_recurso, cde);
     agregar_buffer_para_string(buffer_recurso, recurso);
     enviar_buffer(buffer_recurso, socket_kernel_dispatch);
-
     destruir_buffer(buffer_recurso);
 }
 
