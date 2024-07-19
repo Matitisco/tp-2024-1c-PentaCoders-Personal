@@ -1,4 +1,3 @@
-
 #include "../include/memoria.h"
 
 pthread_t hiloCpu;
@@ -71,6 +70,8 @@ void iniciar_memoria()
     lista_instrucciones = list_create();
 
     crearHilos();
+
+
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
@@ -212,7 +213,7 @@ void *recibirCPU()
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
             imprimir_tabla_de_paginas_proceso(tabla_actual);
-            imprimir_estado_marcos();
+            imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
 
             break;
         case PEDIDO_FRAME:
@@ -276,13 +277,14 @@ void *acceso_a_espacio_usuario_cpu()
         tipo_buffer *buffer = recibir_buffer(CLIENTE_ESPACIO_USUARIO);
         t_write_memoria *escribir = leer_t_write_memoria_buffer(buffer);
         int resultado = escribir_espacio_usuario(escribir->direccion_fisica, escribir->stream, escribir->size, logger, escribir->pid);
-
+        /* esto es para imprimir como char lo escrito
         char *valor_string = (char *)escribir->stream;
         for (size_t i = 0; i < escribir->size; i++)
         {
             printf("%c", valor_string[i]);
         }
         printf("\n");
+        */
         if (resultado != -1)
         {
             enviar_op_code(CLIENTE_ESPACIO_USUARIO, OK);
@@ -348,7 +350,7 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
     else if (tipo_dato == STRING)
     {
         valor_string = leer_buffer_string(buffer);
-        resultado = escribir_espacio_usuario(direccion_fisica, &valor_string, tamanio, logger, pid_ejecutando);
+        resultado = escribir_espacio_usuario(direccion_fisica, valor_string, tamanio, logger, pid_ejecutando);
     }
 
     if (resultado != -1)
@@ -610,7 +612,7 @@ void eliminar_tabla_paginas(uint32_t pid)
 
     // Elimina todas las páginas y libera su memoria
     list_destroy_and_destroy_elements(tabla_paginas->paginas_proceso, (void *)destruir_pagina);
-    imprimir_estado_marcos();
+    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     log_info(logger, "PID: <%d> - Tamaño: <%d> ", pid, cant_paginas);
 }
 
@@ -655,19 +657,6 @@ int obtener_posicion_marco_libre()
         if (array_bitmap[i].bit_ocupado == 0)
         {
             return i;
-        }
-    }
-    return -1;
-}
-
-int consultar_pagina_de_un_marco(t_tabla_paginas *tabla, int marco)
-{
-    for (int i = 0; i < list_size(tabla->paginas_proceso); i++)
-    {
-        t_pagina *pagina = list_get(tabla->paginas_proceso, i);
-        if (pagina->marco == marco)
-        {
-            return 1;
         }
     }
     return -1;
