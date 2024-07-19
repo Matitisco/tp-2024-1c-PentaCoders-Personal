@@ -623,6 +623,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 			list_add(lista_direcciones_fisicas, direccion_fisica);
 		} */
+		int tamanioMarco = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
@@ -635,7 +636,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		else
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz, pid);
+			interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, tamanioMarco, direccion_fisica, informacion_interfaz, pid);
 		}
 		break;
 
@@ -892,7 +893,7 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 	}
 }
 
-void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, t_infoIO *io, int pid)
+void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int tamanio_marco, int dir_fisica, t_infoIO *io, int pid)
 {
 	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
 
@@ -903,6 +904,7 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 	{
 		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
 		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_reg);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_marco);
 		// agregar_buffer_para_enterosUint32(buffer_interfaz, list_size(dirs_fisicas));
 		/* for (int i = 0; i < list_size(dirs_fisicas); i++)
 		{

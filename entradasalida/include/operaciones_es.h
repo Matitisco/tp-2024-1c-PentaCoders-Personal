@@ -16,4 +16,6 @@ void int_a_char_y_concatenar_a_string(int valor, char *cadena);
 char *truncar_texto(char *texto_ingresado, int tamanio);
 void enviar_buffer_stdin_memoria(int direccion_fisica, int pid, int cant_enteros, t_list *lista_enteros);
 void instrucciones_dialfs();
+void enviar_a_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid);
+uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, void *dato, int size, int pid);
 #endif

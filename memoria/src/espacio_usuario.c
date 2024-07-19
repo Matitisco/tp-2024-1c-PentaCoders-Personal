@@ -29,10 +29,10 @@ void imprimir_rango_memoria(void *espacio_usuario, uint32_t inicio, uint32_t fin
 void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio, t_log *logger, int pid)
 {
     log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
-    /*
+
     char* valor_a_escribir_char = valor_a_escribir;
     log_info(logger,"VALOR A ESCRIBIR EU: %s", valor_a_escribir_char);
-    */
+
     // chequeo si el marco esta asignado al proceso
     int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
     if (pagina != -1)
@@ -73,7 +73,34 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
         log_info(logger, "Se accedio al espacio de lectura del proceso");
 
         void *valor = malloc(tamanio);
-        memcpy(valor, espacio_usuario + direccion_fisica, tamanio); //<--- La funcion es esto, lo demas son chequeos
+        if (valor == NULL)
+        {
+            log_error(logger, "Error al reservar memoria");
+            return NULL;
+        }
+
+        size_t bytes_leidos = 0;
+        size_t pagina_size = 16; // Tamaño de la página
+        uint32_t direccion_pagina = direccion_fisica;
+
+        while (bytes_leidos < tamanio)
+        {
+            // Calcular el desplazamiento dentro de la página
+            size_t offset = direccion_pagina % pagina_size;
+            // Calcular el tamaño a copiar en esta iteración
+            size_t bytes_a_copiar = pagina_size - offset;
+            if (bytes_leidos + bytes_a_copiar > tamanio)
+            {
+                bytes_a_copiar = tamanio - bytes_leidos;
+            }
+
+            // Copiar los datos desde la página
+            memcpy(valor + bytes_leidos, espacio_usuario + direccion_pagina, bytes_a_copiar);
+        
+            bytes_leidos += bytes_a_copiar;
+            direccion_pagina += bytes_a_copiar;
+        }
+
         return valor;
     }
     else
@@ -83,6 +110,28 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
 
     return NULL;
 }
+
+/* 
+void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *logger, int pid)
+{
+    log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
+
+    int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
+    if (pagina != -1)
+    {
+        log_info(logger, "Se accedio al espacio de lectura del proceso");
+
+        void *valor = malloc(tamanio);
+        memcpy(valor, espacio_usuario + direccion_fisica, tamanio); //<--- La funcion es esto, lo demas son chequeos
+        return valor;
+    }
+    else
+    {
+        log_error(logger, "Se quiere leer por fuera del espacio del proceso asignado");
+    }
+
+    return NULL;
+} */
 
 void crear_espacio_usuario(int tam_memoria, t_log *logger)
 {
