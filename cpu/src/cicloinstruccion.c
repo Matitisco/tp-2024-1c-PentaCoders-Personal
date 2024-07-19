@@ -246,7 +246,7 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 
     void *reg_valor = obtener_valor(datos);
     uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, sizeof(reg_valor), cde->pid);
+    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, 1, cde->pid);
 
     if (direccion_fisica != 1)
     {
