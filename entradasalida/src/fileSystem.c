@@ -251,11 +251,6 @@ void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion
         int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
         int tamanio_bloque = config_interfaz->block_size;
         int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
-        /*
-        puntero este apunta a una direccion a un byte entonces
-        puntero/tam bloque veo que bloque estoy
-        del bloque me sumo la catidad de bloques a mmover
-        */
         long bloques_a_desplazarse = puntero_archivo / tamanio_bloque;
         long offset = (bloque_inicial + bloques_a_desplazarse) + puntero_archivo;
         FILE *fbloques = fopen(path_arch_bloques, "w+");
@@ -361,7 +356,7 @@ void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, 
     }
     else
     {
-        log_error(logger, "NO hay mas espacio para que el archivo se amplie");
+        log_error(logger, "No hay mas espacio para que el archivo se amplie");
     }
 }
 
@@ -390,9 +385,8 @@ _Bool hay_espacio_disponible(uint32_t cant_bloques_agregar)
 
 _Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial, uint32_t tamanio_archivo_anterior)
 {
-    // Calcula el bloque final actual del archivo
-    uint32_t bloque_final_sin_ampliar = bloque_inicial + (tamanio_archivo_anterior / tamanio_bloque); // 0
-    uint32_t bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;              // 5
+    uint32_t bloque_final_sin_ampliar = bloque_inicial + (tamanio_archivo_anterior / tamanio_bloque);
+    uint32_t bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
     uint32_t contador_libres = 1;
     int i;
 
@@ -489,21 +483,6 @@ int liberarBloque(uint32_t bit_bloque)
     return 0;
 }
 
-int *obtener_bloques_archivo(char *nombre_archivo)
-{
-    t_config *metadata = buscar_meta_data(nombre_archivo);
-    int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
-    int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
-
-    int *bloques = malloc(cantidad_bloques * sizeof(int));
-    for (int i = 0; i < cantidad_bloques; i++)
-    {
-        bloques[i] = config_get_int_value(metadata, "BLOQUE_" + i); // array de bloques
-    }
-
-    return bloques;
-}
-
 void compactar(char *nombre_archivo, int cantidad_bloques_agregar, t_config *metadata)
 {
     desplazar_archivos_y_eliminar_bloques_libres();
@@ -561,13 +540,13 @@ void mover_archivo_al_primer_bloque_libre(int primer_bloque_libre, char *nombre_
     int tam_bloque = config_interfaz->block_size;
     int cantidad_bloques_archivo;
     cantidad_bloques_archivo = obtener_cantidad_bloques_archivo(nombre_archivo);
-    // Mover cada bloque del archivo al final del sistema de archivos
 
     log_info(logger, "ARCHIVO: <%s> - Cantidad de bloques a mover: <%d>", nombre_archivo, cantidad_bloques_archivo);
     nombre_archivo_buscado = nombre_archivo;
     int primer_bloque_para_config = primer_bloque_libre;
     t_archivo_data *info_archivo = list_find(archivos_fs, buscar_arch_por_nombre);
     int primer_bloque = info_archivo->bloque_inicial;
+    info_archivo->bloque_inicial = primer_bloque_libre;
     for (int i = 0; i < cantidad_bloques_archivo; i++)
     {
         int bloque_a_mover = primer_bloque + i; // obtengo los bloques de ese archivo
@@ -608,14 +587,11 @@ int obtener_cantidad_bloques_archivo(char *nombre_archivo)
 
 void desplazar_archivos_y_eliminar_bloques_libres()
 {
-    // 06 00 00 00
-    // 00 06
-    // 0000 0000 0111 1110
-    //              7 E
     int total_bloques = config_interfaz->block_count;
     t_queue *lista_bloques_libres = queue_create();
     for (int i = 0; i < total_bloques; i++)
     {
+        log_info(logger, "BLOQUE EN DONDE ESTOY PARADO ACTUALMENTE %d", i);
         if (!bitarray_test_bit(bitarray, i)) // si estas libre
         {
             queue_push(lista_bloques_libres, i); // meto mi bloque libre
@@ -628,11 +604,11 @@ void desplazar_archivos_y_eliminar_bloques_libres()
                 mover_bloque(i, bloque_a_ser_ocupado);            // mueve el bloque ocupado a un antecesor libre
                 bitarray_set_bit(bitarray, bloque_a_ser_ocupado); // actualiza el bitarrray
                 bitarray_clean_bit(bitarray, i);                  // volvemos a actaulizar el bitarray pero marcando como libres los espacios en donde estaban
-                bloque_inicial_archivo = i;
+                bloque_inicial_archivo = i;                       // VAR GLOBAL
                 actualizar_metadata_archivo(bloque_a_ser_ocupado);
+                i = -1;
             }
         }
-        // Avanzar a la siguiente posición de lectura
     }
 }
 
@@ -640,30 +616,27 @@ void mover_bloque(int origen, int destino)
 {
     int tamano_bloque = config_interfaz->block_size;
     char *contenido_bloque = malloc(tamano_bloque);
-
-    // Leer el contenido del bloque de origen
     memcpy(contenido_bloque, bloquesMapeado + (origen * tamano_bloque), tamano_bloque);
-    // Escribir el contenido en el bloque de destino
     memcpy(bloquesMapeado + (destino * tamano_bloque), contenido_bloque, tamano_bloque);
-
     free(contenido_bloque);
 }
 
-void actualizar_metadata_archivo(int nuevo_bloque_inicial)
+void actualizar_metadata_archivo(int nuevo_bloque_inicial) // de los archivos, NO EL QUE QUEREMOS TRUNCAR
 {
     char *nuevo_bloque_string = string_itoa(nuevo_bloque_inicial);
     t_archivo_data *archivo = list_find(archivos_fs, buscar_por_bloque);
     if (archivo == NULL)
     {
-        log_info(logger, "Puede ser que ya se haya movido, no confirmamos ni negamos");
-        log_info(logger, "No encontramos un archivo con ese bloque inicial(vamos bien)");
+
+        log_info(logger, "No se encontro un archivo con que inicie con el bloque %d", bloque_inicial_archivo);
     }
     else
     {
+        archivo->bloque_inicial = nuevo_bloque_inicial;
         t_config *metadata = buscar_meta_data(archivo->nombre_archivo);
         int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
         int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
-        config_set_value(metadata, "BLOQUE_INICIAL", nuevo_bloque_string);
+        config_set_value(metadata, "BLOQUE_INICIAL", nuevo_bloque_string); // actualizar el de los otros archivos
         config_save(metadata);
     }
 }
