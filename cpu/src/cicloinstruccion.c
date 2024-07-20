@@ -396,27 +396,12 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     uint32_t tamanio_registro = obtener_valor(reg_tamanio);
 
-    /*double paginas_necesarias = ceil((double)tamanio_registro / (double)tamanio_pagina);
-    int numero_pagina = calcular_pagina(direccion_logica);
-    int paginas_totales_necesarias = numero_pagina + paginas_necesarias; */
-
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio_registro);
-    // agregar_buffer_para_enterosUint32(buffer_instruccion_io, paginas_necesarias);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
-    // numero_pagina++;
-
-    /* while (numero_pagina < paginas_totales_necesarias)
-    {
-        numero_pagina++;
-        direccion_logica = numero_pagina * tamanio_pagina;
-        direccion_fisica = traducir_direccion_mmu(direccion_logica);
-
-        agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
-    } */
 
     agregar_buffer_para_string(buffer_instruccion_io, interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
