@@ -7,7 +7,7 @@ pthread_t hiloIO;
 config_memoria *valores_config;
 void *espacio_usuario;
 int socket_io;
-int server_fd;
+int server_memoria;
 int PID_buscado;
 int cliente_cpu;
 int cliente_kernel;
@@ -99,10 +99,9 @@ void inicializar_bitmap(int cant_marcos)
 
 void crearHilos()
 {
-    server_fd = iniciar_servidor(logger, "Memoria", valores_config->ip_memoria, valores_config->puerto_memoria);
-
-    cliente_cpu = esperar_cliente(logger, "Memoria", "CPU", server_fd);
-    cliente_kernel = esperar_cliente(logger, "Memoria", "Kernel", server_fd);
+    server_memoria = iniciar_servidor(logger, "Memoria", valores_config->ip_memoria, valores_config->puerto_memoria);
+    cliente_cpu = esperar_cliente(logger, "Memoria", "CPU", server_memoria);
+    cliente_kernel = esperar_cliente(logger, "Memoria", "Kernel", server_memoria);
 
     pthread_create(&hiloCpu, NULL, recibirCPU, NULL);
     pthread_create(&hiloKernel, NULL, recibirKernel, NULL);
@@ -115,7 +114,7 @@ void *conexiones_io()
 {
     while (1)
     {
-        socket_io = esperar_cliente(logger, "Memoria", "Interfaz IO", server_fd);
+        socket_io = esperar_cliente(logger, "Memoria", "Interfaz IO", server_memoria);
         pthread_create(&hiloIO, NULL, recibir_interfaz_io, NULL);
     }
 }
@@ -126,6 +125,11 @@ void *recibir_interfaz_io()
     while (1)
     {
         op_code codigo_io = recibir_op_code(dispositivo_io);
+        if (codigo_io == -1)
+        {
+            log_error(logger, "Interfaz Desconectada de Memoria");
+            pthread_exit((void *)0);
+        }
         switch (codigo_io)
         {
             sleep_ms(valores_config->retardo_respuesta);
@@ -622,7 +626,7 @@ void destruir_pagina(void *pagina)
 {
     t_pagina *pagina2 = (t_pagina *)pagina;
     // PENDIENTE SOLUCIONAR LIBERADCION DE ESPACIO DE USAUAIRO
-    //memcpy(espacio_usuario + (pagina2->marco * valores_config->tam_pagina - 1), NULL, valores_config->tam_pagina); // nos desplazamos y eliminamos la pagina
+    // memcpy(espacio_usuario + (pagina2->marco * valores_config->tam_pagina - 1), NULL, valores_config->tam_pagina); // nos desplazamos y eliminamos la pagina
     liberar_marco(pagina2->marco);
     free(pagina2);
 }

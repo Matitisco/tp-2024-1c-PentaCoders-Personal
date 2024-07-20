@@ -55,7 +55,7 @@ t_config *buscar_meta_data(char *nombre_archivo);
 int liberarBloque(uint32_t bit);
 _Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial, uint32_t tamanio_archivo_anterior);
 int *obtener_bloques_archivo(char *nombre_archivo);
-void compactar(char *nombre_archivo);
+void compactar(char *nombre_archivo, int cantidad_bloques_agregar, t_config *metadata);
 void mover_archivo_al_final_del_fs(char *nombre_archivo);
 void desplazar_archivos_y_eliminar_bloques_libres();
 void mover_bloque(int origen, int destino);
