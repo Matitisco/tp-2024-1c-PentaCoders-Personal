@@ -150,11 +150,12 @@ bool existe_recurso2(char *nombre_recurso);
 void wait_instancia_recurso(int i);
 
 void wait_instancia_recurso2(t_recurso *recurso);
-_Bool ya_tiene_instancias_del_recurso(void *ptr);
+_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso);
 
 void signal_instancia_recurso(t_recurso *recurso);
 void interfaz_no_conectada(int pid);
 void eliminar_proceso(t_pcb *proceso);
+t_pcb *buscar_pcb_en_colas(int pid);
 t_pcb *buscarProceso(uint32_t pid);
 void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
 
@@ -165,7 +166,7 @@ _Bool interfaz_esta_en_lista(void *ptr);
 void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion);
 _Bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz);
 t_cde *iniciar_cde(char *PATH);
-void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, t_infoIO *io, int pid);
+void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int tamanio_marco, int dir_fisica, t_infoIO *io, int pid);
 void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica,t_infoIO* io, int pid);
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid);
 void atender_interrupciones();

@@ -333,24 +333,22 @@ void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio)
     free(tamanio_a_aplicar);
 }
 
-void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, uint32_t tamanio_a_aplicar, uint32_t tamanio_archivo_anterior, uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial)
+void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, char *tamanio_a_aplicar, uint32_t tamanio_archivo_anterior, uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial)
 {
     if (hay_espacio_disponible(cantidad_bloques_agregar))
     {
         if (espacio_disponible_es_contiguo(cantidad_bloques_agregar, tamanio_bloque, bloque_inicial, tamanio_archivo_anterior))
         {
-            for (int i = 0; i < (tamanio_a_aplicar - tamanio_archivo_anterior) / config_interfaz->block_size; i++)
+            int bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
+            int bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
+            for (int i = bloque_final_sin_ampliar; i <= bloque_final_ampiado; i++)
             {
-                int bloque_final_sin_ampliar = bloque_inicial + tamanio_archivo_anterior / tamanio_bloque;
-                int bloque_final_ampiado = bloque_final_sin_ampliar + cantidad_bloques_agregar;
-                for (int i = bloque_final_sin_ampliar; i < bloque_final_ampiado; i++)
-                {
-                    (bitarray_set_bit(bitarray, i));
-                }
-                msync(bitarray->bitarray, bitarray->size, MS_SYNC);
-                config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
-                config_save(archivo_meta_data_buscado);
+                log_info(logger, "VALOR DEL BITARRAY %d", bitarray_test_bit(bitarray, i));
+                (bitarray_set_bit(bitarray, i));
             }
+            msync(bitarray->bitarray, bitarray->size, MS_SYNC);
+            config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", (tamanio_a_aplicar));
+            config_save(archivo_meta_data_buscado);
         }
 
         else
@@ -404,16 +402,13 @@ _Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t
     uint32_t contador_libres = 0;
     int i;
 
-    for (i = bloque_final_sin_ampliar; i < bloque_final_ampiado; i++)
+    for (i = bloque_final_sin_ampliar; i <= bloque_final_ampiado; i++)
     {
         // Verifica si el bloque actual está libre
+        log_info(logger, "VALOR DEL BITARRAY %d", bitarray_test_bit(bitarray, i));
         if (bitarray_test_bit(bitarray, i) == 0)
         {                      // libre
             contador_libres++; // Incrementa el contador de bloques libres
-        }
-        else
-        {
-            return false; // Si algún bloque no está libre, retorna false
         }
     }
     // Si la cantidad de bloques libres es igual a la cantidad de bloques a agregar
@@ -448,22 +443,20 @@ uint32_t bloque_libre() // esto lo usamos cuando debamos inicializar el meta dat
     uint32_t bloque_libre = -1;
     for (uint32_t i = 0; i < bitarray->size; i++)
     {
-        if (bitarray_test_bit(bitarray, i) == 0)
+        if (bitarray_test_bit(bitarray, i) == 0) // libre
         {
             bitarray_set_bit(bitarray, i);
             bloque_libre = i;
-            i = bitarray->size;
+            return bloque_libre;
         }
     }
-    int sync = msync(bitarray_pointer, bitarray->size, MS_SYNC);
+    int sync = msync(bitarray->bitarray, bitarray->size, MS_SYNC);
     if (sync == -1)
     {
-        {
-            printf("Error syncing bitarray");
-        }
-        log_info(logger, "Acceso a Bitmap - Bloque: %d - Estado: %d", bloque_libre, 1);
-        return bloque_libre;
+        log_error(logger, "Error syncing bitarray");
+        return -1;
     }
+    log_info(logger, "Acceso a Bitmap - Bloque: %d - Estado: %d", bloque_libre, 1);
     return -1;
 }
 
@@ -493,7 +486,7 @@ int liberarBloque(uint32_t bit)
     {
         bitarray_clean_bit(bitarray, bit);
     }
-    int sync = msync(bitarray, bitarray->size, MS_SYNC);
+    int sync = msync(bitarray->bitarray, bitarray->size, MS_SYNC);
     if (sync == -1)
     {
         log_error(logger, "");
@@ -600,7 +593,7 @@ void mover_archivo_al_final_del_fs(char *nombre_archivo)
     // TODO ACUTALIZAR METADA ARCHIVO
     // actualizar_metadata_archivo(nombre_archivo, bloques_archivo);
     // Sincronizar el bitarray y los bloques mapeados con el sistema de archivos
-    msync(bitarray_pointer, bitarray->size, MS_SYNC);
+    msync(bitarray->bitarray, bitarray->size, MS_SYNC);
     msync(bloquesMapeado, total_bloques * tam_bloque, MS_SYNC);
     // Liberar memoria utilizada para los bloques del archivo
     free(bloques_archivo);

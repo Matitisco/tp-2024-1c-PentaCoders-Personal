@@ -1,7 +1,5 @@
 SET AX 10
 SET BX 80
 IO_FS_CREATE FS salida.txt
-IO_FS_CREATE FS cronologico.txt
-IO_FS_DELETE FS salida.txt
-IO_FS_DELETE FS cronologico.txt
+IO_FS_TRUNCATE FS salida.txt BX
 EXIT

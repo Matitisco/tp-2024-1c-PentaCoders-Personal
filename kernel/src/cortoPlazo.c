@@ -203,6 +203,23 @@ void *transicion_blocked_ready()
 
 // AUXILIARES
 
+_Bool esta_bloqueado_por_falta_de_recurso(t_recurso *recurso){
+    
+    int proceso_en_espera;
+	sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);
+    int instanciaLogger;
+    sem_getvalue(recurso->instancias,&instanciaLogger);
+    //sem_post(b_desbloquear_proceso);
+
+    log_info(logger,"%s tiene %d instancias y %d proceso en espera en %d",recurso->nombre,instanciaLogger,proceso_en_espera);
+
+    if (proceso_en_espera > 0){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
 void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo)
 {
     int *valorSem = malloc(sizeof(int));

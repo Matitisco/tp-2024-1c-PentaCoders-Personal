@@ -74,7 +74,7 @@ t_instruccion *crearInstruccion(char *linea);
 _Bool estaElContextoConCiertoPID(t_cde *contexto);
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde *armarCde(tipo_buffer *buffer);
-
+int consultar_pagina_de_un_marco(t_tabla_paginas *tabla, int marco);
 void obtener_y_eliminar_cde(int pid, t_registros *reg);
 bool coincidePID(void *pid);
 void element_destroyer(void *element);

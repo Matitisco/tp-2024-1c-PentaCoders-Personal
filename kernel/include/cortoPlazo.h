@@ -21,6 +21,7 @@ void *transicion_exec_ready();
 void *transicion_exit_largo_plazo();
 void *hilo_quantum();
 
+_Bool esta_bloqueado_por_falta_de_recurso(t_recurso *recurso);
 void enviar_a_cpu_cde(t_cde* cde);
 t_pcb *transicion_ready_exec();
 void inicio_quantum();
