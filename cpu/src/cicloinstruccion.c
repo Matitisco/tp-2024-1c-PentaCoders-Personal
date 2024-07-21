@@ -254,48 +254,6 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
     }
 }
 
-/* 
-void exec_mov_out(char *direccion, char *datos, t_cde *cde)
-{
-    void *valor_a_escribir = obtener_valor(datos);
-    uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-    uint32_t tamanio_registro = sizeof(valor_a_escribir);
-    log_info(logger, "TAMAÑO REGISTRO: %d",tamanio_registro);
-    enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
-    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
-    tipo_buffer *buffer = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
-    agregar_buffer_para_enterosUint32(buffer, cde->pid);
-
-    if (tamanio_registro == sizeof(uint8_t))
-    {
-        agregar_buffer_para_enterosUint32(buffer, UINT8_T);
-        agregar_buffer_para_enterosUint8(buffer, tamanio_registro);
-        agregar_buffer_para_enterosUint8(buffer, valor_a_escribir);
-    }
-
-    else if (tamanio_registro == sizeof(uint32_t))
-    {
-        agregar_buffer_para_enterosUint32(buffer, UINT32_T);
-        agregar_buffer_para_enterosUint32(buffer, tamanio_registro);
-        agregar_buffer_para_enterosUint32(buffer, valor_a_escribir);
-    }
-    enviar_buffer(buffer, socket_memoria);
-
-    op_code escritura_memoria = recibir_op_code(socket_memoria);
-    if (escritura_memoria == OK)
-    {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%u>", cde->pid, direccion_fisica, valor_a_escribir);
-    }
-    else
-    {
-        log_error(logger, "DIRECCION INCORRECTA");
-    }
-    destruir_buffer(buffer);
-} */
-
-
 void exec_resize(char *tamanio, t_cde *cde)
 {
     enviar_op_code(socket_memoria, RESIZE_OP);
@@ -363,29 +321,14 @@ void exec_copy_string(char *tamanio, t_cde *cde)
 
     uint32_t tamanio_string = atoi(tamanio);
     uint32_t direccion_logica_DI = registros->DI;
-    uint32_t direccion_fisica_DI = traducir_direccion_mmu(direccion_logica_DI);
-    
-    escribir_memoria(socket_memoria, direccion_fisica_DI, tamanio_string, valor, cde->pid);
-    /* enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
-    enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
-    tipo_buffer *buffer_DI = crear_buffer();
-    agregar_buffer_para_enterosUint32(buffer_DI, direccion_fisica_DI);
-    agregar_buffer_para_enterosUint32(buffer_DI, cde->pid);
-    agregar_buffer_para_enterosUint32(buffer_DI, tamanio_string);
-    agregar_buffer_para_enterosUint32(buffer_DI, STRING);
-    agregar_buffer_para_string(buffer_DI, valor);
-    enviar_buffer(buffer_DI, socket_memoria); 
+    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica_DI, valor, tamanio_string, cde->pid);
 
-    op_code escritura_memoria = recibir_op_code(socket_memoria);
-    if (escritura_memoria == OK)
+    if (direccion_fisica != 1)
     {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%s>", cde->pid, direccion_fisica_DI, valor);
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%s>", cde->pid, direccion_fisica, valor);
     }
-    else
-    {
-        log_error(logger, "DIRECCION INCORRECTA");
-    }
-    destruir_buffer(buffer_DI);*/
+    free(valor);
+    
 }
 
 // INSTRUCCIONES MANEJO DE RECURSOS

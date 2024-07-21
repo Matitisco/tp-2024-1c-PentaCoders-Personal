@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     free(valores_config->path_instrucciones);
     free(valores_config->puerto_memoria);
     log_destroy(logger);
+    free(escribir_espacio_usuario);
 }
 
 void iniciar_memoria()
@@ -380,7 +381,6 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     tipoDato tipo_dato = leer_buffer_enteroUint32(buffer_lectura);
 
     void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
-    char *valor_char = string_new();
     int valor_int;
     uint32_t valor32;
     uint8_t valor8;
@@ -390,11 +390,12 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
         tipo_buffer *buffer = crear_buffer();
         if (tipo_dato == STRING)
         {
-
-            valor_char = (char *)valor_leido;
-            agregar_buffer_para_string(buffer, valor_leido);
-            log_info(logger, "SE LEYO EL VALOR STRING: %s", valor_char);
-            free(valor_char);
+            char *valor_leido_string = malloc(tamanio + 1);
+            valor_leido_string[tamanio] = '\0';
+            memcpy(valor_leido_string, valor_leido, tamanio);
+            log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_leido_string);
+            agregar_buffer_para_string(buffer, valor_leido_string);
+            free(valor_leido_string);
         }
         else if (tipo_dato == INTEGER)
         {
