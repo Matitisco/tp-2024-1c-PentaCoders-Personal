@@ -524,14 +524,7 @@ t_archivo_data *obtener_ultimo_archivo()
 
 _Bool buscar_arch_por_nombre(t_archivo_data *archivo)
 {
-    if (strcmp(archivo->nombre_archivo, nombre_archivo_buscado) == 0)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+    return strcmp(archivo->nombre_archivo, nombre_archivo_buscado) == 0;
 }
 
 void mover_archivo_al_primer_bloque_libre(int primer_bloque_libre, char *nombre_archivo, int cantidad_bloques_agregar, t_config *metadata)
@@ -544,6 +537,7 @@ void mover_archivo_al_primer_bloque_libre(int primer_bloque_libre, char *nombre_
     log_info(logger, "ARCHIVO: <%s> - Cantidad de bloques a mover: <%d>", nombre_archivo, cantidad_bloques_archivo);
     nombre_archivo_buscado = nombre_archivo;
     int primer_bloque_para_config = primer_bloque_libre;
+    log_info(logger, "PRIMER BLOQUE LIBRE %d", primer_bloque_para_config);
     t_archivo_data *info_archivo = list_find(archivos_fs, buscar_arch_por_nombre);
     int primer_bloque = info_archivo->bloque_inicial;
     info_archivo->bloque_inicial = primer_bloque_libre;
@@ -601,6 +595,7 @@ void desplazar_archivos_y_eliminar_bloques_libres()
             if (!queue_is_empty(lista_bloques_libres)) // si no esta vacia
             {                                          // el primero del bitarray esta libre
                 int bloque_a_ser_ocupado = queue_pop(lista_bloques_libres);
+                log_info(logger, "BLOQUE A SER OCUPADO %d", bloque_a_ser_ocupado);
                 mover_bloque(i, bloque_a_ser_ocupado);            // mueve el bloque ocupado a un antecesor libre
                 bitarray_set_bit(bitarray, bloque_a_ser_ocupado); // actualiza el bitarrray
                 bitarray_clean_bit(bitarray, i);                  // volvemos a actaulizar el bitarray pero marcando como libres los espacios en donde estaban
@@ -632,6 +627,7 @@ void actualizar_metadata_archivo(int nuevo_bloque_inicial) // de los archivos, N
     }
     else
     {
+        log_info(logger, "Se encontro un archivo que arranca en el bloque %d", bloque_inicial_archivo);
         archivo->bloque_inicial = nuevo_bloque_inicial;
         t_config *metadata = buscar_meta_data(archivo->nombre_archivo);
         int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");

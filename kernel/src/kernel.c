@@ -820,10 +820,94 @@ void interfaz_no_conectada(int pid)
 	finalizar_proceso(pid, INVALID_INTERFACE);
 }
 
+/* void interfaz_conectada(t_infoIO *io, t_struct_io *informacion_buffer)
+{
+	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
+	op_code operacion_io = recibir_op_code(io->cliente_io);
+	tipo_buffer *buffer_interfaz = crear_buffer();
+
+	if (operacion_io == ESTOY_LIBRE)
+	{
+		enviar_buffer_interfaz(io, informacion_buffer);
+		operacion_io = recibir_op_code(io->cliente_io);
+		if (operacion_io == CONCLUI_OPERACION)
+		{
+			log_info(logger, "INTERFAZ: <%s> - Operacion Realizada", io->nombre);
+			sem_post(b_transicion_blocked_ready);
+			if (list_is_empty(io->procesos_espera))
+			{
+				log_info(logger, "INTERFAZ: <%s> - Procesos en Espera: <%d>", io->nombre, list_size(io->procesos_espera));
+			}
+			else
+			{
+				t_cde *cde_espera = list_remove(io.procesos_espera, 0);
+				log_info(logger, "INTERFAZ: <%s> - PID: <%d> - Proceso a enviar a la interfaz");
+			}
+		}
+	}
+} */
+
+/* typedef struct
+{
+	t_tipoDeInstruccion instruccion;
+	int unidades_trabajo;
+	int pid;
+	int tamanio_reg;
+	int dir_fisica;
+	int tamanio_marco;
+
+} t_struct_io;
+
+void enviar_buffer_interfaz(t_infoIO *interfaz, t_struct_io *info_buffer)
+{
+	tipo_buffer *buffer_interfaz = crear_buffer();
+	switch (interfaz->tipo_IO)
+	{
+	case GENERICA:
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->instruccion);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->unidades_trabajo);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->pid);
+		break;
+	case STDIN:
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->instruccion);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->tamanio_reg);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->tamanio_marco);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->dir_fisica);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->pid);
+		break;
+	case STDOUT:
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->instruccion);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->tamanio_reg);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->dir_fisica);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->pid);
+		break;
+	case DIALFS:
+		switch (info_buffer->instruccion)
+		{
+		case IO_FS_CREATE:
+			break;
+		case IO_FS_DELETE:
+			break;
+		case IO_FS_READ:
+			break;
+		case IO_FS_TRUNCATE:
+			break;
+		case IO_FS_WRITE:
+			break;
+		}
+		break;
+	default:
+		log_error(logger, "Tipo de Interfaz Desconocida");
+		break;
+	}
+
+	enviar_buffer(buffer_interfaz, interfaz->cliente_io);
+	destruir_buffer(buffer_interfaz);
+} */
+
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid)
 {
 	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-
 	op_code operacion_io = recibir_op_code(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
@@ -860,7 +944,6 @@ void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instr
 void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int tamanio_marco, int dir_fisica, t_infoIO *io, int pid)
 {
 	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-
 	op_code operacion_io = recibir_op_code(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
@@ -900,7 +983,6 @@ void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int ta
 void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, t_infoIO *io, int pid)
 {
 	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-
 	op_code operacion_io = recibir_op_code(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
@@ -950,7 +1032,6 @@ bool existe_recurso2(char *nombre_recurso)
 			return true;
 			break;
 		}
-		// TODO: hacer free para recurso
 	}
 	return false;
 }
@@ -967,7 +1048,6 @@ t_recurso *obtener_recurso(char *nombre_recurso)
 			return recurso;
 			break;
 		}
-		// TODO: hacer free para recurso
 	}
 
 	log_error(logger, "NO se encuentra el recurso");
@@ -975,9 +1055,8 @@ t_recurso *obtener_recurso(char *nombre_recurso)
 	return NULL;
 }
 
-_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso) // void *ptr)
+_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 {
-	// t_recurso *recurso_proceso = (t_recurso *)ptr;
 	if (strcmp(nombre_recurso_recibido, recurso_proceso->nombre) == 0)
 	{
 		return 1;
