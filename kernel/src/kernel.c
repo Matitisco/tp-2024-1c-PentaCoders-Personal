@@ -304,6 +304,7 @@ void levantar_CPU_Dispatch()
 	{
 		op_code cod = recibir_op_code(socket_cpu_dispatch);
 		tipo_buffer *buffer_cpu;
+		tipo_buffer *buffer_cde;
 		log_info(logger, "OPERACION RECIBIDA: <%d>", cod);
 		switch (cod)
 		{
@@ -335,6 +336,7 @@ void levantar_CPU_Dispatch()
 		case FIN_DE_QUANTUM:
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
+			destruir_buffer(buffer_cpu);
 			cde_interrumpido = leer_cde(buffer_cpu);
 			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid);
 			pthread_cancel(hiloQuantum);
@@ -355,19 +357,19 @@ void levantar_CPU_Dispatch()
 				pthread_cancel(hiloQuantum);
 			}
 
-			tipo_buffer *buffer_cde = recibir_buffer(socket_cpu_dispatch); // CDE
+			buffer_cde = recibir_buffer(socket_cpu_dispatch); // CDE
 			cde_interrumpido = leer_cde(buffer_cde);
+
 			destruir_buffer(buffer_cde);
 
 			sem_post(b_transicion_exec_blocked);
 
 			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_cpu);
+			destruir_buffer(buffer_cpu);
 
 			break;
 
 		case WAIT_RECURSO:
-
-			printf("\033[0;33m\n WAIT_RECURSO \n \033[0m");
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
@@ -375,19 +377,18 @@ void levantar_CPU_Dispatch()
 			buffer_cde = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cde);
 
-			// destruir_buffer(buffer_cpu);
-			// destruir_buffer(buffer_cde);
+			destruir_buffer(buffer_cpu);
+			destruir_buffer(buffer_cde);
 
-			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
+			if (existe_recurso2(nombre_recurso_recibido))
 			{
-				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido); // R SO
-				wait_instancia_recurso2(recurso);							   // el SO pierde uno del recurso llamado
+				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
+				wait_instancia_recurso2(recurso);
 				proceso_estado();
 			}
 			else
 			{
-				printf("\033[38;2;255;105;180m \n No existe el recurso: %s a continuacion se muestra en donde esta el proceso: \n \033[0m", nombre_recurso_recibido);
-				proceso_estado();
+				log_error(logger, "WAIT - NO EXISTE EL RECURSO :<%s>", nombre_recurso_recibido);
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
@@ -396,26 +397,24 @@ void levantar_CPU_Dispatch()
 
 		case SIGNAL_RECURSO:
 
-			printf("\033[0;33m\n SIGNAL_RECURSO \n \033[0m");
-
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
 			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
 
 			buffer_cde = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cde);
 
-			// destruir_buffer(buffer_cpu);
+			destruir_buffer(buffer_cpu);
+			destruir_buffer(buffer_cde);
 
-			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
+			if (existe_recurso2(nombre_recurso_recibido))
 			{
-				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido); // recurso del SO
+				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
 				signal_instancia_recurso(recurso);
-				proceso_estado();
 				imprimir_recursos();
 			}
-			else // el recurso no existe
+			else
 			{
-				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
+				log_error(logger, "SIGNAL - NO EXISTE EL RECURSO :<%s>", nombre_recurso_recibido);
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
@@ -430,12 +429,10 @@ void levantar_CPU_Dispatch()
 			sem_post(b_largo_plazo_exit);
 			sem_post(b_reanudar_largo_plazo);
 			sem_post(b_reanudar_corto_plazo);
-
 			break;
 
 		default:
-
-			log_warning(logger, "Operacion - No conozco el codigo enviado por la CPU");
+			log_warning(logger, "OPERACION: <%d> - DESCONOCIDA", cod);
 			break;
 		}
 	}
@@ -1051,7 +1048,7 @@ t_recurso *obtener_recurso(char *nombre_recurso)
 		}
 	}
 
-	log_error(logger, "NO se encuentra el recurso");
+	log_error(logger, "No se encuentra el Recurso: <%s>", nombre_recurso);
 
 	return NULL;
 }

@@ -162,7 +162,6 @@ void finalizar_proceso_success(uint32_t pid, motivoFinalizar motivo)
 
 void eliminar_proceso(t_pcb *proceso)
 {
-    liberar_archivos(proceso);
     liberar_recursos(proceso);
     free(proceso->cde->registros); // se liberan los registros
     proceso->estado = EXIT;
@@ -220,28 +219,6 @@ bool buscar_por_pid(t_pcb *proceso)
     return proceso->cde->pid == pid_a_finalizar;
 }
 
-/*
-t_pcb *buscarProceso(uint32_t pid)
-{
-    t_pcb *pcb_buscada = NULL;
-    colaEstado *colas[] = {cola_new_global, cola_ready_global, cola_bloqueado_global, cola_exec_global, cola_exit_global};
-
-    for (int i = 0; i < 4; i++)
-    {
-        if ((pcb_buscada = buscarPCBEnColaPorPid(pid, colas[i]->estado, colas[i]->nombreEstado)) != NULL)
-        {
-            return pcb_buscada;
-            break;
-        }
-    }
-    if (pcb_buscada == NULL)
-    {
-        printf("No se pudo encontrar ningun PCB asociado al PID %u\n", pid);
-    }
-
-    return pcb_buscada;
-}
-*/
 t_pcb *buscar_pcb_en_colas(int pid)
 {
     pid_a_finalizar = pid;
@@ -281,45 +258,35 @@ char *mostrar_motivo(motivoFinalizar motivo)
 }
 
 void liberar_recursos(t_pcb *proceso)
-{   //TODO
-    
-    int tamanio = list_size(proceso->recursosAsignados);
-    // se le asignan mal los recursos al proceso
-    log_info(logger, "CANTIDAD DE RECURSOS ASIGNADOS QUE TIENE EL PROCESO: %d: %d", proceso->cde->pid, tamanio);
-    for (int i = 0; i < tamanio; i++)
+{
+    log_info(logger, "CANTIDAD DE RECURSOS ASIGNADOS QUE TIENE EL PROCESO: %d: %d", proceso->cde->pid, list_size(proceso->recursosAsignados));
+    for (int i = 0; i < list_size(proceso->recursosAsignados); i++)
     {
-        // liberamos los recursos que tenia el proceso
         t_recurso *recurso_pcb = list_get(proceso->recursosAsignados, i);
         char *nombre_rec = recurso_pcb->nombre;
-        log_info(logger, "RECURSO A LIBERAR DEL PROCESO %d : %s", proceso->cde->pid, nombre_rec);
-        
         int cant_instancias;
         sem_getvalue(recurso_pcb->instancias, &cant_instancias);
 
         log_info(logger, "%d INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO <%d>", cant_instancias, nombre_rec, proceso->cde->pid);
         for (int i = 0; i < cant_instancias; i++)
         {
-        
             sem_wait(recurso_pcb->instancias);
-            //int recursos_SO = cant_recursos_SO(valores_config->recursos);
             int recursos_SO = list_size(valores_config->recursos);
             log_info(logger, "RECURSOS SO: %d", recursos_SO);
             for (int i = 0; i < (recursos_SO); i++)
             {
-                t_recurso *recurso_SO = list_get(valores_config->recursos,i);
+                t_recurso *recurso_SO = list_get(valores_config->recursos, i);
                 if (strcmp(recurso_SO->nombre, nombre_rec) == 0)
                 {
-                    //sem_post(&(recurso_SO->instancias)); //GUARDA ACA ME PUTEA -abort
-                    sem_post(recurso_SO->instancias);//probar con esto
+                    // sem_post(&(recurso_SO->instancias)); //GUARDA ACA ME PUTEA -abort
+                    sem_post(recurso_SO->instancias); // probar con esto
                 }
             }
-        
         }
         free(recurso_pcb->nombre);
         sem_destroy(recurso_pcb->instancias);
     }
     list_destroy(proceso->recursosAsignados);
-    
 }
 int cant_recursos_SO(t_recurso **recursos)
 {
@@ -329,23 +296,6 @@ int cant_recursos_SO(t_recurso **recursos)
         i++;
     }
     return i;
-}
-
-void liberar_archivos(t_pcb *proceso)
-{
-    /*int tamanio=list_size(proceso->archivosAsignados);
-    for (int i = 0; i < tamanio; i++)
-    {
-        tlist_get(proceso->archivosAsignados,i);
-    }
-
-    list_destroy_and_destroy_elements(proceso->archivosAsignados, destroy_archivos);*/
-}
-
-void destroy_archivos(void *element)
-{
-    /*     char *archivo = (char *)element;
-        free(archivo); */
 }
 
 void modificar_grado_multiprogramacion(int valor)
@@ -373,7 +323,6 @@ t_pcb *crear_proceso(char *PATH)
 {
     t_pcb *proceso_nuevo = malloc(sizeof(t_pcb));
     proceso_nuevo->estado = NEW;
-    proceso_nuevo->archivosAsignados = list_create();
     proceso_nuevo->recursosAsignados = list_create();
     proceso_nuevo->cde = iniciar_cde(PATH);
     return proceso_nuevo;
@@ -387,7 +336,7 @@ t_cde *iniciar_cde(char *PATH)
     cde->path = malloc(strlen(PATH) + 1);
     strcpy(cde->path, PATH);
     cde->registros = malloc(sizeof(t_registros));
-    cde->PC = 0; // LA CPU lo va a ir cambiando
+    cde->PC = 0;
     cde->lista_instrucciones = list_create();
     return cde;
 }
