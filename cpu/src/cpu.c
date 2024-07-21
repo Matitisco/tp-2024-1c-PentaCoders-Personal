@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	free(valores_config_cpu);
 	eliminar_tlb();
 	free(registros);
-	liberar_conexion(socket_memoria);
+	liberar_conexion(&socket_memoria);
 }
 
 void iniciar_modulo_cpu()

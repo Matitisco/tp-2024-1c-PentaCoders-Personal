@@ -203,19 +203,23 @@ void *transicion_blocked_ready()
 
 // AUXILIARES
 
-_Bool esta_bloqueado_por_falta_de_recurso(t_recurso *recurso){
-    
+_Bool esta_bloqueado_por_falta_de_recurso(t_recurso *recurso)
+{
+
     int proceso_en_espera;
-	sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);
+    sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);
     int instanciaLogger;
-    sem_getvalue(recurso->instancias,&instanciaLogger);
-    //sem_post(b_desbloquear_proceso);
+    sem_getvalue(recurso->instancias, &instanciaLogger);
+    // sem_post(b_desbloquear_proceso);
 
-    log_info(logger,"%s tiene %d instancias y %d proceso en espera en %d",recurso->nombre,instanciaLogger,proceso_en_espera);
+    log_info(logger, "%s tiene %d instancias y %d proceso en espera en %d", recurso->nombre, instanciaLogger, proceso_en_espera);
 
-    if (proceso_en_espera > 0){
+    if (proceso_en_espera > 0)
+    {
         return 1;
-    }else{
+    }
+    else
+    {
         return 0;
     }
 }

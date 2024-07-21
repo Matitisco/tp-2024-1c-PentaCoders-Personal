@@ -45,15 +45,15 @@ void enviar_a_memoria(int socket_memoria, uint32_t direccion_fisica, int size, v
     }
 }
 
+int calcular_marco(int dir_fisica, int tamanio_marco) { return floor(dir_fisica / tamanio_marco); }
+
 uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, void *dato, int size, int pid)
 {
     uint32_t df_del_byte_inicial_dato = direccion_fisica;
     uint32_t df_del_byte_final_dato = direccion_fisica + size - 1;
 
-    int calcular_marco(int dir_fisica) { floor(direccion_fisica / tamanio_marco); }
-
-    int marco_del_byte_inicial = calcular_marco(df_del_byte_inicial_dato);
-    int marco_del_byte_final = calcular_marco(df_del_byte_final_dato);
+    int marco_del_byte_inicial = calcular_marco(df_del_byte_inicial_dato, tamanio_marco);
+    int marco_del_byte_final = calcular_marco(df_del_byte_final_dato, tamanio_marco);
 
     if (marco_del_byte_inicial == marco_del_byte_final)
     {

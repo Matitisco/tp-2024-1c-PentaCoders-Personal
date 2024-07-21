@@ -19,19 +19,24 @@
 	},
 	"folders": [
 		{
+			"name": "kernel",
 			"path": "kernel"
 		},
 		{
+			"name": "cpu",
 			"path": "cpu"
 		},
 		{
+			"name": "memoria",
 			"path": "memoria"
 		},
 		{
-			"path": "entradasalida"
+			"name": "utils",
+			"path": "utils"
 		},
 		{
-			"path": "utils"
+			"name": "entradasalida",
+			"path": "entradasalida"
 		}
 	]
 }

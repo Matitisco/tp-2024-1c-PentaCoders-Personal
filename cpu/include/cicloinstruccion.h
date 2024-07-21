@@ -27,7 +27,8 @@ void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo,  char *reg_dir
 // AUXILIARES
 
 void* obtener_valor(char *origen);
-
+uint32_t traducir_direccion_mmu(uint32_t direccion_logica);
+int calcular_pagina(int direccion_logica);
 void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid);
 uint32_t escribir_dato_memoria(uint32_t direccion_logica, void *dato, int size, int pid);
 uint32_t leer_dato_memoria(uint32_t direccion_logica, int size, int pid);

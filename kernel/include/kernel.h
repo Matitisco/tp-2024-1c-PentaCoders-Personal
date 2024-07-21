@@ -64,7 +64,6 @@ extern uint32_t PID_GLOBAL;
 extern t_log *logger;
 extern sem_t *GRADO_MULTIPROGRAMACION;
 extern sem_t *sem_agregar_a_estado;
-extern sem_t *sem_kernel_io_generica;
 
 extern int QUANTUM;
 extern pthread_t hiloQuantum;

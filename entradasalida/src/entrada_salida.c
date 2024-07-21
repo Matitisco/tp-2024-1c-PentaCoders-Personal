@@ -60,7 +60,6 @@ void arrancar_interfaz(t_interfaz *interfaz)
 	{
 		levantar_archivo_bloques();
 		levantar_bitmap();
-		
 	}
 	while (1)
 	{
@@ -207,7 +206,6 @@ void inicializar_config_IO(char *PATH)
 		getcwd(directorioActual, sizeof(directorioActual));
 	}
 	strcat(directorioActual, PATH);
-
 	config_interfaz->config = iniciar_config(PATH);
 	config_interfaz->tipo_interfaz = config_get_string_value(config_interfaz->config, "TIPO_INTERFAZ");
 	config_interfaz->ip_kernel = config_get_string_value(config_interfaz->config, "IP_KERNEL");

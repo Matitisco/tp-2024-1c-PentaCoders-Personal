@@ -347,7 +347,6 @@ void levantar_CPU_Dispatch()
 			// 1-OpCode INSTRUCCION_INTERFAZ
 			// 2-Datos de la Interfaz enviados por la instruccion
 			// 3-CDE Enviado por el Check Interrupt
-			log_info(logger, "Llego una interfaz");
 
 			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // DATOS DE INTERFAZ
 
@@ -683,6 +682,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 				fs_write_read(nombre_archivo, instruccion_interfaz, tamanio, direccion_fisica, puntero_archivo, informacion_interfaz);
 			}
 			break;
+		default:
+			log_info(logger, "No es una instruccion de FS");
 		}
 		log_info(logger, "FIN INSTRUCCION DE FS");
 		break;

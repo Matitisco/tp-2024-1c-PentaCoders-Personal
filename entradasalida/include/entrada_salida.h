@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <libgen.h>
+#include <math.h>
 #include "../../utils/include/sockets.h"
 #include "../../utils/include/utils.h"
 #include "../../utils/include/conexiones.h"

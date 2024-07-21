@@ -296,7 +296,7 @@ void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fis
     if (codigo_memoria == OK)
     {
         sleep_ms(config_interfaz->tiempo_unidad_trabajo);
-        log_info(logger, "PID: %d - Leer Archivo:  %s - Tamanio a Leer: %u - Puntero Archivo: %s", pid, nombre_archivo, tamanio, puntero_archivo);
+        log_info(logger, "PID: %d - Leer Archivo:  %s - Tamanio a Leer: %u - Puntero Archivo: %s", pid, nombre_archivo, tamanio, string_itoa(puntero_archivo));
     }
     else if (codigo_memoria == ERROR_PEDIDO_ESCRITURA)
     {
@@ -323,7 +323,7 @@ void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio)
     }
     else
     {
-        reducir_archivo(archivo_meta_data_buscado, tamanio_archivo_anterior, tamanio_a_aplicar, config_interfaz->block_size);
+        reducir_archivo(archivo_meta_data_buscado, tamanio_archivo_anterior, atoi(tamanio_a_aplicar), config_interfaz->block_size);
     }
 
     config_destroy(archivo_meta_data_buscado);
@@ -371,7 +371,7 @@ void reducir_archivo(t_config *archivo_metadata_buscado, uint32_t tamanio_archiv
         bitarray_clean_bit(bitarray, i); // va seteando el bloque indicado en 0
     }
     msync(bitarray->bitarray, bitarray->size, MS_SYNC);
-    config_set_value(archivo_metadata_buscado, "TAMANIO ARCHIVO", tamanio_a_aplicar);
+    config_set_value(archivo_metadata_buscado, "TAMANIO ARCHIVO", string_itoa(tamanio_a_aplicar));
     config_save(archivo_metadata_buscado);
 }
 
@@ -410,7 +410,7 @@ _Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t
 
 void sacar_bloque(t_config *archivo_meta_data_buscado, uint32_t bloques_a_eliminar, uint32_t tamanio_a_aplicar)
 {
-    config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
+    config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", string_itoa(tamanio_a_aplicar));
 }
 
 int contar_bloques_ocupados_bitarray()
@@ -494,7 +494,6 @@ t_archivo_data *obtener_primer_archivo()
 {
     int cant_archivos = list_size(archivos_fs);
     t_archivo_data *archivo_buscado = list_get(archivos_fs, 0); // el primero
-    int bloque_mayor = archivo_buscado->bloque_inicial;
     for (int i = 0; i < cant_archivos; i++)
     {
         t_archivo_data *archivo_victima = list_get(archivos_fs, i);
@@ -510,7 +509,6 @@ t_archivo_data *obtener_ultimo_archivo()
 {
     int cant_archivos = list_size(archivos_fs);
     t_archivo_data *archivo_buscado = list_get(archivos_fs, 0); // el primero
-    int bloque_mayor = archivo_buscado->bloque_inicial;
     for (int i = 0; i < cant_archivos; i++)
     {
         t_archivo_data *archivo_victima = list_get(archivos_fs, i);
@@ -522,8 +520,9 @@ t_archivo_data *obtener_ultimo_archivo()
     return archivo_buscado;
 }
 
-_Bool buscar_arch_por_nombre(t_archivo_data *archivo)
+_Bool buscar_arch_por_nombre(void *data)
 {
+    t_archivo_data *archivo = (t_archivo_data *)data;
     return strcmp(archivo->nombre_archivo, nombre_archivo_buscado) == 0;
 }
 
@@ -588,13 +587,13 @@ void desplazar_archivos_y_eliminar_bloques_libres()
         log_info(logger, "BLOQUE EN DONDE ESTOY PARADO ACTUALMENTE %d", i);
         if (!bitarray_test_bit(bitarray, i)) // si estas libre
         {
-            queue_push(lista_bloques_libres, i); // meto mi bloque libre
+            queue_push(lista_bloques_libres, (void *)&i); // meto mi bloque libre
         }
         else // si estas ocupado, significa que una tanda de lugares libres se terminaron
         {
             if (!queue_is_empty(lista_bloques_libres)) // si no esta vacia
             {                                          // el primero del bitarray esta libre
-                int bloque_a_ser_ocupado = queue_pop(lista_bloques_libres);
+                int bloque_a_ser_ocupado = *(int *)queue_pop(lista_bloques_libres);
                 log_info(logger, "BLOQUE A SER OCUPADO %d", bloque_a_ser_ocupado);
                 mover_bloque(i, bloque_a_ser_ocupado);            // mueve el bloque ocupado a un antecesor libre
                 bitarray_set_bit(bitarray, bloque_a_ser_ocupado); // actualiza el bitarrray
@@ -630,14 +629,13 @@ void actualizar_metadata_archivo(int nuevo_bloque_inicial) // de los archivos, N
         log_info(logger, "Se encontro un archivo que arranca en el bloque %d", bloque_inicial_archivo);
         archivo->bloque_inicial = nuevo_bloque_inicial;
         t_config *metadata = buscar_meta_data(archivo->nombre_archivo);
-        int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
-        int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
         config_set_value(metadata, "BLOQUE_INICIAL", nuevo_bloque_string); // actualizar el de los otros archivos
         config_save(metadata);
     }
 }
 
-_Bool buscar_por_bloque(t_archivo_data *data)
+_Bool buscar_por_bloque(void *data)
 {
-    return data->bloque_inicial == bloque_inicial_archivo;
+    t_archivo_data *archivo = (t_archivo_data *)data;
+    return archivo->bloque_inicial == bloque_inicial_archivo;
 }
