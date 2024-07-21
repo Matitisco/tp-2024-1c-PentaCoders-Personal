@@ -32,8 +32,11 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
 {
     log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
 
-    char *valor_a_escribir_char = valor_a_escribir;
+    char * valor_a_escribir_char = malloc(tamanio + 1);
+    valor_a_escribir_char[tamanio] = '\0';
+    memcpy(valor_a_escribir_char, valor_a_escribir, tamanio);
     log_info(logger, "PID: <%d> - Valor a escribir en Espacio de Usuario: <%s>", pid, valor_a_escribir_char);
+    free(valor_a_escribir_char);
 
     // chequeo si el marco esta asignado al proceso
     int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
