@@ -1,4 +1,3 @@
-
 #include "../include/fileSystem.h"
 
 uint32_t bitarray_pointer;
@@ -232,7 +231,8 @@ void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion
     enviar_op_code(conexion_memoria, PEDIDO_LECTURA);
 
     tipo_buffer *buffer_memoria = crear_buffer();
-
+ int total_bloques;
+ int tamanio_bloque;
     agregar_buffer_para_enterosUint32(buffer_memoria, direccion_fisica);
     agregar_buffer_para_enterosUint32(buffer_memoria, pid);
     agregar_buffer_para_enterosUint32(buffer_memoria, tamanio);
@@ -249,15 +249,15 @@ void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion
         t_config *metadata = buscar_meta_data(nombre_archivo);
         int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
         int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
-        int tamanio_bloque = config_interfaz->block_size;
-        int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
-        long bloques_a_desplazarse = puntero_archivo / tamanio_bloque;
+        tamanio_bloque = config_interfaz->block_size;
+        long bloques_a_desplazarse = floor(puntero_archivo / tamanio_bloque);
         long offset = (bloque_inicial + bloques_a_desplazarse) + puntero_archivo;
-        FILE *fbloques = fopen(path_arch_bloques, "w+");
+        FILE *fbloques = fopen(path_arch_bloques, "w+");//esta mapeado a memoria??dudoso esto
         fseek(fbloques, offset, SEEK_SET);          // nos posicionamos al puntero de1
         fwrite(&texto_leido, tamanio, 1, fbloques); // escribimoos la cadena
         sleep_ms(config_interfaz->tiempo_unidad_trabajo);
         log_info(logger, "PID: <%d> - Operacion: <IO_DIALFS_WRITE>", pid);
+        total_bloques =config_interfaz->block_count;
     }
     else if (codigo_memoria == ERROR_PEDIDO_LECTURA)
     {
@@ -265,6 +265,7 @@ void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion
     }
 
     log_info(logger, "PID: %d - Escribir:  %s - Tamanio a Leer: %d - Puntero Archivo: %d", pid, nombre_archivo, tamanio, puntero_archivo);
+    msync(bloquesMapeado, total_bloques * tamanio_bloque, MS_SYNC);
 }
 
 void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fisica, uint32_t puntero_archivo, uint32_t pid)
@@ -274,10 +275,11 @@ void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fis
     int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
     int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
     int tamanio_bloque = config_interfaz->block_size;
-    int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
+    //int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
     long bloques_a_desplazarse = puntero_archivo / tamanio_bloque;
     long offset = (bloque_inicial + bloques_a_desplazarse) + puntero_archivo;
     FILE *fbloques = fopen(path_arch_bloques, "r+");
+     int total_bloques;
     fseek(fbloques, offset, SEEK_SET);
     fread(valor_a_leer, tamanio, 1, fbloques);
     tipo_buffer *buffer_memoria = crear_buffer();
@@ -292,6 +294,7 @@ void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fis
     agregar_buffer_para_string(buffer_memoria, valor_a_leer);
     enviar_buffer(buffer_memoria, conexion_memoria);
     destruir_buffer(buffer_memoria);
+     total_bloques =config_interfaz->block_count;
     op_code codigo_memoria = recibir_op_code(conexion_memoria);
     if (codigo_memoria == OK)
     {
@@ -302,6 +305,7 @@ void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fis
     {
         log_error(logger, "PID: <%d> - ERROR Operacion: <lEER ARCHIVO>", pid);
     }
+     msync(bloquesMapeado, total_bloques * tamanio_bloque, MS_SYNC);
 }
 
 void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio)

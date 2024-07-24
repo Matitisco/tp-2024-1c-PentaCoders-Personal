@@ -10,11 +10,11 @@ int main(int argc, char *argv[])
 
 void iniciar_modulo_io()
 {
-	printf("--------------------------");
+	printf("--------------------------\n");
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
-	printf("--------------------------");
+	printf("--------------------------\n");
 	char *path_configuracion = readline("Ingrese el nombre del archivo con la configuracion de la interfaz (sin '.config'): ");
-	printf("--------------------------");
+	printf("--------------------------\n");
 	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
 	strcat(path_configuracion, ".config");
 	levantar_interfaz(nombre_interfaz, path_configuracion);

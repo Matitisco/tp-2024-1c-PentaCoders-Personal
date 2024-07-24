@@ -53,6 +53,17 @@ typedef struct
 
 typedef struct
 {
+	t_tipoDeInstruccion instruccion;
+	int unidades_trabajo;
+	int pid;
+	int tamanio_reg;
+	int dir_fisica;
+	int tamanio_marco;
+
+} t_struct_io;
+
+typedef struct
+{
 	int cliente_io;
 	char *nombre_io;
 	enum_interfaz tipo_IO;
@@ -120,7 +131,6 @@ config_kernel *inicializar_config_kernel();
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
 
-
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion);
 void evaluar_planificacion(char *planificador);
 
@@ -166,7 +176,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 _Bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz);
 t_cde *iniciar_cde(char *PATH);
 void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int tamanio_marco, int dir_fisica, t_infoIO *io, int pid);
-void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica,t_infoIO* io, int pid);
+void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, t_infoIO *io, int pid);
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid);
 void atender_interrupciones();
 char *buscar_recurso(char *recurso, int *posicion);

@@ -35,14 +35,14 @@ int main(int argc, char *argv[])
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
-    liberar_conexion(&cliente_cpu);
-    liberar_conexion(&cliente_kernel);
+    liberar_conexion(cliente_cpu);
+    liberar_conexion(cliente_kernel);
     config_destroy(valores_config->config);
     free(valores_config->ip_memoria);
     free(valores_config->path_instrucciones);
     free(valores_config->puerto_memoria);
     log_destroy(logger);
-    free(espacio_usuario);
+    free(escribir_espacio_usuario);
 }
 
 void iniciar_memoria()
@@ -131,9 +131,9 @@ void *recibir_interfaz_io()
             log_error(logger, "Interfaz Desconectada de Memoria");
             pthread_exit((void *)0);
         }
-        sleep_ms(valores_config->retardo_respuesta);
         switch (codigo_io)
         {
+            sleep_ms(valores_config->retardo_respuesta);
         case ACCESO_ESPACIO_USUARIO:
             CLIENTE_ESPACIO_USUARIO = dispositivo_io;
             acceso_a_espacio_usuario();
@@ -190,9 +190,10 @@ void *recibirCPU()
             exit(EXIT_FAILURE);
             return (void *)EXIT_FAILURE;
         }
-        sleep_ms(valores_config->retardo_respuesta);
+
         switch (cod_op)
         {
+            sleep_ms(valores_config->retardo_respuesta);
         case PEDIDO_INSTRUCCION:
             pedido_instruccion_cpu_dispatch(cliente_cpu);
             break;
@@ -272,7 +273,7 @@ int tamanio_proceso(int pid)
 }
 void *acceso_a_espacio_usuario_cpu()
 {
-    op_code codigo;
+    op_code codigo, solicitud;
     codigo = recibir_op_code(CLIENTE_ESPACIO_USUARIO);
     switch (codigo)
     {
@@ -304,7 +305,7 @@ void *acceso_a_espacio_usuario_cpu()
 }
 void *acceso_a_espacio_usuario()
 {
-    op_code codigo;
+    op_code codigo, solicitud;
     codigo = recibir_op_code(CLIENTE_ESPACIO_USUARIO);
     switch (codigo)
     {
@@ -365,27 +366,30 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
 
 void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
 {
-
     uint32_t direccion_fisica = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
     tipoDato tipo_dato = leer_buffer_enteroUint32(buffer_lectura);
 
     void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
+    int valor_int;
     uint32_t valor32;
     uint8_t valor8;
+    char *valor_char = string_new();
     if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
         tipo_buffer *buffer = crear_buffer();
         if (tipo_dato == STRING)
         {
-            char *valor_leido_string = malloc(tamanio + 1);
-            valor_leido_string[tamanio] = '\0';
-            memcpy(valor_leido_string, valor_leido, tamanio);
-            log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_leido_string);
-            agregar_buffer_para_string(buffer, valor_leido_string);
-            free(valor_leido_string);
+            //char *valor_leido_string = malloc(tamanio + 1);
+            //valor_leido_string[tamanio] = '\0';
+            //memcpy(valor_leido_string, valor_leido, tamanio);
+            valor_char = (char *)valor_leido;
+            
+            agregar_buffer_para_string(buffer, valor_leido);
+             log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_char);
+            //free(valor_leido_string);
         }
         else if (tipo_dato == INTEGER)
         {
@@ -410,7 +414,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     {
         enviar_op_code(cliente_solicitante, ERROR_PEDIDO_LECTURA);
     }
-    // free(valor_leido); nos tiro aborted, no sabemos pq es
+    //free(valor_leido); nos tiro aborted, no sabemos pq es
 }
 
 // INICIO DE PROCESO
@@ -535,9 +539,8 @@ t_cde *obtener_contexto_en_ejecucion(int pid)
     return cde_proceso;
 }
 
-_Bool estaElContextoConCiertoPID(void *data)
+_Bool estaElContextoConCiertoPID(t_cde *contexto)
 {
-    t_cde *contexto = (t_cde *)data;
     return contexto->pid == pid_a_buscar_o_eliminar;
 }
 
@@ -764,7 +767,7 @@ void imprimir_tabla_de_paginas_proceso(t_tabla_paginas *tabla_paginas_proceso)
     t_list *tp_paginas_proceso = tabla_paginas_proceso->paginas_proceso;
     if (!list_is_empty(tp_paginas_proceso))
     {
-        // t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso) - 1);
+        t_pagina *pagina2 = list_get(tp_paginas_proceso, list_size(tp_paginas_proceso) - 1);
         printf_yellow("      TABLA PROCESO %d", tabla_paginas_proceso->pid);
 
         printf_yellow("--------------------");

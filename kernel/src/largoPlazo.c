@@ -33,6 +33,7 @@ char *lista_pid()
         else
         {
             strcat(pids_en_ready, "0");
+            strcat(pids_en_ready, "\0");
         }
 
         if (i != list_size(cola_ready_global->estado) - 1)

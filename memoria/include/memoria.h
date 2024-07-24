@@ -70,7 +70,7 @@ t_pcb *buscar_proceso_por_pid(int pid);
 void pedido_instruccion_cpu_dispatch(int cliente_fd);
 t_list *leerArchivoConInstrucciones(char *nombre_archivo);
 t_cde *obtener_contexto_en_ejecucion(int PID);
-_Bool estaElContextoConCiertoPID(void *data);
+_Bool estaElContextoConCiertoPID(t_cde *contexto);
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde *armarCde(tipo_buffer *buffer);
 int consultar_pagina_de_un_marco(t_tabla_paginas *tabla, int marco);

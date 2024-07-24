@@ -41,7 +41,7 @@ bool tlb_llena(t_tlb *tlb)
     return list_size(tlb->entradas_tlb) == tlb->size_tlb;
 }
 
-void *entrada_tlb_last_reference_min(t_entrada_tlb *entrada1, t_entrada_tlb *entrada2)
+static void *entrada_tlb_last_reference_min(t_entrada_tlb *entrada1, t_entrada_tlb *entrada2)
 {
     return entrada1->last_reference <= entrada2->last_reference ? entrada1 : entrada2;
 }

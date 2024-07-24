@@ -3,7 +3,7 @@ t_log *logger;
 
 tipo_buffer *crear_buffer()
 {
-    tipo_buffer *buffer = calloc(1, sizeof(tipo_buffer));
+    tipo_buffer *buffer = malloc(sizeof(tipo_buffer));
 
     if (buffer == NULL)
     {

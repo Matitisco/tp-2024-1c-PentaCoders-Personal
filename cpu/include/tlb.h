@@ -32,7 +32,7 @@ int obtener_marco_tlb(t_tlb *tlb, int pid, int nro_pagina);
 // AUXILIARES
 int obtener_tiempo_en_miliSegundos(char *tiempo);
 bool tlb_llena(t_tlb *tlb);
-void* entrada_tlb_last_reference_min(t_entrada_tlb* entrada1, t_entrada_tlb* entrada2);
+static void* entrada_tlb_last_reference_min(t_entrada_tlb* entrada1, t_entrada_tlb* entrada2);
 void imprimir_tlb(t_tlb * tlb);
 
 #endif

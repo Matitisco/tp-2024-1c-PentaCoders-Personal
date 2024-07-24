@@ -1,5 +1,6 @@
 #include "../include/cicloinstruccion.h"
 
+
 t_registros *registros;
 
 // INSTRUCCIONES DE REGISTROS
@@ -58,75 +59,75 @@ void exec_set(char *registro, uint32_t valor)
 
 void exec_sum(char *destino, char *origen)
 {
-    void *valor_origen = obtener_valor(origen);
+    uint32_t valor_origen = obtener_valor(origen);
     if (strcmp(destino, "AX") == 0)
     {
-        registros->AX = registros->AX + *(uint8_t *)valor_origen;
+        registros->AX = registros->AX + valor_origen;
     }
     if (strcmp(destino, "BX") == 0)
     {
-        registros->BX = registros->BX + *(uint8_t *)valor_origen;
+        registros->BX = registros->BX + valor_origen;
     }
     if (strcmp(destino, "CX") == 0)
     {
-        registros->CX = registros->CX + *(uint8_t *)valor_origen;
+        registros->CX = registros->CX + valor_origen;
     }
     if (strcmp(destino, "DX") == 0)
     {
-        registros->DX = registros->DX + *(uint8_t *)valor_origen;
+        registros->DX = registros->DX + valor_origen;
     }
     if (strcmp(destino, "EAX") == 0)
     {
-        registros->EAX = registros->EAX + *(uint32_t *)valor_origen;
+        registros->EAX = registros->EAX + valor_origen;
     }
     if (strcmp(destino, "EBX") == 0)
     {
-        registros->EBX = registros->EBX + *(uint32_t *)valor_origen;
+        registros->EBX = registros->EBX + valor_origen;
     }
     if (strcmp(destino, "ECX") == 0)
     {
-        registros->ECX = registros->ECX + *(uint32_t *)valor_origen;
+        registros->ECX = registros->ECX + valor_origen;
     }
     if (strcmp(destino, "EDX") == 0)
     {
-        registros->EDX = registros->EDX + *(uint32_t *)valor_origen;
+        registros->EDX = registros->EDX + valor_origen;
     }
 }
 
 void exec_sub(char *destino, char *origen)
 {
-    void *valor_origen = obtener_valor(origen);
+    uint32_t valor_origen = obtener_valor(origen);
     if (strcmp(destino, "AX") == 0)
     {
-        registros->AX = registros->AX - *(uint8_t *)valor_origen;
+        registros->AX = registros->AX - valor_origen;
     }
     if (strcmp(destino, "BX") == 0)
     {
-        registros->BX = registros->BX - *(uint8_t *)valor_origen;
+        registros->BX = registros->BX - valor_origen;
     }
     if (strcmp(destino, "CX") == 0)
     {
-        registros->CX = registros->CX - *(uint8_t *)valor_origen;
+        registros->CX = registros->CX - valor_origen;
     }
     if (strcmp(destino, "DX") == 0)
     {
-        registros->DX = registros->DX - *(uint8_t *)valor_origen;
+        registros->DX = registros->DX - valor_origen;
     }
     if (strcmp(destino, "EAX") == 0)
     {
-        registros->EAX = registros->EAX - *(uint32_t *)valor_origen;
+        registros->EAX = registros->EAX - valor_origen;
     }
     if (strcmp(destino, "EBX") == 0)
     {
-        registros->EBX = registros->EBX - *(uint32_t *)valor_origen;
+        registros->EBX = registros->EBX - valor_origen;
     }
     if (strcmp(destino, "ECX") == 0)
     {
-        registros->ECX = registros->ECX - *(uint32_t *)valor_origen;
+        registros->ECX = registros->ECX - valor_origen;
     }
     if (strcmp(destino, "EDX") == 0)
     {
-        registros->EDX = registros->EDX - *(uint32_t *)valor_origen;
+        registros->EDX = registros->EDX - valor_origen;
     }
 }
 
@@ -194,7 +195,7 @@ void exec_jnz(char *registro, uint32_t numeroInstruccion, t_cde *cde)
 
 void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 {
-    uint32_t direccion_logica = *(uint32_t *)obtener_valor(direccion);
+    uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
 
     log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
@@ -207,12 +208,12 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     if (strcmp(direccion, "AX") == 0 || strcmp(direccion, "BX") == 0 || strcmp(direccion, "CX") == 0 || strcmp(direccion, "DX") == 0)
 
     {
-        valor8 = *(uint8_t *)obtener_valor(datos);
+        valor8 = (uint8_t)obtener_valor(datos);
         int_tamanio = sizeof(valor8);
     }
     else
     {
-        valor32 = *(uint32_t *)obtener_valor(datos);
+        valor32 = (uint32_t)obtener_valor(datos);
         int_tamanio = sizeof(valor32);
     }
 
@@ -244,12 +245,12 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
     void *reg_valor = obtener_valor(datos);
-    uint32_t direccion_logica = *(uint32_t *)obtener_valor(direccion);
-    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, 1, cde->pid);
+    uint32_t direccion_logica = obtener_valor(direccion);
+    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, sizeof(reg_valor), cde->pid);
 
     if (direccion_fisica != 1)
     {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, *(int *)reg_valor);
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
     }
 }
 
@@ -327,6 +328,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
         log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%s>", cde->pid, direccion_fisica, valor);
     }
     free(valor);
+    
 }
 
 // INSTRUCCIONES MANEJO DE RECURSOS
@@ -374,9 +376,9 @@ void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
 void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
 {
     interrupcion_io = 1;
-    uint32_t direccion_logica = *(uint32_t *)obtener_valor(reg_direccion);
+    uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-    uint32_t tamanio_registro = *(uint32_t *)obtener_valor(reg_tamanio);
+    uint32_t tamanio_registro = obtener_valor(reg_tamanio);
 
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
@@ -394,9 +396,9 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
 void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
 {
     interrupcion_io = 1;
-    uint32_t direccion_logica = *(uint32_t *)obtener_valor(reg_direccion);
+    uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-    uint32_t tamanio = *(uint32_t *)obtener_valor(reg_tamanio);
+    uint32_t tamanio = obtener_valor(reg_tamanio);
 
     buffer_instruccion_io = crear_buffer();
 
@@ -445,7 +447,7 @@ void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char *reg_
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_TRUNCATE);
-    uint32_t tamanio = *(uint32_t *)obtener_valor(reg_tamanio);
+    uint32_t tamanio = obtener_valor(reg_tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
@@ -455,7 +457,7 @@ void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_dir
 {
     interrupcion_fs = 1;
     nombre_archivo_a_enviar = nombre_archivo;
-    uint32_t direccion_logica = *(uint32_t *)obtener_valor(reg_direccion);
+    uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
@@ -463,10 +465,10 @@ void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_dir
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_WRITE);
 
-    uint32_t tamanio = *(uint32_t *)obtener_valor(reg_tamanio);
+    uint32_t tamanio = obtener_valor(reg_tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
-    uint32_t int_puntero = *(uint32_t *)obtener_valor(puntero_archivo);
+    uint32_t int_puntero = obtener_valor(puntero_archivo);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, int_puntero);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
@@ -476,16 +478,16 @@ void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_dire
 {
     interrupcion_fs = 1;
     nombre_archivo_a_enviar = nombre_archivo;
-    uint32_t direccion_logica = *(uint32_t*)obtener_valor(reg_direccion);
+    uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_WRITE);
-    uint32_t tamanio = *(uint32_t*)obtener_valor(reg_tamanio);
+    uint32_t tamanio = obtener_valor(reg_tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
-    uint32_t puntero = *(uint32_t*)obtener_valor(puntero_archivo);
+    uint32_t puntero = obtener_valor(puntero_archivo);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, puntero);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
@@ -508,45 +510,26 @@ void exec_exit(t_cde *cde, motivoFinalizar motivo)
 
 void *obtener_valor(char *origen)
 {
-    if (strcmp(origen, "AX") == 0)
-    {
-        return &registros->AX;
-    }
-    else if (strcmp(origen, "BX") == 0)
-    {
-        return &registros->BX;
-    }
-    else if (strcmp(origen, "CX") == 0)
-    {
-        return &registros->CX;
-    }
-    else if (strcmp(origen, "DX") == 0)
-    {
-        return &registros->DX;
-    }
-    else if (strcmp(origen, "SI") == 0)
-    {
-        return &registros->SI;
-    }
-    else if (strcmp(origen, "DI") == 0)
-    {
-        return &registros->DI;
-    }
-    else if (strcmp(origen, "EAX") == 0)
-    {
-        return &registros->EAX;
-    }
-    else if (strcmp(origen, "EBX") == 0)
-    {
-        return &registros->EBX;
-    }
-    else if (strcmp(origen, "ECX") == 0)
-    {
-        return &registros->ECX;
-    }
-    else if (strcmp(origen, "EDX") == 0)
-    {
-        return &registros->EDX;
+    if (strcmp(origen, "AX") == 0) {
+        return registros->AX;
+    } else if (strcmp(origen, "BX") == 0) {
+        return registros->BX;
+    } else if (strcmp(origen, "CX") == 0) {
+        return registros->CX;
+    } else if (strcmp(origen, "DX") == 0) {
+        return registros->DX;
+    } else if (strcmp(origen, "SI") == 0) {
+        return registros->SI;
+    } else if (strcmp(origen, "DI") == 0) {
+        return registros->DI;
+    } else if (strcmp(origen, "EAX") == 0) {
+        return registros->EAX;
+    } else if (strcmp(origen, "EBX") == 0) {
+        return registros->EBX;
+    } else if (strcmp(origen, "ECX") == 0) {
+        return registros->ECX;
+    } else if (strcmp(origen, "EDX") == 0) {
+        return registros->EDX;
     }
     return NULL;
 }
