@@ -81,6 +81,7 @@ void destroyer_instruccion(void *element);
 void eliminar_cde(int pid);
 void liberar_registros(t_registros *registros);
 void iniciar_memoria();
+void finalizar_memoria();
 void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante);
 void escritura(tipo_buffer *buffer, int cliente_solicitante);
 void crear_marcos(int cant_marcos);
@@ -117,4 +118,8 @@ int tamanio_proceso(int pid);
 void liberar_marco(int nroMarco);
 void imprimir_estado_marcos();
 void *conexiones_io();
+void* destruir_tabla(void *tabla);
+
+void* destruir_cde(void* elemento);
+void* destruir_lista_instrucciones(void* instrucciones);
 #endif

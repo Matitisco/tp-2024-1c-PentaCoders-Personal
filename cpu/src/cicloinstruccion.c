@@ -245,14 +245,19 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 {
     void *reg_valor = obtener_valor(datos);
-    uint32_t direccion_logica = obtener_valor(direccion);
-    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, &reg_valor, sizeof(reg_valor), cde->pid);
+    uint32_t *direccion_logica_ptr = (uint32_t *)obtener_valor(direccion);
+
+    uint32_t direccion_logica = *direccion_logica_ptr;
+
+    uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica, reg_valor, 1, cde->pid);
 
     if (direccion_fisica != 1)
     {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
+        uint8_t valor_casteado = *(uint8_t*)reg_valor;
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor_casteado);
     }
 }
+
 
 void exec_resize(char *tamanio, t_cde *cde)
 {
@@ -511,25 +516,25 @@ void exec_exit(t_cde *cde, motivoFinalizar motivo)
 void *obtener_valor(char *origen)
 {
     if (strcmp(origen, "AX") == 0) {
-        return registros->AX;
+        return &(registros->AX);
     } else if (strcmp(origen, "BX") == 0) {
-        return registros->BX;
+        return &(registros->BX);
     } else if (strcmp(origen, "CX") == 0) {
-        return registros->CX;
+        return &(registros->CX);
     } else if (strcmp(origen, "DX") == 0) {
-        return registros->DX;
+        return &(registros->DX);
     } else if (strcmp(origen, "SI") == 0) {
-        return registros->SI;
+        return &(registros->SI);
     } else if (strcmp(origen, "DI") == 0) {
-        return registros->DI;
+        return &(registros->DI);
     } else if (strcmp(origen, "EAX") == 0) {
-        return registros->EAX;
+        return &(registros->EAX);
     } else if (strcmp(origen, "EBX") == 0) {
-        return registros->EBX;
+        return &(registros->EBX);
     } else if (strcmp(origen, "ECX") == 0) {
-        return registros->ECX;
+        return &(registros->ECX);
     } else if (strcmp(origen, "EDX") == 0) {
-        return registros->EDX;
+        return &(registros->EDX);
     }
     return NULL;
 }

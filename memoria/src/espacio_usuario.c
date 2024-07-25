@@ -33,9 +33,9 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
     log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
 
     char *valor_a_escribir_char = malloc(tamanio + 1);
-    valor_a_escribir_char[tamanio] = '\0';
     memcpy(valor_a_escribir_char, valor_a_escribir, tamanio);
-    log_info(logger, "PID: <%d> - Valor a escribir en Espacio de Usuario: <%s>", pid, valor_a_escribir);
+    valor_a_escribir_char[tamanio] = '\0';
+    log_info(logger, "PID: <%d> - Valor a escribir en Espacio de Usuario: <%s>", pid, valor_a_escribir_char);
     free(valor_a_escribir_char);
 
     // chequeo si el marco esta asignado al proceso
@@ -198,6 +198,7 @@ void imprimir_espacio_usuario(void *espacio_usuario, int tam_memoria, int tam_pa
         memset(celda_contanido, ' ', tam_pagina);
         insertarStringEnPosicion(celda_contanido, " CONTENIDO ", 0);
         printf_yellow("| Marco | OCUPADO |%s|", celda_contanido);
+        free(celda_contanido);
     }
     else
     {
