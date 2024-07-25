@@ -249,7 +249,8 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 
     if (direccion_fisica != 1)
     {
-        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, *(int *)reg_valor);
+        uint8_t valor_casteado = *(uint8_t*)reg_valor;
+        log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor_casteado);
     }
 }
 

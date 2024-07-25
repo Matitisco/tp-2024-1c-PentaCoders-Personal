@@ -199,6 +199,7 @@ void imprimir_espacio_usuario(void *espacio_usuario, int tam_memoria, int tam_pa
         memset(celda_contanido, ' ', tam_pagina);
         insertarStringEnPosicion(celda_contanido, " CONTENIDO ", 0);
         printf_yellow("| Marco | OCUPADO |%s|", celda_contanido);
+        free(celda_contanido);
     }
     else
     {

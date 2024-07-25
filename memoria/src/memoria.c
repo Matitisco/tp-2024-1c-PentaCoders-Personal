@@ -18,8 +18,6 @@ int cant_marcos;
 t_list *lista_contextos;
 t_list *lista_instrucciones;
 t_list *lista_global_tablas;
-t_list *lista_global_marcos;
-t_list *lista_io;
 t_tabla_paginas *tabla_actual;
 t_bit_map *array_bitmap;
 
@@ -35,6 +33,10 @@ int main(int argc, char *argv[])
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
+    finalizar_memoria();
+    
+}
+void finalizar_memoria(){
     liberar_conexion(&cliente_cpu);
     liberar_conexion(&cliente_kernel);
     config_destroy(valores_config->config);
@@ -43,15 +45,43 @@ int main(int argc, char *argv[])
     free(valores_config->puerto_memoria);
     log_destroy(logger);
     free(espacio_usuario);
+    free(array_bitmap);
+
+    /*
+    free(lista_instrucciones);*/
+    list_destroy_and_destroy_elements(lista_instrucciones, destruir_lista_instrucciones);
+
+    
+    destruir_tabla(tabla_actual);
+    list_destroy_and_destroy_elements(lista_global_tablas, destruir_tabla);
+    list_destroy_and_destroy_elements(lista_contextos, destruir_cde);
+
+}
+void* destruir_tabla(void *tabla)
+{
+    t_tabla_paginas *tabla_a_eliminar = (t_tabla_paginas *)tabla;
+    list_destroy_and_destroy_elements(tabla_a_eliminar->paginas_proceso, (void *)destruir_pagina);
+    free(tabla_a_eliminar);
+}
+void* destruir_lista_instrucciones(void* instrucciones)
+{
+    list_destroy_and_destroy_elements(instrucciones, free);
+}
+
+void* destruir_cde(void* elemento)
+{
+    t_cde *cde = (t_cde*) elemento;
+    list_destroy_and_destroy_elements(cde->lista_instrucciones, free);
+    free(cde->path);
+    free(cde->registros);
+    free(cde);
 }
 
 void iniciar_memoria()
 {
-    lista_global_marcos = list_create(); // esta seria la tabla de marcos. Todos los marcos componen a la memoria
     lista_global_tablas = list_create();
     lista_contextos = list_create();
     lista_instrucciones = list_create();
-    lista_io = list_create();
 
     cant_marcos = valores_config->tam_memoria / valores_config->tam_pagina; // va a ser la cantida de amrcos
 
@@ -65,7 +95,6 @@ void iniciar_memoria()
     tabla_actual = malloc(sizeof(t_tabla_paginas));
 
     inicializar_bitmap(cant_marcos);
-    crear_marcos(cant_marcos);
 
     lista_contextos = list_create();
     lista_instrucciones = list_create();
@@ -79,14 +108,6 @@ void iniciar_memoria()
     destruirLog(logger);
 }
 
-void crear_marcos(int cant_marcos)
-{
-    lista_global_marcos = list_create();
-    for (int i = 0; i < cant_marcos; i++)
-    {
-        list_add(lista_global_marcos, NULL); // creo mi lista de marcos-tabla. En principio todo en null
-    }
-}
 
 void inicializar_bitmap(int cant_marcos)
 {
@@ -155,7 +176,7 @@ void *recibirKernel()
 
         if (cod_op == -1)
         {
-            log_error(logger, " El KERNEL se desconecto. Terminando servidor");
+            log_error(logger, "KERNEL se desconecto. Terminando servidor");
             return (void *)EXIT_FAILURE;
         }
 
@@ -186,7 +207,7 @@ void *recibirCPU()
 
         if (cod_op == -1)
         {
-            log_error(logger, "El cliente se desconecto. Terminando servidor");
+            log_error(logger, "CPU se desconecto. Terminando servidor");
             exit(EXIT_FAILURE);
             return (void *)EXIT_FAILURE;
         }
@@ -217,7 +238,8 @@ void *recibirCPU()
             }
             imprimir_tabla_de_paginas_proceso(tabla_actual);
             imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
-
+            destruir_buffer(buffer_cpu);
+            //destruir_cde(cde);
             break;
         case PEDIDO_FRAME:
             pedido_frame_mmu(cliente_cpu);
@@ -288,7 +310,7 @@ void *acceso_a_espacio_usuario_cpu()
         {
             enviar_op_code(CLIENTE_ESPACIO_USUARIO, ERROR_PEDIDO_LECTURA);
         }
-
+        destruir_buffer(buffer);
         free_t_write_memoria(escribir);
         break;
     case PEDIDO_LECTURA:
@@ -496,12 +518,10 @@ void pedido_instruccion_cpu_dispatch(int cpu_dispatch)
     uint32_t PID = leer_buffer_enteroUint32(buffer);
     uint32_t PC = leer_buffer_enteroUint32(buffer);
 
-    t_cde *contexto = malloc(sizeof(t_cde));
-    contexto = obtener_contexto_en_ejecucion(PID);
+    t_cde *contexto = obtener_contexto_en_ejecucion(PID);
 
     tipo_buffer *buffer_instruccion = crear_buffer();
-    char *instruccion = string_new();
-    instruccion = list_get(contexto->lista_instrucciones, PC);
+    char *instruccion = list_get(contexto->lista_instrucciones, PC);
 
     enviar_op_code(cpu_dispatch, ENVIAR_INSTRUCCION_CORRECTO);
     agregar_buffer_para_string(buffer_instruccion, instruccion);
@@ -511,6 +531,7 @@ void pedido_instruccion_cpu_dispatch(int cpu_dispatch)
     log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
 
     destruir_buffer(buffer);
+    free(instruccion);
 }
 
 // FINALIZAR PROCESO
@@ -529,9 +550,8 @@ void finalizar_proceso(int socket_kernel)
 
 t_cde *obtener_contexto_en_ejecucion(int pid)
 {
-    t_cde *cde_proceso = malloc(sizeof(t_cde));
     pid_a_buscar_o_eliminar = pid;
-    cde_proceso = list_find(lista_contextos, estaElContextoConCiertoPID);
+    t_cde *cde_proceso = list_find(lista_contextos, estaElContextoConCiertoPID);
     return cde_proceso;
 }
 
@@ -544,13 +564,8 @@ _Bool estaElContextoConCiertoPID(void *data)
 void eliminar_cde(int pid)
 {
     pid_a_buscar_o_eliminar = pid;
-
     t_cde *cde = obtener_contexto_en_ejecucion(pid);
-    list_destroy_and_destroy_elements(cde->lista_instrucciones, element_destroyer);
-    list_remove_by_condition(lista_contextos, estaElContextoConCiertoPID);
-
-    free(cde->path);
-    free(cde);
+    destruir_cde(cde);
 }
 
 void element_destroyer(void *element)
@@ -616,11 +631,9 @@ void eliminar_tabla_paginas(uint32_t pid)
 
 void destruir_pagina(void *pagina)
 {
-    t_pagina *pagina2 = (t_pagina *)pagina;
-    // PENDIENTE SOLUCIONAR LIBERADCION DE ESPACIO DE USAUAIRO
-    // memcpy(espacio_usuario + (pagina2->marco * valores_config->tam_pagina - 1), NULL, valores_config->tam_pagina); // nos desplazamos y eliminamos la pagina
-    liberar_marco(pagina2->marco);
-    free(pagina2);
+    t_pagina *pagina_a_eliminar = (t_pagina *)pagina;
+    liberar_marco(pagina_a_eliminar->marco);
+    free(pagina_a_eliminar);
 }
 
 t_tabla_paginas *buscar_en_lista_global(int pid)
