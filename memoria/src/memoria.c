@@ -29,39 +29,39 @@ int main(int argc, char *argv[])
 
     iniciar_memoria();
 
-    crearHilos();
     pthread_join(hiloCpu, NULL);
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
     finalizar_memoria();
     
 }
+
 void finalizar_memoria(){
     liberar_conexion(&cliente_cpu);
     liberar_conexion(&cliente_kernel);
     config_destroy(valores_config->config);
     free(valores_config->ip_memoria);
     free(valores_config->path_instrucciones);
-    free(valores_config->puerto_memoria);
+    //free(valores_config->puerto_memoria);
     log_destroy(logger);
+    //destruir_tabla(tabla_actual);
     free(espacio_usuario);
     free(array_bitmap);
 
-    /*
-    free(lista_instrucciones);*/
-    list_destroy_and_destroy_elements(lista_instrucciones, destruir_lista_instrucciones);
-
-    
-    destruir_tabla(tabla_actual);
-    list_destroy_and_destroy_elements(lista_global_tablas, destruir_tabla);
-    list_destroy_and_destroy_elements(lista_contextos, destruir_cde);
-
+    //list_destroy_and_destroy_elements(lista_instrucciones, destruir_lista_instrucciones);
+    //list_destroy_and_destroy_elements(lista_global_tablas, destruir_tabla);
+    //list_destroy_and_destroy_elements(lista_contextos, destruir_cde);
 }
 void* destruir_tabla(void *tabla)
 {
     t_tabla_paginas *tabla_a_eliminar = (t_tabla_paginas *)tabla;
-    list_destroy_and_destroy_elements(tabla_a_eliminar->paginas_proceso, (void *)destruir_pagina);
+    list_destroy_and_destroy_elements(tabla_a_eliminar->paginas_proceso, page_destroyer);
     free(tabla_a_eliminar);
+}
+
+void* page_destroyer(void *pagina)
+{
+    free(pagina);
 }
 void* destruir_lista_instrucciones(void* instrucciones)
 {
@@ -92,22 +92,9 @@ void iniciar_memoria()
     }
     crear_espacio_usuario(valores_config->tam_memoria, logger);
 
-    tabla_actual = malloc(sizeof(t_tabla_paginas));
-
     inicializar_bitmap(cant_marcos);
-
-    lista_contextos = list_create();
-    lista_instrucciones = list_create();
-
     crearHilos();
-
-    pthread_join(hiloCpu, NULL);
-    pthread_join(hiloKernel, NULL);
-    pthread_join(hiloIO, NULL);
-    destruirConfig(valores_config->config);
-    destruirLog(logger);
 }
-
 
 void inicializar_bitmap(int cant_marcos)
 {
@@ -176,8 +163,10 @@ void *recibirKernel()
 
         if (cod_op == -1)
         {
-            log_error(logger, "KERNEL se desconecto. Terminando servidor");
-            return (void *)EXIT_FAILURE;
+            log_error(logger, "KERNEL se desconecto. Terminando hilo");
+            pthread_cancel(hiloCpu);
+            pthread_cancel(hiloIO);
+            pthread_exit((void *)EXIT_FAILURE);
         }
 
         switch (cod_op)
@@ -207,9 +196,8 @@ void *recibirCPU()
 
         if (cod_op == -1)
         {
-            log_error(logger, "CPU se desconecto. Terminando servidor");
-            exit(EXIT_FAILURE);
-            return (void *)EXIT_FAILURE;
+            log_error(logger, "CPU se desconecto. Terminando hilo");
+            pthread_exit((void *)EXIT_FAILURE);
         }
 
         switch (cod_op)
@@ -240,7 +228,8 @@ void *recibirCPU()
             imprimir_tabla_de_paginas_proceso(tabla_actual);
             imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
             destruir_buffer(buffer_cpu);
-            //destruir_cde(cde);
+            free(cde->registros);
+            free(cde);
             break;
         case PEDIDO_FRAME:
             pedido_frame_mmu(cliente_cpu);
@@ -443,8 +432,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
 
 void iniciar_proceso(int cliente_fd)
 {
-    tipo_buffer *buffer = crear_buffer();
-    buffer = recibir_buffer(cliente_fd);
+    tipo_buffer *buffer = recibir_buffer(cliente_fd);
     t_cde *cde = armarCde(buffer);
     destruir_buffer(buffer);
 
@@ -477,7 +465,6 @@ t_cde *armarCde(tipo_buffer *buffer)
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
     cde->path = leer_buffer_string(buffer);
-    cde->lista_instrucciones = list_create();
     return cde;
 }
 

@@ -119,6 +119,7 @@ void liberar_marco(int nroMarco);
 void imprimir_estado_marcos();
 void *conexiones_io();
 void* destruir_tabla(void *tabla);
+void* page_destroyer(void* pagina);
 
 void* destruir_cde(void* elemento);
 void* destruir_lista_instrucciones(void* instrucciones);

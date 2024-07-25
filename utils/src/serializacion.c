@@ -148,7 +148,6 @@ t_cde *leer_cde(tipo_buffer *buffer)
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
     cde->PC = leer_buffer_enteroUint32(buffer);
-    cde->registros = malloc(sizeof(t_registros));
     cde->registros = leer_buffer_registros(buffer);
     return cde;
 }
