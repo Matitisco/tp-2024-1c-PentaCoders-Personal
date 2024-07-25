@@ -59,15 +59,18 @@ int esperar_cliente(t_log *logger, const char *name_server, const char *name_cli
     struct sockaddr_in dir_cliente;
     socklen_t tam_direccion = sizeof(struct sockaddr_in);
 
-    if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
-        perror("setsockopt(SO_REUSEADDR) failed");
-
-    int socket_cliente = accept(socket_servidor, (void *)&dir_cliente, &tam_direccion);
+    int socket_cliente = accept(socket_servidor, (struct sockaddr *)&dir_cliente, &tam_direccion);
+    if (socket_cliente < 0) {
+        perror("accept failed");
+        return -1;
+    }
 
     log_info(logger, "%s conectado a %s\n", name_client, name_server);
 
     return socket_cliente;
 }
+
+
 // CLIENTE SE INTENTA CONECTAR A SERVER ESCUCHANDO EN IP:PUERTO
 int crear_conexion(t_log *logger, const char *server_name, char *ip, char *puerto)
 {
