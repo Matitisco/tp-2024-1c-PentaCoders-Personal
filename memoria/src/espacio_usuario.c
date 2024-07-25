@@ -99,12 +99,18 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
             }
 
             // Copiar los datos desde la página
+
             memcpy(valor + bytes_leidos, espacio_usuario + direccion_pagina, bytes_a_copiar);
-            log_info(logger, "VALOR %s", (char *)valor);
+            printf("Página leída: ");
+            for (size_t i = 0; i < bytes_a_copiar; i++)
+            {
+                log_info(logger, "%02x ", ((unsigned char *)(valor + bytes_leidos))[i]);
+            }
+
             bytes_leidos += bytes_a_copiar;
             direccion_pagina += bytes_a_copiar;
         }
-
+        log_info(logger, "VALOR %s", (char *)(valor));
         return valor;
     }
     else
