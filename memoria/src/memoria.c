@@ -392,8 +392,8 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
     tipoDato tipo_dato = leer_buffer_enteroUint32(buffer_lectura);
-
-    void *valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
+    void *valor_leido = calloc(1, tamanio);
+    valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
     int valor_int;
     uint32_t valor32;
     uint8_t valor8;
@@ -436,7 +436,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     {
         enviar_op_code(cliente_solicitante, ERROR_PEDIDO_LECTURA);
     }
-    // free(valor_leido); nos tiro aborted, no sabemos pq es
+    free(valor_leido);
 }
 
 // INICIO DE PROCESO
