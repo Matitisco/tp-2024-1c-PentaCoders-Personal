@@ -382,14 +382,14 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
         tipo_buffer *buffer = crear_buffer();
         if (tipo_dato == STRING)
         {
-            //char *valor_leido_string = malloc(tamanio + 1);
-            //valor_leido_string[tamanio] = '\0';
-            //memcpy(valor_leido_string, valor_leido, tamanio);
+            char *valor_leido_string = malloc(tamanio + 1);
+            valor_leido_string[tamanio] = '\0';
+            memcpy(valor_leido_string, valor_leido, tamanio);
             valor_char = (char *)valor_leido;
-            
+
             agregar_buffer_para_string(buffer, valor_leido);
-             log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_char);
-            //free(valor_leido_string);
+            log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_char);
+            free(valor_leido_string);
         }
         else if (tipo_dato == INTEGER)
         {
@@ -414,7 +414,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     {
         enviar_op_code(cliente_solicitante, ERROR_PEDIDO_LECTURA);
     }
-    //free(valor_leido); nos tiro aborted, no sabemos pq es
+    // free(valor_leido); nos tiro aborted, no sabemos pq es
 }
 
 // INICIO DE PROCESO

@@ -153,12 +153,10 @@ void *transicion_exec_blocked();
 void *transicion_blocked_ready();
 void iniciar_kernel();
 void levantar_servidores();
-int existe_recurso(int *posicion);
-bool existe_recurso2(char *nombre_recurso);
 
-void wait_instancia_recurso(int i);
+bool existe_recurso(char *nombre_recurso);
 
-void wait_instancia_recurso2(t_recurso *recurso);
+void wait_instancia_recurso(t_recurso *recurso);
 _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso);
 
 void signal_instancia_recurso(t_recurso *recurso);
@@ -191,7 +189,7 @@ void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);
 void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo); // no se usa
 
 void valorSemaforo(sem_t *semaforo);
-
+void asignar_recurso(t_recurso *recurso, t_pcb *cde);
 bool existe_recurso2(char *nombre_recurso);
 
 t_recurso *obtener_recurso(char *nombre_recurso);

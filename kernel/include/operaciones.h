@@ -38,7 +38,7 @@ t_pcb *crear_proceso(char *PATH);
 t_pcb *buscarPCBEnColaPorPid(int pid_buscado, t_queue *cola, char *nombreCola);
 t_pcb *buscarYSacarPCBEnColaPorPid(int buscado, t_queue *cola, char *nombreCola);
 t_cde *iniciar_cde(char *PATH);
-
+void asignar_recurso(t_recurso *recurso, t_pcb *pcb);
 // LIBERAR RECURSOS/ARCHIVOS
 void liberar_recursos(t_pcb *proceso);
 void liberar_archivos(t_pcb *proceso);

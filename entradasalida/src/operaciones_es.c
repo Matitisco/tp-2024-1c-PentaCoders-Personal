@@ -156,15 +156,14 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     }
     estoy_libre = 1;
 }
+
 void realizar_operacion_stdout(t_interfaz *interfaz)
 {
     sleep_ms(interfaz->tiempo_unidad_trabajo);
     tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
     t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
-    int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, se lo envio a la memoria para que
-    log_info(logger, "TAMANIO A LEER %d", tamanio);
-    int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a pedirle a memoria que busque el dato
-    log_info(logger, "DIRECCIONES FISICAS %d", direccion_fisica);
+    int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion); 
+    int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion);
     int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
     if (sol_operacion == IO_STDOUT_WRITE)
     {

@@ -139,6 +139,7 @@ void *transicion_exec_ready()
         sem_wait(b_transicion_exec_ready);
         t_pcb *proceso = transicion_generica(cola_exec_global, cola_ready_global, "corto");
         proceso->cde = cde_interrumpido;
+        log_info(logger, "CDE A ENVIAR OTRA VEZ A READY: %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         proceso->estado = READY;
 
         sem_post(contador_readys);

@@ -31,12 +31,12 @@ void imprimir_rango_memoria(void *espacio_usuario, uint32_t inicio, uint32_t fin
 void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio, t_log *logger, int pid)
 {
     log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
-/* 
+
     char *valor_a_escribir_char = malloc(tamanio + 1);
     valor_a_escribir_char[tamanio] = '\0';
     memcpy(valor_a_escribir_char, valor_a_escribir, tamanio);
     log_info(logger, "PID: <%d> - Valor a escribir en Espacio de Usuario: <%s>", pid, valor_a_escribir);
-    free(valor_a_escribir_char); */
+    free(valor_a_escribir_char);
 
     // chequeo si el marco esta asignado al proceso
     int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
@@ -67,7 +67,7 @@ int chequear_lectura_escritura_en_espacio_usuario(int direccion_fisica, int pid)
     return pagina;
 }
 
-/* void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *logger, int pid)
+void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *logger, int pid)
 {
     log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
 
@@ -84,8 +84,7 @@ int chequear_lectura_escritura_en_espacio_usuario(int direccion_fisica, int pid)
         }
 
         size_t bytes_leidos = 0;
-        // ACA SE USA CALORES CONIFG
-        size_t pagina_size =valores_config->tam_pagina; // Tamaño de la página
+        size_t pagina_size = valores_config->tam_pagina; // Tamaño de la página
         uint32_t direccion_pagina = direccion_fisica;
 
         while (bytes_leidos < tamanio)
@@ -101,7 +100,7 @@ int chequear_lectura_escritura_en_espacio_usuario(int direccion_fisica, int pid)
 
             // Copiar los datos desde la página
             memcpy(valor + bytes_leidos, espacio_usuario + direccion_pagina, bytes_a_copiar);
-
+            log_info(logger, "VALOR %s", (char *)valor);
             bytes_leidos += bytes_a_copiar;
             direccion_pagina += bytes_a_copiar;
         }
@@ -114,10 +113,9 @@ int chequear_lectura_escritura_en_espacio_usuario(int direccion_fisica, int pid)
     }
 
     return NULL;
-} */
+}
 
-
-void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *logger, int pid)
+/* void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *logger, int pid)
 {
     log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
 
@@ -136,7 +134,7 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
     }
 
     return NULL;
-}
+} */
 
 void crear_espacio_usuario(int tam_memoria, t_log *logger)
 {

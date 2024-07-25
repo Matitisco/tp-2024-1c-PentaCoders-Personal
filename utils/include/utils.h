@@ -148,7 +148,7 @@ typedef struct
 {
 	t_cde *cde;		  // contexto de ejecucion
 	t_estados estado; // estado del proceso
-	t_lista_recursos *recursosAsignados;
+	t_list *recursosAsignados;
 	int quantum;
 } t_pcb;
 

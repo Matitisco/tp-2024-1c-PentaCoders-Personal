@@ -41,7 +41,7 @@ void exec_set(char *registro, uint32_t valor)
     }
     else if (strcmp(registro, "PC") == 0)
     {
-        cde_recibido->PC = 0;
+        cde_recibido->PC = valor;
     }
     else if (strcmp(registro, "DI") == 0)
     {

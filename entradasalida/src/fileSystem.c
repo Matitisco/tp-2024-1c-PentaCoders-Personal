@@ -231,8 +231,8 @@ void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion
     enviar_op_code(conexion_memoria, PEDIDO_LECTURA);
 
     tipo_buffer *buffer_memoria = crear_buffer();
- int total_bloques;
- int tamanio_bloque;
+    int total_bloques;
+    int tamanio_bloque;
     agregar_buffer_para_enterosUint32(buffer_memoria, direccion_fisica);
     agregar_buffer_para_enterosUint32(buffer_memoria, pid);
     agregar_buffer_para_enterosUint32(buffer_memoria, tamanio);
@@ -243,21 +243,26 @@ void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion
     if (codigo_memoria == OK)
     {
         tipo_buffer *buffer_recibido = recibir_buffer(conexion_memoria);
-        char *texto_leido = leer_buffer_string(buffer_recibido);
-        log_info(logger, "Texto a Escribir en el Archivo: %s", texto_leido);
+        void *texto_leido = calloc(1,tamanio);
+        texto_leido = leer_buffer_string(buffer_recibido);
+        log_info(logger, "Texto a Escribir en el Archivo: <%s>", (char *)texto_leido);
 
         t_config *metadata = buscar_meta_data(nombre_archivo);
         int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
         int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
         tamanio_bloque = config_interfaz->block_size;
-        long bloques_a_desplazarse = floor(puntero_archivo / tamanio_bloque);
-        long offset = (bloque_inicial + bloques_a_desplazarse) + puntero_archivo;
-        FILE *fbloques = fopen(path_arch_bloques, "w+");//esta mapeado a memoria??dudoso esto
-        fseek(fbloques, offset, SEEK_SET);          // nos posicionamos al puntero de1
-        fwrite(&texto_leido, tamanio, 1, fbloques); // escribimoos la cadena
+        // long bloques_a_desplazarse = floor(puntero_archivo / tamanio_bloque);
+        // long offset = (bloque_inicial + bloques_a_desplazarse) + puntero_archivo;
+        long offset = bloque_inicial * config_interfaz->block_size + puntero_archivo;
+        memcpy(bloquesMapeado + offset, texto_leido, tamanio);
+        total_bloques = config_interfaz->block_count;
+        msync(bloquesMapeado, total_bloques * tamanio_bloque, MS_SYNC);
+        /*FILE *fbloques = fopen(path_arch_bloques, "wb+"); // esta mapeado a memoria??dudoso esto
+        fseek(fbloques, offset, SEEK_SET);                // nos posicionamos al puntero de1
+        fwrite(&texto_leido, tamanio, 1, fbloques); */
+        // escribimoos la cadena
         sleep_ms(config_interfaz->tiempo_unidad_trabajo);
         log_info(logger, "PID: <%d> - Operacion: <IO_DIALFS_WRITE>", pid);
-        total_bloques =config_interfaz->block_count;
     }
     else if (codigo_memoria == ERROR_PEDIDO_LECTURA)
     {
@@ -265,7 +270,6 @@ void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion
     }
 
     log_info(logger, "PID: %d - Escribir:  %s - Tamanio a Leer: %d - Puntero Archivo: %d", pid, nombre_archivo, tamanio, puntero_archivo);
-    msync(bloquesMapeado, total_bloques * tamanio_bloque, MS_SYNC);
 }
 
 void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fisica, uint32_t puntero_archivo, uint32_t pid)
@@ -275,11 +279,11 @@ void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fis
     int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
     int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
     int tamanio_bloque = config_interfaz->block_size;
-    //int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
+    // int cantidad_bloques = tamanio_archivo / config_interfaz->block_size;
     long bloques_a_desplazarse = puntero_archivo / tamanio_bloque;
     long offset = (bloque_inicial + bloques_a_desplazarse) + puntero_archivo;
     FILE *fbloques = fopen(path_arch_bloques, "r+");
-     int total_bloques;
+    int total_bloques;
     fseek(fbloques, offset, SEEK_SET);
     fread(valor_a_leer, tamanio, 1, fbloques);
     tipo_buffer *buffer_memoria = crear_buffer();
@@ -294,7 +298,7 @@ void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fis
     agregar_buffer_para_string(buffer_memoria, valor_a_leer);
     enviar_buffer(buffer_memoria, conexion_memoria);
     destruir_buffer(buffer_memoria);
-     total_bloques =config_interfaz->block_count;
+    total_bloques = config_interfaz->block_count;
     op_code codigo_memoria = recibir_op_code(conexion_memoria);
     if (codigo_memoria == OK)
     {
@@ -305,7 +309,7 @@ void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fis
     {
         log_error(logger, "PID: <%d> - ERROR Operacion: <lEER ARCHIVO>", pid);
     }
-     msync(bloquesMapeado, total_bloques * tamanio_bloque, MS_SYNC);
+    msync(bloquesMapeado, total_bloques * tamanio_bloque, MS_SYNC);
 }
 
 void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio)
@@ -588,17 +592,15 @@ void desplazar_archivos_y_eliminar_bloques_libres()
     t_queue *lista_bloques_libres = queue_create();
     for (int i = 0; i < total_bloques; i++)
     {
-        log_info(logger, "BLOQUE EN DONDE ESTOY PARADO ACTUALMENTE %d", i);
         if (!bitarray_test_bit(bitarray, i)) // si estas libre
         {
-            queue_push(lista_bloques_libres, (void *)&i); // meto mi bloque libre
+            queue_push(lista_bloques_libres, i); // meto mi bloque libre
         }
         else // si estas ocupado, significa que una tanda de lugares libres se terminaron
         {
             if (!queue_is_empty(lista_bloques_libres)) // si no esta vacia
             {                                          // el primero del bitarray esta libre
-                int bloque_a_ser_ocupado = *(int *)queue_pop(lista_bloques_libres);
-                log_info(logger, "BLOQUE A SER OCUPADO %d", bloque_a_ser_ocupado);
+                int bloque_a_ser_ocupado = queue_pop(lista_bloques_libres);
                 mover_bloque(i, bloque_a_ser_ocupado);            // mueve el bloque ocupado a un antecesor libre
                 bitarray_set_bit(bitarray, bloque_a_ser_ocupado); // actualiza el bitarrray
                 bitarray_clean_bit(bitarray, i);                  // volvemos a actaulizar el bitarray pero marcando como libres los espacios en donde estaban
@@ -625,7 +627,6 @@ void actualizar_metadata_archivo(int nuevo_bloque_inicial) // de los archivos, N
     t_archivo_data *archivo = list_find(archivos_fs, buscar_por_bloque);
     if (archivo == NULL)
     {
-
         log_info(logger, "No se encontro un archivo con que inicie con el bloque %d", bloque_inicial_archivo);
     }
     else

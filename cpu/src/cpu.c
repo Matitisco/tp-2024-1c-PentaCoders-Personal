@@ -370,6 +370,7 @@ void check_interrupt()
 		{
 			log_info(logger, "INTERRUPCION - OCURRIO FIN DE QUANTUM");
 			enviar_op_code(socket_kernel_dispatch, FIN_DE_QUANTUM);
+			log_info(logger, "PROGRAM COUNTER %d", cde_recibido->PC);
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		}
@@ -423,7 +424,7 @@ void check_interrupt()
 	{
 		log_info(logger, "NO HAY INTERRUPCIONES");
 	}
-	destruir_buffer(buffer_cde);
+	// destruir_buffer(buffer_cde);
 	return;
 }
 

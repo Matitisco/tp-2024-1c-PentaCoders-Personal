@@ -210,6 +210,7 @@ void proceso_estado()
     mostrar_procesos(cola_exec_global);
     mostrar_procesos(cola_bloqueado_global);
     mostrar_procesos(cola_exit_global);
+    //imprimir_recursos();
 }
 
 // FUNCIONES AUXILIARES OPERACIONES
@@ -259,35 +260,50 @@ char *mostrar_motivo(motivoFinalizar motivo)
 
 void liberar_recursos(t_pcb *proceso)
 {
-    log_info(logger, "CANTIDAD DE RECURSOS ASIGNADOS QUE TIENE EL PROCESO: %d: %d", proceso->cde->pid, list_size(proceso->recursosAsignados));
-    for (int i = 0; i < list_size(proceso->recursosAsignados); i++)
+    int cantidad_recursos_asignados = list_size(proceso->recursosAsignados);
+    for (int i = 0; i < cantidad_recursos_asignados; i++)
     {
-        t_recurso *recurso_pcb = list_get(proceso->recursosAsignados, i);
-        char *nombre_rec = recurso_pcb->nombre;
-        int cant_instancias;
-        sem_getvalue(recurso_pcb->instancias, &cant_instancias);
+        t_recurso *recurso_a_liberar_del_proceso = list_get(proceso->recursosAsignados, i);
 
-        log_info(logger, "%d INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO <%d>", cant_instancias, nombre_rec, proceso->cde->pid);
-        for (int i = 0; i < cant_instancias; i++)
+        int instancias_recurso;
+        sem_getvalue(recurso_a_liberar_del_proceso->instancias, &instancias_recurso);
+
+        log_info(logger, "%d INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO <%d>", instancias_recurso, recurso_a_liberar_del_proceso->nombre, proceso->cde->pid);
+        for (int i = 0; i < instancias_recurso; i++)
         {
-            sem_wait(recurso_pcb->instancias);
+            sem_wait(recurso_a_liberar_del_proceso->instancias);
             int recursos_SO = list_size(valores_config->recursos);
-            log_info(logger, "RECURSOS SO: %d", recursos_SO);
             for (int i = 0; i < (recursos_SO); i++)
             {
                 t_recurso *recurso_SO = list_get(valores_config->recursos, i);
-                if (strcmp(recurso_SO->nombre, nombre_rec) == 0)
+                if (strcmp(recurso_SO->nombre, recurso_a_liberar_del_proceso->nombre) == 0)
                 {
-                    // sem_post(&(recurso_SO->instancias)); //GUARDA ACA ME PUTEA -abort
-                    sem_post(recurso_SO->instancias); // probar con esto
+                    sem_post(recurso_SO->instancias);
+                    if (!list_is_empty(recurso_SO->cola_bloqueados->estado))
+                    {
+                        for (int i = 0; i < list_size(recurso_SO->cola_bloqueados->estado); i++)
+                        {
+                            t_pcb *pcb = list_get(recurso_SO->cola_bloqueados->estado, i);
+                            if (pcb->cde->pid == proceso->cde->pid)
+                            {
+                                sem_wait(recurso_SO->cola_bloqueados->contador);
+                                pthread_mutex_lock(recurso_SO->cola_bloqueados->mutex_estado);
+                                t_pcb *pcb = list_remove(recurso_SO->cola_bloqueados->estado, i);
+                                pthread_mutex_unlock(recurso_SO->cola_bloqueados->mutex_estado);
+                            }
+                        }
+                        t_pcb *pcb_ = list_get(recurso_SO->cola_bloqueados->estado, 0);
+                        asignar_recurso(recurso_SO, pcb_);
+                    }
                 }
             }
         }
-        free(recurso_pcb->nombre);
-        sem_destroy(recurso_pcb->instancias);
+        free(recurso_a_liberar_del_proceso->nombre);
+        sem_destroy(recurso_a_liberar_del_proceso->instancias);
     }
     list_destroy(proceso->recursosAsignados);
 }
+
 int cant_recursos_SO(t_recurso **recursos)
 {
     int i = 0;

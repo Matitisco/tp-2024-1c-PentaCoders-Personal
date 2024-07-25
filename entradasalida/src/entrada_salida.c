@@ -12,10 +12,10 @@ void iniciar_modulo_io()
 {
 	printf("--------------------------\n");
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
+	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
 	printf("--------------------------\n");
 	char *path_configuracion = readline("Ingrese el nombre del archivo con la configuracion de la interfaz (sin '.config'): ");
 	printf("--------------------------\n");
-	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
 	strcat(path_configuracion, ".config");
 	levantar_interfaz(nombre_interfaz, path_configuracion);
 	free(nombre_interfaz);
@@ -205,6 +205,7 @@ void inicializar_config_IO(char *PATH)
 	{
 		getcwd(directorioActual, sizeof(directorioActual));
 	}
+	strcat(directorioActual,"/");
 	strcat(directorioActual, PATH);
 	config_interfaz->config = iniciar_config(PATH);
 	config_interfaz->tipo_interfaz = config_get_string_value(config_interfaz->config, "TIPO_INTERFAZ");
