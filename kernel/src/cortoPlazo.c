@@ -165,7 +165,7 @@ void *transicion_exec_blocked()
         {
             temporal_stop(timer);
             tiempo_transcurrido = temporal_gettime(timer);
-            temporal_destroy(timer);
+            //temporal_destroy(timer);
         }
         proceso->estado = BLOCKED;
         log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <BLOCKED>", proceso->cde->pid);
