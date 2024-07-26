@@ -63,11 +63,11 @@ char * ip_local;
 
 int main(int argc, char *argv[])
 {
-
-	iniciar_kernel();
 	ip_local = obtener_ip_local();
 	printf_blue("IP LOCAL: %s", ip_local);
 
+	iniciar_kernel();
+	
 	pthread_join(hiloMEMORIA, NULL);
 	pthread_join(hiloLargoPlazo, NULL);
 	pthread_join(hiloCortoPlazo, NULL);
