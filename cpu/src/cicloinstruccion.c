@@ -203,7 +203,8 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
     uint8_t valor8;
     uint32_t valor32;
-    size_t int_tamanio;
+    size_t int_tamanio=1;
+    /*
     if (strcmp(direccion, "AX") == 0 || strcmp(direccion, "BX") == 0 || strcmp(direccion, "CX") == 0 || strcmp(direccion, "DX") == 0)
 
     {
@@ -214,7 +215,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     {
         valor32 = (uint32_t)obtener_valor(datos);
         int_tamanio = sizeof(valor32);
-    }
+    }*/
 
     log_info(logger, "TAMANIO A ENVIAR %zu", int_tamanio);
     tipo_buffer *buffer = crear_buffer();
@@ -228,7 +229,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     if (lectura_memoria == OK)
     {
         tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
-        uint32_t valor = leer_buffer_enteroUint32(buffer_valor);
+        uint32_t valor = leer_buffer_enteroUint8(buffer_valor);
         exec_set(datos, valor);
         destruir_buffer(buffer_valor);
         log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor);

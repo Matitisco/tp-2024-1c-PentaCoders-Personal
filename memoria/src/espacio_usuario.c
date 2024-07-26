@@ -110,7 +110,12 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
             bytes_leidos += bytes_a_copiar;
             direccion_pagina += bytes_a_copiar;
         }
-        log_info(logger, "VALOR %s", (char *)(valor));
+
+        char *valor_leido_string = malloc(tamanio + 1);
+        valor_leido_string[tamanio] = '\0';
+        memcpy(valor_leido_string, valor, tamanio);
+        log_info(logger, "VALOR <%s>", valor_leido_string);
+
         return valor;
     }
     else

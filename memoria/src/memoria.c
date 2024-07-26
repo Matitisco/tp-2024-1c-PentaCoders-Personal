@@ -413,7 +413,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
             else if (tamanio == 1)
             {
                 valor8 = *(uint8_t *)valor_leido;
-                agregar_buffer_para_enterosUint32(buffer, valor8);
+                agregar_buffer_para_enterosUint8(buffer, valor8);
                 log_info(logger, "SE LEYO EL VALOR de 1 byte: %d", valor8);
             }
         }
