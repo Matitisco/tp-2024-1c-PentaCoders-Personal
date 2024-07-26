@@ -1,4 +1,11 @@
 #include "../include/sockets.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <ifaddrs.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 // INICIA SERVER ESCUCHANDO EN IP:PUERTO
 int iniciar_servidor(t_log *logger, const char *name, char *ip, char *puerto)
@@ -118,4 +125,43 @@ void liberar_conexion(int *socket_cliente)
 {
     close(*socket_cliente);
     *socket_cliente = -1;
+}
+
+char* obtener_ip_local() {
+    struct ifaddrs *ifaddr, *ifa;
+    int family;
+    char *ip = malloc(INET_ADDRSTRLEN);
+
+    if (ip == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        free(ip);
+        exit(EXIT_FAILURE);
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) continue;
+
+        family = ifa->ifa_addr->sa_family;
+
+        if (family == AF_INET) { // IPv4
+            if (strcmp(ifa->ifa_name, "lo") != 0) { // Ignorar loopback
+                if (inet_ntop(family, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr, ip, INET_ADDRSTRLEN) != NULL) {
+                    freeifaddrs(ifaddr);
+                    printf_blue("Direccion de memoria de la IP local: %p", ip);
+                    return ip;
+                } else {
+                    perror("inet_ntop");
+                }
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    free(ip);
+    return NULL;
 }

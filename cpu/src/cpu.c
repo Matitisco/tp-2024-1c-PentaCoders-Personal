@@ -25,10 +25,14 @@ sem_t *sem_check_interrupt;
 sem_t *sem_interface;
 t_cde *cde_recibido;
 int interrupcion_exit;
+char * ip_local;
 
 int main(int argc, char *argv[])
 {
 	interrupcion_exit = 0;
+	ip_local = obtener_ip_local();
+	printf_blue("IP LOCAL: %s", ip_local);
+
 	iniciar_modulo_cpu();
 
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
@@ -46,6 +50,7 @@ int main(int argc, char *argv[])
 	eliminar_tlb();
 	free(registros);
 	liberar_conexion(&socket_memoria);
+	free(ip_local);
 }
 
 void iniciar_modulo_cpu()
@@ -99,7 +104,7 @@ void iniciar_registros_sistema()
 
 void *levantar_kernel_dispatch()
 {
-	int server_fd = iniciar_servidor(logger, "CPU Dispatch", valores_config_cpu->ip, valores_config_cpu->puerto_escucha_dispatch);
+	int server_fd = iniciar_servidor(logger, "CPU Dispatch", ip_local, valores_config_cpu->puerto_escucha_dispatch);
 	socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
@@ -145,7 +150,7 @@ void *levantar_kernel_dispatch()
 
 void *levantar_kernel_interrupt()
 {
-	int server_fd = iniciar_servidor(logger, "CPU Interrupt", valores_config_cpu->ip, valores_config_cpu->puerto_escucha_interrupt);
+	int server_fd = iniciar_servidor(logger, "CPU Interrupt", ip_local, valores_config_cpu->puerto_escucha_interrupt);
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
 	while (1)
 	{

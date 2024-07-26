@@ -59,11 +59,14 @@ sem_t *sem_finalizar_proceso;
 
 sem_t *contador_readys;
 char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
+char * ip_local;
 
 int main(int argc, char *argv[])
 {
 
 	iniciar_kernel();
+	ip_local = obtener_ip_local();
+	printf_blue("IP LOCAL: %s", ip_local);
 
 	pthread_join(hiloMEMORIA, NULL);
 	pthread_join(hiloLargoPlazo, NULL);
@@ -75,6 +78,7 @@ int main(int argc, char *argv[])
 	pthread_join(largo_plazo_exit, NULL);
 	pthread_join(t_transicion_exec_ready, NULL);
 	pthread_join(hiloQuantum, NULL);
+	free(ip_local);
 }
 
 void iniciar_kernel()
@@ -108,7 +112,7 @@ void crear_hilos()
 
 void levantar_servidores()
 {
-	servidor_para_io = iniciar_servidor(logger, "Kernel", valores_config->ip_memoria, valores_config->puerto_escucha);
+	servidor_para_io = iniciar_servidor(logger, "Kernel", ip_local, valores_config->puerto_escucha);
 }
 
 void conexionAMemoria()
