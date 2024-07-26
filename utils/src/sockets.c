@@ -21,10 +21,13 @@ int iniciar_servidor(t_log *logger, const char *name, char *ip, char *puerto)
     for (struct addrinfo *p = servinfo; p != NULL; p = p->ai_next)
     {
         socket_servidor = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
-            perror("setsockopt(SO_REUSEADDR) failed");
+
         if (socket_servidor == -1) // fallo de crear socket
             continue;
+
+        if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+            perror("setsockopt(SO_REUSEADDR) failed");
+        
 
         if (bind(socket_servidor, p->ai_addr, p->ai_addrlen) == -1)
         {

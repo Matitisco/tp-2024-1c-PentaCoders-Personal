@@ -14,7 +14,7 @@ void levantar_bitmap()
     getcwd(cwd, sizeof(cwd));
     strcat(cwd, "/dialfs/bitmap.dat");
 
-    int bitmap = open(cwd, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    int bitmap = open(cwd, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR); 
 
     struct stat mystat;
 
@@ -49,8 +49,7 @@ void levantar_bitmap()
 
 // INICIAR ARCHIVO DE BLOQUES EN MEMORIA
 void levantar_archivo_bloques()
-{
-
+{   
     path_arch_bloques = obtener_ruta_archivo("bloques.dat");
 
     FILE *fbloques = fopen(path_arch_bloques, "wb+");
@@ -188,6 +187,68 @@ char *obtener_ruta_archivo(char *nombre_archivo)
 
     return ruta_fcb_buscado;
 }
+
+
+
+/* 
+char *obtener_ruta_archivo(char *nombre_archivo)
+{
+    config_interfaz = malloc(sizeof(config_io));
+
+	char directorioActual[2048];
+	getcwd(directorioActual, sizeof(directorioActual));
+	char *ultimo_dir = basename(directorioActual);
+	if (strcmp(ultimo_dir, "bin") == 0)
+	{
+		chdir("..");
+		getcwd(directorioActual, sizeof(directorioActual));
+	}
+	else
+	{
+		getcwd(directorioActual, sizeof(directorioActual));
+	}
+	strcat(directorioActual,"/");
+	strcat(directorioActual, nombre_archivo);
+    
+    char* aux = directorioActual;
+    return aux;
+} *//* 
+char* obtener_ruta_archivo(char* nombre_archivo) {
+    config_interfaz = malloc(sizeof(config_io));
+
+    char directorioActual[2048];
+    if (getcwd(directorioActual, sizeof(directorioActual)) == NULL) {
+        perror("getcwd() error");
+        return NULL;
+    }
+
+    char* ultimo_dir = basename(strdup(directorioActual)); // Usa strdup para evitar modificar la cadena original
+    if (strcmp(ultimo_dir, "bin") == 0) {
+        if (chdir("..") != 0) {
+            perror("chdir() error");
+            return NULL;
+        }
+        if (getcwd(directorioActual, sizeof(directorioActual)) == NULL) {
+            perror("getcwd() error");
+            return NULL;
+        }
+    }
+    
+    strcat(directorioActual,"/");
+	strcat(directorioActual, nombre_archivo);
+    
+
+    size_t path_length = strlen(directorioActual) + strlen(nombre_archivo) + 2;
+    char* path_archivo = malloc(path_length);
+    if (path_archivo == NULL) {
+        perror("malloc() error");
+        return NULL;
+    }
+    path_archivo = directorioActual;
+    
+    return path_archivo;
+} */
+
 // TRUNCAR ARCHIVO
 void truncar_archivo(char *nombre_archivo, int nuevo_tamanio, uint32_t pid)
 {
@@ -357,7 +418,7 @@ void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, 
         else
         {
             compactar(nombre_archivo, cantidad_bloques_agregar, archivo_meta_data_buscado);
-            msync(bitarray->bitarray, bitarray->size, MS_SYNC);
+            
         }
         config_set_value(archivo_meta_data_buscado, "TAMANIO_ARCHIVO", tamanio_a_aplicar);
         config_save(archivo_meta_data_buscado);
@@ -493,7 +554,7 @@ int liberarBloque(uint32_t bit_bloque)
 
 void compactar(char *nombre_archivo, int cantidad_bloques_agregar, t_config *metadata)
 {
-    desplazar_archivos_y_eliminar_bloques_libres();
+    desplazar_archivos_y_eliminar_bloques_libres();//[1,1,0,0,]
     int primer_bloque_libre = bloque_libre();
     mover_archivo_al_primer_bloque_libre(primer_bloque_libre, nombre_archivo, cantidad_bloques_agregar, metadata);
 }
@@ -560,6 +621,7 @@ void mover_archivo_al_primer_bloque_libre(int primer_bloque_libre, char *nombre_
         // Avanzar al siguiente bloque libre al final del FS
         primer_bloque_libre++;
     }
+    
 
     log_info(logger, "Archivo %s - Los bloques ya fueron movidos ahora asignamos los extra que pidio", nombre_archivo);
     for (int i = primer_bloque_libre; i < primer_bloque_libre + cantidad_bloques_agregar - 1; i++)
