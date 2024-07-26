@@ -25,10 +25,14 @@ sem_t *sem_check_interrupt;
 sem_t *sem_interface;
 t_cde *cde_recibido;
 int interrupcion_exit;
+char * ip_local;
 
 int main(int argc, char *argv[])
 {
 	interrupcion_exit = 0;
+	ip_local = obtener_ip_local();
+	printf_blue("IP LOCAL: %s", ip_local);
+
 	iniciar_modulo_cpu();
 
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
@@ -45,7 +49,8 @@ int main(int argc, char *argv[])
 	free(valores_config_cpu);
 	eliminar_tlb();
 	free(registros);
-	liberar_conexion(socket_memoria);
+	liberar_conexion(&socket_memoria);
+	free(ip_local);
 }
 
 void iniciar_modulo_cpu()
@@ -99,7 +104,7 @@ void iniciar_registros_sistema()
 
 void *levantar_kernel_dispatch()
 {
-	int server_fd = iniciar_servidor(logger, "CPU Dispatch", valores_config_cpu->ip, valores_config_cpu->puerto_escucha_dispatch);
+	int server_fd = iniciar_servidor(logger, "CPU Dispatch", ip_local, valores_config_cpu->puerto_escucha_dispatch);
 	socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
@@ -145,7 +150,7 @@ void *levantar_kernel_dispatch()
 
 void *levantar_kernel_interrupt()
 {
-	int server_fd = iniciar_servidor(logger, "CPU Interrupt", valores_config_cpu->ip, valores_config_cpu->puerto_escucha_interrupt);
+	int server_fd = iniciar_servidor(logger, "CPU Interrupt", ip_local, valores_config_cpu->puerto_escucha_interrupt);
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
 	while (1)
 	{
@@ -334,6 +339,7 @@ void execute(char **instruccion, t_cde *contextoProceso)
 void check_interrupt()
 {
 	tipo_buffer *buffer_cde = crear_buffer();
+	tipo_buffer *buffer_instruccion_io = crear_buffer();
 	if (interrupcion_rr)
 	{
 		salida_exit = 0;
@@ -369,6 +375,7 @@ void check_interrupt()
 		{
 			log_info(logger, "INTERRUPCION - OCURRIO FIN DE QUANTUM");
 			enviar_op_code(socket_kernel_dispatch, FIN_DE_QUANTUM);
+			log_info(logger, "PROGRAM COUNTER %d", cde_recibido->PC);
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		}
@@ -407,18 +414,22 @@ void check_interrupt()
 		salida_exit = 0;
 		desalojo_signal = 0;
 		log_info(logger, "INTERRUPCION - SIGNAL");
+		agregar_cde_buffer(buffer_cde, cde_recibido);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	}
 	else if (desalojo_wait)
 	{
 		salida_exit = 0;
 		desalojo_wait = 0;
 		log_info(logger, "INTERRUPCION - WAIT");
+		agregar_cde_buffer(buffer_cde, cde_recibido);
+		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	}
 	else
 	{
 		log_info(logger, "NO HAY INTERRUPCIONES");
 	}
-	destruir_buffer(buffer_cde);
+	// destruir_buffer(buffer_cde);
 	return;
 }
 

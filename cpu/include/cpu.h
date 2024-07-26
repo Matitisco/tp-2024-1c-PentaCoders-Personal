@@ -88,4 +88,7 @@ void exec_io_fs_write();
 void exec_io_fs_read();
 void exec_exit(t_cde *cde, motivoFinalizar motivo);
 
+// AUXILIARES
+void eliminar_tlb();
+
 #endif

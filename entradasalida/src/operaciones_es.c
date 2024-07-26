@@ -1,14 +1,5 @@
 #include "../include/operaciones_es.h"
 
-/*
-Cada interfaz en la vida real tiene diferentes velocidades,
-por lo que para simplificar esto en nuestro TP vamos a tener en
-la configuración del módulo el Tiempo de unidad de trabajo, este valor
-luego se va a multiplicar por otro valor que va a estar dado según el
-tipo de interfaz que tengamos, en este TP vamos a trabajar con 4 tipos
-de Interfaces: Genéricas, STDIN, STDOUT y DialFS.
-*/
-
 void realizar_operacion_gen(t_interfaz *interfaz)
 {
     sleep_ms(interfaz->tiempo_unidad_trabajo);
@@ -30,7 +21,6 @@ void realizar_operacion_gen(t_interfaz *interfaz)
 
     estoy_libre = 1;
 }
-
 
 void enviar_a_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
 { // esta función no implementa chequeo de pagina, simplemente escribe
@@ -55,16 +45,16 @@ void enviar_a_memoria(int socket_memoria, uint32_t direccion_fisica, int size, v
     }
 }
 
+int calcular_marco(int dir_fisica, int tamanio_marco) { return floor(dir_fisica / tamanio_marco); }
+
 uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, void *dato, int size, int pid)
 {
     uint32_t df_del_byte_inicial_dato = direccion_fisica;
     uint32_t df_del_byte_final_dato = direccion_fisica + size - 1;
-    
-    int calcular_marco(int dir_fisica){ floor(direccion_fisica / tamanio_marco);}
-    
-    int marco_del_byte_inicial = calcular_marco(df_del_byte_inicial_dato);
-    int marco_del_byte_final = calcular_marco(df_del_byte_final_dato);
-   
+
+    int marco_del_byte_inicial = calcular_marco(df_del_byte_inicial_dato, tamanio_marco);
+    int marco_del_byte_final = calcular_marco(df_del_byte_final_dato, tamanio_marco);
+
     if (marco_del_byte_inicial == marco_del_byte_final)
     {
         // Si el dato cabe en una sola página, se escribe directamente.
@@ -74,7 +64,7 @@ uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, voi
             // interrupcion_exit = 1;
             return -1;
         }
-        enviar_a_memoria(conexion_memoria ,direccion_fisica, size, dato, pid);
+        enviar_a_memoria(conexion_memoria, direccion_fisica, size, dato, pid);
     }
     else
     {
@@ -84,7 +74,7 @@ uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, voi
         int cant_bytes = df_byte_final_marco - df_del_byte_inicial_dato + 1;
 
         // Escribir la primera parte del dato que cabe en la página actual.
-        
+
         enviar_a_memoria(conexion_memoria, direccion_fisica, cant_bytes, dato, pid);
         // Llamada recursiva para escribir el resto del dato en la siguiente página.
         // Nota: se usar (char*) por una cuestion aritmetica de punteros, para sumar de a bytes
@@ -93,7 +83,6 @@ uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, voi
 
     return direccion_fisica;
 }
-
 
 void realizar_operacion_stdin(t_interfaz *interfaz)
 {
@@ -104,7 +93,7 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     int tamanio_marco = leer_buffer_enteroUint32(buffer_stdin);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
     int pid = leer_buffer_enteroUint32(buffer_stdin);
-    
+
     log_info(logger, "CANT DE BYTES A COPIAR: %d", tamanio);
     destruir_buffer(buffer_stdin);
 
@@ -112,8 +101,6 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     {
         char *texto_ingresado = readline("Ingrese un texto por teclado: ");
         char *texto_truncado = truncar_texto(texto_ingresado, tamanio);
-        log_info(logger, "TEXTO A ENVIAR A MEMORIA : %s", texto_truncado);
-
 
         escribir_dato_memoria(direccion_fisica, tamanio_marco, texto_truncado, tamanio, pid);
         /* enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
@@ -125,7 +112,7 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
         agregar_buffer_para_enterosUint32(buffer_stdin, STRING);
         agregar_buffer_para_string(buffer_stdin, texto_truncado);
         enviar_buffer(buffer_stdin, conexion_memoria);
-        destruir_buffer(buffer_stdin); 
+        destruir_buffer(buffer_stdin);
 
         op_code codigo_memoria = recibir_op_code(conexion_memoria);
         if (codigo_memoria == OK)
@@ -175,10 +162,8 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
     sleep_ms(interfaz->tiempo_unidad_trabajo);
     tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
     t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
-    int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion); // con este valor, se lo envio a la memoria para que
-    log_info(logger, "TAMANIO A LEER %d", tamanio);
-    int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion); // donde voy a pedirle a memoria que busque el dato
-    log_info(logger, "DIRECCIONES FISICAS %d", direccion_fisica);
+    int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion); 
+    int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion);
     int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
     if (sol_operacion == IO_STDOUT_WRITE)
     {

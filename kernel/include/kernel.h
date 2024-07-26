@@ -53,6 +53,17 @@ typedef struct
 
 typedef struct
 {
+	t_tipoDeInstruccion instruccion;
+	int unidades_trabajo;
+	int pid;
+	int tamanio_reg;
+	int dir_fisica;
+	int tamanio_marco;
+
+} t_struct_io;
+
+typedef struct
+{
 	int cliente_io;
 	char *nombre_io;
 	enum_interfaz tipo_IO;
@@ -64,7 +75,6 @@ extern uint32_t PID_GLOBAL;
 extern t_log *logger;
 extern sem_t *GRADO_MULTIPROGRAMACION;
 extern sem_t *sem_agregar_a_estado;
-extern sem_t *sem_kernel_io_generica;
 
 extern int QUANTUM;
 extern pthread_t hiloQuantum;
@@ -121,7 +131,6 @@ config_kernel *inicializar_config_kernel();
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
 
-
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion);
 void evaluar_planificacion(char *planificador);
 
@@ -144,17 +153,16 @@ void *transicion_exec_blocked();
 void *transicion_blocked_ready();
 void iniciar_kernel();
 void levantar_servidores();
-int existe_recurso(int *posicion);
-bool existe_recurso2(char *nombre_recurso);
 
-void wait_instancia_recurso(int i);
+bool existe_recurso(char *nombre_recurso);
 
-void wait_instancia_recurso2(t_recurso *recurso);
-_Bool ya_tiene_instancias_del_recurso(void *ptr);
+void wait_instancia_recurso(t_recurso *recurso);
+_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso);
 
 void signal_instancia_recurso(t_recurso *recurso);
 void interfaz_no_conectada(int pid);
 void eliminar_proceso(t_pcb *proceso);
+t_pcb *buscar_pcb_en_colas(int pid);
 t_pcb *buscarProceso(uint32_t pid);
 void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
 
@@ -166,7 +174,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 _Bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz);
 t_cde *iniciar_cde(char *PATH);
 void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int tamanio_marco, int dir_fisica, t_infoIO *io, int pid);
-void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica,t_infoIO* io, int pid);
+void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, t_infoIO *io, int pid);
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid);
 void atender_interrupciones();
 char *buscar_recurso(char *recurso, int *posicion);
@@ -181,7 +189,7 @@ void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);
 void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo); // no se usa
 
 void valorSemaforo(sem_t *semaforo);
-
+void asignar_recurso(t_recurso *recurso, t_pcb *cde);
 bool existe_recurso2(char *nombre_recurso);
 
 t_recurso *obtener_recurso(char *nombre_recurso);

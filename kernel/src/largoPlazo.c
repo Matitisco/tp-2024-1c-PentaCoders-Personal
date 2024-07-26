@@ -6,7 +6,7 @@ void *largo_plazo()
 {
     while (1)
     {
-        sem_wait(binario_menu_lp);
+        // sem_wait(binario_menu_lp); SI SE DEJA ESTO SE TRABA A VECES
         sem_wait(GRADO_MULTIPROGRAMACION);
         sem_wait(b_reanudar_largo_plazo);
         t_pcb *proceso = transicion_new_a_ready();
@@ -25,8 +25,17 @@ char *lista_pid()
     for (int i = 0; i < list_size(cola_ready_global->estado); i++)
     {
         t_pcb *pcb = list_get(cola_ready_global->estado, i);
-        char *pid = string_itoa(pcb->cde->pid);
-        strcat(pids_en_ready, pid);
+        if (pcb->cde->pid != 0)
+        {
+            char *pid = string_itoa(pcb->cde->pid);
+            strcat(pids_en_ready, pid);
+        }
+        else
+        {
+            strcat(pids_en_ready, "0");
+            strcat(pids_en_ready, "\0");
+        }
+
         if (i != list_size(cola_ready_global->estado) - 1)
         {
             strcat(pids_en_ready, ",");

@@ -23,7 +23,7 @@ extern t_tlb * tlb_cpu;
 // TLB
 t_tlb *crear_tlb(int size_tlb, algoritmo_reemplazo_tlb algoritmo);
 t_entrada_tlb *crear_entrada_tlb(int pid, int nro_pagina, int nro_marco);
-
+void eliminar_tlb();
 // ENTRADAS
 void reemplazar_entrada_tlb(t_tlb *tlb, t_entrada_tlb *entrada);
 void agregar_entrada_a_tlb(t_tlb *tlb, t_entrada_tlb *entrada);

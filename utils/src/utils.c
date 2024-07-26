@@ -25,9 +25,11 @@ t_config *iniciar_config(char *config_path)
 
 void terminar_programa(int conexion, t_log *logger, t_config *config)
 {
-	destruirLog(logger);
-	destruirConfig(config);
-	liberar_conexion(conexion);
+	if (logger != NULL)
+		log_destroy(logger);
+	if (config != NULL)
+		config_destroy(config);
+	liberar_conexion(&conexion);
 }
 
 void destruirLog(t_log *logger)
@@ -43,14 +45,6 @@ void destruirConfig(t_config *config)
 	if (config != NULL)
 	{
 		config_destroy(config);
-	}
-}
-
-void liberarConexion(int conexion)
-{
-	if (conexion != 0)
-	{
-		liberar_conexion(conexion);
 	}
 }
 

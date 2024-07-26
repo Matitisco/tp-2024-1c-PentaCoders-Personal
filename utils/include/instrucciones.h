@@ -32,8 +32,8 @@ typedef enum
 typedef struct
 {
     t_tipoDeInstruccion codigo;
-    // parametros que puede llegar a recibir la instruccion ( ej. mov ac bx son dos parametros)
-    t_list* parametros;
+    t_list *parametros;
+
 } t_instruccion;
 
 #endif

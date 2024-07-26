@@ -70,22 +70,25 @@ t_pcb *buscar_proceso_por_pid(int pid);
 void pedido_instruccion_cpu_dispatch(int cliente_fd);
 t_list *leerArchivoConInstrucciones(char *nombre_archivo);
 t_cde *obtener_contexto_en_ejecucion(int PID);
-t_instruccion *crearInstruccion(char *linea);
 _Bool estaElContextoConCiertoPID(t_cde *contexto);
 char *obtener_char_instruccion(t_tipoDeInstruccion instruccion_code);
 t_cde *armarCde(tipo_buffer *buffer);
-
+int consultar_pagina_de_un_marco(t_tabla_paginas *tabla, int marco);
 void obtener_y_eliminar_cde(int pid, t_registros *reg);
 bool coincidePID(void *pid);
 void element_destroyer(void *element);
 void destroyer_instruccion(void *element);
 void eliminar_cde(int pid);
 void liberar_registros(t_registros *registros);
-
+void iniciar_memoria();
+void finalizar_memoria();
+void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante);
+void escritura(tipo_buffer *buffer, int cliente_solicitante);
+void crear_marcos(int cant_marcos);
 void *destroy_instruccion(void *element);
 
 // espacio de usuario
-
+void imprimir_espacio_usuario(void *espacio_usuario, int tam_memoria, int tam_pagina, t_bit_map *array_bitmap);
 char *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario();
 void *acceso_a_espacio_usuario_cpu();
@@ -115,4 +118,9 @@ int tamanio_proceso(int pid);
 void liberar_marco(int nroMarco);
 void imprimir_estado_marcos();
 void *conexiones_io();
+void* destruir_tabla(void *tabla);
+void* page_destroyer(void* pagina);
+
+void* destruir_cde(void* elemento);
+void* destruir_lista_instrucciones(void* instrucciones);
 #endif

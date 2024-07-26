@@ -12,9 +12,7 @@ int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
 char *nombre_recurso_recibido;
-int socket_interfaz;
 int socket_disp_io;
-t_pcb *proceso_interrumpido;
 int habilitar_planificadores;
 int QUANTUM;
 // Contadores Semaforos
@@ -61,12 +59,15 @@ sem_t *sem_finalizar_proceso;
 
 sem_t *contador_readys;
 char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
+char * ip_local;
 
 int main(int argc, char *argv[])
 {
+	ip_local = obtener_ip_local();
+	printf_blue("IP LOCAL: %s", ip_local);
 
 	iniciar_kernel();
-
+	
 	pthread_join(hiloMEMORIA, NULL);
 	pthread_join(hiloLargoPlazo, NULL);
 	pthread_join(hiloCortoPlazo, NULL);
@@ -77,6 +78,7 @@ int main(int argc, char *argv[])
 	pthread_join(largo_plazo_exit, NULL);
 	pthread_join(t_transicion_exec_ready, NULL);
 	pthread_join(hiloQuantum, NULL);
+	free(ip_local);
 }
 
 void iniciar_kernel()
@@ -110,7 +112,7 @@ void crear_hilos()
 
 void levantar_servidores()
 {
-	servidor_para_io = iniciar_servidor(logger, "Kernel", valores_config->ip_memoria, valores_config->puerto_escucha);
+	servidor_para_io = iniciar_servidor(logger, "Kernel", ip_local, valores_config->puerto_escucha);
 }
 
 void conexionAMemoria()
@@ -176,6 +178,7 @@ void iniciar_semaforos()
 	sem_init(bloquearReadyPlus, 0, 0);
 	sem_init(b_switch_readys, 0, 0);
 	sem_init(contador_readys, 0, 0);
+	sem_init(binario_menu_lp, 0, 0);
 	sem_init(sem_finalizar_proceso, 0, 0);
 }
 
@@ -214,21 +217,21 @@ config_kernel *inicializar_config_kernel()
 		tamanio++;
 	}
 
-	t_lista_recursos *recursos = list_create(); // lista con elementos de tipo t_recurso
+	t_lista_recursos *recursos = list_create();
 
 	for (int i = 0; i < tamanio; i++)
-	{ // voy creando tantos recursos según hayan en el config->  [RA,RB,RC] -> {"RA", "RB", "RC", NULL }
+	{
 		t_recurso *recurso = malloc(sizeof(t_recurso));
 		recurso->nombre = strdup(lista_recursos[i]);
-		// recurso.cola_bloqueados =  //colaEstado *cola_bloqueados;
-		recurso->instancias = malloc(sizeof(sem_t));
 
-		int instancias = atoi(instancias_recursos_str[i]); // cant de instancias del recurso
+		recurso->instancias = malloc(sizeof(sem_t));
+		int instancias = atoi(instancias_recursos_str[i]);
 		sem_init(recurso->instancias, 0, instancias);
+
+		recurso->cola_bloqueados = constructorColaEstado("BLOCK_RECURSO");
 		list_add(recursos, recurso);
 	}
 	configuracion->recursos = recursos;
-	// Libero los arrays
 	for (int i = 0; instancias_recursos_str[i] != NULL; i++)
 	{
 		free(instancias_recursos_str[i]);
@@ -301,10 +304,7 @@ void levantar_CPU_Dispatch()
 
 	while (1)
 	{
-		log_info(logger, "Espera codigo");
 		op_code cod = recibir_op_code(socket_cpu_dispatch);
-		tipo_buffer *buffer_cpu;
-		log_info(logger, "CODIGO RECIBIDO %d", cod);
 		switch (cod)
 		{
 		case FINALIZAR_PROCESO:
@@ -312,16 +312,12 @@ void levantar_CPU_Dispatch()
 			tipo_buffer *buffer_cpu_fin = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			motivoFinalizar motivo = leer_buffer_enteroUint32(buffer_cpu_fin);
-			destruir_buffer(buffer_cpu_fin);
+			// destruir_buffer(buffer_cpu_fin);
 
 			if (motivo == SUCCESS)
 			{
 				finalizar_proceso_success(cde_interrumpido->pid, motivo);
 				sem_post(b_largo_plazo_exit);
-			}
-			else
-			{
-				log_info(logger, "El Proceso Ya Fue Interrumpido y Finalizado");
 			}
 			sem_post(b_reanudar_largo_plazo);
 			sem_post(b_reanudar_corto_plazo);
@@ -334,118 +330,73 @@ void levantar_CPU_Dispatch()
 
 		case FIN_DE_QUANTUM:
 
-			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
-			cde_interrumpido = leer_cde(buffer_cpu);
-			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid);
+			tipo_buffer *buffer_quantum = recibir_buffer(socket_cpu_dispatch);
+			cde_interrumpido = leer_cde(buffer_quantum);
+			// destruir_buffer(buffer_quantum);
+			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid); // log obligatorio
 			pthread_cancel(hiloQuantum);
 			sem_post(b_transicion_exec_ready);
 			break;
 
 		case INSTRUCCION_INTERFAZ:
 
-			// Orden de Envio de Datos Para Interfaces (este orden)
-			// 1-OpCode INSTRUCCION_INTERFAZ
-			// 2-Datos de la Interfaz enviados por la instruccion
-			// 3-CDE Enviado por el Check Interrupt
-			log_info(logger, "Llego una interfaz");
-
-			buffer_cpu = recibir_buffer(socket_cpu_dispatch); // DATOS DE INTERFAZ
+			tipo_buffer *buffer_interfaz = recibir_buffer(socket_cpu_dispatch); // DATOS DE INTERFAZ
 
 			if (strcmp(valores_config->algoritmo_planificacion, "RR") == 0 || strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
 			{
 				pthread_cancel(hiloQuantum);
 			}
 
-			tipo_buffer *buffer_cde = recibir_buffer(socket_cpu_dispatch); // CDE
-			cde_interrumpido = leer_cde(buffer_cde);
-			destruir_buffer(buffer_cde);
-
+			tipo_buffer *buffer_interfaz_cde = recibir_buffer(socket_cpu_dispatch); // CDE
+			cde_interrumpido = leer_cde(buffer_interfaz_cde);
 			sem_post(b_transicion_exec_blocked);
-
-			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_cpu);
+			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_interfaz);
+			// destruir_buffer(buffer_interfaz);
+			// destruir_buffer(buffer_interfaz_cde);
 
 			break;
 
 		case WAIT_RECURSO:
 
-			tipo_buffer *buffer_cpu = recibir_buffer(socket_cpu_dispatch);
-			cde_interrumpido = leer_cde(buffer_cpu);
-
-			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
-			destruir_buffer(buffer_cpu);
-
-			sem_post(b_transicion_exec_blocked);
-
-			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
+			tipo_buffer *buffer_wait = recibir_buffer(socket_cpu_dispatch);
+			nombre_recurso_recibido = leer_buffer_string(buffer_wait);
+			tipo_buffer *buffer_wait_cde = recibir_buffer(socket_cpu_dispatch);
+			cde_interrumpido = leer_cde(buffer_wait_cde);
+			// destruir_buffer(buffer_wait);
+			// destruir_buffer(buffer_wait_cde);
+			if (existe_recurso(nombre_recurso_recibido))
 			{
-				printf("\033[0;33m\n Existe el recurso: %s \n \033[0m", nombre_recurso_recibido);
-
-				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
-				wait_instancia_recurso2(recurso); // el SO pierde uno del recurso llamado
-				int valor_instancias;
-
-				sem_getvalue(recurso->instancias, &valor_instancias);
-				log_info(logger, "Recurso: %s Instancias Restantes: %d", recurso->nombre, valor_instancias);
-
-				proceso_interrumpido = buscar_pcb_en_colas(cde_interrumpido->pid);
-				t_recurso *recurso_del_proceso = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
-				// se supone que si llega acá o bien el recurso ya estaba cargado o se cargó por primera vez -> t_recurso *recurso_del_proceso no debería ser NULL
-
-				int recursos_en_espera;
-
-				sem_getvalue(recurso_del_proceso->cola_bloqueados->contador, &recursos_en_espera);
-				log_info(logger, "recursos esperando %d", recursos_en_espera);
-				if (recursos_en_espera == 0) // si el proceso NO se bloqueo x falta de recurso
-				{
-					sem_post(b_transicion_blocked_ready);
-				} // si se bloqueo, queda esperando
+				t_recurso *recurso_SO = obtener_recurso(nombre_recurso_recibido);
+				wait_instancia_recurso(recurso_SO);
+				proceso_estado();
+				// free(recurso_SO);
 			}
-
 			else
 			{
-				printf("\033[38;2;255;105;180m \n No existe el recurso: %s a continuacion se muestra en donde esta el proceso: \n \033[0m", nombre_recurso_recibido);
-				proceso_estado();
-
+				// si no existe el recurso, lo finalizamos al proceso
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
-
 			break;
 
 		case SIGNAL_RECURSO:
 
-			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
-			cde_interrumpido = leer_cde(buffer_cpu);
-			nombre_recurso_recibido = leer_buffer_string(buffer_cpu);
-			destruir_buffer(buffer_cpu);
-
-			sem_post(b_transicion_exec_blocked);
-
-			if (existe_recurso2(nombre_recurso_recibido)) // encontro al recurso y existe
+			tipo_buffer *buffer_signal = recibir_buffer(socket_cpu_dispatch);
+			nombre_recurso_recibido = leer_buffer_string(buffer_signal);
+			tipo_buffer *buffer_signal_cde = recibir_buffer(socket_cpu_dispatch);
+			cde_interrumpido = leer_cde(buffer_signal_cde);
+			// destruir_buffer(buffer_signal);
+			// destruir_buffer(buffer_signal_cde);
+			if (existe_recurso(nombre_recurso_recibido))
 			{
-				printf("\033[0;33m\n Existe el recurso: %s \n \033[0m", nombre_recurso_recibido);
-
 				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
-
 				signal_instancia_recurso(recurso);
-
-				// sem_wait(recurso_buscado->instancias);
-
-				int valor_instancias;
-
-				sem_getvalue(recurso->instancias, &valor_instancias);
-				log_info(logger, "Recurso: %s Instancias Restantes: %d", recurso->nombre, valor_instancias);
-
-				// recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso);
-
-				sem_post(b_transicion_blocked_ready);
-				sem_post(b_reanudar_largo_plazo);
-				sem_post(b_reanudar_corto_plazo);
+				// imprimir_recursos();
+				//  free(recurso);
 			}
-			else // el recurso no existe
+			else
 			{
-				log_info(logger, "El Recurso Pedido No Existe En El Sistema");
-
+				// si no existe el recurso, lo finalizamos al proceso
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
@@ -453,19 +404,18 @@ void levantar_CPU_Dispatch()
 
 		case OUT_OF_MEMORY:
 
-			buffer_cpu = recibir_buffer(socket_cpu_dispatch);
-			cde_interrumpido = leer_cde(buffer_cpu);
+			tipo_buffer *buffer_out_memory = recibir_buffer(socket_cpu_dispatch);
+			cde_interrumpido = leer_cde(buffer_out_memory);
+			// destruir_buffer(buffer_out_memory);
 			sem_post(sem_finalizar_proceso);
 			finalizar_proceso(cde_interrumpido->pid, OUT_OF_MEMORY_END);
 			sem_post(b_largo_plazo_exit);
 			sem_post(b_reanudar_largo_plazo);
 			sem_post(b_reanudar_corto_plazo);
-
 			break;
 
 		default:
-
-			log_warning(logger, "Operacion - No conozco el codigo enviado por la CPU");
+			log_warning(logger, "OPERACION CPU DISPATCH: <%d> - DESCONOCIDA", cod);
 			break;
 		}
 	}
@@ -477,12 +427,6 @@ _Bool interfaz_esta_en_lista(void *ptr)
 {
 	t_infoIO *interfaz = (t_infoIO *)ptr;
 	return strcmp(interfaz->nombre_io, nombre_IO) == 0;
-}
-
-_Bool interfaz_esta_conectada(t_infoIO *informacion_interfaz)
-{
-	op_code cod_op = CONFIRMAR_CONEXION;
-	return (send(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), 0) == -1) || (recv(informacion_interfaz->cliente_io, &cod_op, sizeof(uint32_t), MSG_WAITALL) == -1);
 }
 
 void *levantarIO()
@@ -591,6 +535,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	t_infoIO *informacion_interfaz;
 	uint32_t tamanioRegistro;
 	uint32_t direccion_fisica;
+	t_struct_io *io_con_info_buffer = malloc(sizeof(t_struct_io));
 
 	switch (operacion_desde_cpu_dispatch)
 	{
@@ -600,7 +545,13 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 
+		io_con_info_buffer->pid = pid;
+		io_con_info_buffer->instruccion = instruccion_interfaz;
+		io_con_info_buffer->unidades_trabajo = unidades_trabajo;
+
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+
+		list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 
 		if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 		{
@@ -609,25 +560,28 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		else
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_generica(unidades_trabajo, instruccion_interfaz, informacion_interfaz, pid);
+			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
+			// interfaz_conectada_generica(unidades_trabajo, instruccion_interfaz, informacion_interfaz, pid);
 		}
 		break;
 
 	case SOLICITUD_INTERFAZ_STDIN:
 
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
-		/* int paginas_necesarias = leer_buffer_enteroUint32(buffer_con_instruccion);
-		t_list *lista_direcciones_fisicas = list_create();
-		for (int i = 0; i < paginas_necesarias; i++)
-		{
-			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
-			list_add(lista_direcciones_fisicas, direccion_fisica);
-		} */
 		int tamanioMarco = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+
+		io_con_info_buffer->tamanio_marco = tamanioMarco;
+		io_con_info_buffer->tamanio_reg = tamanioRegistro;
+		io_con_info_buffer->dir_fisica = direccion_fisica;
+		io_con_info_buffer->pid = pid;
+		io_con_info_buffer->instruccion = instruccion_interfaz;
+
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+
+		list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 
 		if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 		{
@@ -636,7 +590,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		else
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, tamanioMarco, direccion_fisica, informacion_interfaz, pid);
+			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
+			// interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, tamanioMarco, direccion_fisica, informacion_interfaz, pid);
 		}
 		break;
 
@@ -645,8 +600,17 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+
+		io_con_info_buffer->pid = pid;
+		io_con_info_buffer->tamanio_reg = tamanioRegistro;
+		io_con_info_buffer->dir_fisica = direccion_fisica;
+		io_con_info_buffer->instruccion = instruccion_interfaz;
+
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+
+		list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 
 		if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 		{
@@ -655,7 +619,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		else
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-			interfaz_conectada_stdout(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz, pid);
+			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
+			// interfaz_conectada_stdout(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz, pid);
 		}
 		break;
 
@@ -674,6 +639,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 			if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 			{
 				interfaz_no_conectada(pid);
@@ -690,6 +656,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 			if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 			{
 				interfaz_no_conectada(pid);
@@ -709,6 +676,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
+			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 			if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 			{
 				interfaz_no_conectada(pid);
@@ -719,6 +687,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 				fs_write_read(nombre_archivo, instruccion_interfaz, tamanio, direccion_fisica, puntero_archivo, informacion_interfaz);
 			}
 			break;
+		default:
+			log_info(logger, "No es una instruccion de FS");
 		}
 		log_info(logger, "FIN INSTRUCCION DE FS");
 		break;
@@ -856,134 +826,64 @@ void interfaz_no_conectada(int pid)
 	finalizar_proceso(pid, INVALID_INTERFACE);
 }
 
-void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid)
+void interfaz_conectada(t_infoIO *io, t_struct_io *informacion_buffer)
 {
 	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-
 	op_code operacion_io = recibir_op_code(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
 
 	if (operacion_io == ESTOY_LIBRE)
 	{
-		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, unidades_trabajo);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
-		enviar_buffer(buffer_interfaz, io->cliente_io);
+		enviar_buffer_interfaz(io, informacion_buffer);
 		operacion_io = recibir_op_code(io->cliente_io);
 		if (operacion_io == CONCLUI_OPERACION)
 		{
-			log_info(logger, "La Interfaz Concluyo su Operacion");
+			log_info(logger, "INTERFAZ: <%s> - Operacion Realizada", io->nombre_io);
 			sem_post(b_transicion_blocked_ready);
-			if (list_is_empty(io->procesos_espera))
-			{
-				log_info(logger, "No hay procesos en espera");
-			}
-			else
-			{
-				t_cde *cde_espera = list_remove(io->procesos_espera, 0); // obtengo el que esta esperando mas tiempo
-				log_info(logger, "El proceso que estaba en espera es el proceso PID: %d", cde_espera->pid);
-			}
-		}
-	}
-	else if (operacion_io == NO_ESTOY_LIBRE)
-	{
-		log_info(logger, "Interfaz Ocupada");
-		list_add(io->procesos_espera, cde_interrumpido);
-		log_info(logger, "Se agrego el proceso: %d a la lista de pendientes de la interfaz %s", pid, io->nombre_io);
-	}
-}
-
-void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int tamanio_marco, int dir_fisica, t_infoIO *io, int pid)
-{
-	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-
-	op_code operacion_io = recibir_op_code(io->cliente_io);
-	tipo_buffer *buffer_interfaz = crear_buffer();
-
-	if (operacion_io == ESTOY_LIBRE)
-	{
-		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_reg);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_marco);
-		// agregar_buffer_para_enterosUint32(buffer_interfaz, list_size(dirs_fisicas));
-		/* for (int i = 0; i < list_size(dirs_fisicas); i++)
-		{
-			agregar_buffer_para_enterosUint32(buffer_interfaz, list_get(dirs_fisicas, i));
-		} */
-
-		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
-		enviar_buffer(buffer_interfaz, io->cliente_io);
-		operacion_io = recibir_op_code(io->cliente_io);
-
-		if (operacion_io == CONCLUI_OPERACION)
-		{
-			log_info(logger, "La Interfaz Concluyo su Operacion");
-			sem_post(b_transicion_blocked_ready);
-			if (list_is_empty(io->procesos_espera))
-			{
-				log_info(logger, "No hay procesos en espera");
-			}
-			else
-			{
-				t_cde *cde_espera = list_remove(io->procesos_espera, 0); // obtengo el que esta esperando mas tiempo
-				log_info(logger, "El proceso que estaba en espera es el proceso PID: %d", cde_espera->pid);
-			}
+			list_remove(io->procesos_espera, 0);
 		}
 	}
 	else
 	{
-		log_info(logger, "Interfaz Ocupada");
-		list_add(io->procesos_espera, cde_interrumpido);
-		log_info(logger, "Se agrego el proceso: %d a la lista de pendientes de la interfaz %s", pid, io->nombre_io);
+		log_info(logger, "INTERFAZ: <%s> - OCUPADA POR OTRO PROCESO");
 	}
 }
 
-void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int dir_fisica, t_infoIO *io, int pid)
+void enviar_buffer_interfaz(t_infoIO *interfaz, t_struct_io *info_buffer)
 {
-	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-
-	op_code operacion_io = recibir_op_code(io->cliente_io);
 	tipo_buffer *buffer_interfaz = crear_buffer();
-
-	if (operacion_io == ESTOY_LIBRE)
+	switch (interfaz->tipo_IO)
 	{
-		agregar_buffer_para_enterosUint32(buffer_interfaz, instruccion_a_ejecutar);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, tamanio_reg);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, dir_fisica);
-		agregar_buffer_para_enterosUint32(buffer_interfaz, pid);
-		enviar_buffer(buffer_interfaz, io->cliente_io);
-
-		operacion_io = recibir_op_code(io->cliente_io);
-
-		if (operacion_io == CONCLUI_OPERACION)
-		{
-			log_info(logger, "La Interfaz Concluyo su Operacion");
-			sem_post(b_transicion_blocked_ready);
-			if (list_is_empty(io->procesos_espera))
-			{
-				log_info(logger, "No hay procesos en espera");
-			}
-			else
-			{
-				t_cde *cde_espera = list_remove(io->procesos_espera, 0); // obtengo el que esta esperando mas tiempo
-				log_info(logger, "El proceso que estaba en espera es el proceso PID: %d", cde_espera->pid);
-			}
-		}
+	case GENERICA:
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->instruccion);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->unidades_trabajo);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->pid);
+		break;
+	case STDIN:
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->instruccion);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->tamanio_reg);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->tamanio_marco);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->dir_fisica);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->pid);
+		break;
+	case STDOUT:
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->instruccion);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->tamanio_reg);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->dir_fisica);
+		agregar_buffer_para_enterosUint32(buffer_interfaz, info_buffer->pid);
+		break;
+	default:
+		log_error(logger, "Tipo de Interfaz Desconocida");
+		break;
 	}
-	else
-	{
-		log_info(logger, "Interfaz Ocupada");
-		list_add(io->procesos_espera, cde_interrumpido);
-		log_info(logger, "Se agrego el proceso: %d a la lista de pendientes de la interfaz %s", pid, io->nombre_io);
-	}
+	enviar_buffer(buffer_interfaz, interfaz->cliente_io);
+	destruir_buffer(buffer_interfaz);
 }
 
 // MANEJO DE RECURSOS
 
-bool existe_recurso2(char *nombre_recurso)
+bool existe_recurso(char *nombre_recurso)
 {
-
 	for (size_t i = 0; i < list_size(valores_config->recursos); i++)
 	{
 		t_recurso *recurso = list_get(valores_config->recursos, i);
@@ -993,34 +893,26 @@ bool existe_recurso2(char *nombre_recurso)
 			return true;
 			break;
 		}
-		// TODO: hacer free para recurso
 	}
 	return false;
 }
 
 t_recurso *obtener_recurso(char *nombre_recurso)
-{ // dado un nombre de un recuso, devuelve el recurso
-	t_recurso *recurso = NULL;
+{
 	for (size_t i = 0; i < list_size(valores_config->recursos); i++)
 	{
-		recurso = list_get(valores_config->recursos, i);
-
+		t_recurso *recurso = list_get(valores_config->recursos, i);
 		if (strcmp(recurso->nombre, nombre_recurso) == 0)
 		{
 			return recurso;
 			break;
 		}
-		// TODO: hacer free para recurso
 	}
-
-	log_error(logger, "NO se encuentra el recurso");
-
 	return NULL;
 }
 
-_Bool ya_tiene_instancias_del_recurso(void *ptr)
+_Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso)
 {
-	t_recurso *recurso_proceso = (t_recurso *)ptr;
 	if (strcmp(nombre_recurso_recibido, recurso_proceso->nombre) == 0)
 	{
 		return 1;
@@ -1028,75 +920,97 @@ _Bool ya_tiene_instancias_del_recurso(void *ptr)
 	return 0;
 }
 
-void signal_instancia_recurso(t_recurso *recurso) // Si llegó aca existe el recurso -> sumarle 1 a la cantidad de instancias del mismo.
+void signal_instancia_recurso(t_recurso *recurso)
 {
-	int valor;
+	int proceso_en_espera;
+	t_pcb *proceso;
 
-	sem_getvalue(recurso->instancias, &valor);
+	sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera); // R SO
 
-	if (valor > 0)
-	{								   // si hay instancias del recurso
-		sem_post(recurso->instancias); // sumo 1 al contador de las instancias global
-	}
-	else if (valor == 0)
-	{	// hay que sacar de bloqueado el proceso
-		// t_pcb * proceso_bloqueado = sacar_procesos_cola(recurso->cola_bloqueados);
-		// agregar_a_estado(proceso_bloqueado, cola_ready_global);
-		/*
-		 En caso de que corresponda, desbloquea al primer proceso de la cola de bloqueados de ese recurso.
-		Una vez hecho esto, se devuelve la ejecución al proceso que peticiona el SIGNAL.
-
-		-aca tengo que ver si tengo un proceso bloqueado por un recurso,si ESTE signal se esta haciendo a ESE recurso
-		bloqueante, verifico si ya se puede desbloquear el proceso
-		sacar_procesos_cola()
-		*/
-
-		// list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
+	if (proceso_en_espera > 0) // libera a otro proceso bloqueado
+	{
+		sem_post(b_transicion_blocked_ready);
+		proceso = sacar_procesos_cola(recurso->cola_bloqueados);
+		mostrar_procesos(recurso->cola_bloqueados);
 	}
 
-	// aca hay que sacarle un recursos al proceso que lo tiene e incrementar las intancias del mismo
+	enviar_a_cpu_cde(cde_interrumpido);
+	sem_post(recurso->instancias); // R SO
 }
 
-// no se puede liberar un recurso que no se está consumiendo
-
-void wait_instancia_recurso2(t_recurso *recurso) // si entra acá es porque el recurso existe
+void wait_instancia_recurso(t_recurso *recurso)
 {
 	int valor;
-
 	sem_getvalue(recurso->instancias, &valor);
+	t_pcb *proceso_interrumpido = buscar_pcb_en_colas(cde_interrumpido->pid);
+	proceso_interrumpido->cde = cde_interrumpido;
 
-	if (valor > 0) // Si hay instancias del recurso, puedo restar y asignar a un proceso
+	t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso); // R PROCESO
+
+	if (valor > 0) // Hay instancias del recurso (SO)
 	{
-		sem_wait(recurso->instancias); // le doy una instancia al proceso, y le quito una a la lista de recursos que tiene el SO
-		// De aca para abajo asigna al proceso los recursos retenidos
-
-		proceso_interrumpido = buscar_pcb_en_colas(cde_interrumpido->pid); // PCB
-
-		t_recurso *recurso_buscado = list_find(proceso_interrumpido->recursosAsignados, ya_tiene_instancias_del_recurso); // si no lo encuentra devuelve NULL
-		if (recurso_buscado == NULL)																					  // el caso de que el proceso no contaba con el recurso ya cargado
+		sem_wait(recurso->instancias);
+		// SUMO instancia de recurso al PROCESO (esta reteniendo)
+		if (recurso_buscado == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
 		{
-			log_info(logger, "Recurso: <%s> No estaba cargado en proceso - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
+			// log_info(logger, "Recurso: <%s> No estaba cargado en proceso - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
 			t_recurso *recurso_asignado = malloc(sizeof(t_recurso));
 			recurso_asignado->nombre = nombre_recurso_recibido;
 			recurso_asignado->instancias = malloc(sizeof(sem_t));
-			recurso_asignado->cola_bloqueados = constructorColaEstado("BLOCK");
 			sem_init(recurso_asignado->instancias, 0, 1);
 
 			list_add(proceso_interrumpido->recursosAsignados, recurso_asignado);
-			log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", recurso_asignado->nombre, proceso_interrumpido->cde->pid);
+			// log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", recurso_asignado->nombre, proceso_interrumpido->cde->pid);
 		}
 		else // ya tiene el recurso cargado el proceso
 		{
-			log_info(logger, "Recurso: <%s> Estaba cargado en el proceso - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
-			sem_post(recurso_buscado->instancias);
-			log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
+			// log_info(logger, "Recurso: <%s> Estaba cargado en el proceso - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
+			sem_post(recurso_buscado->instancias); // Cant de instancias que retiene el proceso
+												   // log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", nombre_recurso_recibido, proceso_interrumpido->cde->pid);
 		}
-	} // recurso_del_proceso->cola_bloqueados->contador
-	else
+		enviar_a_cpu_cde(cde_interrumpido);
+	}
+	else // mando proceso a cola de bloqueados correspondiente al recurso
 	{
-		log_info(logger, "PID: <%d> - Bloqueado por: <%s>", proceso_interrumpido->cde->pid, nombre_recurso_recibido);
-		// mandar proceso a cola de bloqueados correspondiente al recurso
-		// agregar_a_estado(proceso_interrumpido, recurso->cola_bloqueados);
-		// sem_post(b_transicion_exec_blocked);
+		sem_post(b_transicion_exec_blocked);
+		agregar_a_estado(proceso_interrumpido, recurso->cola_bloqueados); // R SO
+																		  // log_info(logger, "PID: <%d> - Bloqueado por: <%s> con procesos en espera", proceso_interrumpido->cde->pid, nombre_recurso_recibido);
 	}
 }
+
+void asignar_recurso(t_recurso *recurso, t_pcb *pcb)
+{
+	// log_info(logger, "SE LIBERO UNA INSTANCIA DEL RECURSO %s  yse la vamos a dar al proceso %d", recurso->nombre, pcb->cde->pid);
+	nombre_recurso_recibido = recurso->nombre;
+	t_recurso *recurso_proceso = list_find(pcb->recursosAsignados, ya_tiene_instancias_del_recurso); // R PROCESO
+	sem_wait(recurso->instancias);
+
+	if (recurso_proceso == NULL) // el caso de que el proceso no contaba con el recurso ya cargado
+	{
+		// log_info(logger, "Recurso: <%s> No estaba cargado en proceso - PID: <%d>", nombre_recurso_recibido, pcb->cde->pid);
+		t_recurso *recurso_asignado = malloc(sizeof(t_recurso));
+		recurso_asignado->nombre = nombre_recurso_recibido;
+		recurso_asignado->instancias = malloc(sizeof(sem_t));
+		sem_init(recurso_asignado->instancias, 0, 1);
+		list_add(pcb->recursosAsignados, recurso_asignado);
+		// log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", recurso_asignado->nombre, pcb->cde->pid);
+	}
+	else
+	{
+		// log_info(logger, "Recurso: <%s> Estaba cargado en el proceso - PID: <%d>", nombre_recurso_recibido, pcb->cde->pid);
+		sem_post(recurso_proceso->instancias); // Cant de instancias que retiene el proceso
+											   // log_info(logger, "Recurso: <%s> Cargado - PID: <%d>", nombre_recurso_recibido, pcb->cde->pid);
+	}
+	sem_post(b_transicion_blocked_ready);
+}
+
+/* void imprimir_recursos()
+{
+	for (size_t i = 0; i < list_size(valores_config->recursos); i++)
+	{
+		t_recurso *recurso = list_get(valores_config->recursos, i);
+		int valor;
+		sem_getvalue(recurso->instancias, &valor);
+		log_info(logger, "Recurso: %s - Cant: %d", recurso->nombre, valor);
+	}
+} */

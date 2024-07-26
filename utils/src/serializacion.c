@@ -3,12 +3,10 @@ t_log *logger;
 
 tipo_buffer *crear_buffer()
 {
-    tipo_buffer *buffer = calloc(1, sizeof(tipo_buffer));
+    tipo_buffer *buffer = (tipo_buffer *)calloc(1, sizeof(tipo_buffer));
 
-    // Verificar si la asignación de memoria fue exitosa.
     if (buffer == NULL)
     {
-        // Manejo del error, por ejemplo, retornar NULL o manejar de otra manera.
         return NULL;
     }
     return buffer;
@@ -129,14 +127,6 @@ char *leer_buffer_string(tipo_buffer *buffer)
     return cadena;
 }
 
-t_list *leer_buffer_instrucciones(tipo_buffer *buffer)
-{
-    t_list *lista_instrucciones;
-    uint32_t tamanio;
-    tamanio = leer_buffer_enteroUint32(buffer);
-    return lista_instrucciones;
-}
-
 t_registros *leer_buffer_registros(tipo_buffer *buffer)
 {
     t_registros *registros = malloc(sizeof(t_registros));
@@ -158,7 +148,6 @@ t_cde *leer_cde(tipo_buffer *buffer)
     t_cde *cde = malloc(sizeof(t_cde));
     cde->pid = leer_buffer_enteroUint32(buffer);
     cde->PC = leer_buffer_enteroUint32(buffer);
-    cde->registros = malloc(sizeof(t_registros));
     cde->registros = leer_buffer_registros(buffer);
     return cde;
 }
@@ -203,7 +192,6 @@ void agregar_t_write_memoria_buffer(tipo_buffer *buffer, t_write_memoria *escrib
     buffer->size = nuevo_tamano;
 }
 
-
 void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
 { // esta función no implementa chequeo de pagina, simplemente escribe
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
@@ -226,7 +214,6 @@ void escribir_memoria(int socket_memoria, uint32_t direccion_fisica, int size, v
         log_error(logger, "DIRECCION INCORRECTA");
     }
 }
-
 
 t_write_memoria *leer_t_write_memoria_buffer(tipo_buffer *buffer)
 {
