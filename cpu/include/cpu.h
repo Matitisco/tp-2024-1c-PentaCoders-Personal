@@ -52,7 +52,7 @@ config_cpu *configurar_cpu();
 void tlb_iniciar(char *algoritmo, int cant_entradas);
 
 // CONEXIONES Y SERVIDORES
-void levantar_conexion_a_memoria();
+void* levantar_conexion_a_memoria();
 void *levantar_kernel_dispatch();
 void *levantar_kernel_interrupt();
 

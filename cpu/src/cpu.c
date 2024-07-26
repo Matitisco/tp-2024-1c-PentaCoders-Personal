@@ -38,8 +38,10 @@ int main(int argc, char *argv[])
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
 	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
 	pthread_join(hilo_CPU_CLIENTE, NULL);
+	printf_red("CPU FINALIZADA");
 
 	log_destroy(logger);
+	printf_red("CPU FINALIZADA");
 	config_destroy(valores_config_cpu->config);
 	free(valores_config_cpu->algoritmo_tlb);
 	free(valores_config_cpu->ip);
@@ -47,8 +49,9 @@ int main(int argc, char *argv[])
 	free(valores_config_cpu->puerto_escucha_interrupt);
 	free(valores_config_cpu->puerto_memoria);
 	free(valores_config_cpu);
-	eliminar_tlb();
+	//eliminar_tlb();
 	free(registros);
+	printf_red("CPU FINALIZADA");
 	liberar_conexion(&socket_memoria);
 	free(ip_local);
 }
@@ -82,7 +85,7 @@ void iniciar_semaforos_CPU()
 
 void crear_hilos_CPU()
 {
-	pthread_create(&hilo_CPU_CLIENTE, NULL, (void *(*)(void *))levantar_conexion_a_memoria, NULL);
+	pthread_create(&hilo_CPU_CLIENTE, NULL, levantar_conexion_a_memoria, NULL);
 	pthread_create(&hilo_CPU_SERVIDOR_DISPATCH, NULL, levantar_kernel_dispatch, NULL);
 	pthread_create(&hilo_CPU_SERVIDOR_INTERRUPT, NULL, levantar_kernel_interrupt, NULL);
 }
@@ -114,7 +117,9 @@ void *levantar_kernel_dispatch()
 		if (codigo == -1)
 		{
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
-			return (void *)EXIT_FAILURE;
+			pthread_cancel(hilo_CPU_SERVIDOR_INTERRUPT); 
+			pthread_cancel(hilo_CPU_CLIENTE); 
+			exit(EXIT_FAILURE);
 		}
 
 		switch (codigo)
@@ -161,7 +166,9 @@ void *levantar_kernel_interrupt()
 			if (codigo == -1)
 			{
 				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-				return (void *)EXIT_FAILURE;
+				pthread_cancel(hilo_CPU_SERVIDOR_DISPATCH);
+				pthread_cancel(hilo_CPU_CLIENTE);    
+				exit(EXIT_FAILURE);
 			}
 
 			switch (codigo)
@@ -181,7 +188,7 @@ void *levantar_kernel_interrupt()
 	}
 }
 
-void levantar_conexion_a_memoria()
+void* levantar_conexion_a_memoria()
 {
 	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, valores_config_cpu->puerto_memoria);
 	recibir_tamanio_pagina(socket_memoria);
