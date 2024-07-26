@@ -1,5 +1,5 @@
 #include "../include/espacio_usuario.h"
-extern void *espacio_usuario; // espacio_usuario está definido en otro lugar
+extern void *espacio_usuario;
 
 void imprimir_rango_memoria(void *espacio_usuario, uint32_t inicio, uint32_t fin)
 {
@@ -19,13 +19,6 @@ void imprimir_rango_memoria(void *espacio_usuario, uint32_t inicio, uint32_t fin
 
     // Convertir el puntero a un puntero a unsigned char para imprimir bytes
     unsigned char *memoria = (unsigned char *)espacio_usuario;
-
-    printf("Valores en el rango de memoria de %u a %u:\n", inicio, fin);
-    for (uint32_t i = inicio; i <= fin; i++)
-    {
-        // Imprimir el valor en hexadecimal
-        printf("Dirección %u: %02X\n", i, memoria[i]);
-    }
 }
 
 void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio, t_log *logger, int pid)
@@ -42,7 +35,7 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
     int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
     if (pagina != -1)
     {
-        log_info(logger, "Se accedio al espacio de escritura del proceso");
+        // log_info(logger, "Se accedio al espacio de escritura del proceso");
         void *destino = espacio_usuario + direccion_fisica;
         memcpy(destino, valor_a_escribir, tamanio);
         imprimir_rango_memoria(espacio_usuario, direccion_fisica, direccion_fisica + tamanio);
@@ -64,17 +57,19 @@ int chequear_lectura_escritura_en_espacio_usuario(int direccion_fisica, int pid)
         return -1;
     }
     int pagina = consultar_pagina_de_un_marco(tabla, marco);
+
     return pagina;
 }
 
 void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *logger, int pid)
 {
+    // log obligatorio
     log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
 
     int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
     if (pagina != -1)
     {
-        log_info(logger, "Se accedio al espacio de lectura del proceso");
+        // log_info(logger, "Se accedio al espacio de lectura del proceso");
 
         void *valor = malloc(tamanio);
         if (valor == NULL)
@@ -101,7 +96,7 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
             // Copiar los datos desde la página
 
             memcpy(valor + bytes_leidos, espacio_usuario + direccion_pagina, bytes_a_copiar);
-            printf("Página leída: ");
+            // printf("Página leída: ");
             for (size_t i = 0; i < bytes_a_copiar; i++)
             {
                 log_info(logger, "%02x ", ((unsigned char *)(valor + bytes_leidos))[i]);
@@ -125,27 +120,6 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
 
     return NULL;
 }
-
-/* void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *logger, int pid)
-{
-    log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
-
-    int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
-    if (pagina != -1)
-    {
-        log_info(logger, "Se accedio al espacio de lectura del proceso");
-
-        void *valor = malloc(tamanio);
-        memcpy(valor, espacio_usuario + direccion_fisica, tamanio); //<--- La funcion es esto, lo demas son chequeos
-        return valor;
-    }
-    else
-    {
-        log_error(logger, "Se quiere leer por fuera del espacio del proceso asignado");
-    }
-
-    return NULL;
-} */
 
 void crear_espacio_usuario(int tam_memoria, t_log *logger)
 {

@@ -109,12 +109,10 @@ void conectarse_kernel(t_interfaz *interfaz)
 	op_code mensaje_kernel = recibir_op_code(conexion_kernel);
 	if (mensaje_kernel == ESTABA_CONECTADO)
 	{
-		log_info(logger, "YA ESTOY CONECTADA CON KERNEL");
 		exit(1);
 	}
 	else if (mensaje_kernel == NO_ESTABA_CONECTADO)
 	{
-		log_info(logger, "CONEXION EXITOSA CON KERNEL");
 	}
 }
 
@@ -124,7 +122,6 @@ void conectarse_memoria(t_interfaz *interfaz)
 
 	if (conexion_memoria == 0)
 	{
-		log_error(logger, "No pude conectarme a Memoria o esta apagada");
 		exit(1);
 	}
 }
@@ -205,7 +202,7 @@ void inicializar_config_IO(char *PATH)
 	{
 		getcwd(directorioActual, sizeof(directorioActual));
 	}
-	strcat(directorioActual,"/");
+	strcat(directorioActual, "/");
 	strcat(directorioActual, PATH);
 	config_interfaz->config = iniciar_config(PATH);
 	config_interfaz->tipo_interfaz = config_get_string_value(config_interfaz->config, "TIPO_INTERFAZ");

@@ -59,7 +59,7 @@ sem_t *sem_finalizar_proceso;
 
 sem_t *contador_readys;
 char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
-char * ip_local;
+char *ip_local;
 
 int main(int argc, char *argv[])
 {
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 	printf_blue("IP LOCAL: %s", ip_local);
 
 	iniciar_kernel();
-	
+
 	pthread_join(hiloMEMORIA, NULL);
 	pthread_join(hiloLargoPlazo, NULL);
 	pthread_join(hiloCortoPlazo, NULL);
@@ -561,7 +561,6 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
-			// interfaz_conectada_generica(unidades_trabajo, instruccion_interfaz, informacion_interfaz, pid);
 		}
 		break;
 
@@ -591,7 +590,6 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
-			// interfaz_conectada_stdin(instruccion_interfaz, tamanioRegistro, tamanioMarco, direccion_fisica, informacion_interfaz, pid);
 		}
 		break;
 
@@ -620,7 +618,6 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			log_info(logger, "La interfaz %s esta conectada", nombre_IO);
 			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
-			// interfaz_conectada_stdout(instruccion_interfaz, tamanioRegistro, direccion_fisica, informacion_interfaz, pid);
 		}
 		break;
 
@@ -629,6 +626,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		tipo_buffer *buffer_archivo = recibir_buffer(socket_cpu_dispatch);
 		char *nombre_archivo = leer_buffer_string(buffer_archivo);
 		uint32_t tamanio;
+		int marco;
 		uint32_t direccion_fisica;
 		uint32_t puntero_archivo;
 		switch (instruccion_interfaz)
@@ -670,6 +668,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		case IO_FS_WRITE:
 		case IO_FS_READ:
+			if (instruccion_interfaz == IO_FS_READ)
+			{
+				marco = leer_buffer_enteroUint32(buffer_con_instruccion);
+			}
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
 			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 			puntero_archivo = leer_buffer_enteroUint32(buffer_con_instruccion);
@@ -684,7 +686,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			else
 			{
 				log_info(logger, "La interfaz %s esta conectada", nombre_IO);
-				fs_write_read(nombre_archivo, instruccion_interfaz, tamanio, direccion_fisica, puntero_archivo, informacion_interfaz);
+				fs_write_read(nombre_archivo, instruccion_interfaz, marco, tamanio, direccion_fisica, puntero_archivo, informacion_interfaz);
 			}
 			break;
 		default:
@@ -780,7 +782,7 @@ void fs_truncate(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz,
 	}
 }
 
-void fs_write_read(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, uint32_t tamanio, uint32_t reg_direccion, uint32_t puntero_archivo, t_infoIO *io)
+void fs_write_read(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, uint32_t marco, uint32_t tamanio, uint32_t reg_direccion, uint32_t puntero_archivo, t_infoIO *io)
 {
 	tipo_buffer *buffer_fs = crear_buffer();
 	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
@@ -793,6 +795,10 @@ void fs_write_read(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfa
 		agregar_buffer_para_enterosUint32(buffer_fs, tamanio);
 		agregar_buffer_para_enterosUint32(buffer_fs, reg_direccion);
 		agregar_buffer_para_enterosUint32(buffer_fs, puntero_archivo);
+		if (instruccion_interfaz == IO_FS_READ)
+		{
+			agregar_buffer_para_enterosUint32(buffer_fs, marco);
+		}
 		agregar_buffer_para_string(buffer_fs, nombre_archivo);
 		enviar_buffer(buffer_fs, io->cliente_io);
 

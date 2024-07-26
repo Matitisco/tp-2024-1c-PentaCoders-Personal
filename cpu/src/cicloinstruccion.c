@@ -203,7 +203,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 
     uint8_t valor8;
     uint32_t valor32;
-    size_t int_tamanio=1;
+    size_t int_tamanio = 1;
     /*
     if (strcmp(direccion, "AX") == 0 || strcmp(direccion, "BX") == 0 || strcmp(direccion, "CX") == 0 || strcmp(direccion, "DX") == 0)
 
@@ -482,8 +482,9 @@ void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_dire
     buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
-    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_WRITE);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_READ);
     uint32_t tamanio = obtener_valor(reg_tamanio);
+    agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio_pagina);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
     uint32_t puntero = obtener_valor(puntero_archivo);

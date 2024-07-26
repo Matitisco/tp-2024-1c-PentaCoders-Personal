@@ -344,18 +344,15 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		interrupcion_rr = 0;
-		log_info(logger, "INTERRUPCION - FIN DE QUANTUM");
 		if (interrupcion_io)
 		{
 			interrupcion_io = 0;
-			log_info(logger, "INTERRUPCION - IO");
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch); // enviamos proceso interrumpido
 		}
 		else if (interrupcion_fs)
 		{
 			interrupcion_fs = 0;
-			log_info(logger, "INTERRUPCION - FS");
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
 			destruir_buffer(buffer_instruccion_io);
@@ -367,15 +364,13 @@ void check_interrupt()
 		else if (interrupcion_exit)
 		{
 			interrupcion_exit = 0;
-			log_info(logger, "INTERRUPCION - EXIT CONSOLA");
 			enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 			exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 		}
 		else
 		{
-			log_info(logger, "INTERRUPCION - OCURRIO FIN DE QUANTUM");
 			enviar_op_code(socket_kernel_dispatch, FIN_DE_QUANTUM);
-			log_info(logger, "PROGRAM COUNTER %d", cde_recibido->PC);
+
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		}
@@ -383,7 +378,6 @@ void check_interrupt()
 	else if (interrupcion_exit)
 	{
 		interrupcion_exit = 0;
-		log_info(logger, "INTERRUPCION - EXIT CONSOLA");
 		enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 		exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 	}
@@ -391,7 +385,6 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		interrupcion_io = 0;
-		log_info(logger, "INTERRUPCION - IO");
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		destruir_buffer(buffer_instruccion_io);
@@ -400,7 +393,6 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		interrupcion_fs = 0;
-		log_info(logger, "INTERRUPCION - FS");
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 		destruir_buffer(buffer_instruccion_io);
@@ -413,7 +405,7 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		desalojo_signal = 0;
-		log_info(logger, "INTERRUPCION - SIGNAL");
+
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	}
@@ -421,14 +413,10 @@ void check_interrupt()
 	{
 		salida_exit = 0;
 		desalojo_wait = 0;
-		log_info(logger, "INTERRUPCION - WAIT");
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	}
-	else
-	{
-		log_info(logger, "NO HAY INTERRUPCIONES");
-	}
+	
 	// destruir_buffer(buffer_cde);
 	return;
 }

@@ -33,44 +33,48 @@ int main(int argc, char *argv[])
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
     finalizar_memoria();
-    
 }
 
-void finalizar_memoria(){
+void finalizar_memoria()
+{
     liberar_conexion(&cliente_cpu);
     liberar_conexion(&cliente_kernel);
     config_destroy(valores_config->config);
     free(valores_config->ip_memoria);
     free(valores_config->path_instrucciones);
-    //free(valores_config->puerto_memoria);
+    free(valores_config->puerto_memoria);
     log_destroy(logger);
-    //destruir_tabla(tabla_actual);
+
+    // estas list destroy estaban comentadas, ahora las descomente
+    list_destroy_and_destroy_elements(lista_instrucciones, destruir_lista_instrucciones);
+    list_destroy_and_destroy_elements(lista_global_tablas, destruir_tabla);
+    list_destroy_and_destroy_elements(lista_contextos, destruir_cde);
+
+    destruir_tabla(tabla_actual);
     free(espacio_usuario);
     free(array_bitmap);
-
-    //list_destroy_and_destroy_elements(lista_instrucciones, destruir_lista_instrucciones);
-    //list_destroy_and_destroy_elements(lista_global_tablas, destruir_tabla);
-    //list_destroy_and_destroy_elements(lista_contextos, destruir_cde);
 }
-void* destruir_tabla(void *tabla)
+
+void *destruir_tabla(void *tabla)
 {
     t_tabla_paginas *tabla_a_eliminar = (t_tabla_paginas *)tabla;
     list_destroy_and_destroy_elements(tabla_a_eliminar->paginas_proceso, page_destroyer);
     free(tabla_a_eliminar);
 }
 
-void* page_destroyer(void *pagina)
+void *page_destroyer(void *pagina)
 {
     free(pagina);
 }
-void* destruir_lista_instrucciones(void* instrucciones)
+
+void *destruir_lista_instrucciones(void *instrucciones)
 {
     list_destroy_and_destroy_elements(instrucciones, free);
 }
 
-void* destruir_cde(void* elemento)
+void *destruir_cde(void *elemento)
 {
-    t_cde *cde = (t_cde*) elemento;
+    t_cde *cde = (t_cde *)elemento;
     list_destroy_and_destroy_elements(cde->lista_instrucciones, free);
     free(cde->path);
     free(cde->registros);
@@ -217,15 +221,16 @@ void *recibirCPU()
             int tamanio_actual = tamanio_proceso(cde->pid);
             if (tamanio_actual > nuevo_tamanio)
             {
+                // log obligatorio
                 log_info(logger, "PID: %d - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 reducir_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
             else
             {
+                // log obligatorio
                 log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
-            imprimir_tabla_de_paginas_proceso(tabla_actual);
             imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
             destruir_buffer(buffer_cpu);
             free(cde->registros);
@@ -255,10 +260,14 @@ void pedido_frame_mmu(int cliente_cpu)
     if (tabla == NULL)
     {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
-        log_error(logger, "PID: <%d> - NO SE ENCONTRO LA TABLA DE PAGINAS", pid);
+        // log_error(logger, "PID: <%d> - NO SE ENCONTRO LA TABLA DE PAGINAS", pid);
         return;
     }
+
     int marco = consultar_marco_de_una_pagina(tabla, pagina);
+
+    // log obligatorio
+    log_info(logger, "PID: <%d> - Pagina: <%d> - Marco: <%d>", pid, pagina, marco);
 
     if (marco == -1)
     {
@@ -272,7 +281,6 @@ void pedido_frame_mmu(int cliente_cpu)
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_CORRECTO);
         enviar_buffer(buffer_memoria_mmu, cliente_cpu);
         destruir_buffer(buffer_memoria_mmu);
-        log_info(logger, "PID: <%d> - Pagina: <%d> - Marco: <%d>", pid, pagina, marco);
     }
 }
 
@@ -282,6 +290,7 @@ int tamanio_proceso(int pid)
     int cant_paginas_proceso = list_size(tabla_paginas->paginas_proceso);
     return cant_paginas_proceso * valores_config->tam_pagina;
 }
+
 void *acceso_a_espacio_usuario_cpu()
 {
     op_code codigo, solicitud;
@@ -314,9 +323,10 @@ void *acceso_a_espacio_usuario_cpu()
     }
     return (void *)1;
 }
+
 void *acceso_a_espacio_usuario()
 {
-    op_code codigo, solicitud;
+    op_code codigo;
     codigo = recibir_op_code(CLIENTE_ESPACIO_USUARIO);
     switch (codigo)
     {
@@ -332,6 +342,7 @@ void *acceso_a_espacio_usuario()
         break;
     default:
         log_error(logger, "ERROR - ACCESO ESPACIO USUARIO");
+        return (void *)-1;
         break;
     }
     return (void *)1;
@@ -350,7 +361,6 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
     if (tipo_dato == INTEGER)
     {
         valor_a_escribir = leer_buffer_enteroUint32(buffer);
-        log_info(logger, "VALOR A ESCRIBIR %d", valor_a_escribir);
         resultado = escribir_espacio_usuario(direccion_fisica, &valor_a_escribir, tamanio, logger, pid_ejecutando);
     }
 
@@ -359,14 +369,9 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
         valor_string = leer_buffer_string(buffer);
         resultado = escribir_espacio_usuario(direccion_fisica, valor_string, tamanio, logger, pid_ejecutando);
     }
-
+    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (resultado != -1)
     {
-        if (tipo_dato == INTEGER)
-            log_info(logger, "Se escribio el valor: %d", valor_a_escribir);
-        else if (tipo_dato == STRING)
-            log_info(logger, "Se escribio el valor: %s", valor_string);
-
         enviar_op_code(cliente_solicitante, OK);
     }
     else
@@ -383,10 +388,10 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     tipoDato tipo_dato = leer_buffer_enteroUint32(buffer_lectura);
     void *valor_leido = calloc(1, tamanio);
     valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
-    int valor_int;
     uint32_t valor32;
     uint8_t valor8;
     char *valor_char = string_new();
+    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
@@ -447,7 +452,6 @@ void iniciar_proceso(int cliente_fd)
         list_add(lista_contextos, cde);
         list_add(lista_instrucciones, cde->lista_instrucciones);
         enviar_op_code(cliente_fd, INICIAR_PROCESO_CORRECTO);
-        log_info(logger, "PID: <%d> - Iniciar Proceso: <%s>", cde->pid, cde->path);
     }
 }
 
@@ -457,6 +461,7 @@ void crear_y_agregar_tabla_a_lista_global(int pid)
     tabla_proceso->paginas_proceso = list_create();
     tabla_proceso->pid = pid;
     list_add(lista_global_tablas, tabla_proceso);
+    // log obligatorio
     log_info(logger, "PID: <%d> - Tamaño : <%d>", pid, list_size(tabla_proceso->paginas_proceso));
 }
 
@@ -480,7 +485,6 @@ t_list *leerArchivoConInstrucciones(char *nombre_archivo)
 
     if (archivo == NULL)
     {
-        log_error(logger, "No se pudo abrir el archivo: <%s>", directorioActual);
         return NULL;
     }
     char linea_instruccion[1024];
@@ -519,8 +523,6 @@ void pedido_instruccion_cpu_dispatch(int cpu_dispatch)
 
     enviar_buffer(buffer_instruccion, cpu_dispatch);
     destruir_buffer(buffer_instruccion);
-    log_info(logger, "PID: <%d> - Instruccion: <%s>", PID, instruccion);
-
     destruir_buffer(buffer);
 }
 
@@ -565,10 +567,7 @@ void eliminar_cde(int pid)
 void element_destroyer(void *element)
 {
     char *valor = (char *)element;
-    log_info(logger, "Elemento eliminado: %s", valor);
     free(valor);
-    // hacer free daba error, ya que antes se liberaba una vez que enviaba la instruccion a cpu, funcion de arriba
-    // ahora solo se debe hacer free aca y anda :D
 }
 
 // CONFIGURACION DE LA MEMORIA
@@ -619,7 +618,7 @@ void eliminar_tabla_paginas(uint32_t pid)
 
     // Elimina todas las páginas y libera su memoria
     list_destroy_and_destroy_elements(tabla_paginas->paginas_proceso, (void *)destruir_pagina);
-    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap); // este esta desactualizado
+    // log obligatorio
     log_info(logger, "PID: <%d> - Tamaño: <%d> ", pid, cant_paginas);
 }
 
@@ -639,7 +638,6 @@ t_tabla_paginas *buscar_en_lista_global(int pid)
         tabla_actual = list_get(lista_global_tablas, i);
         if (tabla_actual->pid == pid)
         {
-            printf_green("Tabla encontrada");
             return tabla_actual;
         }
     }
@@ -649,11 +647,10 @@ t_tabla_paginas *buscar_en_lista_global(int pid)
 void colocar_pagina_en_marco(t_pagina *pagina)
 {
     int marco_libre = obtener_posicion_marco_libre(); // consigo el primer marco libre que encuentro
-    if (marco_libre == -1)
-    {
-        log_info(logger, "No hay ningun marco libre, OUT OF MEMORY");
-        // puede ser que debamos finalizar el proceso
-    }
+                                                      /*     if (marco_libre == -1)
+                                                          {
+                                                              log_info(logger, "No hay ningun marco libre, OUT OF MEMORY");
+                                                          } */
     pagina->marco = marco_libre;
 }
 
@@ -697,7 +694,7 @@ void liberar_marco(int nroMarco)
 {
     array_bitmap[nroMarco].bit_ocupado = 0;
 }
-void imprimir_estado_marcos()
+/* void imprimir_estado_marcos()
 {
     printf_yellow("ESTADO DE LOS MARCOS");
     printf_yellow("---------------------");
@@ -707,7 +704,7 @@ void imprimir_estado_marcos()
         printf_yellow("|  %d      |    %d   |", i, array_bitmap[i].bit_ocupado);
         printf_yellow("---------------------");
     }
-}
+} */
 void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
@@ -720,16 +717,10 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     float tam_pagina = valores_config->tam_pagina;
     double cantidad_paginas_nuevas = ceil(f_tamanio / tam_pagina);
     int cantidad_paginas_actuales = list_size(tabla_paginas->paginas_proceso);
-
-    printf_green("Cantidad de paginas actuales: %d", cantidad_paginas_actuales);
-    printf_green("Cantidad de paginas nuevas: %f", cantidad_paginas_nuevas);
-
     int paginas_adicionales = cantidad_paginas_nuevas - cantidad_paginas_actuales;
-    log_info(logger, "CANTIDAD MARCOS A ASIGNAR: %d", paginas_adicionales);
 
     if (paginas_adicionales > cantidad_marcos_libres())
     {
-        log_error(logger, "NO HAY SUFICIENTES MARCOS DISPONIBLES");
         enviar_op_code(cliente_cpu, OUT_OF_MEMORY);
         return;
     }
@@ -763,10 +754,10 @@ int cantidad_marcos_libres()
             marcos_libres++;
         }
     }
-    log_info(logger, "MARCOS DISPONIBLES: <%d>", marcos_libres);
+    // log_info(logger, "MARCOS DISPONIBLES: <%d>", marcos_libres);
     return marcos_libres;
 }
-void imprimir_tabla_de_paginas_proceso(t_tabla_paginas *tabla_paginas_proceso)
+/*void imprimir_tabla_de_paginas_proceso(t_tabla_paginas *tabla_paginas_proceso)
 { // t_tabla_paginas
     t_list *tp_paginas_proceso = tabla_paginas_proceso->paginas_proceso;
     if (!list_is_empty(tp_paginas_proceso))
@@ -787,13 +778,13 @@ void imprimir_tabla_de_paginas_proceso(t_tabla_paginas *tabla_paginas_proceso)
     {
         printf_yellow("      TABLA PROCESO %d VACÍA", tabla_paginas_proceso->pid);
     }
-}
+}*/
+
 void reducir_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid); // busco en la lista de listaa
     if (tabla_paginas == NULL)
     {
-        log_info(logger, "NO se encontro la tabla de paginas con pid %d", pid);
         return;
     }
     int tam_pagina = valores_config->tam_pagina;

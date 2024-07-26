@@ -91,7 +91,7 @@ int obtener_marco_tlb(t_tlb *tlb, int pid, int nro_pagina)
     return -1;
 }
 
-void imprimir_tlb(t_tlb *tlb)
+/*void imprimir_tlb(t_tlb *tlb)
 {
     if (!list_is_empty(tlb->entradas_tlb))
     {
@@ -110,14 +110,14 @@ void imprimir_tlb(t_tlb *tlb)
         printf_green("TLB VACIA\n");
     }
     return;
-}
+}*/
 
 void tlb_iniciar(char *algoritmo, int cant_entradas)
 {
     if (cant_entradas <= 0)
     {
         TLB_HABILITADA = 0; // false
-        printf_purple("TLB DESHABILITADA\n");
+        //printf_purple("TLB DESHABILITADA\n");
     }
     else
     {
@@ -130,8 +130,8 @@ void tlb_iniciar(char *algoritmo, int cant_entradas)
             tlb_cpu = crear_tlb(cant_entradas, LRU);
         }
         TLB_HABILITADA = 1; // true
-        printf_purple("TLB HABILITADA\n");
-        imprimir_tlb(tlb_cpu);
+       // printf_purple("TLB HABILITADA\n");
+       // imprimir_tlb(tlb_cpu);
     }
 }
 void eliminar_tlb()

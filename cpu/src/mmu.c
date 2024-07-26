@@ -37,7 +37,7 @@ int obtener_frame(int pagina)
         { // TLB HIT
             log_info(logger, "PID: <%d> - TLB HIT - Pagina: <%d>", cde_recibido->pid, pagina);
         }
-        imprimir_tlb(tlb_cpu);
+        //imprimir_tlb(tlb_cpu);
     }
     else
     {
