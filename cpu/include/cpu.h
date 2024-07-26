@@ -55,6 +55,7 @@ void tlb_iniciar(char *algoritmo, int cant_entradas);
 void* levantar_conexion_a_memoria();
 void *levantar_kernel_dispatch();
 void *levantar_kernel_interrupt();
+void liberar_array_instruccion(char **array_instruccion);
 
 // HILOS
 void crear_hilos_CPU();
