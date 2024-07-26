@@ -84,6 +84,8 @@ void planificar_por_vrr()
     {
         sem_wait(b_exec_libre);
 
+        sem_wait(contador_readys);
+
         if (hayProcesosEnEstado(cola_ready_plus))
         {
             proceso = transicion_generica(cola_ready_plus, cola_exec_global, "corto");
@@ -198,6 +200,9 @@ void *transicion_blocked_ready()
             proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto");
             proceso->estado = READY;
         }
+
+        sem_post(contador_readys);
+
         log_info(logger, "PID: <%d> - Estado Anterior: <BLOCKED> - Estado Actual: <READY>", proceso->cde->pid);
     }
 }
