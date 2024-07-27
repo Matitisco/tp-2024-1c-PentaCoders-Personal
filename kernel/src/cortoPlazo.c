@@ -145,6 +145,7 @@ void *transicion_exec_ready()
         sem_post(contador_readys);
         sem_post(b_exec_libre);
 
+         //log obligatorio
         log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <READY>", proceso->cde->pid);
     }
 }

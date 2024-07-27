@@ -1,6 +1,6 @@
 #include "../include/espacio_usuario.h"
 extern void *espacio_usuario;
-
+/*
 void imprimir_rango_memoria(void *espacio_usuario, uint32_t inicio, uint32_t fin)
 {
     // Validar los rangos de inicio y fin
@@ -20,7 +20,7 @@ void imprimir_rango_memoria(void *espacio_usuario, uint32_t inicio, uint32_t fin
     // Convertir el puntero a un puntero a unsigned char para imprimir bytes
     unsigned char *memoria = (unsigned char *)espacio_usuario;
 }
-
+*/
 void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir, size_t tamanio, t_log *logger, int pid)
 {
     log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
@@ -28,7 +28,7 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
     char *valor_a_escribir_char = malloc(tamanio + 1);
     valor_a_escribir_char[tamanio+1] = '\0';
     memcpy(valor_a_escribir_char, valor_a_escribir, tamanio);
-    log_info(logger, "PID: <%d> - Valor a escribir en Espacio de Usuario: <%s>", pid, valor_a_escribir_char);
+    //log_info(logger, "PID: <%d> - Valor a escribir en Espacio de Usuario: <%s>", pid, valor_a_escribir_char);
     free(valor_a_escribir_char);
 
     // chequeo si el marco esta asignado al proceso
@@ -38,7 +38,7 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
         // log_info(logger, "Se accedio al espacio de escritura del proceso");
         void *destino = espacio_usuario + direccion_fisica;
         memcpy(destino, valor_a_escribir, tamanio);
-        imprimir_rango_memoria(espacio_usuario, direccion_fisica, direccion_fisica + tamanio);
+       // imprimir_rango_memoria(espacio_usuario, direccion_fisica, direccion_fisica + tamanio);
         return (void *)1;
     }
     else
@@ -115,7 +115,7 @@ void crear_espacio_usuario(int tam_memoria, t_log *logger)
         log_error(logger, "ERROR ESPACIO USUARIO");
     }
 }
-
+/*
 int contarDigitos(int numero)
 {
     if (numero == 0)
@@ -128,8 +128,8 @@ void insertarStringEnPosicion(char *destino, const char *fuente, int posicion)
 {
     int longitudFuente = strlen(fuente);
     memcpy(destino + posicion, fuente, longitudFuente);
-}
-
+}*/
+/*
 int imprimir_linea_guiones(int tam_memoria, int tam_pagina)
 {
     int cant_marcos = tam_memoria / tam_pagina;
@@ -154,8 +154,8 @@ int imprimir_linea_guiones(int tam_memoria, int tam_pagina)
     printf_yellow("%s", linea_guiones);
     free(linea_guiones);
     return longitud_total;
-}
-
+}*/
+/*
 void imprimir_espacio_usuario(void *espacio_usuario, int tam_memoria, int tam_pagina, t_bit_map *array_bitmap)
 {
     printf_yellow("     ESPACIO DE USUARIO");
@@ -215,4 +215,4 @@ void imprimir_espacio_usuario(void *espacio_usuario, int tam_memoria, int tam_pa
         free(nro_marco);
         free(celda_marco);
     }
-}
+}*/

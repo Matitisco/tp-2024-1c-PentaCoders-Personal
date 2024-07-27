@@ -208,11 +208,11 @@ void detener_planificacion()
         habilitar_planificadores = 0;
         //sem_wait(b_reanudar_largo_plazo);
         //sem_wait(b_reanudar_corto_plazo);
-        log_info(logger, "PLANIFICACION PAUSADA");
+        //log_info(logger, "PLANIFICACION PAUSADA");
     }
     else
     {
-        log_info(logger, "PLANIFICACION YA ESTA PAUSADA");
+        //log_info(logger, "PLANIFICACION YA ESTA PAUSADA");
     }
 }
 
@@ -228,11 +228,11 @@ void iniciar_planificacion()
         sem_post(b_reanudar_exec_ready);
         sem_post(b_reanudar_blocked_ready);
     
-        log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
+        //log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
     }
     else
     {
-        log_info(logger, "PLANIFICACION YA ESTA EN FUNCIONAMIENTO");
+        //log_info(logger, "PLANIFICACION YA ESTA EN FUNCIONAMIENTO");
     }
 }
 

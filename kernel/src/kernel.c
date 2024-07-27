@@ -302,7 +302,7 @@ void manejarGrado(){
         sem_wait(manejo_grado);
 		int valor;
 		sem_getvalue(GRADO_MULTIPROGRAMACION, &valor);
-    	log_info(logger,"Old semaphore value: %d\n", valor);
+    	//log_info(logger,"Old semaphore value: %d\n", valor);
 		int aux = abs(valor_grado_a_modificar - configuracion->grado_multiprogramacion);
         if(valor_grado_a_modificar > configuracion->grado_multiprogramacion)
         {

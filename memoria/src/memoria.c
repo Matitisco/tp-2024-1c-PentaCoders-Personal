@@ -231,7 +231,7 @@ void *recibirCPU()
                 log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
-            imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
+            //imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
             destruir_buffer(buffer_cpu);
             free(cde->registros);
             free(cde);
@@ -368,7 +368,7 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
         valor_string = leer_buffer_string(buffer);
         resultado = escribir_espacio_usuario(direccion_fisica, valor_string, tamanio, logger, pid_ejecutando);
     }
-    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
+    //(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (resultado != -1)
     {
         enviar_op_code(cliente_solicitante, OK);

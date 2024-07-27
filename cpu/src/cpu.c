@@ -189,7 +189,7 @@ void *levantar_kernel_interrupt()
 				break;
 			case SOLICITUD_EXIT:
 				interrupcion_exit = 1;
-				log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR");
+				//log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR");
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");

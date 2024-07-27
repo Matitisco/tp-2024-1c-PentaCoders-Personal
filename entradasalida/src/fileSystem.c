@@ -595,7 +595,7 @@ int actualizar_metadata_archivo(int nuevo_bloque_inicial) // de los archivos, NO
     t_archivo_data *archivo = list_find(archivos_fs, buscar_por_bloque);
     if (archivo == NULL)
     {
-        log_info(logger, "nO LO ENCONTRE DEVULEVO 0");
+        //log_info(logger, "nO LO ENCONTRE DEVULEVO 0");
         return 0;
     }
     else
