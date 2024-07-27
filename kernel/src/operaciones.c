@@ -103,11 +103,11 @@ void iniciar_proceso(char *PATH)
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global);
-        log_info(logger, "Se crea el proceso <%u> en NEW\n", proceso->cde->pid);
+
+        log_info(logger, "Se crea el proceso <%u> en NEW", proceso->cde->pid); // log obligatorio
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
     {
-        log_info(logger, "No se pudo crear el proceso <%u> en NEW\n", proceso->cde->pid);
         PID_GLOBAL--;
         free(proceso->cde->path);
         free(proceso->cde);
@@ -241,7 +241,7 @@ void proceso_estado()
     mostrar_procesos(cola_exec_global);
     mostrar_procesos(cola_bloqueado_global);
     mostrar_procesos(cola_exit_global);
-    //imprimir_recursos();
+    // imprimir_recursos();
 }
 
 // FUNCIONES AUXILIARES OPERACIONES

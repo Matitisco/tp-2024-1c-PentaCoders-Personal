@@ -107,7 +107,6 @@ t_pcb *sacar_proceso_cola(colaEstado *cola_estado, uint32_t pid)
     pthread_mutex_lock(cola_estado->mutex_estado);
     pid_a_sacar = pid;
     t_pcb *pcb = list_remove_by_condition(cola_estado->estado, coincide_pid);
-    log_info(logger, "PID: <%d> - SACADO DE COLA: <%s>", pcb->cde->pid, cola_estado->nombreEstado);
     pthread_mutex_unlock(cola_estado->mutex_estado);
     return pcb;
 }

@@ -33,7 +33,6 @@ int main(int argc, char *argv[])
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
     finalizar_memoria();
-    printf_yellow("Memoria Finalizada");
 }
 
 void finalizar_memoria()
@@ -41,16 +40,17 @@ void finalizar_memoria()
     liberar_conexion(&cliente_cpu);
     liberar_conexion(&cliente_kernel);
     config_destroy(valores_config->config);
-    free(valores_config);//con esto es suficiente, los demás atributos se liberan con config_destroy (config_get_string_value retorna un puntero y no crea uno nuevo)
+    free(valores_config->ip_memoria);
+    free(valores_config->path_instrucciones);
+    free(valores_config->puerto_memoria);
     log_destroy(logger);
 
     // estas list destroy estaban comentadas, ahora las descomente
-    /*
     list_destroy_and_destroy_elements(lista_instrucciones, destruir_lista_instrucciones);
     list_destroy_and_destroy_elements(lista_global_tablas, destruir_tabla);
-    list_destroy_and_destroy_elements(lista_contextos, destruir_cde);*/
+    list_destroy_and_destroy_elements(lista_contextos, destruir_cde);
 
-    //destruir_tabla(tabla_actual);
+    destruir_tabla(tabla_actual);
     free(espacio_usuario);
     free(array_bitmap);
 }
@@ -231,7 +231,7 @@ void *recibirCPU()
                 log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
-            //imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
+            imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
             destruir_buffer(buffer_cpu);
             free(cde->registros);
             free(cde);
@@ -260,7 +260,6 @@ void pedido_frame_mmu(int cliente_cpu)
     if (tabla == NULL)
     {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
-        // log_error(logger, "PID: <%d> - NO SE ENCONTRO LA TABLA DE PAGINAS", pid);
         return;
     }
 
@@ -369,7 +368,7 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
         valor_string = leer_buffer_string(buffer);
         resultado = escribir_espacio_usuario(direccion_fisica, valor_string, tamanio, logger, pid_ejecutando);
     }
-    //imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
+    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (resultado != -1)
     {
         enviar_op_code(cliente_solicitante, OK);
@@ -390,22 +389,13 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
     uint32_t valor32;
     uint8_t valor8;
-    char *valor_char = string_new();
-    //imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
         tipo_buffer *buffer = crear_buffer();
         if (tipo_dato == STRING)
         {
-            char *valor_leido_string = malloc(tamanio + 1);
-            valor_leido_string[tamanio] = '\0';
-            memcpy(valor_leido_string, valor_leido, tamanio);
-            valor_char = (char *)valor_leido;
-
             agregar_buffer_para_string(buffer, valor_leido);
-            log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_char);
-            free(valor_leido_string);
         }
         else if (tipo_dato == INTEGER)
         {
@@ -413,13 +403,11 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
             {
                 valor32 = *(uint32_t *)valor_leido;
                 agregar_buffer_para_enterosUint32(buffer, valor32);
-                log_info(logger, "SE LEYO EL VALOR DE 4 bytes: %d", valor32);
             }
             else if (tamanio == 1)
             {
                 valor8 = *(uint8_t *)valor_leido;
                 agregar_buffer_para_enterosUint8(buffer, valor8);
-                log_info(logger, "SE LEYO EL VALOR de 1 byte: %d", valor8);
             }
         }
 
