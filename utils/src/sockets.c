@@ -34,7 +34,6 @@ int iniciar_servidor(t_log *logger, const char *name, char *ip, char *puerto)
 
         if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
             perror("setsockopt(SO_REUSEADDR) failed");
-        
 
         if (bind(socket_servidor, p->ai_addr, p->ai_addrlen) == -1)
         {
@@ -70,16 +69,16 @@ int esperar_cliente(t_log *logger, const char *name_server, const char *name_cli
     socklen_t tam_direccion = sizeof(struct sockaddr_in);
 
     int socket_cliente = accept(socket_servidor, (struct sockaddr *)&dir_cliente, &tam_direccion);
-    if (socket_cliente < 0) {
+    if (socket_cliente < 0)
+    {
         perror("accept failed");
         return -1;
     }
 
-    log_info(logger, "%s conectado a %s\n", name_client, name_server);
+    log_info(logger, "<%s> - Conectado A: <%s>\n", name_client, name_server);
 
     return socket_cliente;
 }
-
 
 // CLIENTE SE INTENTA CONECTAR A SERVER ESCUCHANDO EN IP:PUERTO
 int crear_conexion(t_log *logger, const char *server_name, char *ip, char *puerto)
@@ -127,34 +126,44 @@ void liberar_conexion(int *socket_cliente)
     *socket_cliente = -1;
 }
 
-char* obtener_ip_local() {
+char *obtener_ip_local()
+{
     struct ifaddrs *ifaddr, *ifa;
     int family;
     char *ip = malloc(INET_ADDRSTRLEN);
 
-    if (ip == NULL) {
+    if (ip == NULL)
+    {
         perror("malloc");
         exit(EXIT_FAILURE);
     }
 
-    if (getifaddrs(&ifaddr) == -1) {
+    if (getifaddrs(&ifaddr) == -1)
+    {
         perror("getifaddrs");
         free(ip);
         exit(EXIT_FAILURE);
     }
 
-    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr == NULL) continue;
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr == NULL)
+            continue;
 
         family = ifa->ifa_addr->sa_family;
 
-        if (family == AF_INET) { // IPv4
-            if (strcmp(ifa->ifa_name, "lo") != 0) { // Ignorar loopback
-                if (inet_ntop(family, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr, ip, INET_ADDRSTRLEN) != NULL) {
+        if (family == AF_INET)
+        { // IPv4
+            if (strcmp(ifa->ifa_name, "lo") != 0)
+            { // Ignorar loopback
+                if (inet_ntop(family, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr, ip, INET_ADDRSTRLEN) != NULL)
+                {
                     freeifaddrs(ifaddr);
                     printf_blue("Direccion de memoria de la IP local: %p", ip);
                     return ip;
-                } else {
+                }
+                else
+                {
                     perror("inet_ntop");
                 }
             }

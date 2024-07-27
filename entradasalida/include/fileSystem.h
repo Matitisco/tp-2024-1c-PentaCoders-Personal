@@ -60,7 +60,7 @@ void mover_archivo_al_final_del_fs(char *nombre_archivo);
 void desplazar_archivos_y_eliminar_bloques_libres();
 void mover_archivo_al_primer_bloque_libre(int primer_bloque_libre, char *nombre_archivo, int cantidad_bloques_agregar, t_config *metadata);
 void mover_bloque(int origen, int destino);
-void actualizar_metadata_archivo(int nuevo_bloque_inicial);
+int actualizar_metadata_archivo(int nuevo_bloque_inicial);
 _Bool buscar_por_bloque(void *data);
 void levantar_bitmap();
 int obtener_cantidad_bloques_archivo(char *nombre_archivo);

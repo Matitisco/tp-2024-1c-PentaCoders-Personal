@@ -23,7 +23,7 @@ void realizar_operacion_gen(t_interfaz *interfaz)
 }
 
 void enviar_a_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
-{ // esta función no implementa chequeo de pagina, simplemente escribe
+{
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_ESCRITURA);
     tipo_buffer *buffer = crear_buffer();
@@ -35,11 +35,7 @@ void enviar_a_memoria(int socket_memoria, uint32_t direccion_fisica, int size, v
     enviar_buffer(buffer, conexion_memoria);
     destruir_buffer(buffer);
     op_code escritura_memoria = recibir_op_code(socket_memoria);
-    if (escritura_memoria == OK)
-    {
-        log_info(logger, "PID: <%d> - Escritura correcta en memoria", pid);
-    }
-    else
+    if (escritura_memoria != OK)
     {
         log_error(logger, "DIRECCION INCORRECTA");
     }
@@ -93,8 +89,6 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     int tamanio_marco = leer_buffer_enteroUint32(buffer_stdin);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
     int pid = leer_buffer_enteroUint32(buffer_stdin);
-
-    log_info(logger, "CANT DE BYTES A COPIAR: %d", tamanio);
     destruir_buffer(buffer_stdin);
 
     if (instruccion == IO_STDIN_READ)
@@ -103,51 +97,6 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
         char *texto_truncado = truncar_texto(texto_ingresado, tamanio);
 
         escribir_dato_memoria(direccion_fisica, tamanio_marco, texto_truncado, tamanio, pid);
-        /* enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
-        enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
-        tipo_buffer *buffer_stdin = crear_buffer();
-        agregar_buffer_para_enterosUint32(buffer_stdin, direccion_fisica);
-        agregar_buffer_para_enterosUint32(buffer_stdin, pid);
-        agregar_buffer_para_enterosUint32(buffer_stdin, tamanio);
-        agregar_buffer_para_enterosUint32(buffer_stdin, STRING);
-        agregar_buffer_para_string(buffer_stdin, texto_truncado);
-        enviar_buffer(buffer_stdin, conexion_memoria);
-        destruir_buffer(buffer_stdin);
-
-        op_code codigo_memoria = recibir_op_code(conexion_memoria);
-        if (codigo_memoria == OK)
-        {
-            log_info(logger, "Se escribio correctamente en la pagina en memoria");
-        }
-        else if (codigo_memoria == ERROR_PEDIDO_ESCRITURA)
-        {
-            log_error(logger, "PID: <%d> - ERROR Operacion: <IO_STDIN_READ>", pid);
-        }*/
-
-        /* for (int i = 0; i < cant_dirs_fisicas; i++)
-        {
-            enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
-            enviar_op_code(conexion_memoria, PEDIDO_ESCRITURA);
-            tipo_buffer *buffer_stdin = crear_buffer();
-            direccion_fisica = list_get(dirs_fisicas, 0);
-            agregar_buffer_para_enterosUint32(buffer_stdin, direccion_fisica);
-            agregar_buffer_para_enterosUint32(buffer_stdin, pid);
-            agregar_buffer_para_enterosUint32(buffer_stdin, tamanio);
-            agregar_buffer_para_enterosUint32(buffer_stdin, STRING);
-            agregar_buffer_para_string(buffer_stdin, texto_truncado);
-            enviar_buffer(buffer_stdin, conexion_memoria);
-            destruir_buffer(buffer_stdin);
-
-            op_code codigo_memoria = recibir_op_code(conexion_memoria);
-            if (codigo_memoria == OK)
-            {
-                log_info(logger, "Se escribio correctamente en la pagina en memoria");
-            }
-            else if (codigo_memoria == ERROR_PEDIDO_ESCRITURA)
-            {
-                log_error(logger, "PID: <%d> - ERROR Operacion: <IO_STDIN_READ>", pid);
-            }
-        } */
         log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
     }
     else
@@ -162,7 +111,7 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
     sleep_ms(interfaz->tiempo_unidad_trabajo);
     tipo_buffer *buffer_sol_operacion = recibir_buffer(conexion_kernel);
     t_tipoDeInstruccion sol_operacion = leer_buffer_enteroUint32(buffer_sol_operacion);
-    int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion); 
+    int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion);
     int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
     if (sol_operacion == IO_STDOUT_WRITE)
@@ -211,18 +160,6 @@ void realizar_operacion_dialfs(t_interfaz *interfaz)
 
 // AUXILIARES
 
-t_list *convertir_a_numeros(char *texto)
-{
-    int i;
-    t_list *lista = list_create();
-    for (i = 0; texto[i] != '\0'; i++)
-    {
-        int numero = (int)texto[i];
-        list_add(lista, &numero);
-    }
-    return lista;
-}
-
 void truncar_valor(char **valor_nuevo, char *valor_viejo, int limitante)
 {
     *valor_nuevo = malloc(limitante * sizeof(char));
@@ -241,14 +178,6 @@ void truncar_valor(char **valor_nuevo, char *valor_viejo, int limitante)
     {
         free(valor_viejo);
     }
-}
-
-void int_a_char_y_concatenar_a_string(int valor, char *cadena)
-{
-    char caracter = (char)valor;
-    int longitud_cadena = strlen(cadena);
-    cadena[longitud_cadena] = caracter;
-    cadena[longitud_cadena + 1] = '\0';
 }
 
 char *truncar_texto(char *texto_ingresado, int tamanio)

@@ -160,7 +160,7 @@ void wait_instancia_recurso(t_recurso *recurso);
 _Bool ya_tiene_instancias_del_recurso(t_recurso *recurso_proceso);
 
 void signal_instancia_recurso(t_recurso *recurso);
-void interfaz_no_conectada(int pid);
+void interfaz_no_conectada(int pid, t_infoIO *informacion_interfaz);
 void eliminar_proceso(t_pcb *proceso);
 t_pcb *buscar_pcb_en_colas(int pid);
 t_pcb *buscarProceso(uint32_t pid);
