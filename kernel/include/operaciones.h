@@ -7,6 +7,7 @@
 
 // OPERACIONES
 void ejecutar_script(char *PATH);
+void liberar_lineas_script(char **lineas_script);
 void iniciar_proceso(char *PATH);
 void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
 void finalizar_proceso_success(uint32_t PID, motivoFinalizar motivo);

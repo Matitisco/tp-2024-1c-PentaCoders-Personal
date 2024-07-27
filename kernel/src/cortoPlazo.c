@@ -101,6 +101,9 @@ void planificar_por_vrr()
             enviar_a_cpu_cde(proceso->cde);
             inicio_quantum(QUANTUM);
         }
+        if(timer != NULL){
+            temporal_destroy(timer);
+        }
         timer = temporal_create();
         if (habilitar_planificadores == 1)
         {

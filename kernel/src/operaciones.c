@@ -61,12 +61,24 @@ void ejecutar_script(char *PATH)
         {
             proceso_estado();
         }
-        free(lineas_script);
+        liberar_lineas_script(lineas_script);
     }
     
     fclose(archivo_script);
 }
+void liberar_lineas_script(char **lineas_script)
+{
+    if (lineas_script == NULL)
+    {
+        return;
+    }
 
+    for (int i = 0; lineas_script[i] != NULL; i++)
+    {
+        free(lineas_script[i]);
+    }
+    free(lineas_script);
+}
 void iniciar_proceso(char *PATH)
 {
     t_pcb *proceso = crear_proceso(PATH);

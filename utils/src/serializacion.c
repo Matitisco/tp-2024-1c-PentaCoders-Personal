@@ -151,6 +151,7 @@ t_cde *leer_cde(tipo_buffer *buffer)
     cde->registros = leer_buffer_registros(buffer);
     return cde;
 }
+
 void agregar_cde_buffer(tipo_buffer *buffer, t_cde *cde)
 {
     agregar_buffer_para_enterosUint32(buffer, cde->pid);

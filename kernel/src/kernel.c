@@ -351,6 +351,11 @@ void levantar_CPU_Dispatch()
 		case FIN_DE_QUANTUM:
 
 			tipo_buffer *buffer_quantum = recibir_buffer(socket_cpu_dispatch);
+			if (cde_interrumpido != NULL)
+			{
+				free(cde_interrumpido->registros);
+				free(cde_interrumpido);
+			}
 			cde_interrumpido = leer_cde(buffer_quantum);
 			destruir_buffer(buffer_quantum);
 			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid); // log obligatorio
@@ -371,8 +376,8 @@ void levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_interfaz_cde);
 			sem_post(b_transicion_exec_blocked);
 			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_interfaz);
-			// destruir_buffer(buffer_interfaz);
-			// destruir_buffer(buffer_interfaz_cde);
+			destruir_buffer(buffer_interfaz);
+			destruir_buffer(buffer_interfaz_cde);
 
 			break;
 
@@ -487,6 +492,7 @@ void *levantarIO()
 				list_add(lista_interfaces, infoIO);
 				log_info(logger, "Se conecto una interfaz del tipo: %s, y de nombre: %s", tipo_io, infoIO->nombre_io);
 			}
+			destruir_buffer(buffer_io);
 		}
 		else
 		{
@@ -901,6 +907,7 @@ void interfaz_conectada(t_infoIO *io, t_struct_io *informacion_buffer)
 	{
 		log_info(logger, "INTERFAZ: <%s> - OCUPADA POR OTRO PROCESO");
 	}
+	destruir_buffer(buffer_interfaz);
 }
 
 void enviar_buffer_interfaz(t_infoIO *interfaz, t_struct_io *info_buffer)
