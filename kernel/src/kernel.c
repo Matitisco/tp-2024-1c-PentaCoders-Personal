@@ -272,27 +272,27 @@ void evaluar_planificacion(char* planificador)
 	log_info(logger, "habilitar planificadores: %d", habilitar_planificadores);
 	if(habilitar_planificadores==0)
 	{
-		if(strcmp(planificador, "largo"))
+		if(strcmp(planificador, "largo") == 0)
 		{
 			sem_wait(b_reanudar_largo_plazo);
 		}
-		else if(strcmp(planificador, "corto"))
+		else if(strcmp(planificador, "corto") == 0)
 		{
 			sem_wait(b_reanudar_corto_plazo);
 		}
-		else if(strcmp(planificador, "exit_largo"))
+		else if(strcmp(planificador, "exit_largo") == 0)
 		{
 			sem_wait(b_reanudar_exit_largo);
 		}
-		else if(strcmp(planificador, "exec_blocked"))
+		else if(strcmp(planificador, "exec_blocked") == 0)
 		{
 			sem_wait(b_reanudar_exec_blocked);
 		}
-		else if(strcmp(planificador, "exec_ready"))
+		else if(strcmp(planificador, "exec_ready") == 0)
 		{
 			sem_wait(b_reanudar_exec_ready);
 		}
-		else if(strcmp(planificador, "blocked_ready"))
+		else if(strcmp(planificador, "blocked_ready") == 0)
 		{
 			sem_wait(b_reanudar_blocked_ready);
 		}
