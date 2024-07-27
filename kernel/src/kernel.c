@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
 	pthread_join(t_transicion_exec_ready, NULL);
 	pthread_join(hiloQuantum, NULL);
 	free(ip_local);
+	printf_yellow("Kernel finalizado");
 }
 
 void iniciar_kernel()
@@ -86,7 +87,6 @@ void iniciar_kernel()
 	habilitar_planificadores = 0;
 	inicializarEstados();
 	logger = iniciar_logger("kernel.log", "KERNEL");
-	nombre_IO = string_new();
 	lista_interfaces = list_create();
 	valores_config = inicializar_config_kernel();
 	QUANTUM = valores_config->quantum;
@@ -108,6 +108,20 @@ void crear_hilos()
 	pthread_create(&hiloIO, NULL, levantarIO, NULL);
 	pthread_create(&hiloCPUDS, NULL, (void *)levantar_CPU_Dispatch, NULL);
 	pthread_create(&hiloCPUINT, NULL, (void *)levantar_CPU_Interrupt, NULL);
+}
+void finalizar_hilos()
+{
+	pthread_cancel(hiloLargoPlazo);
+	pthread_cancel(hiloCortoPlazo);
+	pthread_cancel(hiloConsola);
+	pthread_cancel(largo_plazo_exit);
+	pthread_cancel(t_transicion_exec_blocked);
+	pthread_cancel(t_transicion_exec_ready);
+	pthread_cancel(t_transicion_blocked_ready);
+	pthread_cancel(hiloMEMORIA);
+	pthread_cancel(hiloIO);
+	pthread_cancel(hiloCPUDS);
+	pthread_cancel(hiloCPUINT);
 }
 
 void levantar_servidores()
@@ -305,6 +319,12 @@ void levantar_CPU_Dispatch()
 	while (1)
 	{
 		op_code cod = recibir_op_code(socket_cpu_dispatch);
+		if (cod == -1)
+		{
+			log_error(logger, "CPU se desconectó. Terminando hilo");
+			finalizar_hilos();
+			pthread_exit((void *)EXIT_FAILURE);
+		}
 		switch (cod)
 		{
 		case FINALIZAR_PROCESO:
@@ -312,7 +332,7 @@ void levantar_CPU_Dispatch()
 			tipo_buffer *buffer_cpu_fin = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			motivoFinalizar motivo = leer_buffer_enteroUint32(buffer_cpu_fin);
-			// destruir_buffer(buffer_cpu_fin);
+			destruir_buffer(buffer_cpu_fin);
 
 			if (motivo == SUCCESS)
 			{
@@ -331,8 +351,13 @@ void levantar_CPU_Dispatch()
 		case FIN_DE_QUANTUM:
 
 			tipo_buffer *buffer_quantum = recibir_buffer(socket_cpu_dispatch);
+			if (cde_interrumpido != NULL)
+			{
+				free(cde_interrumpido->registros);
+				free(cde_interrumpido);
+			}
 			cde_interrumpido = leer_cde(buffer_quantum);
-			// destruir_buffer(buffer_quantum);
+			destruir_buffer(buffer_quantum);
 			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid); // log obligatorio
 			pthread_cancel(hiloQuantum);
 			sem_post(b_transicion_exec_ready);
@@ -351,8 +376,8 @@ void levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_interfaz_cde);
 			sem_post(b_transicion_exec_blocked);
 			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_interfaz);
-			// destruir_buffer(buffer_interfaz);
-			// destruir_buffer(buffer_interfaz_cde);
+			destruir_buffer(buffer_interfaz);
+			destruir_buffer(buffer_interfaz_cde);
 
 			break;
 
@@ -438,7 +463,12 @@ void *levantarIO()
 			tipo_buffer *buffer_io = recibir_buffer(socket_disp_io);
 
 			int tipo_interfaz_io = leer_buffer_enteroUint32(buffer_io);
+			if (nombre_IO != NULL)
+			{
+				free(nombre_IO);
+			}
 			nombre_IO = leer_buffer_string(buffer_io);
+
 			char *tipo_io = obtener_interfaz(tipo_interfaz_io);
 
 			if (list_find(lista_interfaces, interfaz_esta_en_lista) != NULL)
@@ -456,6 +486,7 @@ void *levantarIO()
 				infoIO->tipo_IO = tipo_interfaz_io;
 				list_add(lista_interfaces, infoIO);
 			}
+			destruir_buffer(buffer_io);
 		}
 	}
 	return NULL;
@@ -520,6 +551,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	case SOLICITUD_INTERFAZ_GENERICA:
 
 		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
+		if (nombre_IO != NULL)
+		{
+			free(nombre_IO);
+		}
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		io_con_info_buffer->pid = pid;
 		io_con_info_buffer->instruccion = instruccion_interfaz;
@@ -544,6 +579,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		int tamanioMarco = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		if (nombre_IO != NULL)
+		{
+			free(nombre_IO);
+		}
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		io_con_info_buffer->tamanio_marco = tamanioMarco;
 		io_con_info_buffer->tamanio_reg = tamanioRegistro;
@@ -569,6 +608,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		if (nombre_IO != NULL)
+		{
+			free(nombre_IO);
+		}
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		io_con_info_buffer->pid = pid;
 		io_con_info_buffer->tamanio_reg = tamanioRegistro;
@@ -601,7 +644,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 		case IO_FS_CREATE:
 		case IO_FS_DELETE:
-
+			if (nombre_IO != NULL)
+			{
+				free(nombre_IO);
+			}
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 
@@ -620,6 +666,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		case IO_FS_TRUNCATE:
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
+			if (nombre_IO != NULL)
+			{
+				free(nombre_IO);
+			}
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
@@ -643,6 +693,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
 			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 			puntero_archivo = leer_buffer_enteroUint32(buffer_con_instruccion);
+			if (nombre_IO != NULL)
+			{
+				free(nombre_IO);
+			}
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
@@ -771,6 +825,11 @@ void interfaz_conectada(t_infoIO *io, t_struct_io *informacion_buffer)
 			list_remove(io->procesos_espera, 0);
 		}
 	}
+	else
+	{
+		log_info(logger, "INTERFAZ: <%s> - OCUPADA POR OTRO PROCESO");
+	}
+	destruir_buffer(buffer_interfaz);
 }
 
 void enviar_buffer_interfaz(t_infoIO *interfaz, t_struct_io *info_buffer)

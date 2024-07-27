@@ -25,8 +25,9 @@ sem_t *sem_check_interrupt;
 sem_t *sem_interface;
 t_cde *cde_recibido;
 int interrupcion_exit;
-char * ip_local;
-
+char *ip_local;
+t_registros *registros;
+pthread_mutex_t mutex_salida_exit;
 int main(int argc, char *argv[])
 {
 	interrupcion_exit = 0;
@@ -39,18 +40,15 @@ int main(int argc, char *argv[])
 	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
 	pthread_join(hilo_CPU_CLIENTE, NULL);
 
-	log_destroy(logger);
 	config_destroy(valores_config_cpu->config);
-	free(valores_config_cpu->algoritmo_tlb);
-	free(valores_config_cpu->ip);
-	free(valores_config_cpu->puerto_escucha_dispatch);
-	free(valores_config_cpu->puerto_escucha_interrupt);
-	free(valores_config_cpu->puerto_memoria);
-	free(valores_config_cpu);
-	eliminar_tlb();
+	free(valores_config_cpu); // con esto es suficiente, los demás atributos se liberan con config_destroy (config_get_string_value retorna un puntero y no crea uno nuevo)
+
+	// eliminar_tlb();
 	free(registros);
 	liberar_conexion(&socket_memoria);
 	free(ip_local);
+	log_destroy(logger);
+	printf_yellow("CPU FINALIZADA");
 }
 
 void iniciar_modulo_cpu()
@@ -78,11 +76,12 @@ void iniciar_semaforos_CPU()
 	sem_init(mutex_cde_ejecutando, 0, 0);
 	sem_init(sem_check_interrupt, 0, 1);
 	sem_init(sem_interface, 0, 0);
+	pthread_mutex_init(&mutex_salida_exit, NULL);
 }
 
 void crear_hilos_CPU()
 {
-	pthread_create(&hilo_CPU_CLIENTE, NULL, (void *(*)(void *))levantar_conexion_a_memoria, NULL);
+	pthread_create(&hilo_CPU_CLIENTE, NULL, levantar_conexion_a_memoria, NULL);
 	pthread_create(&hilo_CPU_SERVIDOR_DISPATCH, NULL, levantar_kernel_dispatch, NULL);
 	pthread_create(&hilo_CPU_SERVIDOR_INTERRUPT, NULL, levantar_kernel_interrupt, NULL);
 }
@@ -114,7 +113,12 @@ void *levantar_kernel_dispatch()
 		if (codigo == -1)
 		{
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
-			return (void *)EXIT_FAILURE;
+			pthread_mutex_lock(&mutex_salida_exit);
+			salida_exit = 1;
+			pthread_mutex_unlock(&mutex_salida_exit);
+			pthread_cancel(hilo_CPU_SERVIDOR_INTERRUPT);
+			pthread_cancel(hilo_CPU_CLIENTE);
+			pthread_exit((void *)EXIT_FAILURE);
 		}
 
 		switch (codigo)
@@ -124,7 +128,9 @@ void *levantar_kernel_dispatch()
 			tipo_buffer *buffer_cde = recibir_buffer(socket_kernel_dispatch);
 			cde_recibido = leer_cde(buffer_cde);
 			registros = cde_recibido->registros;
+			pthread_mutex_lock(&mutex_salida_exit);
 			salida_exit = 1;
+			pthread_mutex_unlock(&mutex_salida_exit);
 			printf_yellow("------------------------------\n");
 			while (salida_exit)
 			{
@@ -134,7 +140,7 @@ void *levantar_kernel_dispatch()
 				char **array_instruccion = decode(linea_instruccion);
 				free(linea_instruccion); // agregado
 				execute(array_instruccion, cde_recibido);
-				free(array_instruccion);
+				liberar_array_instruccion(array_instruccion);
 				check_interrupt();
 				printf_yellow("------------------------------\n");
 			}
@@ -147,7 +153,16 @@ void *levantar_kernel_dispatch()
 		}
 	}
 }
-
+void liberar_array_instruccion(char **array_instruccion)
+{
+	int i = 0;
+	while (array_instruccion[i] != NULL)
+	{
+		free(array_instruccion[i]);
+		i++;
+	}
+	free(array_instruccion);
+}
 void *levantar_kernel_interrupt()
 {
 	int server_fd = iniciar_servidor(logger, "CPU Interrupt", ip_local, valores_config_cpu->puerto_escucha_interrupt);
@@ -157,11 +172,14 @@ void *levantar_kernel_interrupt()
 		if (salida_exit)
 		{
 			op_code codigo = recibir_op_code(socket_kernel_interrupt);
-
 			if (codigo == -1)
 			{
+
 				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-				return (void *)EXIT_FAILURE;
+				printf("\033[0m");
+				pthread_cancel(hilo_CPU_SERVIDOR_DISPATCH);
+				pthread_cancel(hilo_CPU_CLIENTE);
+				pthread_exit((void *)EXIT_FAILURE);
 			}
 
 			switch (codigo)
@@ -181,7 +199,7 @@ void *levantar_kernel_interrupt()
 	}
 }
 
-void levantar_conexion_a_memoria()
+void *levantar_conexion_a_memoria()
 {
 	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, valores_config_cpu->puerto_memoria);
 	recibir_tamanio_pagina(socket_memoria);
@@ -339,10 +357,11 @@ void execute(char **instruccion, t_cde *contextoProceso)
 void check_interrupt()
 {
 	tipo_buffer *buffer_cde = crear_buffer();
-	tipo_buffer *buffer_instruccion_io = crear_buffer();
 	if (interrupcion_rr)
 	{
+		pthread_mutex_lock(&mutex_salida_exit);
 		salida_exit = 0;
+		pthread_mutex_unlock(&mutex_salida_exit);
 		interrupcion_rr = 0;
 		if (interrupcion_io)
 		{
@@ -355,7 +374,6 @@ void check_interrupt()
 			interrupcion_fs = 0;
 			agregar_cde_buffer(buffer_cde, cde_recibido);
 			enviar_buffer(buffer_cde, socket_kernel_dispatch);
-			destruir_buffer(buffer_instruccion_io);
 			tipo_buffer *buffer_archivo = crear_buffer();
 			agregar_buffer_para_string(buffer_archivo, nombre_archivo_a_enviar);
 			enviar_buffer(buffer_archivo, socket_kernel_dispatch);
@@ -383,19 +401,21 @@ void check_interrupt()
 	}
 	else if (interrupcion_io)
 	{
+		pthread_mutex_lock(&mutex_salida_exit);
 		salida_exit = 0;
+		pthread_mutex_unlock(&mutex_salida_exit);
 		interrupcion_io = 0;
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
-		destruir_buffer(buffer_instruccion_io);
 	}
 	else if (interrupcion_fs)
 	{
+		pthread_mutex_lock(&mutex_salida_exit);
 		salida_exit = 0;
+		pthread_mutex_unlock(&mutex_salida_exit);
 		interrupcion_fs = 0;
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
-		destruir_buffer(buffer_instruccion_io);
 		tipo_buffer *buffer_archivo = crear_buffer();
 		agregar_buffer_para_string(buffer_archivo, nombre_archivo_a_enviar);
 		enviar_buffer(buffer_archivo, socket_kernel_dispatch);
@@ -403,7 +423,9 @@ void check_interrupt()
 	}
 	else if (desalojo_signal)
 	{
+		pthread_mutex_lock(&mutex_salida_exit);
 		salida_exit = 0;
+		pthread_mutex_unlock(&mutex_salida_exit);
 		desalojo_signal = 0;
 
 		agregar_cde_buffer(buffer_cde, cde_recibido);
@@ -411,13 +433,15 @@ void check_interrupt()
 	}
 	else if (desalojo_wait)
 	{
+		pthread_mutex_lock(&mutex_salida_exit);
 		salida_exit = 0;
+		pthread_mutex_unlock(&mutex_salida_exit);
 		desalojo_wait = 0;
 		agregar_cde_buffer(buffer_cde, cde_recibido);
 		enviar_buffer(buffer_cde, socket_kernel_dispatch);
 	}
-	
-	// destruir_buffer(buffer_cde);
+
+	destruir_buffer(buffer_cde);
 	return;
 }
 

@@ -1,6 +1,6 @@
 #include "../include/cicloinstruccion.h"
 
-t_registros *registros;
+extern t_registros *registros;
 
 // INSTRUCCIONES DE REGISTROS
 

@@ -395,17 +395,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
         tipo_buffer *buffer = crear_buffer();
         if (tipo_dato == STRING)
         {
-            void *str = realloc(valor_leido, tamanio + 1);
-            if (str == NULL)
-            {
-                free(valor_leido);
-                return NULL;
-            }
-
-            // Agregar el nulo terminal
-            ((char *)str)[tamanio] = '\0';
             agregar_buffer_para_string(buffer, valor_leido);
-            log_info(logger, "SE LEYO EL VALOR STRING: <%s>", str);
         }
         else if (tipo_dato == INTEGER)
         {
@@ -413,13 +403,11 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
             {
                 valor32 = *(uint32_t *)valor_leido;
                 agregar_buffer_para_enterosUint32(buffer, valor32);
-                log_info(logger, "SE LEYO EL VALOR DE 4 bytes: %d", valor32);
             }
             else if (tamanio == 1)
             {
                 valor8 = *(uint8_t *)valor_leido;
                 agregar_buffer_para_enterosUint8(buffer, valor8);
-                log_info(logger, "SE LEYO EL VALOR de 1 byte: %d", valor8);
             }
         }
 
