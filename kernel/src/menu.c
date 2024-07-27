@@ -88,7 +88,7 @@ void ejecutar_comando(char *comando, int tokens)
     {
         if (tokens == 2)
         {
-            // sem_post(sem_finalizar_proceso);
+            sem_post(sem_finalizar_proceso);
             finalizar_proceso(atoi(strtok(NULL, "\0")), INTERRUPTED_BY_USER);
         }
         else
@@ -239,7 +239,7 @@ void ejecutar_operacion(char *opcion, t_log *logger)
         detener_planificacion();
         break;
     case MULTIPROGRAMACION:
-        char *valor = readline("Ingrese el PID del Proceso a Finalizar: ");
+        char *valor = readline("Ingrese el Grado de Multiprogramacion: ");
         grado_multiprogramacion(atoi(valor));
         free(valor);
         break;

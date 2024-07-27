@@ -15,6 +15,8 @@ char *nombre_recurso_recibido;
 int socket_disp_io;
 int habilitar_planificadores;
 int QUANTUM;
+int valorSem;
+int valor_grado_a_modificar;
 // Contadores Semaforos
 sem_t *GRADO_MULTIPROGRAMACION;
 // Semaforos de binarios
@@ -33,10 +35,13 @@ sem_t *b_reanudar_exec_blocked;
 sem_t *b_reanudar_exec_ready;
 sem_t *b_reanudar_blocked_ready;
 
+sem_t* manejo_grado;
 
 sem_t *b_transicion_blocked_ready;
 sem_t *bloquearReady;
 sem_t *bloquearReadyPlus;
+
+sem_t *cant_procesos_en_new;
 
 // HILOS
 pthread_t hiloMEMORIA;
@@ -51,6 +56,8 @@ pthread_t t_transicion_exec_ready;
 pthread_t t_transicion_exec_blocked;
 pthread_t t_transicion_blocked_ready;
 pthread_t hiloQuantum;
+pthread_t hiloMultiProg;
+
 t_cde *cde_interrumpido;
 t_list *lista_interfaces;
 extern t_log *logger;
@@ -67,6 +74,8 @@ sem_t *sem_finalizar_proceso;
 sem_t *contador_readys;
 char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
 char *ip_local;
+
+config_kernel *configuracion;
 
 int main(int argc, char *argv[])
 {
@@ -85,6 +94,7 @@ int main(int argc, char *argv[])
 	pthread_join(largo_plazo_exit, NULL);
 	pthread_join(t_transicion_exec_ready, NULL);
 	pthread_join(hiloQuantum, NULL);
+	pthread_join(hiloMultiProg, NULL);
 	free(ip_local);
 }
 
@@ -118,6 +128,7 @@ void crear_hilos()
 	pthread_create(&hiloIO, NULL, levantarIO, NULL);
 	pthread_create(&hiloCPUDS, NULL, (void *)levantar_CPU_Dispatch, NULL);
 	pthread_create(&hiloCPUINT, NULL, (void *)levantar_CPU_Interrupt, NULL);
+	pthread_create(&hiloMultiProg, NULL, (void *)manejarGrado, NULL);
 }
 
 void levantar_servidores()
@@ -156,9 +167,11 @@ void inicializarEstados()
 void iniciar_semaforos()
 {
 	GRADO_MULTIPROGRAMACION = malloc(sizeof(sem_t));
+	manejo_grado = malloc(sizeof(sem_t));
 	binario_menu_lp = malloc(sizeof(sem_t));
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
 	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
+	cant_procesos_en_new = malloc(sizeof(sem_t));
 
 	b_reanudar_exit_largo = malloc(sizeof(sem_t));
 	b_reanudar_exec_blocked = malloc(sizeof(sem_t));
@@ -180,8 +193,10 @@ void iniciar_semaforos()
 	sem_finalizar_proceso = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
+	sem_init(cant_procesos_en_new, 0, 0);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(b_reanudar_corto_plazo, 0, 0);
+	sem_init(manejo_grado,0,0);
 
 	sem_init(b_reanudar_exit_largo, 0, 0);
 	sem_init(b_reanudar_exec_blocked, 0, 0);
@@ -206,7 +221,7 @@ void iniciar_semaforos()
 
 config_kernel *inicializar_config_kernel()
 {
-	config_kernel *configuracion = (config_kernel *)malloc(sizeof(config_kernel));
+	configuracion = (config_kernel *)malloc(sizeof(config_kernel));
 	char directorioActual[1024];
 	getcwd(directorioActual, sizeof(directorioActual));
 	char *ultimo_dir = basename(directorioActual);
@@ -267,9 +282,36 @@ config_kernel *inicializar_config_kernel()
 
 
 
+void manejarGrado(){
+    while(1)
+    {
+        sem_wait(manejo_grado);
+		int valor;
+		sem_getvalue(GRADO_MULTIPROGRAMACION, &valor);
+    	log_info(logger,"Old semaphore value: %d\n", valor);
+		int aux = abs(valor_grado_a_modificar - configuracion->grado_multiprogramacion);
+        if(valor_grado_a_modificar > configuracion->grado_multiprogramacion)
+        {
+            for (int i = 0; i < aux; i++)
+            {
+            sem_post(GRADO_MULTIPROGRAMACION);
+            } 
+        }
+        else if (valor_grado_a_modificar < configuracion->grado_multiprogramacion)
+        {
+
+            for (int i = 0; i < aux; i++)
+            {
+            sem_wait(GRADO_MULTIPROGRAMACION);
+            } 
+        }
+		
+    } 
+}
+
+
 void evaluar_planificacion(char* planificador)
 {
-	log_info(logger, "habilitar planificadores: %d", habilitar_planificadores);
 	if(habilitar_planificadores==0)
 	{
 		if(strcmp(planificador, "largo") == 0)
@@ -300,6 +342,8 @@ void evaluar_planificacion(char* planificador)
 }
 
 
+
+
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion)
 {
 	t_pcb * proceso = sacar_procesos_cola(colaEstadoInicio, planificacion);
@@ -316,6 +360,16 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 	pthread_mutex_unlock(cola_estado->mutex_estado);
 	sem_post(cola_estado->contador);
 }
+
+t_pcb *sacar_procesos_cola_basico(colaEstado *cola_estado, char *planificacion)
+{
+	sem_wait(cola_estado->contador);
+	pthread_mutex_lock(cola_estado->mutex_estado);
+	t_pcb *pcb = list_remove(cola_estado->estado, 0);
+	pthread_mutex_unlock(cola_estado->mutex_estado);
+	return pcb;
+}
+
 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char *planificacion)
 {
@@ -996,7 +1050,7 @@ void signal_instancia_recurso(t_recurso *recurso)
 	if (proceso_en_espera > 0) // libera a otro proceso bloqueado
 	{
 		sem_post(b_transicion_blocked_ready);
-		proceso = sacar_procesos_cola(recurso->cola_bloqueados, "");
+		proceso = sacar_procesos_cola_basico(recurso->cola_bloqueados, "");
 		mostrar_procesos(recurso->cola_bloqueados);
 	}
 

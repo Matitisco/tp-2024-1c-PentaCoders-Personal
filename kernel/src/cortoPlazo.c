@@ -252,11 +252,12 @@ void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo)
     }
 }
 
-void valorSemaforo(sem_t *semaforo)
+int valorSemaforo(sem_t *semaforo)
 {
     int *valor = malloc(sizeof(int));
     sem_getvalue(semaforo, valor);
     log_info(logger, "El valor del semaforo es: %d ", *valor);
+    return *valor;
 }
 
 int hayProcesosEnEstado(colaEstado *cola_estado)

@@ -6,6 +6,7 @@ void *largo_plazo()
 {
     while (1)
     {
+        sem_wait(cant_procesos_en_new);
         // sem_wait(binario_menu_lp); SI SE DEJA ESTO SE TRABA A VECES
         sem_wait(GRADO_MULTIPROGRAMACION);
         //sem_wait(b_reanudar_largo_plazo);

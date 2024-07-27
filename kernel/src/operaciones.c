@@ -4,6 +4,8 @@ uint32_t PID_GLOBAL = 0;
 uint32_t pid_a_finalizar;
 int primera_ejecucion = 1;
 
+
+
 void ejecutar_script(char *PATH)
 {
     char **lineas_script = string_array_new();
@@ -83,6 +85,7 @@ void iniciar_proceso(char *PATH)
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global);
+        sem_post(cant_procesos_en_new);
         log_info(logger, "Se crea el proceso <%u> en NEW\n", proceso->cde->pid);
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
@@ -109,7 +112,8 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
     else // EXEC
     {
         enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT); // Si esta en CPU le aviso que lo finalice
-        sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
+        //sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
+        sleep(2);
         finalizar_proceso_final(proceso, pid, motivo);        // finaliza el proceso en memoria
         return;
     }
@@ -319,14 +323,13 @@ int cant_recursos_SO(t_recurso **recursos)
     return i;
 }
 
+
 void modificar_grado_multiprogramacion(int valor)
 {
-    for (int i = 0; i < valor; i++)
-    {
-        sem_post(GRADO_MULTIPROGRAMACION);
-    }
-    log_info(logger, "Se modifico el grado de multiprogramacion a %d", valor);
+    valor_grado_a_modificar = valor;
+    sem_post(manejo_grado);
 }
+
 
 void mostrar_procesos(colaEstado *cola)
 {
