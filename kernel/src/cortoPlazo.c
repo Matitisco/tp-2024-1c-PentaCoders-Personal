@@ -45,12 +45,10 @@ void iniciar_sem_cp()
 
 void planificar_por_fifo()
 {
-    t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
         sem_wait(b_exec_libre);
-        proceso = transicion_ready_exec();
-        log_info(logger, "Se agrego el proceso <%d> y PC <%d> a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
+        t_pcb *proceso = transicion_ready_exec();
         enviar_a_cpu_cde(proceso->cde);
         /* if (habilitar_planificadores == 1)
         {
@@ -67,7 +65,6 @@ void planificar_por_rr()
         sem_wait(b_exec_libre);
         proceso = transicion_ready_exec();
         proceso->estado = EXEC;
-        log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por RR con Quantum: %d\n", proceso->cde->pid, QUANTUM);
         enviar_a_cpu_cde(proceso->cde);
         /* if (habilitar_planificadores == 1)
         {
@@ -79,7 +76,7 @@ void planificar_por_rr()
 
 void planificar_por_vrr()
 {
-    t_pcb *proceso = malloc(sizeof(t_pcb));
+    t_pcb *proceso;
     while (1)
     {
         sem_wait(b_exec_libre);
@@ -90,7 +87,6 @@ void planificar_por_vrr()
         {
             proceso = transicion_generica(cola_ready_plus, cola_exec_global, "corto");
             proceso->estado = EXEC;
-            log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por VRR con Quantum: %d\n", proceso->cde->pid, proceso->quantum);
             enviar_a_cpu_cde(proceso->cde);
             inicio_quantum(proceso->quantum);
         }
@@ -98,9 +94,12 @@ void planificar_por_vrr()
         {
             proceso = transicion_ready_exec();
             proceso->estado = EXEC;
-            log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por VRR con Quantum Normal: %d\n", proceso->cde->pid, QUANTUM);
             enviar_a_cpu_cde(proceso->cde);
             inicio_quantum(QUANTUM);
+        }
+        if (timer != NULL)
+        {
+            temporal_destroy(timer);
         }
         timer = temporal_create();
         /* if (habilitar_planificadores == 1)
@@ -141,7 +140,6 @@ void *transicion_exec_ready()
         sem_wait(b_transicion_exec_ready);
         t_pcb *proceso = transicion_generica(cola_exec_global, cola_ready_global, "exec_ready");
         proceso->cde = cde_interrumpido;
-        log_info(logger, "CDE A ENVIAR OTRA VEZ A READY: %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         proceso->estado = READY;
 
         sem_post(contador_readys);
@@ -165,7 +163,7 @@ void *transicion_exec_blocked()
         {
             temporal_stop(timer);
             tiempo_transcurrido = temporal_gettime(timer);
-            //temporal_destroy(timer);
+            // temporal_destroy(timer);
         }
         proceso->estado = BLOCKED;
         log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <BLOCKED>", proceso->cde->pid);
@@ -187,7 +185,6 @@ void *transicion_blocked_ready()
                 proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "blocked_ready"); // READY+
                 proceso->estado = READY_PLUS;
                 proceso->quantum = QUANTUM - tiempo_transcurrido;
-                log_info(logger, "El proceso tiene un quantum restante de %d", proceso->quantum);
             }
             else
             {
@@ -209,50 +206,7 @@ void *transicion_blocked_ready()
 
 // AUXILIARES
 
-_Bool esta_bloqueado_por_falta_de_recurso(t_recurso *recurso)
-{
-
-    int proceso_en_espera;
-    sem_getvalue(recurso->cola_bloqueados->contador, &proceso_en_espera);
-    int instanciaLogger;
-    sem_getvalue(recurso->instancias, &instanciaLogger);
-    // sem_post(b_desbloquear_proceso);
-
-    log_info(logger, "%s tiene %d instancias y %d proceso en espera en %d", recurso->nombre, instanciaLogger, proceso_en_espera);
-
-    if (proceso_en_espera > 0)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo)
-{
-    int *valorSem = malloc(sizeof(int));
-    sem_getvalue(interruptorSemaforo, valorSem);
-    if (valor_interruptor == 0 && valorSem == -1)
-    {
-        valor_interruptor = 1;
-        sem_post(interruptorSemaforo);
-    }
-}
-
-void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo)
-{
-    int *valorSem = malloc(sizeof(int));
-    sem_getvalue(interruptorSemaforo, valorSem);
-    if (valor_interruptor == 1 && valorSem == 0)
-    {
-        valor_interruptor = 0;
-        sem_wait(interruptorSemaforo);
-    }
-}
-
-int valorSemaforo(sem_t *semaforo)
+void valorSemaforo(sem_t *semaforo)
 {
     int *valor = malloc(sizeof(int));
     sem_getvalue(semaforo, valor);
@@ -266,14 +220,19 @@ int hayProcesosEnEstado(colaEstado *cola_estado)
     sem_getvalue(cola_estado->contador, valor);
     log_info(logger, "Hay %d procesos en el Estado %s", *valor, cola_estado->nombreEstado);
     if (*valor > 0)
+    {
+        free(valor);
         return 1;
+    }
     else
+    {
+        free(valor);
         return 0;
+    }
 }
 
 void enviar_a_cpu_cde(t_cde *cde)
 {
-    // log_info(logger, "Proceso A Enviar: <%d>", cde->pid);
     enviar_op_code(socket_cpu_dispatch, EJECUTAR_PROCESO);
     enviar_cde(socket_cpu_dispatch, cde);
 }

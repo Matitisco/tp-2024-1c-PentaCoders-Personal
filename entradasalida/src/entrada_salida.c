@@ -10,12 +10,9 @@ int main(int argc, char *argv[])
 
 void iniciar_modulo_io()
 {
-	printf("--------------------------\n");
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
 	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
-	printf("--------------------------\n");
 	char *path_configuracion = readline("Ingrese el nombre del archivo con la configuracion de la interfaz (sin '.config'): ");
-	printf("--------------------------\n");
 	strcat(path_configuracion, ".config");
 	levantar_interfaz(nombre_interfaz, path_configuracion);
 	free(nombre_interfaz);
@@ -80,7 +77,6 @@ void arrancar_interfaz(t_interfaz *interfaz)
 		else if (consulta_kernel == CONFIRMAR_CONEXION)
 		{
 			enviar_op_code(conexion_kernel, OK);
-			log_info(logger, "ESTA KERNEL CONECTADO");
 		}
 		else
 		{

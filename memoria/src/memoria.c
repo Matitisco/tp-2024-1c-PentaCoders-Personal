@@ -260,7 +260,6 @@ void pedido_frame_mmu(int cliente_cpu)
     if (tabla == NULL)
     {
         enviar_op_code(cliente_cpu, PEDIDO_FRAME_INCORRECTO);
-        // log_error(logger, "PID: <%d> - NO SE ENCONTRO LA TABLA DE PAGINAS", pid);
         return;
     }
 
@@ -390,22 +389,13 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
     uint32_t valor32;
     uint8_t valor8;
-    char *valor_char; //string_new()
-    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (valor_leido != NULL)
     {
         enviar_op_code(cliente_solicitante, OK);
         tipo_buffer *buffer = crear_buffer();
         if (tipo_dato == STRING)
         {
-            char *valor_leido_string = malloc(tamanio + 1);
-            valor_leido_string[tamanio] = '\0';
-            memcpy(valor_leido_string, valor_leido, tamanio);
-            //valor_char = (char *)valor_leido;
-
-            agregar_buffer_para_string(buffer, valor_leido_string);
-            log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_leido_string);
-            free(valor_leido_string);
+            agregar_buffer_para_string(buffer, valor_leido);
         }
         else if (tipo_dato == INTEGER)
         {
@@ -413,13 +403,11 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
             {
                 valor32 = *(uint32_t *)valor_leido;
                 agregar_buffer_para_enterosUint32(buffer, valor32);
-                log_info(logger, "SE LEYO EL VALOR DE 4 bytes: %d", valor32);
             }
             else if (tamanio == 1)
             {
                 valor8 = *(uint8_t *)valor_leido;
                 agregar_buffer_para_enterosUint8(buffer, valor8);
-                log_info(logger, "SE LEYO EL VALOR de 1 byte: %d", valor8);
             }
         }
 

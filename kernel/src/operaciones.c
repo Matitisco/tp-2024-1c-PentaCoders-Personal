@@ -8,7 +8,7 @@ int primera_ejecucion = 1;
 
 void ejecutar_script(char *PATH)
 {
-    char **lineas_script = string_array_new();
+
     char linea[1024];
 
     char directorioActual[1024];
@@ -31,13 +31,13 @@ void ejecutar_script(char *PATH)
 
     if (archivo_script == NULL)
     {
-        log_info(logger, "No se pudo leer el script con PATH: %s", directorioActual);
+        log_info(logger, "No se pudo leer el script con PATH: <%s>", directorioActual);
         iniciar_consola_interactiva();
     }
     while (fgets(linea, sizeof(linea), archivo_script) != NULL)
     {
         strtok(linea, "\n");
-        lineas_script = string_split(linea, " ");
+        char **lineas_script = string_split(linea, " ");
 
         if (strcmp(lineas_script[0], "INICIAR_PROCESO") == 0)
         {
@@ -63,11 +63,24 @@ void ejecutar_script(char *PATH)
         {
             proceso_estado();
         }
+        liberar_lineas_script(lineas_script);
     }
-    free(lineas_script);
+    
     fclose(archivo_script);
 }
+void liberar_lineas_script(char **lineas_script)
+{
+    if (lineas_script == NULL)
+    {
+        return;
+    }
 
+    for (int i = 0; lineas_script[i] != NULL; i++)
+    {
+        free(lineas_script[i]);
+    }
+    free(lineas_script);
+}
 void iniciar_proceso(char *PATH)
 {
     t_pcb *proceso = crear_proceso(PATH);
@@ -82,6 +95,13 @@ void iniciar_proceso(char *PATH)
     destruir_buffer(buffer);
 
     op_code respuestaDeMemoria = recibir_op_code(socket_memoria);
+    if(respuestaDeMemoria == -1){
+        log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
+        free(proceso->cde->path);
+        free(proceso->cde);
+        free(proceso);
+        return;
+    }
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global);
@@ -90,8 +110,10 @@ void iniciar_proceso(char *PATH)
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
     {
-        log_info(logger, "No se pudo crear el proceso <%u> en NEW\n", proceso->cde->pid);
         PID_GLOBAL--;
+        free(proceso->cde->path);
+        free(proceso->cde);
+        free(proceso);
     }
 }
 
@@ -129,6 +151,10 @@ void finalizar_proceso_final(t_pcb *proceso, int pid, motivoFinalizar motivo)
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
     op_code codigo = recibir_op_code(socket_memoria);
+    if(codigo == -1){
+        log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
+        return;
+    }
     if (codigo == FINALIZAR_PROCESO)
     {
         transicion_generica_exit(proceso->cde->pid);
@@ -151,6 +177,10 @@ void finalizar_proceso_success(uint32_t pid, motivoFinalizar motivo)
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
     op_code codigo = recibir_op_code(socket_memoria);
+    if(codigo == -1){
+        log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
+        return;
+    }
     if (codigo == FINALIZAR_PROCESO)
     {
         t_pcb *proceso = list_find(cola_exec_global->estado, buscar_por_pid);
@@ -219,7 +249,7 @@ void proceso_estado()
     mostrar_procesos(cola_exec_global);
     mostrar_procesos(cola_bloqueado_global);
     mostrar_procesos(cola_exit_global);
-    //imprimir_recursos();
+    // imprimir_recursos();
 }
 
 // FUNCIONES AUXILIARES OPERACIONES

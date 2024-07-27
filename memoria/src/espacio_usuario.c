@@ -71,17 +71,13 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
     int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
     if (pagina != -1)
     {
-        // log_info(logger, "Se accedio al espacio de lectura del proceso");
-
         void *valor = malloc(tamanio);
         if (valor == NULL)
         {
-            log_error(logger, "Error al reservar memoria");
             return NULL;
         }
-
         size_t bytes_leidos = 0;
-        size_t pagina_size = valores_config->tam_pagina; // Tamaño de la página
+        size_t pagina_size = valores_config->tam_pagina;
         uint32_t direccion_pagina = direccion_fisica;
 
         while (bytes_leidos < tamanio)
@@ -94,24 +90,11 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
             {
                 bytes_a_copiar = tamanio - bytes_leidos;
             }
-
             // Copiar los datos desde la página
-
             memcpy(valor + bytes_leidos, espacio_usuario + direccion_pagina, bytes_a_copiar);
-            // printf("Página leída: ");
-            for (size_t i = 0; i < bytes_a_copiar; i++)
-            {
-                log_info(logger, "%02x ", ((unsigned char *)(valor + bytes_leidos))[i]);
-            }
-
             bytes_leidos += bytes_a_copiar;
             direccion_pagina += bytes_a_copiar;
         }
-
-        char *valor_leido_string = malloc(tamanio + 1);
-        valor_leido_string[tamanio] = '\0';
-        memcpy(valor_leido_string, valor, tamanio);
-        log_info(logger, "VALOR <%s>", valor_leido_string);
 
         return valor;
     }

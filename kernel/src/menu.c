@@ -195,7 +195,9 @@ void iniciar_consola_interactiva()
         sleep(1);
         // sem_post(binario_menu_lp); // Habilita largo plazo
         mostrar_operaciones_realizables();
-        ejecutar_operacion(readline("Ingrese un valor para realizar una de las siguientes acciones: "), logger);
+        char *opcion = readline("Ingrese un valor para realizar una de las siguientes acciones: ");
+        ejecutar_operacion(opcion, logger);
+        free(opcion);
     }
 }
 
