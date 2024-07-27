@@ -87,7 +87,6 @@ void iniciar_kernel()
 	habilitar_planificadores = 0;
 	inicializarEstados();
 	logger = iniciar_logger("kernel.log", "KERNEL");
-	nombre_IO = string_new();
 	lista_interfaces = list_create();
 	valores_config = inicializar_config_kernel();
 	QUANTUM = valores_config->quantum;
@@ -353,7 +352,7 @@ void levantar_CPU_Dispatch()
 
 			tipo_buffer *buffer_quantum = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_quantum);
-			// destruir_buffer(buffer_quantum);
+			destruir_buffer(buffer_quantum);
 			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid); // log obligatorio
 			pthread_cancel(hiloQuantum);
 			sem_post(b_transicion_exec_ready);
@@ -461,7 +460,12 @@ void *levantarIO()
 			tipo_buffer *buffer_io = recibir_buffer(socket_disp_io);
 
 			int tipo_interfaz_io = leer_buffer_enteroUint32(buffer_io);
+			if (nombre_IO != NULL)
+			{
+				free(nombre_IO);
+			}
 			nombre_IO = leer_buffer_string(buffer_io);
+
 			char *tipo_io = obtener_interfaz(tipo_interfaz_io);
 
 			if (list_find(lista_interfaces, interfaz_esta_en_lista) != NULL)
@@ -563,6 +567,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	case SOLICITUD_INTERFAZ_GENERICA:
 
 		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
+		if (nombre_IO != NULL)
+		{
+			free(nombre_IO);
+		}
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 
@@ -590,6 +598,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		int tamanioMarco = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		if (nombre_IO != NULL)
+		{
+			free(nombre_IO);
+		}
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 
@@ -618,6 +630,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		if (nombre_IO != NULL)
+		{
+			free(nombre_IO);
+		}
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
@@ -654,7 +670,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 		case IO_FS_CREATE:
 		case IO_FS_DELETE:
-
+			if (nombre_IO != NULL)
+			{
+				free(nombre_IO);
+			}
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
@@ -672,6 +691,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		case IO_FS_TRUNCATE:
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
+			if (nombre_IO != NULL)
+			{
+				free(nombre_IO);
+			}
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
@@ -696,6 +719,10 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
 			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 			puntero_archivo = leer_buffer_enteroUint32(buffer_con_instruccion);
+			if (nombre_IO != NULL)
+			{
+				free(nombre_IO);
+			}
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);

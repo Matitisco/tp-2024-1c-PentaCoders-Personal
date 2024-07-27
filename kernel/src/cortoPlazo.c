@@ -78,7 +78,7 @@ void planificar_por_rr()
 
 void planificar_por_vrr()
 {
-    t_pcb *proceso = malloc(sizeof(t_pcb));
+    t_pcb *proceso;
     while (1)
     {
         sem_wait(b_exec_libre);
@@ -264,9 +264,15 @@ int hayProcesosEnEstado(colaEstado *cola_estado)
     sem_getvalue(cola_estado->contador, valor);
     log_info(logger, "Hay %d procesos en el Estado %s", *valor, cola_estado->nombreEstado);
     if (*valor > 0)
+    {
+        free(valor);
         return 1;
+    }
     else
+    {
+        free(valor);
         return 0;
+    }
 }
 
 void enviar_a_cpu_cde(t_cde *cde)

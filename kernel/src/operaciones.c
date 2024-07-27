@@ -6,7 +6,7 @@ int primera_ejecucion = 1;
 
 void ejecutar_script(char *PATH)
 {
-    char **lineas_script = string_array_new();
+
     char linea[1024];
 
     char directorioActual[1024];
@@ -29,13 +29,13 @@ void ejecutar_script(char *PATH)
 
     if (archivo_script == NULL)
     {
-        log_info(logger, "No se pudo leer el script con PATH: %s", directorioActual);
+        log_info(logger, "No se pudo leer el script con PATH: <%s>", directorioActual);
         iniciar_consola_interactiva();
     }
     while (fgets(linea, sizeof(linea), archivo_script) != NULL)
     {
         strtok(linea, "\n");
-        lineas_script = string_split(linea, " ");
+        char **lineas_script = string_split(linea, " ");
 
         if (strcmp(lineas_script[0], "INICIAR_PROCESO") == 0)
         {
@@ -61,8 +61,9 @@ void ejecutar_script(char *PATH)
         {
             proceso_estado();
         }
+        free(lineas_script);
     }
-    free(lineas_script);
+    
     fclose(archivo_script);
 }
 
