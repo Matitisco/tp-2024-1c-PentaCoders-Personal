@@ -465,10 +465,7 @@ void *levantarIO()
 			tipo_buffer *buffer_io = recibir_buffer(socket_disp_io);
 
 			int tipo_interfaz_io = leer_buffer_enteroUint32(buffer_io);
-			if (nombre_IO != NULL)
-			{
-				free(nombre_IO);
-			}
+
 			nombre_IO = leer_buffer_string(buffer_io);
 
 			char *tipo_io = obtener_interfaz(tipo_interfaz_io);
@@ -676,10 +673,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 		case IO_FS_CREATE:
 		case IO_FS_DELETE:
-			if (nombre_IO != NULL)
-			{
-				free(nombre_IO);
-			}
+
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
@@ -697,10 +691,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		case IO_FS_TRUNCATE:
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
-			if (nombre_IO != NULL)
-			{
-				free(nombre_IO);
-			}
+
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
@@ -725,10 +716,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
 			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 			puntero_archivo = leer_buffer_enteroUint32(buffer_con_instruccion);
-			if (nombre_IO != NULL)
-			{
-				free(nombre_IO);
-			}
+
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
