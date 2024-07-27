@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
 	pthread_join(t_transicion_exec_ready, NULL);
 	pthread_join(hiloQuantum, NULL);
 	free(ip_local);
+	printf_yellow("Kernel finalizado");
 }
 
 void iniciar_kernel()
@@ -108,6 +109,20 @@ void crear_hilos()
 	pthread_create(&hiloIO, NULL, levantarIO, NULL);
 	pthread_create(&hiloCPUDS, NULL, (void *)levantar_CPU_Dispatch, NULL);
 	pthread_create(&hiloCPUINT, NULL, (void *)levantar_CPU_Interrupt, NULL);
+}
+void finalizar_hilos()
+{
+	pthread_cancel(hiloLargoPlazo);
+	pthread_cancel(hiloCortoPlazo);
+	pthread_cancel(hiloConsola);
+	pthread_cancel(largo_plazo_exit);
+	pthread_cancel(t_transicion_exec_blocked);
+	pthread_cancel(t_transicion_exec_ready);
+	pthread_cancel(t_transicion_blocked_ready);
+	pthread_cancel(hiloMEMORIA);
+	pthread_cancel(hiloIO);
+	pthread_cancel(hiloCPUDS);
+	pthread_cancel(hiloCPUINT);
 }
 
 void levantar_servidores()
@@ -305,6 +320,12 @@ void levantar_CPU_Dispatch()
 	while (1)
 	{
 		op_code cod = recibir_op_code(socket_cpu_dispatch);
+		if (cod == -1)
+		{
+			log_error(logger, "CPU se desconectó. Terminando hilo");
+			finalizar_hilos();
+			pthread_exit((void *)EXIT_FAILURE);
+		}
 		switch (cod)
 		{
 		case FINALIZAR_PROCESO:
@@ -312,7 +333,7 @@ void levantar_CPU_Dispatch()
 			tipo_buffer *buffer_cpu_fin = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			motivoFinalizar motivo = leer_buffer_enteroUint32(buffer_cpu_fin);
-			// destruir_buffer(buffer_cpu_fin);
+			destruir_buffer(buffer_cpu_fin);
 
 			if (motivo == SUCCESS)
 			{

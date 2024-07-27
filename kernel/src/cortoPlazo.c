@@ -45,11 +45,10 @@ void iniciar_sem_cp()
 
 void planificar_por_fifo()
 {
-    t_pcb *proceso = malloc(sizeof(t_pcb));
     while (1)
     {
         sem_wait(b_exec_libre);
-        proceso = transicion_ready_exec();
+        t_pcb *proceso = transicion_ready_exec();
         log_info(logger, "Se agrego el proceso <%d> y PC <%d> a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
         enviar_a_cpu_cde(proceso->cde);
         if (habilitar_planificadores == 1)

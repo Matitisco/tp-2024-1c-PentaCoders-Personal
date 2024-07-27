@@ -11,7 +11,9 @@ void *largo_plazo()
         sem_wait(b_reanudar_largo_plazo);
         t_pcb *proceso = transicion_new_a_ready();
         log_info(logger, "PID: %d - Estado Anterior: <NEW> - Estado Actual: <READY>", proceso->cde->pid);
-        log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
+        char *pids = lista_pid();
+        log_info(logger, "Cola Ready / Ready Prioridad : [%s]", pids);
+        free(pids);
         if (habilitar_planificadores == 1)
         {
             sem_post(b_reanudar_largo_plazo);
@@ -29,6 +31,7 @@ char *lista_pid()
         {
             char *pid = string_itoa(pcb->cde->pid);
             strcat(pids_en_ready, pid);
+            free(pid);
         }
         else
         {

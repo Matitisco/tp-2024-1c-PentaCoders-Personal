@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
     pthread_join(hiloKernel, NULL);
     pthread_join(hiloIO, NULL);
     finalizar_memoria();
+    printf_yellow("Memoria Finalizada");
 }
 
 void finalizar_memoria()
@@ -44,11 +45,12 @@ void finalizar_memoria()
     log_destroy(logger);
 
     // estas list destroy estaban comentadas, ahora las descomente
+    /*
     list_destroy_and_destroy_elements(lista_instrucciones, destruir_lista_instrucciones);
     list_destroy_and_destroy_elements(lista_global_tablas, destruir_tabla);
-    list_destroy_and_destroy_elements(lista_contextos, destruir_cde);
+    list_destroy_and_destroy_elements(lista_contextos, destruir_cde);*/
 
-    destruir_tabla(tabla_actual);
+    //destruir_tabla(tabla_actual);
     free(espacio_usuario);
     free(array_bitmap);
 }

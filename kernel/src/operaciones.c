@@ -80,6 +80,13 @@ void iniciar_proceso(char *PATH)
     destruir_buffer(buffer);
 
     op_code respuestaDeMemoria = recibir_op_code(socket_memoria);
+    if(respuestaDeMemoria == -1){
+        log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
+        free(proceso->cde->path);
+        free(proceso->cde);
+        free(proceso);
+        return;
+    }
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global);
@@ -89,6 +96,9 @@ void iniciar_proceso(char *PATH)
     {
         log_info(logger, "No se pudo crear el proceso <%u> en NEW\n", proceso->cde->pid);
         PID_GLOBAL--;
+        free(proceso->cde->path);
+        free(proceso->cde);
+        free(proceso);
     }
 }
 
@@ -125,6 +135,10 @@ void finalizar_proceso_final(t_pcb *proceso, int pid, motivoFinalizar motivo)
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
     op_code codigo = recibir_op_code(socket_memoria);
+    if(codigo == -1){
+        log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
+        return;
+    }
     if (codigo == FINALIZAR_PROCESO)
     {
         transicion_generica_exit(proceso->cde->pid);
@@ -147,6 +161,10 @@ void finalizar_proceso_success(uint32_t pid, motivoFinalizar motivo)
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
     op_code codigo = recibir_op_code(socket_memoria);
+    if(codigo == -1){
+        log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
+        return;
+    }
     if (codigo == FINALIZAR_PROCESO)
     {
         t_pcb *proceso = list_find(cola_exec_global->estado, buscar_por_pid);
