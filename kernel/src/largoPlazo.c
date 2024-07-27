@@ -23,7 +23,7 @@ void *largo_plazo()
 
 char *lista_pid()
 {
-    char *pids_en_ready = string_new();
+    char *pids_en_ready = malloc(1024);
     for (int i = 0; i < list_size(cola_ready_global->estado); i++)
     {
         t_pcb *pcb = list_get(cola_ready_global->estado, i);
@@ -51,6 +51,7 @@ char *lista_pid()
 t_pcb *transicion_new_a_ready()
 {
     t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, " ");
+    sem_post(contador_readys);
     proceso->estado = READY;
     return proceso;
 }
