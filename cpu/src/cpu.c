@@ -138,9 +138,9 @@ void *levantar_kernel_dispatch()
 				log_info(logger, "PID: <%d> - FETCH - Program Counter: <%d>", cde_recibido->pid, cde_recibido->PC);
 				cde_recibido->PC++;
 				char **array_instruccion = decode(linea_instruccion);
-				free(linea_instruccion); // agregado
+				//free(linea_instruccion); // agregado
 				execute(array_instruccion, cde_recibido);
-				liberar_array_instruccion(array_instruccion);
+				//liberar_array_instruccion(array_instruccion);
 				check_interrupt();
 				printf_yellow("------------------------------\n");
 			}

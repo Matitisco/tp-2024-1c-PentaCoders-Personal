@@ -206,7 +206,7 @@ void *transicion_blocked_ready()
 
 // AUXILIARES
 
-void valorSemaforo(sem_t *semaforo)
+int valorSemaforo(sem_t *semaforo)
 {
     int *valor = malloc(sizeof(int));
     sem_getvalue(semaforo, valor);
