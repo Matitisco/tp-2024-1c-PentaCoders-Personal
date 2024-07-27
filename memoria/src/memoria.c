@@ -40,9 +40,7 @@ void finalizar_memoria()
     liberar_conexion(&cliente_cpu);
     liberar_conexion(&cliente_kernel);
     config_destroy(valores_config->config);
-    free(valores_config->ip_memoria);
-    free(valores_config->path_instrucciones);
-    free(valores_config->puerto_memoria);
+    free(valores_config);//con esto es suficiente, los demás atributos se liberan con config_destroy (config_get_string_value retorna un puntero y no crea uno nuevo)
     log_destroy(logger);
 
     // estas list destroy estaban comentadas, ahora las descomente

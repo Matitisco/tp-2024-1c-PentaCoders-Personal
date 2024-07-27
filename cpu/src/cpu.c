@@ -39,22 +39,16 @@ int main(int argc, char *argv[])
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
 	pthread_join(hilo_CPU_SERVIDOR_DISPATCH, NULL);
 	pthread_join(hilo_CPU_CLIENTE, NULL);
-	printf_red("CPU FINALIZADA");
 
-	log_destroy(logger);
-	printf_red("CPU FINALIZADA");
 	config_destroy(valores_config_cpu->config);
-	free(valores_config_cpu->algoritmo_tlb);
-	free(valores_config_cpu->ip);
-	free(valores_config_cpu->puerto_escucha_dispatch);
-	free(valores_config_cpu->puerto_escucha_interrupt);
-	free(valores_config_cpu->puerto_memoria);
-	free(valores_config_cpu);
+	free(valores_config_cpu); // con esto es suficiente, los demás atributos se liberan con config_destroy (config_get_string_value retorna un puntero y no crea uno nuevo)
+
 	// eliminar_tlb();
 	free(registros);
-	printf_red("CPU FINALIZADA");
 	liberar_conexion(&socket_memoria);
 	free(ip_local);
+	log_destroy(logger);
+	printf_yellow("CPU FINALIZADA");
 }
 
 void iniciar_modulo_cpu()
@@ -120,7 +114,7 @@ void *levantar_kernel_dispatch()
 		{
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
 			pthread_mutex_lock(&mutex_salida_exit);
-				salida_exit = 1;
+			salida_exit = 1;
 			pthread_mutex_unlock(&mutex_salida_exit);
 			pthread_cancel(hilo_CPU_SERVIDOR_INTERRUPT);
 			pthread_cancel(hilo_CPU_CLIENTE);
@@ -135,7 +129,7 @@ void *levantar_kernel_dispatch()
 			cde_recibido = leer_cde(buffer_cde);
 			registros = cde_recibido->registros;
 			pthread_mutex_lock(&mutex_salida_exit);
-				salida_exit = 1;
+			salida_exit = 1;
 			pthread_mutex_unlock(&mutex_salida_exit);
 			printf_yellow("------------------------------\n");
 			while (salida_exit)
@@ -178,16 +172,14 @@ void *levantar_kernel_interrupt()
 		if (salida_exit)
 		{
 			op_code codigo = recibir_op_code(socket_kernel_interrupt);
-			printf(""); // no borrar porque sino no finaliza bien (no sé por qué)
 			if (codigo == -1)
 			{
+
 				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-				pthread_mutex_lock(&mutex_salida_exit);
-				salida_exit = 1;
-				pthread_mutex_unlock(&mutex_salida_exit);
+				printf("\033[0m");
 				pthread_cancel(hilo_CPU_SERVIDOR_DISPATCH);
 				pthread_cancel(hilo_CPU_CLIENTE);
-				exit(EXIT_FAILURE);
+				pthread_exit((void *)EXIT_FAILURE);
 			}
 
 			switch (codigo)
