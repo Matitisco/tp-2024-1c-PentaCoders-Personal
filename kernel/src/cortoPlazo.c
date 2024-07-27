@@ -52,10 +52,10 @@ void planificar_por_fifo()
         proceso = transicion_ready_exec();
         log_info(logger, "Se agrego el proceso <%d> y PC <%d> a Execute desde Ready por FIFO\n", proceso->cde->pid, proceso->cde->PC);
         enviar_a_cpu_cde(proceso->cde);
-        if (habilitar_planificadores == 1)
+        /* if (habilitar_planificadores == 1)
         {
-            sem_post(b_reanudar_corto_plazo);
-        }
+            //sem_post(b_reanudar_corto_plazo);
+        } */
     }
 }
 
@@ -69,10 +69,10 @@ void planificar_por_rr()
         proceso->estado = EXEC;
         log_info(logger, "Se agrego el proceso %d  a Execute desde Ready por RR con Quantum: %d\n", proceso->cde->pid, QUANTUM);
         enviar_a_cpu_cde(proceso->cde);
-        if (habilitar_planificadores == 1)
+        /* if (habilitar_planificadores == 1)
         {
-            sem_post(b_reanudar_corto_plazo);
-        }
+            //sem_post(b_reanudar_corto_plazo);
+        } */
         inicio_quantum(QUANTUM);
     }
 }
@@ -103,10 +103,10 @@ void planificar_por_vrr()
             inicio_quantum(QUANTUM);
         }
         timer = temporal_create();
-        if (habilitar_planificadores == 1)
+        /* if (habilitar_planificadores == 1)
         {
-            sem_post(b_reanudar_corto_plazo);
-        }
+            //sem_post(b_reanudar_corto_plazo);
+        } */
     }
 }
 
@@ -129,7 +129,7 @@ void *hilo_quantum()
 // READY -> EXEC
 t_pcb *transicion_ready_exec()
 {
-    t_pcb *proceso = transicion_generica(cola_ready_global, cola_exec_global, " ");
+    t_pcb *proceso = transicion_generica(cola_ready_global, cola_exec_global, "corto");
     proceso->estado = EXEC;
     return proceso;
 }
@@ -139,7 +139,7 @@ void *transicion_exec_ready()
     while (1)
     {
         sem_wait(b_transicion_exec_ready);
-        t_pcb *proceso = transicion_generica(cola_exec_global, cola_ready_global, "corto");
+        t_pcb *proceso = transicion_generica(cola_exec_global, cola_ready_global, "exec_ready");
         proceso->cde = cde_interrumpido;
         log_info(logger, "CDE A ENVIAR OTRA VEZ A READY: %d y PC %d", proceso->cde->pid, proceso->cde->PC);
         proceso->estado = READY;
@@ -158,7 +158,7 @@ void *transicion_exec_blocked()
         sem_wait(b_transicion_exec_blocked);
         sem_post(b_exec_libre);
 
-        t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "corto");
+        t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "exec_blocked");
         proceso->cde = cde_interrumpido;
 
         if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
@@ -184,14 +184,14 @@ void *transicion_blocked_ready()
             if (tiempo_transcurrido < QUANTUM)
             {
 
-                proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "corto"); // READY+
+                proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "blocked_ready"); // READY+
                 proceso->estado = READY_PLUS;
                 proceso->quantum = QUANTUM - tiempo_transcurrido;
                 log_info(logger, "El proceso tiene un quantum restante de %d", proceso->quantum);
             }
             else
             {
-                proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto"); // READY+
+                proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "blocked_ready"); // READY+
                 proceso->estado = READY;
             }
         }

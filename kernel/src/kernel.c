@@ -25,8 +25,15 @@ sem_t *b_transicion_exec_blocked;
 sem_t *b_exec_libre;
 sem_t *sem_quantum;
 sem_t *sem_agregar_a_estado;
+
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
+sem_t *b_reanudar_exit_largo;
+sem_t *b_reanudar_exec_blocked;
+sem_t *b_reanudar_exec_ready;
+sem_t *b_reanudar_blocked_ready;
+
+
 sem_t *b_transicion_blocked_ready;
 sem_t *bloquearReady;
 sem_t *bloquearReadyPlus;
@@ -97,13 +104,16 @@ void iniciar_kernel()
 
 void crear_hilos()
 {
-	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
-	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
+	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);	//Done
+	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);	//Done
+
 	pthread_create(&hiloConsola, NULL, (void *)iniciar_consola_interactiva, NULL);
+
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
 	pthread_create(&t_transicion_blocked_ready, NULL, transicion_blocked_ready, NULL);
+
 	pthread_create(&hiloMEMORIA, NULL, (void *)conexionAMemoria, NULL);
 	pthread_create(&hiloIO, NULL, levantarIO, NULL);
 	pthread_create(&hiloCPUDS, NULL, (void *)levantar_CPU_Dispatch, NULL);
@@ -148,9 +158,15 @@ void iniciar_semaforos()
 	GRADO_MULTIPROGRAMACION = malloc(sizeof(sem_t));
 	binario_menu_lp = malloc(sizeof(sem_t));
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
+	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
+
+	b_reanudar_exit_largo = malloc(sizeof(sem_t));
+	b_reanudar_exec_blocked = malloc(sizeof(sem_t));
+	b_reanudar_exec_ready = malloc(sizeof(sem_t));
+	b_reanudar_blocked_ready = malloc(sizeof(sem_t));
+
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
 	b_largo_plazo_exit = malloc(sizeof(sem_t));
-	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
 	b_exec_libre = malloc(sizeof(sem_t));
 	b_transicion_exec_ready = malloc(sizeof(sem_t));
 	b_transicion_exec_blocked = malloc(sizeof(sem_t));
@@ -165,8 +181,14 @@ void iniciar_semaforos()
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
-	sem_init(sem_agregar_a_estado, 0, 0);
 	sem_init(b_reanudar_corto_plazo, 0, 0);
+
+	sem_init(b_reanudar_exit_largo, 0, 0);
+	sem_init(b_reanudar_exec_blocked, 0, 0);
+	sem_init(b_reanudar_exec_ready, 0, 0);
+	sem_init(b_reanudar_blocked_ready, 0, 0);
+
+	sem_init(sem_agregar_a_estado, 0, 0);
 	sem_init(b_exec_libre, 0, 1);
 	sem_init(b_largo_plazo_exit, 0, 0);
 	sem_init(b_transicion_exec_ready, 0, 0);
@@ -243,10 +265,47 @@ config_kernel *inicializar_config_kernel()
 	return configuracion;
 }
 
+
+
+void evaluar_planificacion(char* planificador)
+{
+	log_info(logger, "habilitar planificadores: %d", habilitar_planificadores);
+	if(habilitar_planificadores==0)
+	{
+		if(strcmp(planificador, "largo"))
+		{
+			sem_wait(b_reanudar_largo_plazo);
+		}
+		else if(strcmp(planificador, "corto"))
+		{
+			sem_wait(b_reanudar_corto_plazo);
+		}
+		else if(strcmp(planificador, "exit_largo"))
+		{
+			sem_wait(b_reanudar_exit_largo);
+		}
+		else if(strcmp(planificador, "exec_blocked"))
+		{
+			sem_wait(b_reanudar_exec_blocked);
+		}
+		else if(strcmp(planificador, "exec_ready"))
+		{
+			sem_wait(b_reanudar_exec_ready);
+		}
+		else if(strcmp(planificador, "blocked_ready"))
+		{
+			sem_wait(b_reanudar_blocked_ready);
+		}
+	}
+}
+
+
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion)
 {
-	t_pcb *proceso = sacar_procesos_cola(colaEstadoInicio);
+	t_pcb * proceso = sacar_procesos_cola(colaEstadoInicio, planificacion);
+	evaluar_planificacion(planificacion);
 	agregar_a_estado(proceso, colaEstadoFinal);
+
 	return proceso;
 }
 
@@ -258,9 +317,10 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 	sem_post(cola_estado->contador);
 }
 
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char *planificacion)
 {
 	sem_wait(cola_estado->contador);
+	evaluar_planificacion(planificacion);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	t_pcb *pcb = list_remove(cola_estado->estado, 0);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
@@ -319,8 +379,8 @@ void levantar_CPU_Dispatch()
 				finalizar_proceso_success(cde_interrumpido->pid, motivo);
 				sem_post(b_largo_plazo_exit);
 			}
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+			//sem_post(b_reanudar_largo_plazo);
+			//sem_post(b_reanudar_corto_plazo);
 			break;
 
 		case EXIT_SUCCESS:
@@ -410,8 +470,8 @@ void levantar_CPU_Dispatch()
 			sem_post(sem_finalizar_proceso);
 			finalizar_proceso(cde_interrumpido->pid, OUT_OF_MEMORY_END);
 			sem_post(b_largo_plazo_exit);
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+			//sem_post(b_reanudar_largo_plazo);
+			//sem_post(b_reanudar_corto_plazo);
 			break;
 
 		default:
@@ -936,7 +996,7 @@ void signal_instancia_recurso(t_recurso *recurso)
 	if (proceso_en_espera > 0) // libera a otro proceso bloqueado
 	{
 		sem_post(b_transicion_blocked_ready);
-		proceso = sacar_procesos_cola(recurso->cola_bloqueados);
+		proceso = sacar_procesos_cola(recurso->cola_bloqueados, "");
 		mostrar_procesos(recurso->cola_bloqueados);
 	}
 

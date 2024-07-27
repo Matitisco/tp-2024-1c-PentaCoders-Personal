@@ -8,16 +8,16 @@ void *largo_plazo()
     {
         // sem_wait(binario_menu_lp); SI SE DEJA ESTO SE TRABA A VECES
         sem_wait(GRADO_MULTIPROGRAMACION);
-        sem_wait(b_reanudar_largo_plazo);
+        //sem_wait(b_reanudar_largo_plazo);
         t_pcb *proceso = transicion_new_a_ready();
         log_info(logger, "PID: %d - Estado Anterior: <NEW> - Estado Actual: <READY>", proceso->cde->pid);
         //char* lista = lista_pid();
         log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
         //free(lista);
-        if (habilitar_planificadores == 1)
+        /* if (habilitar_planificadores == 1)
         {
-            sem_post(b_reanudar_largo_plazo);
-        }
+            //sem_post(b_reanudar_largo_plazo);
+        } */
     }
 }
 
@@ -49,7 +49,7 @@ char *lista_pid()
 // NEW -> READY
 t_pcb *transicion_new_a_ready()
 {
-    t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, " ");
+    t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, "largo");
     sem_post(contador_readys);
     proceso->estado = READY;
     return proceso;
@@ -60,13 +60,13 @@ void *transicion_exit_largo_plazo()
     while (1)
     {
         sem_wait(b_largo_plazo_exit);
-        transicion_generica(cola_exec_global, cola_exit_global, " ");
+        transicion_generica(cola_exec_global, cola_exit_global, "exit_largo");
         sem_post(GRADO_MULTIPROGRAMACION);
         sem_post(b_exec_libre);
     }
 }
 
-// NEW/READY/BLOCKED -> EXIT
+// NEW/READY/BLOCKED -> EXIT (para finalizar)
 void transicion_generica_exit(uint32_t pid)
 {
     colaEstado *cola_encontrada = buscarCola(pid);

@@ -85,8 +85,14 @@ extern sem_t *binario_menu_lp;
 extern sem_t *b_largo_plazo_exit;
 extern sem_t *b_exec_libre;
 extern sem_t *b_transicion_exec_blocked;
+
 extern sem_t *b_reanudar_largo_plazo;
 extern sem_t *b_reanudar_corto_plazo;
+extern sem_t *b_reanudar_exit_largo;
+extern sem_t *b_reanudar_exec_blocked;
+extern sem_t *b_reanudar_exec_ready;
+extern sem_t *b_reanudar_blocked_ready;
+
 extern sem_t *b_transicion_exec_ready;
 extern sem_t *b_transicion_blocked_ready;
 extern sem_t *b_detener_planificacion;
@@ -129,7 +135,7 @@ colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char *planificacion);
 
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion);
 void evaluar_planificacion(char *planificador);

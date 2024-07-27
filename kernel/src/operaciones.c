@@ -172,8 +172,8 @@ void detener_planificacion()
     if (habilitar_planificadores == 1)
     {
         habilitar_planificadores = 0;
-        sem_wait(b_reanudar_largo_plazo);
-        sem_wait(b_reanudar_corto_plazo);
+        //sem_wait(b_reanudar_largo_plazo);
+        //sem_wait(b_reanudar_corto_plazo);
         log_info(logger, "PLANIFICACION PAUSADA");
     }
     else
@@ -189,6 +189,11 @@ void iniciar_planificacion()
         habilitar_planificadores = 1;
         sem_post(b_reanudar_largo_plazo);
         sem_post(b_reanudar_corto_plazo);
+        sem_post(b_reanudar_exit_largo);
+        sem_post(b_reanudar_exec_blocked);
+        sem_post(b_reanudar_exec_ready);
+        sem_post(b_reanudar_blocked_ready);
+    
         log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
     }
     else

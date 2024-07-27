@@ -225,6 +225,7 @@ char *fetch(t_cde *contexto)
 
 char **decode(char *linea_de_instrucion)
 {
+
 	char **instruccion = string_split(linea_de_instrucion, " ");
 	return instruccion;
 }

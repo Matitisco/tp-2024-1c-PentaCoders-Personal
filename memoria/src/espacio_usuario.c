@@ -26,8 +26,8 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
     log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion fisica: <%d> - Tamaño <%zu>", pid, direccion_fisica, tamanio);
 
     char *valor_a_escribir_char = malloc(tamanio + 1);
+    valor_a_escribir_char[tamanio+1] = '\0';
     memcpy(valor_a_escribir_char, valor_a_escribir, tamanio);
-    valor_a_escribir_char[tamanio] = '\0';
     log_info(logger, "PID: <%d> - Valor a escribir en Espacio de Usuario: <%s>", pid, valor_a_escribir_char);
     free(valor_a_escribir_char);
 
@@ -45,6 +45,8 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
     {
         log_error(logger, "Se quiere escribir por fuera del espacio del proceso asignado");
     }
+
+
     return NULL;
 }
 

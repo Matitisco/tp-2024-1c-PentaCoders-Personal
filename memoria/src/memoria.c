@@ -390,7 +390,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
     uint32_t valor32;
     uint8_t valor8;
-    char *valor_char = string_new();
+    char *valor_char; //string_new()
     imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (valor_leido != NULL)
     {
@@ -401,10 +401,10 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
             char *valor_leido_string = malloc(tamanio + 1);
             valor_leido_string[tamanio] = '\0';
             memcpy(valor_leido_string, valor_leido, tamanio);
-            valor_char = (char *)valor_leido;
+            //valor_char = (char *)valor_leido;
 
-            agregar_buffer_para_string(buffer, valor_leido);
-            log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_char);
+            agregar_buffer_para_string(buffer, valor_leido_string);
+            log_info(logger, "SE LEYO EL VALOR STRING: <%s>", valor_leido_string);
             free(valor_leido_string);
         }
         else if (tipo_dato == INTEGER)
