@@ -49,11 +49,11 @@ void planificar_por_fifo()
     {
         sem_wait(b_exec_libre);
         t_pcb *proceso = transicion_ready_exec();
+        log_info(logger, "PID: <%d> - Estado Anterior: <READY+> - Estado Actual: <EXECUTE>", proceso->cde->pid);
         enviar_a_cpu_cde(proceso->cde);
-        /* if (habilitar_planificadores == 1)
-        {
-            //sem_post(b_reanudar_corto_plazo);
-        } */
+
+        
+
     }
 }
 
@@ -64,12 +64,10 @@ void planificar_por_rr()
     {
         sem_wait(b_exec_libre);
         proceso = transicion_ready_exec();
+        log_info(logger, "PID: <%d> - Estado Anterior: <READY> - Estado Actual: <EXECUTE>", proceso->cde->pid);
         proceso->estado = EXEC;
         enviar_a_cpu_cde(proceso->cde);
-        /* if (habilitar_planificadores == 1)
-        {
-            //sem_post(b_reanudar_corto_plazo);
-        } */
+    
         inicio_quantum(QUANTUM);
     }
 }
@@ -86,13 +84,16 @@ void planificar_por_vrr()
         if (hayProcesosEnEstado(cola_ready_plus))
         {
             proceso = transicion_generica(cola_ready_plus, cola_exec_global, "corto");
+            log_info(logger, "PID: <%d> - Estado Anterior: <READY+> - Estado Actual: <EXECUTE>", proceso->cde->pid);
             proceso->estado = EXEC;
             enviar_a_cpu_cde(proceso->cde);
+           
             inicio_quantum(proceso->quantum);
         }
         else
         {
             proceso = transicion_ready_exec();
+            log_info(logger, "PID: <%d> - Estado Anterior: <READY> - Estado Actual: <EXECUTE>", proceso->cde->pid);
             proceso->estado = EXEC;
             enviar_a_cpu_cde(proceso->cde);
             inicio_quantum(QUANTUM);
@@ -102,10 +103,6 @@ void planificar_por_vrr()
             temporal_destroy(timer);
         }
         timer = temporal_create();
-        /* if (habilitar_planificadores == 1)
-        {
-            //sem_post(b_reanudar_corto_plazo);
-        } */
     }
 }
 
@@ -139,9 +136,12 @@ void *transicion_exec_ready()
     {
         sem_wait(b_transicion_exec_ready);
         t_pcb *proceso = transicion_generica(cola_exec_global, cola_ready_global, "exec_ready");
+        free(proceso->cde->registros);
+        free(proceso->cde);
         proceso->cde = cde_interrumpido;
         proceso->estado = READY;
 
+    
         sem_post(contador_readys);
         sem_post(b_exec_libre);
 

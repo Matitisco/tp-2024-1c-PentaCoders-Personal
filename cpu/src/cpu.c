@@ -400,7 +400,7 @@ void check_interrupt()
 		enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 		exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 	}
-	else if (interrupcion_io)
+	else if (interrupcion_io)//sin quantum
 	{
 		pthread_mutex_lock(&mutex_salida_exit);
 		salida_exit = 0;

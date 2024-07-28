@@ -134,8 +134,8 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
     else // EXEC
     {
         enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT); // Si esta en CPU le aviso que lo finalice
-        //sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
-        sleep(2);
+        sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
+        //sleep(1);
         finalizar_proceso_final(proceso, pid, motivo);        // finaliza el proceso en memoria
         return;
     }
@@ -145,7 +145,7 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
 
 void finalizar_proceso_final(t_pcb *proceso, int pid, motivoFinalizar motivo)
 {
-    enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
+    enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);    //Envia mensaje a memoria para que finalice
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, pid);
     enviar_buffer(buffer, socket_memoria);
@@ -265,7 +265,7 @@ t_pcb *buscar_pcb_en_colas(int pid)
     colaEstado *colas[5] = {cola_new_global, cola_ready_global, cola_ready_plus, cola_exec_global, cola_bloqueado_global};
     for (int i = 0; i < 5; i++)
     {
-        t_pcb *pcb = list_find(colas[i]->estado, buscar_por_pid);
+        t_pcb *pcb = list_find(colas[i]->estado, buscar_por_pid); //list_remove_by_condition(colas[i]->estado, buscar_por_pid); //
         if (pcb != NULL)
             return pcb;
     }
