@@ -94,11 +94,11 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
 
     if (instruccion == IO_STDIN_READ)
     {
+        log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
         char *texto_ingresado = readline("Ingrese un texto por teclado: ");
         char *texto_truncado = truncar_texto(texto_ingresado, tamanio);
 
         escribir_dato_memoria(direccion_fisica, tamanio_marco, texto_truncado, tamanio, pid);
-        log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
     }
     else
     {
@@ -136,10 +136,11 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
             char *texto_recibido = calloc(1, tamanio);
             tipo_buffer *lectura = recibir_buffer(conexion_memoria);
             texto_recibido = leer_buffer_string(lectura);
-            log_info(logger, "Texto hallado: %s", texto_recibido);
+            printf("PID: <%d> - Texto hallado: <%s>\n", pid, texto_recibido);
             destruir_buffer(lectura);
 
             log_info(logger, "PID: <%d> - Operacion: <IO_STDOUT_WRITE>", pid);
+            free(texto_recibido);
         }
         else if (codigo_memoria == ERROR_PEDIDO_LECTURA)
         {
