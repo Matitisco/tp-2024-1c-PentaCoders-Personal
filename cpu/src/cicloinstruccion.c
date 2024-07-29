@@ -375,6 +375,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     uint32_t tamanio = obtener_valor(reg_tamanio);
+    log_info(logger, "TAMANIO : %d", tamanio);
 
     buffer_instruccion_io = crear_buffer();
 

@@ -115,6 +115,7 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
     int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion);
     int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
+    log_info(logger, "TAMANIO : %d", tamanio);
     if (sol_operacion == IO_STDOUT_WRITE)
     {
         enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
