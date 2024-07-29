@@ -523,7 +523,6 @@ void finalizar_proceso(int socket_kernel)
     eliminar_tabla_paginas(pid);
     eliminar_cde(pid);
 
-    enviar_op_code(socket_kernel, FINALIZAR_PROCESO);
     destruir_buffer(buffer);
 }
 

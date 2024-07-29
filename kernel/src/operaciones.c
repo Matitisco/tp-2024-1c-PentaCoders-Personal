@@ -4,8 +4,6 @@ uint32_t PID_GLOBAL = 0;
 uint32_t pid_a_finalizar;
 int primera_ejecucion = 1;
 
-
-
 void ejecutar_script(char *PATH)
 {
 
@@ -65,7 +63,7 @@ void ejecutar_script(char *PATH)
         }
         liberar_lineas_script(lineas_script);
     }
-    
+
     fclose(archivo_script);
 }
 void liberar_lineas_script(char **lineas_script)
@@ -95,7 +93,8 @@ void iniciar_proceso(char *PATH)
     destruir_buffer(buffer);
 
     op_code respuestaDeMemoria = recibir_op_code(socket_memoria);
-    if(respuestaDeMemoria == -1){
+    if (respuestaDeMemoria == -1)
+    {
         log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
         free(proceso->cde->path);
         free(proceso->cde);
@@ -135,8 +134,8 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
     {
         enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT); // Si esta en CPU le aviso que lo finalice
         sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
-        //sleep(1);
-        finalizar_proceso_final(proceso, pid, motivo);        // finaliza el proceso en memoria
+        // sleep(1);
+        finalizar_proceso_final(proceso, pid, motivo); // finaliza el proceso en memoria
         return;
     }
     finalizar_proceso_final(proceso, pid, motivo);
@@ -145,27 +144,16 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
 
 void finalizar_proceso_final(t_pcb *proceso, int pid, motivoFinalizar motivo)
 {
-    enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);    //Envia mensaje a memoria para que finalice
+    enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO); // Envia mensaje a memoria para que finalice
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, pid);
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
-    op_code codigo = recibir_op_code(socket_memoria);
-    if(codigo == -1){
-        log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
-        return;
-    }
-    if (codigo == FINALIZAR_PROCESO)
-    {
-        transicion_generica_exit(proceso->cde->pid);
-        eliminar_proceso(proceso);
 
-        log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
-    }
-    else
-    {
-        log_error(logger, "PID <%d> - Error al finalizar el proceso", pid);
-    }
+    transicion_generica_exit(proceso->cde->pid);
+    eliminar_proceso(proceso);
+
+    log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", proceso->cde->pid, mostrar_motivo(motivo));
 }
 
 void finalizar_proceso_success(uint32_t pid, motivoFinalizar motivo)
@@ -176,22 +164,9 @@ void finalizar_proceso_success(uint32_t pid, motivoFinalizar motivo)
     agregar_buffer_para_enterosUint32(buffer, pid);
     enviar_buffer(buffer, socket_memoria);
     destruir_buffer(buffer);
-    op_code codigo = recibir_op_code(socket_memoria);
-    if(codigo == -1){
-        log_error(logger, "Error en la conexión con memoria, finalizando kernel.");
-        return;
-    }
-    if (codigo == FINALIZAR_PROCESO)
-    {
-        t_pcb *proceso = list_find(cola_exec_global->estado, buscar_por_pid);
-        eliminar_proceso(proceso);
-
-        log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", pid, mostrar_motivo(motivo));
-    }
-    else
-    {
-        log_error(logger, "PID <%d> - Error Finalizar", pid);
-    }
+    t_pcb *proceso = list_find(cola_exec_global->estado, buscar_por_pid);
+    eliminar_proceso(proceso);
+    log_info(logger, "Finaliza el proceso %d - Motivo: <%s>", pid, mostrar_motivo(motivo));
 }
 
 void eliminar_proceso(t_pcb *proceso)
@@ -206,13 +181,13 @@ void detener_planificacion()
     if (habilitar_planificadores == 1)
     {
         habilitar_planificadores = 0;
-        //sem_wait(b_reanudar_largo_plazo);
-        //sem_wait(b_reanudar_corto_plazo);
-        //log_info(logger, "PLANIFICACION PAUSADA");
+        // sem_wait(b_reanudar_largo_plazo);
+        // sem_wait(b_reanudar_corto_plazo);
+        // log_info(logger, "PLANIFICACION PAUSADA");
     }
     else
     {
-        //log_info(logger, "PLANIFICACION YA ESTA PAUSADA");
+        // log_info(logger, "PLANIFICACION YA ESTA PAUSADA");
     }
 }
 
@@ -227,12 +202,12 @@ void iniciar_planificacion()
         sem_post(b_reanudar_exec_blocked);
         sem_post(b_reanudar_exec_ready);
         sem_post(b_reanudar_blocked_ready);
-    
-        //log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
+
+        // log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
     }
     else
     {
-        //log_info(logger, "PLANIFICACION YA ESTA EN FUNCIONAMIENTO");
+        // log_info(logger, "PLANIFICACION YA ESTA EN FUNCIONAMIENTO");
     }
 }
 
@@ -265,7 +240,7 @@ t_pcb *buscar_pcb_en_colas(int pid)
     colaEstado *colas[5] = {cola_new_global, cola_ready_global, cola_ready_plus, cola_exec_global, cola_bloqueado_global};
     for (int i = 0; i < 5; i++)
     {
-        t_pcb *pcb = list_find(colas[i]->estado, buscar_por_pid); //list_remove_by_condition(colas[i]->estado, buscar_por_pid); //
+        t_pcb *pcb = list_find(colas[i]->estado, buscar_por_pid);
         if (pcb != NULL)
             return pcb;
     }
@@ -353,13 +328,11 @@ int cant_recursos_SO(t_recurso **recursos)
     return i;
 }
 
-
 void modificar_grado_multiprogramacion(int valor)
 {
     valor_grado_a_modificar = valor;
     sem_post(manejo_grado);
 }
-
 
 void mostrar_procesos(colaEstado *cola)
 {

@@ -9,12 +9,12 @@ void *largo_plazo()
         sem_wait(cant_procesos_en_new);
         // sem_wait(binario_menu_lp); SI SE DEJA ESTO SE TRABA A VECES
         sem_wait(GRADO_MULTIPROGRAMACION);
-        //sem_wait(b_reanudar_largo_plazo);
+        // sem_wait(b_reanudar_largo_plazo);
         t_pcb *proceso = transicion_new_a_ready();
         log_info(logger, "PID: %d - Estado Anterior: <NEW> - Estado Actual: <READY>", proceso->cde->pid);
-        //char* lista = lista_pid();
+        // char* lista = lista_pid();
         log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
-        //free(lista);
+        // free(lista);
         /* if (habilitar_planificadores == 1)
         {
             //sem_post(b_reanudar_largo_plazo);

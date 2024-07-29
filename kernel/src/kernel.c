@@ -379,6 +379,7 @@ t_pcb *sacar_procesos_cola_basico(colaEstado *cola_estado, char *planificacion)
 
 t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char *planificacion)
 {
+	evaluar_planificacion(planificacion);
 	sem_wait(cola_estado->contador);
 	evaluar_planificacion(planificacion);
 	pthread_mutex_lock(cola_estado->mutex_estado);
@@ -445,8 +446,6 @@ void levantar_CPU_Dispatch()
 				finalizar_proceso_success(cde_interrumpido->pid, motivo);
 				sem_post(b_largo_plazo_exit);
 			}
-			// sem_post(b_reanudar_largo_plazo);
-			// sem_post(b_reanudar_corto_plazo);
 			break;
 
 		case EXIT_SUCCESS:
@@ -656,6 +655,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 
+		free(nombre_IO);
+
 		if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 		{
 			interfaz_no_conectada(pid, informacion_interfaz);
@@ -664,6 +665,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
 		}
+		// free(informacion_interfaz);
 		break;
 
 	case SOLICITUD_INTERFAZ_STDIN:
