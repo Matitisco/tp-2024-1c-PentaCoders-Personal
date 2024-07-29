@@ -465,7 +465,6 @@ void levantar_CPU_Dispatch()
 		case FIN_DE_QUANTUM:
 
 			tipo_buffer *buffer_quantum = recibir_buffer(socket_cpu_dispatch);
-			
 			cde_interrumpido = leer_cde(buffer_quantum);
 			destruir_buffer(buffer_quantum);
 			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid); // log obligatorio
