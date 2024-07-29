@@ -133,7 +133,7 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
         op_code codigo_memoria = recibir_op_code(conexion_memoria);
         if (codigo_memoria == OK)
         {
-            char *texto_recibido = calloc(1, tamanio);
+            char *texto_recibido = (char *)calloc(1, tamanio);
             tipo_buffer *lectura = recibir_buffer(conexion_memoria);
             texto_recibido = leer_buffer_string(lectura);
             printf("PID: <%d> - Texto hallado: <%s>\n", pid, texto_recibido);
