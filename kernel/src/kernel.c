@@ -440,12 +440,8 @@ void levantar_CPU_Dispatch()
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			motivoFinalizar motivo = leer_buffer_enteroUint32(buffer_cpu_fin);
 			destruir_buffer(buffer_cpu_fin);
-
-			if (motivo == SUCCESS)
-			{
-				finalizar_proceso_success(cde_interrumpido->pid, motivo);
-				sem_post(b_largo_plazo_exit);
-			}
+			finalizar_proceso_success(cde_interrumpido->pid, motivo);
+			sem_post(b_largo_plazo_exit);
 			break;
 
 		case EXIT_SUCCESS:
@@ -487,18 +483,16 @@ void levantar_CPU_Dispatch()
 			nombre_recurso_recibido = leer_buffer_string(buffer_wait);
 			tipo_buffer *buffer_wait_cde = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_wait_cde);
-			// destruir_buffer(buffer_wait);
-			// destruir_buffer(buffer_wait_cde);
+			destruir_buffer(buffer_wait);
+			destruir_buffer(buffer_wait_cde);
 			if (existe_recurso(nombre_recurso_recibido))
 			{
 				t_recurso *recurso_SO = obtener_recurso(nombre_recurso_recibido);
 				wait_instancia_recurso(recurso_SO);
-				proceso_estado();
-				// free(recurso_SO);
+				free(recurso_SO);
 			}
 			else
 			{
-				// si no existe el recurso, lo finalizamos al proceso
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
@@ -510,33 +504,19 @@ void levantar_CPU_Dispatch()
 			nombre_recurso_recibido = leer_buffer_string(buffer_signal);
 			tipo_buffer *buffer_signal_cde = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_signal_cde);
-			// destruir_buffer(buffer_signal);
-			// destruir_buffer(buffer_signal_cde);
+			destruir_buffer(buffer_signal);
+			destruir_buffer(buffer_signal_cde);
 			if (existe_recurso(nombre_recurso_recibido))
 			{
 				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
 				signal_instancia_recurso(recurso);
-				// imprimir_recursos();
-				//  free(recurso);
+				free(recurso);
 			}
 			else
 			{
-				// si no existe el recurso, lo finalizamos al proceso
 				finalizar_proceso(cde_interrumpido->pid, INVALID_RESOURCE);
 				sem_post(b_largo_plazo_exit);
 			}
-			break;
-
-		case OUT_OF_MEMORY:
-
-			tipo_buffer *buffer_out_memory = recibir_buffer(socket_cpu_dispatch);
-			cde_interrumpido = leer_cde(buffer_out_memory);
-			// destruir_buffer(buffer_out_memory);
-			sem_post(sem_finalizar_proceso);
-			finalizar_proceso(cde_interrumpido->pid, OUT_OF_MEMORY_END);
-			sem_post(b_largo_plazo_exit);
-			// sem_post(b_reanudar_largo_plazo);
-			// sem_post(b_reanudar_corto_plazo);
 			break;
 		default:
 			break;

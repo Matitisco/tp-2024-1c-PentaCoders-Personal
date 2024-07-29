@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 {
 	interrupcion_exit = 0;
 	ip_local = obtener_ip_local();
-	printf("IP LOCAL: %s", ip_local);
+	printf("IP LOCAL: %s\n", ip_local);
 
 	iniciar_modulo_cpu();
 
@@ -152,6 +152,7 @@ void *levantar_kernel_dispatch()
 		}
 	}
 }
+
 void liberar_array_instruccion(char **array_instruccion)
 {
 	int i = 0;
@@ -162,6 +163,7 @@ void liberar_array_instruccion(char **array_instruccion)
 	}
 	free(array_instruccion);
 }
+
 void *levantar_kernel_interrupt()
 {
 	int server_fd = crear_servidor(valores_config_cpu->puerto_escucha_interrupt);
@@ -257,98 +259,98 @@ void execute(char **instruccion, t_cde *contextoProceso)
 	switch (cod_instruccion)
 	{
 	case SET:
-		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_set(instruccion[1], atoi((instruccion[2])));
 		actualizar_cde();
 		break;
 	case MOV_IN:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_mov_in(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde();
 		break;
 	case MOV_OUT:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_mov_out(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde();
 		break;
 	case SUM:
-		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_sum(instruccion[1], instruccion[2]);
 		actualizar_cde();
 		break;
 	case SUB:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_sub(instruccion[1], instruccion[2]);
 		actualizar_cde();
 		break;
 	case JNZ:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_jnz(instruccion[1], atoi((instruccion[2])), contextoProceso);
 		actualizar_cde();
 		break;
 	case RESIZE:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s>", contextoProceso->pid, instruccion[0], instruccion[1]);
 		exec_resize(instruccion[1], contextoProceso);
 		actualizar_cde();
 		break;
 	case COPY_STRING:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s>", contextoProceso->pid, instruccion[0], instruccion[1]);
 		exec_copy_string(instruccion[1], contextoProceso);
 		actualizar_cde();
 		break;
 	case WAIT:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s>", contextoProceso->pid, instruccion[0], instruccion[1]);
 		exec_wait(instruccion[1], contextoProceso);
 		actualizar_cde();
 		break;
 	case SIGNAL:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s", contextoProceso->pid, instruccion[0], instruccion[1]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s>", contextoProceso->pid, instruccion[0], instruccion[1]);
 		exec_signal(instruccion[1], contextoProceso);
 		actualizar_cde();
 		break;
 	case IO_GEN_SLEEP:
-		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_io_gen_sleep(instruccion[1], atoi((instruccion[2])));
 		actualizar_cde();
 		break;
 	case IO_STDIN_READ:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		exec_io_stdin_read(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
 		actualizar_cde();
 		break;
 	case IO_STDOUT_WRITE:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		exec_io_stdout_write(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
 		actualizar_cde();
 		break;
 	case IO_FS_CREATE:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_io_fs_create(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde();
 		break;
 	case IO_FS_DELETE:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_io_fs_delete(instruccion[1], instruccion[2], contextoProceso);
 		actualizar_cde();
 		break;
 	case IO_FS_TRUNCATE:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s ", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
 		exec_io_fs_truncate(instruccion[1], instruccion[2], instruccion[3], contextoProceso);
 		actualizar_cde();
 		break;
 	case IO_FS_WRITE:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s %s %s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
 		exec_io_fs_write(instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5], contextoProceso);
 		actualizar_cde();
 		break;
 	case IO_FS_READ:
-		log_info(logger, "PID: %d - Ejecutando: %s - %s %s %s  %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
+		log_info(logger, "PID: <%d> - Ejecutando: <%s> - <%s %s %s %s %s>", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5]);
 		exec_io_fs_read(instruccion[1], instruccion[2], instruccion[3], instruccion[4], instruccion[5], contextoProceso);
 		actualizar_cde();
 		break;
 	case EXIT:
 		interrupcion_rr = 0;
-		log_info(logger, "Instrucción Ejecutando: PID: %d - Ejecutando %s ", contextoProceso->pid, instruccion[0]);
+		log_info(logger, "PID: <%d> - Ejecutando <%s> ", contextoProceso->pid, instruccion[0]);
 		actualizar_cde();
 		exec_exit(contextoProceso, SUCCESS);
 		break;

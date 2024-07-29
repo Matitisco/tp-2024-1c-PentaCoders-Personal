@@ -522,7 +522,6 @@ void finalizar_proceso(int socket_kernel)
 
     eliminar_tabla_paginas(pid);
     eliminar_cde(pid);
-
     destruir_buffer(buffer);
 }
 
@@ -707,12 +706,11 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     if (paginas_adicionales > cantidad_marcos_libres())
     {
         enviar_op_code(cliente_cpu, OUT_OF_MEMORY);
-        return;
+    }else{
+        enviar_op_code(cliente_cpu,RESIZE_EXITOSO);
     }
 
     asignar_paginas_nuevas(tabla_paginas, paginas_adicionales, pid);
-
-    enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
 }
 
 void asignar_paginas_nuevas(t_tabla_paginas *tabla_paginas, int paginas_adicionales, uint32_t pid)
