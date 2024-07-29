@@ -394,7 +394,11 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
         tipo_buffer *buffer = crear_buffer();
         if (tipo_dato == STRING)
         {
-            agregar_buffer_para_string(buffer, valor_leido);
+            char *valor_casteado = calloc(1, tamanio);
+            valor_casteado = (char *)valor_leido;
+            log_info(logger, "VALOR CASTERADO %s", valor_casteado);
+            agregar_buffer_para_string(buffer, valor_casteado);
+            free(valor_casteado);
         }
         else if (tipo_dato == INTEGER)
         {
@@ -706,8 +710,10 @@ void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
     if (paginas_adicionales > cantidad_marcos_libres())
     {
         enviar_op_code(cliente_cpu, OUT_OF_MEMORY);
-    }else{
-        enviar_op_code(cliente_cpu,RESIZE_EXITOSO);
+    }
+    else
+    {
+        enviar_op_code(cliente_cpu, RESIZE_EXITOSO);
     }
 
     asignar_paginas_nuevas(tabla_paginas, paginas_adicionales, pid);
