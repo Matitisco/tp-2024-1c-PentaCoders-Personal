@@ -13,7 +13,8 @@
 			"algorithm": "c",
 			"cstdint": "c",
 			"*.tcc": "c",
-			"cmath": "c"
+			"cmath": "c",
+			"type_traits": "c"
 		},
 		"C_Cpp.errorSquiggles": "disabled",
 	},

@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 {
 	interrupcion_exit = 0;
 	ip_local = obtener_ip_local();
-	printf_blue("IP LOCAL: %s", ip_local);
+	printf("IP LOCAL: %s", ip_local);
 
 	iniciar_modulo_cpu();
 
@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
 	liberar_conexion(&socket_memoria);
 	free(ip_local);
 	log_destroy(logger);
-	printf_yellow("CPU FINALIZADA");
 }
 
 void iniciar_modulo_cpu()
@@ -103,7 +102,7 @@ void iniciar_registros_sistema()
 
 void *levantar_kernel_dispatch()
 {
-	int server_fd = iniciar_servidor(logger, "CPU Dispatch", ip_local, valores_config_cpu->puerto_escucha_dispatch);
+	int server_fd = crear_servidor(valores_config_cpu->puerto_escucha_dispatch);
 	socket_kernel_dispatch = esperar_cliente(logger, "CPU DISPATCH", "Kernel", server_fd);
 	while (1)
 	{
@@ -131,24 +130,24 @@ void *levantar_kernel_dispatch()
 			pthread_mutex_lock(&mutex_salida_exit);
 			salida_exit = 1;
 			pthread_mutex_unlock(&mutex_salida_exit);
-			printf_yellow("------------------------------\n");
 			while (salida_exit)
 			{
+				sleep_ms(1000);
 				char *linea_instruccion = fetch(cde_recibido);
 				log_info(logger, "PID: <%d> - FETCH - Program Counter: <%d>", cde_recibido->pid, cde_recibido->PC);
 				cde_recibido->PC++;
 				char **array_instruccion = decode(linea_instruccion);
-				free(linea_instruccion); // agregado
+				// free(linea_instruccion); // agregado
 				execute(array_instruccion, cde_recibido);
-				liberar_array_instruccion(array_instruccion);
+				// liberar_array_instruccion(array_instruccion);
 				check_interrupt();
-				printf_yellow("------------------------------\n");
 			}
 
 			destruir_buffer(buffer_cde);
 			break;
 		default:
-			log_error(logger, "DISPATCH - Operacion Desconocida");
+			log_error(logger, "Dispatch - Operacion Desconocida - Finalizando Servidor");
+			return (void *)EXIT_FAILURE;
 			break;
 		}
 	}
@@ -165,7 +164,7 @@ void liberar_array_instruccion(char **array_instruccion)
 }
 void *levantar_kernel_interrupt()
 {
-	int server_fd = iniciar_servidor(logger, "CPU Interrupt", ip_local, valores_config_cpu->puerto_escucha_interrupt);
+	int server_fd = crear_servidor(valores_config_cpu->puerto_escucha_interrupt);
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
 	while (1)
 	{
@@ -188,8 +187,12 @@ void *levantar_kernel_interrupt()
 				interrupcion_rr = 1;
 				break;
 			case SOLICITUD_EXIT:
+
+				pthread_mutex_lock(&mutex_salida_exit);
 				interrupcion_exit = 1;
-				log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR");
+				pthread_mutex_unlock(&mutex_salida_exit);
+
+				// log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR");
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
@@ -201,7 +204,7 @@ void *levantar_kernel_interrupt()
 
 void *levantar_conexion_a_memoria()
 {
-	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, valores_config_cpu->puerto_memoria);
+	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, string_itoa(valores_config_cpu->puerto_memoria));
 	recibir_tamanio_pagina(socket_memoria);
 }
 
@@ -243,6 +246,7 @@ char *fetch(t_cde *contexto)
 
 char **decode(char *linea_de_instrucion)
 {
+
 	char **instruccion = string_split(linea_de_instrucion, " ");
 	return instruccion;
 }
@@ -273,12 +277,12 @@ void execute(char **instruccion, t_cde *contextoProceso)
 		actualizar_cde();
 		break;
 	case SUB:
-		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_sub(instruccion[1], instruccion[2]);
 		actualizar_cde();
 		break;
 	case JNZ:
-		log_info(logger, "Instrucción Ejecutada: PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
+		log_info(logger, "PID: %d - Ejecutando: %s - %s %s", contextoProceso->pid, instruccion[0], instruccion[1], instruccion[2]);
 		exec_jnz(instruccion[1], atoi((instruccion[2])), contextoProceso);
 		actualizar_cde();
 		break;
@@ -381,7 +385,9 @@ void check_interrupt()
 		}
 		else if (interrupcion_exit)
 		{
+			pthread_mutex_lock(&mutex_salida_exit);
 			interrupcion_exit = 0;
+			pthread_mutex_unlock(&mutex_salida_exit);
 			enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 			exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 		}
@@ -395,11 +401,13 @@ void check_interrupt()
 	}
 	else if (interrupcion_exit)
 	{
+		pthread_mutex_lock(&mutex_salida_exit);
 		interrupcion_exit = 0;
+		pthread_mutex_unlock(&mutex_salida_exit);
 		enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 		exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 	}
-	else if (interrupcion_io)
+	else if (interrupcion_io) // sin quantum
 	{
 		pthread_mutex_lock(&mutex_salida_exit);
 		salida_exit = 0;
@@ -545,9 +553,9 @@ config_cpu *configurar_cpu()
 	strcat(directorioActual, "/cpu.config");
 	valores_config_cpu->config = iniciar_config(directorioActual);
 	valores_config_cpu->ip = config_get_string_value(valores_config_cpu->config, "IP_MEMORIA");
-	valores_config_cpu->puerto_memoria = config_get_string_value(valores_config_cpu->config, "PUERTO_MEMORIA");
-	valores_config_cpu->puerto_escucha_dispatch = config_get_string_value(valores_config_cpu->config, "PUERTO_ESCUCHA_DISPATCH");
-	valores_config_cpu->puerto_escucha_interrupt = config_get_string_value(valores_config_cpu->config, "PUERTO_ESCUCHA_INTERRUPT");
+	valores_config_cpu->puerto_memoria = config_get_int_value(valores_config_cpu->config, "PUERTO_MEMORIA");
+	valores_config_cpu->puerto_escucha_dispatch = config_get_int_value(valores_config_cpu->config, "PUERTO_ESCUCHA_DISPATCH");
+	valores_config_cpu->puerto_escucha_interrupt = config_get_int_value(valores_config_cpu->config, "PUERTO_ESCUCHA_INTERRUPT");
 	valores_config_cpu->algoritmo_tlb = config_get_string_value(valores_config_cpu->config, "ALGORITMO_TLB");
 	valores_config_cpu->cantidad_entradas_tlb = config_get_int_value(valores_config_cpu->config, "CANTIDAD_ENTRADAS_TLB");
 

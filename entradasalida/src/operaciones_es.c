@@ -12,6 +12,7 @@ void realizar_operacion_gen(t_interfaz *interfaz)
     if (instruccion == IO_GEN_SLEEP)
     {
         sleep_ms(unidades_tiempo * interfaz->tiempo_unidad_trabajo);
+        //log obligatorio
         log_info(logger, "PID: <%d> - Operacion: <IO_GEN_SLEEP>", pid);
     }
     else

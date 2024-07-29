@@ -197,7 +197,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
     uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
 
-    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
+    //log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
 
@@ -217,7 +217,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
         int_tamanio = sizeof(valor32);
     }*/
 
-    log_info(logger, "TAMANIO A ENVIAR %zu", int_tamanio);
+    //log_info(logger, "TAMANIO A ENVIAR %zu", int_tamanio);
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
     agregar_buffer_para_enterosUint32(buffer, cde->pid);
@@ -310,7 +310,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
         valor = leer_buffer_string(buffer_valor);
         destruir_buffer(buffer_valor);
         log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%s>", cde->pid, direccion_fisica_SI, valor);
-        log_info(logger, "Cadena recibida %s", valor);
+        //log_info(logger, "Cadena recibida %s", valor);
     }
     else
     {

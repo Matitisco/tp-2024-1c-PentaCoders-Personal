@@ -111,7 +111,7 @@ void inicializar_bitmap(int cant_marcos)
 
 void crearHilos()
 {
-    server_memoria = iniciar_servidor(logger, "Memoria", valores_config->ip_memoria, valores_config->puerto_memoria);
+    server_memoria = crear_servidor(valores_config->puerto_memoria);
     cliente_cpu = esperar_cliente(logger, "Memoria", "CPU", server_memoria);
     cliente_kernel = esperar_cliente(logger, "Memoria", "Kernel", server_memoria);
 
@@ -230,7 +230,7 @@ void *recibirCPU()
                 log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
-            imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
+            // imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
             destruir_buffer(buffer_cpu);
             free(cde->registros);
             free(cde);
@@ -367,7 +367,7 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
         valor_string = leer_buffer_string(buffer);
         resultado = escribir_espacio_usuario(direccion_fisica, valor_string, tamanio, logger, pid_ejecutando);
     }
-    imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
+    //(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (resultado != -1)
     {
         enviar_op_code(cliente_solicitante, OK);
@@ -572,8 +572,7 @@ config_memoria *configuracion_memoria()
     }
     strcat(directorioActual, "/memoria.config");
     valores_config->config = iniciar_config(directorioActual);
-    valores_config->ip_memoria = config_get_string_value(valores_config->config, "IP");
-    valores_config->puerto_memoria = config_get_string_value(valores_config->config, "PUERTO_ESCUCHA");
+    valores_config->puerto_memoria = config_get_int_value(valores_config->config, "PUERTO_ESCUCHA");
     valores_config->path_instrucciones = config_get_string_value(valores_config->config, "PATH_INSTRUCCIONES");
     valores_config->tam_memoria = config_get_int_value(valores_config->config, "TAM_MEMORIA");
     valores_config->tam_pagina = config_get_int_value(valores_config->config, "TAM_PAGINA");

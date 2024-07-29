@@ -61,14 +61,6 @@ void enviar_op_code(int socket_servidor, uint32_t cod)
 op_code recibir_op_code(int socket_cliente)
 {
 	op_code cod_op;
-	while (1)
-	{
-		if (recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL) > 0)
-			return cod_op;
-		else
-		{
-			close(socket_cliente);
-			return -1;
-		}
-	}
+	recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL);
+	return cod_op;
 }

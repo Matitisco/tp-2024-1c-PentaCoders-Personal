@@ -88,7 +88,7 @@ void crear_marcos(int cant_marcos);
 void *destroy_instruccion(void *element);
 
 // espacio de usuario
-void imprimir_espacio_usuario(void *espacio_usuario, int tam_memoria, int tam_pagina, t_bit_map *array_bitmap);
+//void imprimir_espacio_usuario(void *espacio_usuario, int tam_memoria, int tam_pagina, t_bit_map *array_bitmap);
 char *leer_memoria_stdout(int32_t direccion_fisica, uint32_t pid, int limite_bytes);
 void *acceso_a_espacio_usuario();
 void *acceso_a_espacio_usuario_cpu();

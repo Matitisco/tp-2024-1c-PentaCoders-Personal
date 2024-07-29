@@ -38,12 +38,12 @@ typedef struct
 typedef struct
 {
 	t_config *config;
-	char *puerto_escucha;
+	int puerto_escucha;
 	char *ip_memoria;
-	char *puerto_memoria;
+	int puerto_memoria;
 	char *ip_cpu;
-	char *puerto_cpu_dispatch;
-	char *puerto_cpu_interrupt;
+	int puerto_cpu_dispatch;
+	int puerto_cpu_interrupt;
 	char *algoritmo_planificacion;
 	int quantum;
 	t_lista_recursos *recursos;
@@ -85,11 +85,21 @@ extern sem_t *binario_menu_lp;
 extern sem_t *b_largo_plazo_exit;
 extern sem_t *b_exec_libre;
 extern sem_t *b_transicion_exec_blocked;
+
 extern sem_t *b_reanudar_largo_plazo;
 extern sem_t *b_reanudar_corto_plazo;
+extern sem_t *b_reanudar_exit_largo;
+extern sem_t *b_reanudar_exec_blocked;
+extern sem_t *b_reanudar_exec_ready;
+extern sem_t *b_reanudar_blocked_ready;
+
 extern sem_t *b_transicion_exec_ready;
 extern sem_t *b_transicion_blocked_ready;
 extern sem_t *b_detener_planificacion;
+
+extern sem_t *manejo_grado;
+
+extern sem_t *cant_procesos_en_new;
 
 extern int habilitar_planificadores;
 extern config_kernel *valores_config;
@@ -97,6 +107,7 @@ extern int socket_memoria;
 extern int socket_cpu_dispatch;
 extern sem_t *sem_finalizar_proceso;
 extern int socket_cpu_interrupt;
+
 // DECLARACION VARIABLES GLOBALES
 
 // INTERRUPTORES
@@ -115,6 +126,10 @@ extern colaEstado *cola_exit_global;
 extern sem_t *bloquearReady;
 extern sem_t *bloquearReadyPlus;
 
+extern int valorSem;
+extern int valor_grado_a_modificar;
+
+extern config_kernel *configuracion;
 // FUNCIONES
 void crear_hilos();
 void proceso_estado();
@@ -129,7 +144,8 @@ colaEstado *constructorColaEstado(char *nombre);
 config_kernel *inicializar_config_kernel();
 
 void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado);
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado);
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char *planificacion);
+t_pcb *sacar_procesos_cola_basico(colaEstado *cola_estado, char *planificacion);
 
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion);
 void evaluar_planificacion(char *planificador);
@@ -139,7 +155,7 @@ void iniciar_semaforos();
 // FUNCIONES DE LEVANTAR MODULOS
 void levantar_CPU_Dispatch();
 void levantar_CPU_Interrupt();
-void *levantarIO();
+void *conectar_interfaces();
 void iniciar_hilos();
 
 // planificadores
@@ -188,9 +204,10 @@ void waitInterruptor(int valor_interruptor, sem_t *interruptorSemaforo);
 
 void signalInterruptor(int valor_interruptor, sem_t *interruptorSemaforo); // no se usa
 
-void valorSemaforo(sem_t *semaforo);
+int valorSemaforo(sem_t *semaforo);
 void asignar_recurso(t_recurso *recurso, t_pcb *cde);
 bool existe_recurso2(char *nombre_recurso);
+void manejarGrado();
 
 t_recurso *obtener_recurso(char *nombre_recurso);
 

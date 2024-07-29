@@ -1,4 +1,4 @@
-#ifndef PRINTF_COLOR_H_
+/*#ifndef PRINTF_COLOR_H_
 #define PRINTF_COLOR_H_
 
 #include <stdarg.h> 
@@ -11,4 +11,4 @@ void printf_orange(const char *format, ...);
 void printf_green(const char *format, ...);
 void printf_purple(const char *format, ...);
 
-#endif
+#endif*/

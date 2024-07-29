@@ -62,21 +62,52 @@ int iniciar_servidor(t_log *logger, const char *name, char *ip, char *puerto)
     return socket_servidor;
 }
 
+int crear_servidor(int puerto)
+{
+
+    int socket_servidor;
+
+    const char *puerto_recibido = string_itoa(puerto);
+
+    struct addrinfo hints, *servinfo;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    getaddrinfo(NULL, puerto_recibido, &hints, &servinfo);
+
+    printf("Servidor - Puerto <%d>\n", puerto);
+
+    socket_servidor = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+
+    int val = 1;
+    setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+
+    bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
+
+    listen(socket_servidor, SOMAXCONN);
+
+    freeaddrinfo(servinfo);
+    free(puerto_recibido);
+
+    return socket_servidor;
+}
+
 // ESPERAR CONEXION DE CLIENTE EN UN SERVER ABIERTO
 int esperar_cliente(t_log *logger, const char *name_server, const char *name_client, int socket_servidor)
 {
-    struct sockaddr_in dir_cliente;
-    socklen_t tam_direccion = sizeof(struct sockaddr_in);
+    struct sockaddr_storage cliente_addr;
+    socklen_t addr_size = sizeof(cliente_addr);
 
-    int socket_cliente = accept(socket_servidor, (struct sockaddr *)&dir_cliente, &tam_direccion);
-    if (socket_cliente < 0)
+    int socket_cliente = accept(socket_servidor, (struct sockaddr *)&cliente_addr, &addr_size);
+    if (socket_cliente == -1)
     {
         perror("accept failed");
         return -1;
     }
-
-    log_info(logger, "<%s> - Conectado A: <%s>\n", name_client, name_server);
-
+    printf("<%s> - Conectado A: <%s>\n", name_client, name_server);
     return socket_cliente;
 }
 
@@ -97,22 +128,13 @@ int crear_conexion(t_log *logger, const char *server_name, char *ip, char *puert
     // Crea un socket con la informacion recibida (del primero, suficiente)
     int socket_cliente = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
 
-    // Fallo en crear el socket
-    if (socket_cliente == -1)
-    {
-        log_error(logger, "Error creando el socket para %s:%s", ip, puerto);
-        return 0;
-    }
+    int val = 1;
+    setsockopt(socket_cliente, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 
-    // Error conectando
     if (connect(socket_cliente, servinfo->ai_addr, servinfo->ai_addrlen) == -1)
     {
-        log_error(logger, "Error al conectar (a %s)\n", server_name);
-        freeaddrinfo(servinfo);
-        return 0;
+        return -1;
     }
-    else
-        log_info(logger, "Cliente conectado en %s:%s (a %s)\n", ip, puerto, server_name);
 
     freeaddrinfo(servinfo);
 
@@ -159,7 +181,7 @@ char *obtener_ip_local()
                 if (inet_ntop(family, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr, ip, INET_ADDRSTRLEN) != NULL)
                 {
                     freeifaddrs(ifaddr);
-                    printf_blue("Direccion de memoria de la IP local: %p", ip);
+                    printf("Direccion de memoria de la IP local: %p", ip);
                     return ip;
                 }
                 else

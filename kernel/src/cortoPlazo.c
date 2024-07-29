@@ -49,11 +49,11 @@ void planificar_por_fifo()
     {
         sem_wait(b_exec_libre);
         t_pcb *proceso = transicion_ready_exec();
+        log_info(logger, "PID: <%d> - Estado Anterior: <READY+> - Estado Actual: <EXECUTE>", proceso->cde->pid);
         enviar_a_cpu_cde(proceso->cde);
-        if (habilitar_planificadores == 1)
-        {
-            sem_post(b_reanudar_corto_plazo);
-        }
+
+        
+
     }
 }
 
@@ -64,12 +64,10 @@ void planificar_por_rr()
     {
         sem_wait(b_exec_libre);
         proceso = transicion_ready_exec();
+        log_info(logger, "PID: <%d> - Estado Anterior: <READY> - Estado Actual: <EXECUTE>", proceso->cde->pid);
         proceso->estado = EXEC;
         enviar_a_cpu_cde(proceso->cde);
-        if (habilitar_planificadores == 1)
-        {
-            sem_post(b_reanudar_corto_plazo);
-        }
+    
         inicio_quantum(QUANTUM);
     }
 }
@@ -86,13 +84,16 @@ void planificar_por_vrr()
         if (hayProcesosEnEstado(cola_ready_plus))
         {
             proceso = transicion_generica(cola_ready_plus, cola_exec_global, "corto");
+            log_info(logger, "PID: <%d> - Estado Anterior: <READY+> - Estado Actual: <EXECUTE>", proceso->cde->pid);
             proceso->estado = EXEC;
             enviar_a_cpu_cde(proceso->cde);
+           
             inicio_quantum(proceso->quantum);
         }
         else
         {
             proceso = transicion_ready_exec();
+            log_info(logger, "PID: <%d> - Estado Anterior: <READY> - Estado Actual: <EXECUTE>", proceso->cde->pid);
             proceso->estado = EXEC;
             enviar_a_cpu_cde(proceso->cde);
             inicio_quantum(QUANTUM);
@@ -102,10 +103,6 @@ void planificar_por_vrr()
             temporal_destroy(timer);
         }
         timer = temporal_create();
-        if (habilitar_planificadores == 1)
-        {
-            sem_post(b_reanudar_corto_plazo);
-        }
     }
 }
 
@@ -128,7 +125,7 @@ void *hilo_quantum()
 // READY -> EXEC
 t_pcb *transicion_ready_exec()
 {
-    t_pcb *proceso = transicion_generica(cola_ready_global, cola_exec_global, " ");
+    t_pcb *proceso = transicion_generica(cola_ready_global, cola_exec_global, "corto");
     proceso->estado = EXEC;
     return proceso;
 }
@@ -138,13 +135,17 @@ void *transicion_exec_ready()
     while (1)
     {
         sem_wait(b_transicion_exec_ready);
-        t_pcb *proceso = transicion_generica(cola_exec_global, cola_ready_global, "corto");
+        t_pcb *proceso = transicion_generica(cola_exec_global, cola_ready_global, "exec_ready");
+        free(proceso->cde->registros);
+        free(proceso->cde);
         proceso->cde = cde_interrumpido;
         proceso->estado = READY;
 
+    
         sem_post(contador_readys);
         sem_post(b_exec_libre);
 
+         //log obligatorio
         log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <READY>", proceso->cde->pid);
     }
 }
@@ -156,7 +157,7 @@ void *transicion_exec_blocked()
         sem_wait(b_transicion_exec_blocked);
         sem_post(b_exec_libre);
 
-        t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "corto");
+        t_pcb *proceso = transicion_generica(cola_exec_global, cola_bloqueado_global, "exec_blocked");
         proceso->cde = cde_interrumpido;
 
         if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
@@ -182,13 +183,13 @@ void *transicion_blocked_ready()
             if (tiempo_transcurrido < QUANTUM)
             {
 
-                proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "corto"); // READY+
+                proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "blocked_ready"); // READY+
                 proceso->estado = READY_PLUS;
                 proceso->quantum = QUANTUM - tiempo_transcurrido;
             }
             else
             {
-                proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto"); // READY+
+                proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "blocked_ready"); // READY+
                 proceso->estado = READY;
             }
         }
@@ -206,11 +207,12 @@ void *transicion_blocked_ready()
 
 // AUXILIARES
 
-void valorSemaforo(sem_t *semaforo)
+int valorSemaforo(sem_t *semaforo)
 {
     int *valor = malloc(sizeof(int));
     sem_getvalue(semaforo, valor);
     log_info(logger, "El valor del semaforo es: %d ", *valor);
+    return *valor;
 }
 
 int hayProcesosEnEstado(colaEstado *cola_estado)

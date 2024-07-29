@@ -4,6 +4,8 @@ uint32_t PID_GLOBAL = 0;
 uint32_t pid_a_finalizar;
 int primera_ejecucion = 1;
 
+
+
 void ejecutar_script(char *PATH)
 {
 
@@ -103,8 +105,8 @@ void iniciar_proceso(char *PATH)
     if (respuestaDeMemoria == INICIAR_PROCESO_CORRECTO)
     {
         agregar_a_estado(proceso, cola_new_global);
-
-        log_info(logger, "Se crea el proceso <%u> en NEW", proceso->cde->pid); // log obligatorio
+        sem_post(cant_procesos_en_new);
+        log_info(logger, "Se crea el proceso <%u> en NEW\n", proceso->cde->pid);
     }
     else if (respuestaDeMemoria == ERROR_INICIAR_PROCESO)
     {
@@ -133,6 +135,7 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
     {
         enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT); // Si esta en CPU le aviso que lo finalice
         sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
+        //sleep(1);
         finalizar_proceso_final(proceso, pid, motivo);        // finaliza el proceso en memoria
         return;
     }
@@ -142,7 +145,7 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
 
 void finalizar_proceso_final(t_pcb *proceso, int pid, motivoFinalizar motivo)
 {
-    enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);
+    enviar_op_code(socket_memoria, SOLICITUD_FINALIZAR_PROCESO);    //Envia mensaje a memoria para que finalice
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, pid);
     enviar_buffer(buffer, socket_memoria);
@@ -203,13 +206,13 @@ void detener_planificacion()
     if (habilitar_planificadores == 1)
     {
         habilitar_planificadores = 0;
-        sem_wait(b_reanudar_largo_plazo);
-        sem_wait(b_reanudar_corto_plazo);
-        log_info(logger, "PLANIFICACION PAUSADA");
+        //sem_wait(b_reanudar_largo_plazo);
+        //sem_wait(b_reanudar_corto_plazo);
+        //log_info(logger, "PLANIFICACION PAUSADA");
     }
     else
     {
-        log_info(logger, "PLANIFICACION YA ESTA PAUSADA");
+        //log_info(logger, "PLANIFICACION YA ESTA PAUSADA");
     }
 }
 
@@ -220,11 +223,16 @@ void iniciar_planificacion()
         habilitar_planificadores = 1;
         sem_post(b_reanudar_largo_plazo);
         sem_post(b_reanudar_corto_plazo);
-        log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
+        sem_post(b_reanudar_exit_largo);
+        sem_post(b_reanudar_exec_blocked);
+        sem_post(b_reanudar_exec_ready);
+        sem_post(b_reanudar_blocked_ready);
+    
+        //log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
     }
     else
     {
-        log_info(logger, "PLANIFICACION YA ESTA EN FUNCIONAMIENTO");
+        //log_info(logger, "PLANIFICACION YA ESTA EN FUNCIONAMIENTO");
     }
 }
 
@@ -257,7 +265,7 @@ t_pcb *buscar_pcb_en_colas(int pid)
     colaEstado *colas[5] = {cola_new_global, cola_ready_global, cola_ready_plus, cola_exec_global, cola_bloqueado_global};
     for (int i = 0; i < 5; i++)
     {
-        t_pcb *pcb = list_find(colas[i]->estado, buscar_por_pid);
+        t_pcb *pcb = list_find(colas[i]->estado, buscar_por_pid); //list_remove_by_condition(colas[i]->estado, buscar_por_pid); //
         if (pcb != NULL)
             return pcb;
     }
@@ -345,14 +353,13 @@ int cant_recursos_SO(t_recurso **recursos)
     return i;
 }
 
+
 void modificar_grado_multiprogramacion(int valor)
 {
-    for (int i = 0; i < valor; i++)
-    {
-        sem_post(GRADO_MULTIPROGRAMACION);
-    }
-    log_info(logger, "Se modifico el grado de multiprogramacion a %d", valor);
+    valor_grado_a_modificar = valor;
+    sem_post(manejo_grado);
 }
+
 
 void mostrar_procesos(colaEstado *cola)
 {

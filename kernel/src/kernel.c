@@ -15,6 +15,8 @@ char *nombre_recurso_recibido;
 int socket_disp_io;
 int habilitar_planificadores;
 int QUANTUM;
+int valorSem;
+int valor_grado_a_modificar;
 // Contadores Semaforos
 sem_t *GRADO_MULTIPROGRAMACION;
 // Semaforos de binarios
@@ -25,11 +27,21 @@ sem_t *b_transicion_exec_blocked;
 sem_t *b_exec_libre;
 sem_t *sem_quantum;
 sem_t *sem_agregar_a_estado;
+
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
+sem_t *b_reanudar_exit_largo;
+sem_t *b_reanudar_exec_blocked;
+sem_t *b_reanudar_exec_ready;
+sem_t *b_reanudar_blocked_ready;
+
+sem_t *manejo_grado;
+
 sem_t *b_transicion_blocked_ready;
 sem_t *bloquearReady;
 sem_t *bloquearReadyPlus;
+
+sem_t *cant_procesos_en_new;
 
 // HILOS
 pthread_t hiloMEMORIA;
@@ -44,6 +56,8 @@ pthread_t t_transicion_exec_ready;
 pthread_t t_transicion_exec_blocked;
 pthread_t t_transicion_blocked_ready;
 pthread_t hiloQuantum;
+pthread_t hiloMultiProg;
+
 t_cde *cde_interrumpido;
 t_list *lista_interfaces;
 extern t_log *logger;
@@ -61,10 +75,12 @@ sem_t *contador_readys;
 char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
 char *ip_local;
 
+config_kernel *configuracion;
+
 int main(int argc, char *argv[])
 {
 	ip_local = obtener_ip_local();
-	printf_blue("IP LOCAL: %s", ip_local);
+	printf("IP LOCAL: %s", ip_local);
 
 	iniciar_kernel();
 
@@ -78,8 +94,9 @@ int main(int argc, char *argv[])
 	pthread_join(largo_plazo_exit, NULL);
 	pthread_join(t_transicion_exec_ready, NULL);
 	pthread_join(hiloQuantum, NULL);
+	pthread_join(hiloMultiProg, NULL);
 	free(ip_local);
-	printf_yellow("Kernel finalizado");
+	printf("Kernel finalizado");
 }
 
 void iniciar_kernel()
@@ -97,17 +114,20 @@ void iniciar_kernel()
 
 void crear_hilos()
 {
-	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
-	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
-	pthread_create(&hiloConsola, NULL, (void *)iniciar_consola_interactiva, NULL);
+	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL); // Done
+	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL); // Done
+
+	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
 	pthread_create(&t_transicion_blocked_ready, NULL, transicion_blocked_ready, NULL);
+
 	pthread_create(&hiloMEMORIA, NULL, (void *)conexionAMemoria, NULL);
-	pthread_create(&hiloIO, NULL, levantarIO, NULL);
 	pthread_create(&hiloCPUDS, NULL, (void *)levantar_CPU_Dispatch, NULL);
 	pthread_create(&hiloCPUINT, NULL, (void *)levantar_CPU_Interrupt, NULL);
+	pthread_create(&hiloIO, NULL, conectar_interfaces, NULL);
+	pthread_create(&hiloMultiProg, NULL, (void *)manejarGrado, NULL);
 }
 void finalizar_hilos()
 {
@@ -126,12 +146,12 @@ void finalizar_hilos()
 
 void levantar_servidores()
 {
-	servidor_para_io = iniciar_servidor(logger, "Kernel", ip_local, valores_config->puerto_escucha);
+	servidor_para_io = crear_servidor(valores_config->puerto_escucha);
 }
 
 void conexionAMemoria()
 {
-	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, valores_config->puerto_memoria);
+	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config->ip_memoria, string_itoa(valores_config->puerto_memoria));
 }
 
 colaEstado *constructorColaEstado(char *nombre)
@@ -160,11 +180,19 @@ void inicializarEstados()
 void iniciar_semaforos()
 {
 	GRADO_MULTIPROGRAMACION = malloc(sizeof(sem_t));
+	manejo_grado = malloc(sizeof(sem_t));
 	binario_menu_lp = malloc(sizeof(sem_t));
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
+	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
+	cant_procesos_en_new = malloc(sizeof(sem_t));
+
+	b_reanudar_exit_largo = malloc(sizeof(sem_t));
+	b_reanudar_exec_blocked = malloc(sizeof(sem_t));
+	b_reanudar_exec_ready = malloc(sizeof(sem_t));
+	b_reanudar_blocked_ready = malloc(sizeof(sem_t));
+
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
 	b_largo_plazo_exit = malloc(sizeof(sem_t));
-	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
 	b_exec_libre = malloc(sizeof(sem_t));
 	b_transicion_exec_ready = malloc(sizeof(sem_t));
 	b_transicion_exec_blocked = malloc(sizeof(sem_t));
@@ -178,9 +206,17 @@ void iniciar_semaforos()
 	sem_finalizar_proceso = malloc(sizeof(sem_t));
 
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
+	sem_init(cant_procesos_en_new, 0, 0);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
-	sem_init(sem_agregar_a_estado, 0, 0);
 	sem_init(b_reanudar_corto_plazo, 0, 0);
+	sem_init(manejo_grado, 0, 0);
+
+	sem_init(b_reanudar_exit_largo, 0, 0);
+	sem_init(b_reanudar_exec_blocked, 0, 0);
+	sem_init(b_reanudar_exec_ready, 0, 0);
+	sem_init(b_reanudar_blocked_ready, 0, 0);
+
+	sem_init(sem_agregar_a_estado, 0, 0);
 	sem_init(b_exec_libre, 0, 1);
 	sem_init(b_largo_plazo_exit, 0, 0);
 	sem_init(b_transicion_exec_ready, 0, 0);
@@ -198,7 +234,7 @@ void iniciar_semaforos()
 
 config_kernel *inicializar_config_kernel()
 {
-	config_kernel *configuracion = (config_kernel *)malloc(sizeof(config_kernel));
+	configuracion = (config_kernel *)malloc(sizeof(config_kernel));
 	char directorioActual[1024];
 	getcwd(directorioActual, sizeof(directorioActual));
 	char *ultimo_dir = basename(directorioActual);
@@ -214,10 +250,10 @@ config_kernel *inicializar_config_kernel()
 
 	configuracion->ip_memoria = config_get_string_value(configuracion->config, "IP_MEMORIA");
 	configuracion->ip_cpu = config_get_string_value(configuracion->config, "IP_CPU");
-	configuracion->puerto_memoria = config_get_string_value(configuracion->config, "PUERTO_MEMORIA");
-	configuracion->puerto_escucha = config_get_string_value(configuracion->config, "PUERTO_ESCUCHA");
-	configuracion->puerto_cpu_dispatch = config_get_string_value(configuracion->config, "PUERTO_CPU_DISPATCH");
-	configuracion->puerto_cpu_interrupt = config_get_string_value(configuracion->config, "PUERTO_CPU_INTERRUPT");
+	configuracion->puerto_memoria = config_get_int_value(configuracion->config, "PUERTO_MEMORIA");
+	configuracion->puerto_escucha = config_get_int_value(configuracion->config, "PUERTO_ESCUCHA");
+	configuracion->puerto_cpu_dispatch = config_get_int_value(configuracion->config, "PUERTO_CPU_DISPATCH");
+	configuracion->puerto_cpu_interrupt = config_get_int_value(configuracion->config, "PUERTO_CPU_INTERRUPT");
 	configuracion->algoritmo_planificacion = config_get_string_value(configuracion->config, "ALGORITMO_PLANIFICACION");
 	configuracion->quantum = config_get_int_value(configuracion->config, "QUANTUM");
 	configuracion->grado_multiprogramacion = config_get_int_value(configuracion->config, "GRADO_MULTIPROGRAMACION");
@@ -257,10 +293,70 @@ config_kernel *inicializar_config_kernel()
 	return configuracion;
 }
 
+void manejarGrado()
+{
+	while (1)
+	{
+		sem_wait(manejo_grado);
+		int valor;
+		sem_getvalue(GRADO_MULTIPROGRAMACION, &valor);
+		// log_info(logger,"Old semaphore value: %d\n", valor);
+		int aux = abs(valor_grado_a_modificar - configuracion->grado_multiprogramacion);
+		if (valor_grado_a_modificar > configuracion->grado_multiprogramacion)
+		{
+			for (int i = 0; i < aux; i++)
+			{
+				sem_post(GRADO_MULTIPROGRAMACION);
+			}
+		}
+		else if (valor_grado_a_modificar < configuracion->grado_multiprogramacion)
+		{
+
+			for (int i = 0; i < aux; i++)
+			{
+				sem_wait(GRADO_MULTIPROGRAMACION);
+			}
+		}
+	}
+}
+
+void evaluar_planificacion(char *planificador)
+{
+	if (habilitar_planificadores == 0)
+	{
+		if (strcmp(planificador, "largo") == 0)
+		{
+			sem_wait(b_reanudar_largo_plazo);
+		}
+		else if (strcmp(planificador, "corto") == 0)
+		{
+			sem_wait(b_reanudar_corto_plazo);
+		}
+		else if (strcmp(planificador, "exit_largo") == 0)
+		{
+			sem_wait(b_reanudar_exit_largo);
+		}
+		else if (strcmp(planificador, "exec_blocked") == 0)
+		{
+			sem_wait(b_reanudar_exec_blocked);
+		}
+		else if (strcmp(planificador, "exec_ready") == 0)
+		{
+			sem_wait(b_reanudar_exec_ready);
+		}
+		else if (strcmp(planificador, "blocked_ready") == 0)
+		{
+			sem_wait(b_reanudar_blocked_ready);
+		}
+	}
+}
+
 t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoFinal, char *planificacion)
 {
-	t_pcb *proceso = sacar_procesos_cola(colaEstadoInicio);
+	t_pcb *proceso = sacar_procesos_cola(colaEstadoInicio, planificacion);
+	evaluar_planificacion(planificacion);
 	agregar_a_estado(proceso, colaEstadoFinal);
+
 	return proceso;
 }
 
@@ -272,9 +368,19 @@ void agregar_a_estado(t_pcb *pcb, colaEstado *cola_estado)
 	sem_post(cola_estado->contador);
 }
 
-t_pcb *sacar_procesos_cola(colaEstado *cola_estado)
+t_pcb *sacar_procesos_cola_basico(colaEstado *cola_estado, char *planificacion)
 {
 	sem_wait(cola_estado->contador);
+	pthread_mutex_lock(cola_estado->mutex_estado);
+	t_pcb *pcb = list_remove(cola_estado->estado, 0);
+	pthread_mutex_unlock(cola_estado->mutex_estado);
+	return pcb;
+}
+
+t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char *planificacion)
+{
+	sem_wait(cola_estado->contador);
+	evaluar_planificacion(planificacion);
 	pthread_mutex_lock(cola_estado->mutex_estado);
 	t_pcb *pcb = list_remove(cola_estado->estado, 0);
 	pthread_mutex_unlock(cola_estado->mutex_estado);
@@ -309,12 +415,12 @@ colaEstado *obtener_cola(t_estados estado)
 
 void levantar_CPU_Interrupt()
 {
-	socket_cpu_interrupt = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_interrupt);
+	socket_cpu_interrupt = levantarCliente(logger, "CPU", valores_config->ip_cpu, string_itoa(valores_config->puerto_cpu_interrupt));
 }
 
 void levantar_CPU_Dispatch()
 {
-	socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, valores_config->puerto_cpu_dispatch);
+	socket_cpu_dispatch = levantarCliente(logger, "CPU", valores_config->ip_cpu, string_itoa(valores_config->puerto_cpu_dispatch));
 
 	while (1)
 	{
@@ -339,8 +445,8 @@ void levantar_CPU_Dispatch()
 				finalizar_proceso_success(cde_interrumpido->pid, motivo);
 				sem_post(b_largo_plazo_exit);
 			}
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+			// sem_post(b_reanudar_largo_plazo);
+			// sem_post(b_reanudar_corto_plazo);
 			break;
 
 		case EXIT_SUCCESS:
@@ -351,11 +457,6 @@ void levantar_CPU_Dispatch()
 		case FIN_DE_QUANTUM:
 
 			tipo_buffer *buffer_quantum = recibir_buffer(socket_cpu_dispatch);
-			if (cde_interrumpido != NULL)
-			{
-				free(cde_interrumpido->registros);
-				free(cde_interrumpido);
-			}
 			cde_interrumpido = leer_cde(buffer_quantum);
 			destruir_buffer(buffer_quantum);
 			log_info(logger, "PID: <%d> - Desalojado por fin de Quantum", cde_interrumpido->pid); // log obligatorio
@@ -435,8 +536,8 @@ void levantar_CPU_Dispatch()
 			sem_post(sem_finalizar_proceso);
 			finalizar_proceso(cde_interrumpido->pid, OUT_OF_MEMORY_END);
 			sem_post(b_largo_plazo_exit);
-			sem_post(b_reanudar_largo_plazo);
-			sem_post(b_reanudar_corto_plazo);
+			// sem_post(b_reanudar_largo_plazo);
+			// sem_post(b_reanudar_corto_plazo);
 			break;
 		default:
 			break;
@@ -452,7 +553,7 @@ _Bool interfaz_esta_en_lista(void *ptr)
 	return strcmp(interfaz->nombre_io, nombre_IO) == 0;
 }
 
-void *levantarIO()
+void *conectar_interfaces()
 {
 	while (1)
 	{
@@ -461,14 +562,8 @@ void *levantarIO()
 		if (operacion == SOLICITUD_CONEXION_IO)
 		{
 			tipo_buffer *buffer_io = recibir_buffer(socket_disp_io);
-
 			int tipo_interfaz_io = leer_buffer_enteroUint32(buffer_io);
-			if (nombre_IO != NULL)
-			{
-				free(nombre_IO);
-			}
 			nombre_IO = leer_buffer_string(buffer_io);
-
 			char *tipo_io = obtener_interfaz(tipo_interfaz_io);
 
 			if (list_find(lista_interfaces, interfaz_esta_en_lista) != NULL)
@@ -477,19 +572,19 @@ void *levantarIO()
 			}
 			else
 			{
-				enviar_op_code(socket_disp_io, NO_ESTABA_CONECTADO);
-
 				t_infoIO *infoIO = malloc(sizeof(t_infoIO));
 				infoIO->cliente_io = socket_disp_io;
 				infoIO->nombre_io = nombre_IO;
 				infoIO->procesos_espera = list_create();
 				infoIO->tipo_IO = tipo_interfaz_io;
 				list_add(lista_interfaces, infoIO);
+
+				enviar_op_code(socket_disp_io, NO_ESTABA_CONECTADO);
 			}
 			destruir_buffer(buffer_io);
 		}
 	}
-	return NULL;
+	return (void *)-1;
 }
 
 bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz)
@@ -551,10 +646,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	case SOLICITUD_INTERFAZ_GENERICA:
 
 		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
-		if (nombre_IO != NULL)
-		{
-			free(nombre_IO);
-		}
+
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		io_con_info_buffer->pid = pid;
 		io_con_info_buffer->instruccion = instruccion_interfaz;
@@ -579,10 +671,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		int tamanioMarco = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
-		if (nombre_IO != NULL)
-		{
-			free(nombre_IO);
-		}
+
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		io_con_info_buffer->tamanio_marco = tamanioMarco;
 		io_con_info_buffer->tamanio_reg = tamanioRegistro;
@@ -608,10 +697,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
 		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
-		if (nombre_IO != NULL)
-		{
-			free(nombre_IO);
-		}
+
 		nombre_IO = leer_buffer_string(buffer_con_instruccion);
 		io_con_info_buffer->pid = pid;
 		io_con_info_buffer->tamanio_reg = tamanioRegistro;
@@ -644,10 +730,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 		case IO_FS_CREATE:
 		case IO_FS_DELETE:
-			if (nombre_IO != NULL)
-			{
-				free(nombre_IO);
-			}
+
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 
@@ -666,10 +749,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 		case IO_FS_TRUNCATE:
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
-			if (nombre_IO != NULL)
-			{
-				free(nombre_IO);
-			}
+
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
@@ -693,10 +773,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
 			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
 			puntero_archivo = leer_buffer_enteroUint32(buffer_con_instruccion);
-			if (nombre_IO != NULL)
-			{
-				free(nombre_IO);
-			}
+
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
@@ -913,7 +990,7 @@ void signal_instancia_recurso(t_recurso *recurso)
 	if (proceso_en_espera > 0)
 	{
 		sem_post(b_transicion_blocked_ready);
-		proceso = sacar_procesos_cola(recurso->cola_bloqueados);
+		proceso = sacar_procesos_cola_basico(recurso->cola_bloqueados, "");
 		mostrar_procesos(recurso->cola_bloqueados);
 	}
 
