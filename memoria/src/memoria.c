@@ -394,7 +394,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
         tipo_buffer *buffer = crear_buffer();
         if (tipo_dato == STRING)
         {
-            agregar_buffer_para_string(buffer, valor_casteado);
+            agregar_buffer_para_string(buffer, valor_leido);
         }
         else if (tipo_dato == INTEGER)
         {
