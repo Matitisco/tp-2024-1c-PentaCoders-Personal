@@ -45,7 +45,6 @@ void finalizar_memoria()
     free(valores_config->puerto_memoria);
     log_destroy(logger);
 
-    // estas list destroy estaban comentadas, ahora las descomente
     list_destroy_and_destroy_elements(lista_instrucciones, destruir_lista_instrucciones);
     list_destroy_and_destroy_elements(lista_global_tablas, destruir_tabla);
     list_destroy_and_destroy_elements(lista_contextos, destruir_cde);
