@@ -280,7 +280,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
 
     enviar_buffer(buffer_copy_string, socket_memoria);
     destruir_buffer(buffer_copy_string);
-    char *valor = calloc(1, atoi(tamanio));
+    char *valor = (char *)calloc(1, atoi(tamanio));
     op_code lectura_memoria = recibir_op_code(socket_memoria);
     if (lectura_memoria == OK)
     {
@@ -375,7 +375,6 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     uint32_t tamanio = obtener_valor(reg_tamanio);
-    log_info(logger, "TAMANIO : %d", tamanio);
 
     buffer_instruccion_io = crear_buffer();
 
