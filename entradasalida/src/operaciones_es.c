@@ -12,7 +12,7 @@ void realizar_operacion_gen(t_interfaz *interfaz)
     if (instruccion == IO_GEN_SLEEP)
     {
         sleep_ms(unidades_tiempo * interfaz->tiempo_unidad_trabajo);
-        //log obligatorio
+        // log obligatorio
         log_info(logger, "PID: <%d> - Operacion: <IO_GEN_SLEEP>", pid);
     }
     else
@@ -132,8 +132,9 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
         op_code codigo_memoria = recibir_op_code(conexion_memoria);
         if (codigo_memoria == OK)
         {
+            char *texto_recibido = calloc(1, tamanio);
             tipo_buffer *lectura = recibir_buffer(conexion_memoria);
-            char *texto_recibido = leer_buffer_string(lectura);
+            texto_recibido = leer_buffer_string(lectura);
             log_info(logger, "Texto hallado: %s", texto_recibido);
             destruir_buffer(lectura);
 
