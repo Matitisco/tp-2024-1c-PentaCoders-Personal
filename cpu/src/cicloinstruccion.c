@@ -196,28 +196,12 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
 {
     uint32_t direccion_logica = obtener_valor(direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-
-    // log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica);
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
 
     uint8_t valor8;
     uint32_t valor32;
     size_t int_tamanio = 1;
-    /*
-    if (strcmp(direccion, "AX") == 0 || strcmp(direccion, "BX") == 0 || strcmp(direccion, "CX") == 0 || strcmp(direccion, "DX") == 0)
-
-    {
-        valor8 = (uint8_t)obtener_valor(datos);
-        int_tamanio = sizeof(valor8);
-    }
-    else
-    {
-        valor32 = (uint32_t)obtener_valor(datos);
-        int_tamanio = sizeof(valor32);
-    }*/
-
-    // log_info(logger, "TAMANIO A ENVIAR %zu", int_tamanio);
     tipo_buffer *buffer = crear_buffer();
     agregar_buffer_para_enterosUint32(buffer, direccion_fisica);
     agregar_buffer_para_enterosUint32(buffer, cde->pid);
@@ -282,9 +266,8 @@ void exec_copy_string(char *tamanio, t_cde *cde)
 {
     // LEER STRING
 
-    uint32_t direccion_logica_SI = registros->SI; // SET SI 0
+    uint32_t direccion_logica_SI = registros->SI;
     uint32_t direccion_fisica_SI = traducir_direccion_mmu(direccion_logica_SI);
-    log_info(logger, "DIRECCION FISICA ENVIADA POR CPU: %u", direccion_fisica_SI);
 
     enviar_op_code(socket_memoria, ACCESO_ESPACIO_USUARIO);
     enviar_op_code(socket_memoria, PEDIDO_LECTURA);
@@ -297,7 +280,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
 
     enviar_buffer(buffer_copy_string, socket_memoria);
     destruir_buffer(buffer_copy_string);
-    char *valor = string_new();
+    char *valor = calloc(1, atoi(tamanio));
     op_code lectura_memoria = recibir_op_code(socket_memoria);
     if (lectura_memoria == OK)
     {
@@ -305,7 +288,6 @@ void exec_copy_string(char *tamanio, t_cde *cde)
         valor = leer_buffer_string(buffer_valor);
         destruir_buffer(buffer_valor);
         log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%s>", cde->pid, direccion_fisica_SI, valor);
-        // log_info(logger, "Cadena recibida %s", valor);
     }
     else
     {
