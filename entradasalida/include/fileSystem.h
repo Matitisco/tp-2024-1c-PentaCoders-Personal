@@ -38,10 +38,9 @@ void truncar_archivo(char *nombre_archivo, int nuevo_tamanio, uint32_t pid);
 void eliminar_archivo(char *nombre_archivo, uint32_t pid);
 void escribir_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t direccion_fisica, uint32_t puntero_archivo, uint32_t pid);
 void leer_archivo(char *nombre_archivo, uint32_t tamanio, uint32_t tamanio_marco, uint32_t direccion_fisica, uint32_t puntero_archivo, uint32_t pid);
-void cambiar_tamanio_archivo(char *nombre_archivo, uint32_t nuevo_tamanio, int pid);
-void ampliar_archivo(char *nombre_archivo, t_config *archivo_meta_data_buscado, char *tamanio_a_aplicar, uint32_t tamanio_archivo_anterior, uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial,int pid);
-void reducir_archivo(t_config *archivo_metadata_buscado, uint32_t tamanio_archivo_anterior, uint32_t tamanio_a_aplicar, uint32_t tamanio_bloque);
-
+void cambiar_tamanio_archivo(char *nombre_archivo, int nuevo_tamanio, int pid);
+void ampliar_archivo(t_archivo_data *archivo, int tamanio, int cantidad_bloques_agregar, int pid);
+void reducir_archivo(t_archivo_data *archivo, int tamanio_nuevo, int cantidad_bloques_agregar, int pid);
 void levantar_archivo_bloques();
 t_config *crear_meta_data_archivo(char *nombre_archivo);
 void instrucciones_dialfs();
@@ -53,9 +52,9 @@ uint32_t bloque_libre();
 t_config *buscar_meta_data(char *nombre_archivo);
 // libera bloque del bitarray
 int liberarBloque(uint32_t bit);
-_Bool espacio_disponible_es_contiguo(uint32_t cantidad_bloques_agregar, uint32_t tamanio_bloque, uint32_t bloque_inicial, uint32_t tamanio_archivo_anterior);
+bool espacio_disponible_es_contiguo(int cantidad_bloques_agregar, t_archivo_data *archivo);
 int *obtener_bloques_archivo(char *nombre_archivo);
-void compactar(char *nombre_archivo, int cantidad_bloques_agregar, t_config *metadata);
+void compactar(int nuevo_tamanio, t_archivo_data *archivo);
 void mover_archivo_al_final_del_fs(char *nombre_archivo);
 void desplazar_archivos_y_eliminar_bloques_libres();
 void mover_archivo_al_primer_bloque_libre(int primer_bloque_libre, char *nombre_archivo, int cantidad_bloques_agregar, t_config *metadata);
@@ -68,4 +67,13 @@ int contar_bloques_ocupados_bitarray();
 _Bool buscar_arch_por_nombre(void *data);
 uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, void *dato, int size, int pid);
 
+char *buscar_contenido_de(t_archivo_data *arch);
+void crear_arch_list(t_archivo_data *arch);
+int bloques_necesarios(int tamanio);
+_Bool buscar_por_bloque(void *data);
+
+char *leer_bloques(int bloque_inicial, uint32_t tamanio_a_leer);
+char *obtener_informacion_archivo(t_archivo_data *archivo, int bloques_totales);
+void marcar_bloques_libres(int inicio, int final);
+void marcar_bloques_ocupados(int inicio, int fin);
 #endif

@@ -129,6 +129,7 @@ void crear_hilos()
 	pthread_create(&hiloIO, NULL, conectar_interfaces, NULL);
 	pthread_create(&hiloMultiProg, NULL, (void *)manejarGrado, NULL);
 }
+
 void finalizar_hilos()
 {
 	pthread_cancel(hiloLargoPlazo);
@@ -300,7 +301,6 @@ void manejarGrado()
 		sem_wait(manejo_grado);
 		int valor;
 		sem_getvalue(GRADO_MULTIPROGRAMACION, &valor);
-		// log_info(logger,"Old semaphore value: %d\n", valor);
 		int aux = abs(valor_grado_a_modificar - configuracion->grado_multiprogramacion);
 		if (valor_grado_a_modificar > configuracion->grado_multiprogramacion)
 		{
@@ -489,7 +489,6 @@ void levantar_CPU_Dispatch()
 			{
 				t_recurso *recurso_SO = obtener_recurso(nombre_recurso_recibido);
 				wait_instancia_recurso(recurso_SO);
-				free(recurso_SO);
 			}
 			else
 			{
@@ -510,7 +509,6 @@ void levantar_CPU_Dispatch()
 			{
 				t_recurso *recurso = obtener_recurso(nombre_recurso_recibido);
 				signal_instancia_recurso(recurso);
-				free(recurso);
 			}
 			else
 			{
@@ -570,14 +568,12 @@ bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz)
 {
 	op_code codigo = CONFIRMAR_CONEXION;
 
-	// Enviar el código de operación
 	int bytes_enviados = send(informacion_interfaz->cliente_io, &codigo, sizeof(op_code), 0);
 	if (bytes_enviados == -1)
 	{
 		return true;
 	}
 
-	// Esperar la respuesta del servidor
 	op_code respuesta;
 	int bytes_recibidos = recv(informacion_interfaz->cliente_io, &respuesta, sizeof(op_code), MSG_WAITALL);
 	if (bytes_recibidos <= 0)
@@ -585,7 +581,6 @@ bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz)
 		return true;
 	}
 
-	// Verificar si la respuesta es OK
 	return respuesta != OK;
 }
 
@@ -645,7 +640,6 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		{
 			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
 		}
-		// free(informacion_interfaz);
 		break;
 
 	case SOLICITUD_INTERFAZ_STDIN:
@@ -777,6 +771,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		log_error(logger, "ERROR - Solicitud Interfaz Enviada Por CPU");
 		break;
 	}
+	// free(informacion_interfaz);
 }
 
 void fs_create_delete(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, t_infoIO *io)

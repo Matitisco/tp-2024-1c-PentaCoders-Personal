@@ -7,38 +7,25 @@ void *largo_plazo()
     while (1)
     {
         sem_wait(cant_procesos_en_new);
-        // sem_wait(binario_menu_lp); SI SE DEJA ESTO SE TRABA A VECES
         sem_wait(GRADO_MULTIPROGRAMACION);
-        // sem_wait(b_reanudar_largo_plazo);
         t_pcb *proceso = transicion_new_a_ready();
         log_info(logger, "PID: %d - Estado Anterior: <NEW> - Estado Actual: <READY>", proceso->cde->pid);
-        // char* lista = lista_pid();
-        log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
-        // free(lista);
-        /* if (habilitar_planificadores == 1)
-        {
-            //sem_post(b_reanudar_largo_plazo);
-        } */
     }
 }
 
 char *lista_pid()
 {
-    char *pids_en_ready = malloc(1024);
+    char *pids_en_ready = string_new();
+    char *auxiliar;
+    int pid_auxiliar;
     for (int i = 0; i < list_size(cola_ready_global->estado); i++)
     {
         t_pcb *pcb = list_get(cola_ready_global->estado, i);
-        if (pcb->cde->pid != 0)
-        {
-            char *pid = string_itoa(pcb->cde->pid);
-            strcat(pids_en_ready, pid);
-            free(pid);
-        }
-        else
-        {
-            strcat(pids_en_ready, "0");
-            strcat(pids_en_ready, "\0");
-        }
+
+        pid_auxiliar = pcb->cde->pid;
+        auxiliar = string_itoa(pid_auxiliar);
+        string_append(&pids_en_ready, auxiliar);
+        free(auxiliar);
 
         if (i != list_size(cola_ready_global->estado) - 1)
         {
@@ -52,6 +39,7 @@ char *lista_pid()
 t_pcb *transicion_new_a_ready()
 {
     t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, "largo");
+    log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
     sem_post(contador_readys);
     proceso->estado = READY;
     return proceso;
