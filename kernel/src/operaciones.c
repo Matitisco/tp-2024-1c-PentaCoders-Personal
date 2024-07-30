@@ -133,9 +133,7 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
     else // EXEC
     {
         enviar_op_code(socket_cpu_interrupt, SOLICITUD_EXIT); // Si esta en CPU le aviso que lo finalice
-        sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
-        // sleep(1);
-        finalizar_proceso_final(proceso, pid, motivo); // finaliza el proceso en memoria
+        // sem_wait(sem_finalizar_proceso);                      // recibe el OK de la CPU
         return;
     }
     finalizar_proceso_final(proceso, pid, motivo);
@@ -172,7 +170,7 @@ void finalizar_proceso_success(uint32_t pid, motivoFinalizar motivo)
 void eliminar_proceso(t_pcb *proceso)
 {
     liberar_recursos(proceso);
-    free(proceso->cde->registros); // se liberan los registros
+    free(proceso->cde->registros);
     proceso->estado = EXIT;
 }
 
@@ -181,13 +179,6 @@ void detener_planificacion()
     if (habilitar_planificadores == 1)
     {
         habilitar_planificadores = 0;
-        // sem_wait(b_reanudar_largo_plazo);
-        // sem_wait(b_reanudar_corto_plazo);
-        // log_info(logger, "PLANIFICACION PAUSADA");
-    }
-    else
-    {
-        // log_info(logger, "PLANIFICACION YA ESTA PAUSADA");
     }
 }
 
@@ -202,12 +193,6 @@ void iniciar_planificacion()
         sem_post(b_reanudar_exec_blocked);
         sem_post(b_reanudar_exec_ready);
         sem_post(b_reanudar_blocked_ready);
-
-        // log_info(logger, "PLANIFICACION EN FUNCIONAMIENTO");
-    }
-    else
-    {
-        // log_info(logger, "PLANIFICACION YA ESTA EN FUNCIONAMIENTO");
     }
 }
 

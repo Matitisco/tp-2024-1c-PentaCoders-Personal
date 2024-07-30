@@ -16,7 +16,6 @@ void *bloquesMapeado;
 char *path_meta_data;
 char *path_bitmap;
 char *path_arch_bloques;
-int bloque_inicial;
 int tamanio_meta_data;
 t_bitarray *bitarray;
 FILE *arch_bloque;

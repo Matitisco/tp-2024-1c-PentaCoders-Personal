@@ -189,12 +189,9 @@ void *levantar_kernel_interrupt()
 				interrupcion_rr = 1;
 				break;
 			case SOLICITUD_EXIT:
-
 				pthread_mutex_lock(&mutex_salida_exit);
 				interrupcion_exit = 1;
 				pthread_mutex_unlock(&mutex_salida_exit);
-
-				// log_info(logger, "LLEGO UNA SOLICITUD DE FINALIZAR");
 				break;
 			default:
 				log_error(logger, "Codigo de operacion desconocido.");
@@ -390,7 +387,6 @@ void check_interrupt()
 			pthread_mutex_lock(&mutex_salida_exit);
 			interrupcion_exit = 0;
 			pthread_mutex_unlock(&mutex_salida_exit);
-			enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 			exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 		}
 		else
@@ -406,7 +402,6 @@ void check_interrupt()
 		pthread_mutex_lock(&mutex_salida_exit);
 		interrupcion_exit = 0;
 		pthread_mutex_unlock(&mutex_salida_exit);
-		enviar_op_code(socket_kernel_dispatch, EXIT_SUCCESS);
 		exec_exit(cde_recibido, INTERRUPTED_BY_USER);
 	}
 	else if (interrupcion_io) // sin quantum
