@@ -61,6 +61,17 @@ void arrancar_interfaz(t_interfaz *interfaz)
 	while (1)
 	{
 		op_code consulta_kernel = recibir_op_code(conexion_kernel);
+		if (consulta_kernel == -1)
+		{
+			log_error(logger, "KERNEL se desconecto");
+			/*pthread_mutex_lock(&mutex_salida_exit);
+			salida_exit = 1;
+			pthread_mutex_unlock(&mutex_salida_exit);
+			pthread_cancel(hilo_CPU_SERVIDOR_INTERRUPT);
+			pthread_cancel(hilo_CPU_CLIENTE);
+			pthread_exit((void *)EXIT_FAILURE);*/
+			break;
+		}
 		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
 		{
 			if (estoy_libre)

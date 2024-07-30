@@ -60,7 +60,11 @@ void enviar_op_code(int socket_servidor, uint32_t cod)
 
 op_code recibir_op_code(int socket_cliente)
 {
-	op_code cod_op;
-	recv(socket_cliente, &cod_op, sizeof(uint32_t), MSG_WAITALL);
-	return cod_op;
+    op_code cod_op;
+    ssize_t bytes_recibidos = recv(socket_cliente, &cod_op, sizeof(op_code), MSG_WAITALL);
+    if (bytes_recibidos <= 0) { //error o conexión cerrada
+
+        return -1; 
+    }
+    return cod_op;
 }
