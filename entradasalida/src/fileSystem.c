@@ -327,19 +327,15 @@ void cambiar_tamanio_archivo(char *nombre_archivo, int tamanio_nuevo, int pid)
     else
     {
         reducir_archivo(archivo, tamanio_nuevo, cantidad_bloques_agregar, pid);
+        nombre_archivo_buscado = nombre_archivo;
+        t_config *metadata = buscar_meta_data(nombre_archivo);
+        t_archivo_data *archivo_compactado = list_find(archivos_fs, buscar_arch_por_nombre);
+        archivo_compactado->tamanio = tamanio_nuevo;
+        int tamanio_real = archivo_compactado->tamanio;
+        config_set_value(metadata, "TAMANIO_ARCHIVO", string_itoa(tamanio_real));
+        config_set_value(metadata, "BLOQUE_INICIAL", string_itoa(archivo_compactado->bloque_inicial));
+        config_save(metadata);
     }
-    // ahora aca actualizamos el metadata
-
-    char *ruta_archivo = obtener_ruta_archivo(nombre_archivo);
-
-    nombre_archivo_buscado = nombre_archivo;
-    t_config *metadata = buscar_meta_data(nombre_archivo);
-    t_archivo_data *archivo_compactado = list_find(archivos_fs, buscar_arch_por_nombre);
-    archivo_compactado->tamanio = tamanio_nuevo;
-    int tamanio_real = archivo_compactado->tamanio;
-    config_set_value(metadata, "TAMANIO_ARCHIVO", string_itoa(tamanio_real));
-    config_set_value(metadata, "BLOQUE_INICIAL", string_itoa(archivo_compactado->bloque_inicial));
-    config_save(metadata);
 }
 
 void asignar_espacio(int cantidad_bloques_agregar, t_archivo_data *archivo)
@@ -360,11 +356,27 @@ void ampliar_archivo(t_archivo_data *archivo, int tamanio, int cantidad_bloques_
         if (espacio_disponible_es_contiguo(cantidad_bloques_agregar, archivo))
         {
             asignar_espacio(cantidad_bloques_agregar, archivo);
+            nombre_archivo_buscado = archivo->nombre_archivo;
+            t_config *metadata = buscar_meta_data(archivo->nombre_archivo);
+            t_archivo_data *archivo_compactado = list_find(archivos_fs, buscar_arch_por_nombre);
+            archivo_compactado->tamanio = tamanio;
+            int tamanio_real = archivo_compactado->tamanio;
+            config_set_value(metadata, "TAMANIO_ARCHIVO", string_itoa(tamanio_real));
+            config_save(metadata);
         }
         else
         {
             log_info(logger, "PID: <%d> - Inicio Compactacion", pid); // obligatorio
-            compactar(tamanio, archivo);
+            int nuevo_bloque_inicial = compactar(tamanio, archivo);
+            nombre_archivo_buscado = archivo->nombre_archivo;
+            t_config *metadata = buscar_meta_data(archivo->nombre_archivo);
+            t_archivo_data *archivo_compactado = list_find(archivos_fs, buscar_arch_por_nombre);
+            archivo_compactado->tamanio = tamanio;
+            archivo_compactado->bloque_inicial = nuevo_bloque_inicial;
+            int tamanio_real = archivo_compactado->tamanio;
+            config_set_value(metadata, "TAMANIO_ARCHIVO", string_itoa(tamanio_real));
+            config_set_value(metadata, "BLOQUE_INICIAL", string_itoa(nuevo_bloque_inicial));
+            config_save(metadata);
             log_info(logger, "PID: <%d> - Fin Compactacion", pid); // obligatorio
         }
     }
@@ -508,7 +520,6 @@ int actualizar_metadata_archivo(int nuevo_bloque_inicial) // de los archivos, NO
     t_archivo_data *archivo = list_find(archivos_fs, buscar_por_bloque);
     if (archivo == NULL)
     {
-        // log_info(logger, "nO LO ENCONTRE DEVULEVO 0");
         return 0;
     }
     else
@@ -539,212 +550,47 @@ char *obtener_informacion_archivo(t_archivo_data *archivo, int bloques_totales)
     contenido_bloques = leer_bloques(bloque_inicial, bloques_totales * config_interfaz->block_size);
     return contenido_bloques; /// contneido de los blqoues
 }
-// nuevo compactar, no usamos mas metadata, nos manejamos directamente con listas y luego al final de compactar
-// lo acutalizamos
 
-int bloque_final_arch(t_archivo_data *archivo)
+int compactar(int nuevo_tamanio, t_archivo_data *archivo)
 {
-    return ceil((double)archivo->tamanio / (double)config_interfaz->block_size) - 1;
-}
 
-void compactar(int nuevo_tamanio, t_archivo_data *archivo)
-{
-    int bloques_totales = bloques_necesarios(nuevo_tamanio);
-    mover_bloques_y_ordenarlos(archivo);
-    int bloq_libre = bloque_libre();
-    int bloque_final = bloque_final_arch(archivo);
-    if (bloque_final + 1 == bloque_libre)
+    int bloques_totales = bloques_necesarios(archivo->tamanio);
+    char *contenido_archivo_a_truncar = calloc(1, bloques_totales);
+    contenido_archivo_a_truncar = obtener_informacion_archivo(archivo, bloques_totales);
+    marcar_bloques_libres(archivo->bloque_inicial, bloques_necesarios(archivo->tamanio) + archivo->bloque_inicial);
+
+    for (int i = 0; i < list_size(archivos_fs); i++)
     {
-        log_info(logger, "El archivo esta al final vamos directo al paso 6");
-        asignar_espacio(bloques_totales, archivo);
-    }
-    else
-    {
-        log_info(logger, "EL archivo no esta al final, debemos moverlo y hacer pasos 3,4,5,6");
-        // paso 3 borrar y guardar copia
-
-        // char *contenido_archivo = calloc(1, archivo->tamanio);
-        /*
-        1: 000000000
-        2: TODO BIEN
-        */
-        char *contenido_archivo = calloc(1, (char *)(archivo->bloque_inicial * config_interfaz->block_size));
-
-        memcpy(contenido_archivo, bloquesMapeado + (archivo->bloque_inicial * config_interfaz->block_size), config_interfaz->block_size);
-        for (int i = archivo->bloque_inicial; i < archivo->bloque_inicial + bloques_necesarios(archivo->tamanio); i++)
+        t_archivo_data *arch_a_liberar = list_get(archivos_fs, i);
+        if (arch_a_liberar->bloque_inicial == archivo->bloque_inicial)
         {
-            bitarray_clean_bit(bitarray, i);
+            continue;
         }
-
-        // paso 4
-        mover_bloques_y_ordenarlos();
-        // paso 5 insertar copia al final
-        memcpy(bloquesMapeado + (bloq_libre * config_interfaz->block_size), contenido_archivo, config_interfaz->block_size);
-        // paso 6 asginar espacio
-        asignar_espacio(bloques_totales, archivo);
-        archivo->bloque_inicial = bloq_libre;
-        archivo->tamanio = nuevo_tamanio;
-    }
-
-    /*  int bloques_totales = bloques_necesarios(nuevo_tamanio); // tenemos los bloques necesarios totales para el archivo
-char *contenido_bloque = calloc(1, nuevo_tamanio);
-
-// obtenemos la informacion del archivo a mover
-contenido_bloque = obtener_informacion_archivo(archivo, bloques_totales);
-marcar_bloques_libres(archivo->bloque_inicial, bloques_necesarios(archivo->tamanio) + archivo->bloque_inicial);
-
-for (int i = 0; i < list_size(archivos_fs); i++)
-{
-t_archivo_data *arch_a_liberar = list_get(archivos_fs, i);
-if (arch_a_liberar->bloque_inicial == archivo->bloque_inicial)
-{
-// continue;//se cumple la condicion  y sale la ejecuon
-int bloque_inicial = arch_a_liberar->bloque_inicial;
-int bloque_final = bloques_necesarios((arch_a_liberar->tamanio) + bloque_inicial - 1);
-int tamanio = bloques_necesarios(arch_a_liberar->tamanio) * config_interfaz->block_size;
-
-char *contenido_bloques = calloc(1, tamanio);
-contenido_bloques = buscar_contenido_de(arch_a_liberar);
-
-int nuevo_bloque_inicial = copiar_contenido_a(contenido_bloques, nuevo_tamanio);
-if (nuevo_bloque_inicial == -1) // archivo 2.txt
-{
-mover_bloques_y_ordenarlos();
-}
-
-arch_a_liberar->bloque_inicial = nuevo_bloque_inicial; // nuevo bloque inicial
-
-/* crear_arch_list(arch_a_liberar); // creo el nuevo elemento de la lista y lo agrego a archivos:fs.
-// va a tener el nuevo bloque inicial
-// actualizar la lista */
-    /*t_archivo_data *archivo_sacado = list_remove(archivos_fs, i);
-    archivo_sacado->bloque_inicial = nuevo_bloque_inicial;
-    archivo_sacado->nombre_archivo = arch_a_liberar->nombre_archivo;
-    list_add(archivos_fs, archivo_sacado);
-}
-} */
-}
-
-// 0 3 2 1 1 0
-// 3 2 1 1 0 0
-// 3 2 2 2 1 1 0 0 0 // estado inicial
-
-// 3 0 0 0 1 1 2 2 2 // lueog de mover el archivo al cual yo quier darle mas vblqoues
-// 3 1 1 2 2 2 0 0 0 // blqoues ordenados y compactadso final
-// 2 2 1 1 -> te lo guardas en un lado -> aux
-//  <-| ->
-// 3 (2 0 0 0)  1 1 2 2 2
-// 3 1 1 2 0 0
-
-// 3 0 0 0 1 2 2 2
-// 3 1 1 5 2 2
-// 3 1 1 2 2 5 0 0 0
-// 3 1 1 2 2 5 5 5 5
-// 3 0 0 2 2 2 5 0
-
-void mover_bloques_y_ordenarlos(t_archivo_data *archivo) // PASO 1
-{
-    int indice_archivo, indice, intercambiado;
-
-    for (indice_archivo = 0; indice_archivo < list_size(archivos_fs) - 1; indice_archivo++)
-    {
-        intercambiado = 0;
-        for (indice = 0; indice < list_size(archivos_fs) - indice_archivo - 1; indice++)
+        else
         {
-            if (!bitarray_test_bit(bitarray, indice) && bitarray_test_bit(bitarray, indice + 1))
-            {
-                bitarray_set_bit(bitarray, indice);       // marcamos como ocupado
-                bitarray_clean_bit(bitarray, indice + 1); // marcamos como libre
-                // ahora movemos el bloque
-                mover_bloque(indice, indice + 1);
-                intercambiado = 1;
-            }
-        }
-        // Si no se realizaron intercambios, ya se finalizó la compactación
-        if (intercambiado == 0)
-            break;
-    }
-}
+            int bloque_inicial = arch_a_liberar->bloque_inicial;
+            int bloque_final = bloques_necesarios(arch_a_liberar->tamanio) + bloque_inicial;
+            int tamanio = bloques_necesarios(arch_a_liberar->tamanio) * config_interfaz->block_size;
 
-/// 1 1 1  0 0 0  5 5 5  2 2 2  -> 1 mover bloques y ordenarlos
-/// 1 1 1  5 5 5  2 2 2  0 0 0  -> 2 hay que chequear (si no te quedo al final)
-/// 1 1 1  0 0 0  2 2 2  0 0 0  -> 3 borras
-/// 1 1 1  2 2 2  0 0 0  0 0 0  -> 4 mover bloques y ordenarlos
-/// 1 1 1  2 2 2  5 5 5  0 0 0  -> 5 poner al final
-/// 1 1 1  2 2 2  5 5 5  5 5 5  -> 6 ampliar
+            char *contenido_bloques = buscar_contenido_de(arch_a_liberar);
+
+            marcar_bloques_libres(bloque_inicial, bloque_final);
+
+            int nuevo_bloque_inicial = copiar_contenido_a(contenido_bloques, tamanio);
+
+            arch_a_liberar->bloque_inicial = nuevo_bloque_inicial;
+
+            t_config *metadata = buscar_meta_data(arch_a_liberar->nombre_archivo);
+            config_set_value(metadata, "BLOQUE_INICIAL", string_itoa(nuevo_bloque_inicial));
+            config_save(metadata);
+        }
+    }
+    int nuevo_bloque_inicial_archivo = copiar_contenido_a(contenido_archivo_a_truncar, nuevo_tamanio);
+}
 
 int obtener_cantidad_bloques_archivo(t_archivo_data *archivo)
 {
     return (ceil((double)archivo->tamanio / (double)config_interfaz->block_size) - 1) - archivo->bloque_inicial;
-}
-
-void eliminar_contenido_bloque(int posicion_inicial_bloque, t_archivo_data *archivo, int nuevo_tamanio)
-{
-    // 1 1 1 1 1
-    // char* contenido_bloques_viejo = calloc(1,archivo->tamanio); // con esto guardamos la info que ya tenemos actualmente
-    int ultimo_bloque_archivo = posicion_inicial_bloque + obtener_cantidad_bloques_archivo(archivo);
-    for (int i = posicion_inicial_bloque; i < ultimo_bloque_archivo; i++)
-    {
-        bitarray_clean_bit(bitarray, i);
-    }
-    int prim_bloque_libre = bloque_libre_contiguo(nuevo_tamanio);
-}
-
-/* int compactar(t_FCB *fcb)
-{
-    t_list *lista_fcb = leer_directorio();
-    t_FCB *fcb_a_agrandar = buscar_fcb(fcb, lista_fcb);
-
-    int tamanio_archivo_agrandar = calcular_bloques_necesarios(fcb_a_agrandar->size) * config->block_size;
-    char *contenido_a_agrandar = malloc(tamanio_archivo_agrandar);
-
-    contenido_a_agrandar = buscar_contenido_de(fcb_a_agrandar);
-
-    bitmap_marcar_bloques_libres(fcb->bloque_inicial, max(calcular_bloques_necesarios(fcb_a_agrandar->size) + fcb_a_agrandar->bloque_inicial - 1, 0));
-
-    for (int i = 0; i < list_size(lista_fcb); i++)
-    {
-        t_FCB *fcb_a_liberar = list_get(lista_fcb, i);
-        if (fcb_a_liberar->bloque_inicial == fcb_a_agrandar->bloque_inicial)
-        {
-            continue;
-        }
-        int bloque_inicial = fcb_a_liberar->bloque_inicial;
-        int bloque_final = max(calcular_bloques_necesarios(fcb_a_liberar->size) + bloque_inicial - 1, 0);
-        int tamanio = calcular_bloques_necesarios(fcb_a_liberar->size) * config->block_size;
-        // log_trace(log_conexion, "Se mueve el archivo %s", fcb_a_liberar->nombre_archivo);
-
-        char *contenido_bloques;
-        contenido_bloques = buscar_contenido_de(fcb_a_liberar);
-        // log_error(log_filesystem, "EL contenido del archivo a mover es %s", contenido_bloques);
-
-        bitmap_marcar_bloques_libres(bloque_inicial, bloque_final);
-
-        int nuevo_bloque_inicial = copiar_contenido_a(contenido_bloques, tamanio);
-
-        fcb_a_liberar->bloque_inicial = nuevo_bloque_inicial;
-
-        crear_archivo(fcb_a_liberar);
-        // if(contenido_bloques){
-        //     free(contenido_bloques);
-        // }
-
-        free(fcb_a_liberar->nombre_archivo);
-        free(fcb_a_liberar);
-    }
-
-    int nuevo_bloque_inicial_archivo_agrandar = copiar_contenido_a(contenido_a_agrandar, tamanio_archivo_agrandar);
-    // log_trace(log_filesystem, "El nuevo bloque inicial del archivo que se agrando es %i", nuevo_bloque_inicial_archivo_agrandar);
-
-    list_destroy(lista_fcb);
-
-    return nuevo_bloque_inicial_archivo_agrandar;
-} */
-
-void crear_arch_list(t_archivo_data *arch)
-{
-
-    list_add(arch, archivos_fs);
 }
 
 int bloque_libre_contiguo(int tamanio)
@@ -790,7 +636,7 @@ int copiar_contenido_a(char *contenido, int tamanio)
 
     if (bloques_necesarios(tamanio) == 1)
     {
-        marcar_bloques_ocupados(bloque_inicial, 1);
+        marcar_bloques_ocupados(bloque_inicial, bloque_inicial + 1);
     }
     else
     {
