@@ -61,7 +61,7 @@ void mover_bloque(int origen, int destino);
 int actualizar_metadata_archivo(int nuevo_bloque_inicial);
 _Bool buscar_por_bloque(void *data);
 void levantar_bitmap();
-int obtener_cantidad_bloques_archivo(char *nombre_archivo);
+int obtener_cantidad_bloques_archivo(t_archivo_data *nombre_archivo);
 int contar_bloques_ocupados_bitarray();
 _Bool buscar_arch_por_nombre(void *data);
 uint32_t escribir_dato_memoria(uint32_t direccion_fisica, int tamanio_marco, void *dato, int size, int pid);

@@ -64,7 +64,7 @@ void planificar_por_rr()
         log_info(logger, "PID: <%d> - Estado Anterior: <READY> - Estado Actual: <EXECUTE>", proceso->cde->pid);
         proceso->estado = EXEC;
         enviar_a_cpu_cde(proceso->cde);
-
+    
         inicio_quantum(QUANTUM);
     }
 }
@@ -84,7 +84,7 @@ void planificar_por_vrr()
             log_info(logger, "PID: <%d> - Estado Anterior: <READY+> - Estado Actual: <EXECUTE>", proceso->cde->pid);
             proceso->estado = EXEC;
             enviar_a_cpu_cde(proceso->cde);
-
+           
             inicio_quantum(proceso->quantum);
         }
         else
@@ -138,10 +138,11 @@ void *transicion_exec_ready()
         proceso->cde = cde_interrumpido;
         proceso->estado = READY;
 
+    
         sem_post(contador_readys);
         sem_post(b_exec_libre);
 
-        // log obligatorio
+         //log obligatorio
         log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <READY>", proceso->cde->pid);
     }
 }

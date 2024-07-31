@@ -444,6 +444,11 @@ void levantar_CPU_Dispatch()
 			sem_post(b_largo_plazo_exit);
 			break;
 
+		case EXIT_SUCCESS:
+
+			sem_post(sem_finalizar_proceso);
+			break;
+
 		case FIN_DE_QUANTUM:
 
 			tipo_buffer *buffer_quantum = recibir_buffer(socket_cpu_dispatch);

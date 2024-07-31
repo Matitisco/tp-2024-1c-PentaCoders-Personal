@@ -68,6 +68,7 @@ typedef struct
 	char *nombre_io;
 	enum_interfaz tipo_IO;
 	t_list *procesos_espera;
+	sem_t* sem_orden_interfaz;
 } t_infoIO;
 
 // VARIABLES
@@ -186,7 +187,7 @@ void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
 
 char *obtener_interfaz(enum_interfaz interfaz);
 _Bool interfaz_esta_en_lista(void *ptr);
-void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion);
+void recibir_orden_interfaces_de_cpu();
 _Bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz);
 t_cde *iniciar_cde(char *PATH);
 void interfaz_conectada_stdin(t_tipoDeInstruccion instruccion_a_ejecutar, int tamanio_reg, int tamanio_marco, int dir_fisica, t_infoIO *io, int pid);
@@ -208,7 +209,8 @@ int valorSemaforo(sem_t *semaforo);
 void asignar_recurso(t_recurso *recurso, t_pcb *cde);
 bool existe_recurso2(char *nombre_recurso);
 void manejarGrado();
-
+void *manejar_conexiones_io();
+void *conectar_interfaz();
 t_recurso *obtener_recurso(char *nombre_recurso);
 
 #endif
