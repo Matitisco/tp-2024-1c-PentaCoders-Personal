@@ -89,7 +89,6 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     int direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
     int pid = leer_buffer_enteroUint32(buffer_stdin);
     destruir_buffer(buffer_stdin);
-    sem_post(bloqueo);
     if (instruccion == IO_STDIN_READ)
     {
         log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
@@ -102,6 +101,7 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     {
         log_error(logger, "ERROR - INSTRUCCION INCORRECTA");
     }
+    sem_post(bloqueo);
 }
 
 void realizar_operacion_stdout(t_interfaz *interfaz)

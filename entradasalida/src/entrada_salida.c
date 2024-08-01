@@ -262,7 +262,6 @@ void realizar_operacion()
 			realizar_operacion_gen(interfaz);
 			break;
 		case STDIN:
-
 			realizar_operacion_stdin(interfaz);
 			break;
 		case STDOUT:
