@@ -1,6 +1,13 @@
 #include "../include/entrada_salida.h"
+#include <pthread.h>
 
 config_io *config_interfaz;
+t_interfaz *interfaz;
+sem_t *b_realizar_operacion;
+sem_t *concluir_operacion;
+sem_t *bloqueo;
+pthread_mutex_t *mutex_estoy_libre;
+pthread_t hiloRealizarOperacion;
 
 int main(int argc, char *argv[])
 {
@@ -10,6 +17,12 @@ int main(int argc, char *argv[])
 
 void iniciar_modulo_io()
 {
+	mutex_estoy_libre = malloc(sizeof(pthread_mutex_t));
+	b_realizar_operacion = malloc(sizeof(sem_t));
+	bloqueo = malloc(sizeof(sem_t));
+	pthread_mutex_init(mutex_estoy_libre, NULL);
+	sem_init(b_realizar_operacion, 0, 0);
+	sem_init(bloqueo, 0, 1);
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
 	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
 	char *path_configuracion = readline("Ingrese el nombre del archivo con la configuracion de la interfaz (sin '.config'): ");
@@ -29,8 +42,12 @@ void liberar_modulo_io()
 void levantar_interfaz(char *nombre, char *PATH)
 {
 	inicializar_config_IO(PATH);
+
+	// pthread_mutex_lock(mutex_estoy_libre);
 	estoy_libre = 1;
-	t_interfaz *interfaz = crear_interfaz(config_interfaz, nombre);
+	// pthread_mutex_unlock(mutex_estoy_libre);
+
+	interfaz = crear_interfaz(config_interfaz, nombre);
 	if (interfaz == NULL)
 	{
 		log_error(logger, "ERROR - CREAR INTERFAZ <%s> ", nombre);
@@ -41,7 +58,7 @@ void levantar_interfaz(char *nombre, char *PATH)
 	}
 }
 
-void arrancar_interfaz(t_interfaz *interfaz)
+void arrancar_interfaz()
 {
 
 	if (interfaz->tipo_interfaz == GENERICA)
@@ -58,36 +75,26 @@ void arrancar_interfaz(t_interfaz *interfaz)
 		levantar_archivo_bloques();
 		levantar_bitmap();
 	}
+	pthread_create(&hiloRealizarOperacion, NULL, realizar_operacion, NULL);
 	while (1)
 	{
+		sem_wait(bloqueo);
 		op_code consulta_kernel = recibir_op_code(conexion_kernel);
+
+		log_info(logger, "Recibi consulta del KERNEL - %d", consulta_kernel);
 		if (consulta_kernel == -1)
 		{
 			log_error(logger, "KERNEL se desconecto");
-			/*pthread_mutex_lock(&mutex_salida_exit);
-			salida_exit = 1;
-			pthread_mutex_unlock(&mutex_salida_exit);
-			pthread_cancel(hilo_CPU_SERVIDOR_INTERRUPT);
-			pthread_cancel(hilo_CPU_CLIENTE);
-			pthread_exit((void *)EXIT_FAILURE);*/
 			break;
 		}
-		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
+		else if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
 		{
-			if (estoy_libre)
-			{
-				enviar_op_code(conexion_kernel, ESTOY_LIBRE);
-				realizar_operacion(interfaz);
-				enviar_op_code(conexion_kernel, CONCLUI_OPERACION);
-			}
-			else
-			{
-				enviar_op_code(conexion_kernel, NO_ESTOY_LIBRE);
-			}
+			sem_post(b_realizar_operacion);
 		}
 		else if (consulta_kernel == CONFIRMAR_CONEXION)
 		{
 			enviar_op_code(conexion_kernel, OK);
+			sem_post(bloqueo);
 		}
 		else
 		{
@@ -135,7 +142,7 @@ void conectarse_memoria(t_interfaz *interfaz)
 
 t_interfaz *crear_interfaz(config_io *config, char *nombre)
 {
-	t_interfaz *interfaz = malloc(sizeof(t_interfaz));
+	interfaz = malloc(sizeof(t_interfaz));
 
 	interfaz->nombre_interfaz = nombre;
 	interfaz->ip_kernel = config->ip_kernel;
@@ -243,25 +250,32 @@ void inicializar_config_IO(char *PATH)
 	}
 }
 
-void realizar_operacion(t_interfaz *interfaz)
+void realizar_operacion()
 {
-	estoy_libre = 0;
-	switch (interfaz->tipo_interfaz)
+	while (1)
 	{
-	case GENERICA:
-		realizar_operacion_gen(interfaz);
-		break;
-	case STDIN:
-		realizar_operacion_stdin(interfaz);
-		break;
-	case STDOUT:
-		realizar_operacion_stdout(interfaz);
-		break;
-	case DIALFS:
-		realizar_operacion_dialfs(interfaz);
-		break;
-	default:
-		log_error(logger, "ERROR - TIPO INTERFAZ DESCONOCIDA");
-		break;
+		sem_wait(b_realizar_operacion);
+		estoy_libre = 0;
+		switch (interfaz->tipo_interfaz)
+		{
+		case GENERICA:
+			realizar_operacion_gen(interfaz);
+			break;
+		case STDIN:
+
+			realizar_operacion_stdin(interfaz);
+			break;
+		case STDOUT:
+			realizar_operacion_stdout(interfaz);
+			break;
+		case DIALFS:
+			realizar_operacion_dialfs(interfaz);
+			break;
+		default:
+			log_error(logger, "ERROR - TIPO INTERFAZ DESCONOCIDA");
+			break;
+		}
+		estoy_libre = 1;
+		enviar_op_code(conexion_kernel, CONCLUI_OPERACION);
 	}
 }

@@ -168,7 +168,6 @@ void agregar_t_write_memoria_buffer(tipo_buffer *buffer, t_write_memoria *escrib
 {
     if (buffer == NULL || escribir == NULL)
     {
-        // Manejar el error adecuadamente, por ejemplo, retornar o imprimir un error.
         return;
     }
 
@@ -176,7 +175,6 @@ void agregar_t_write_memoria_buffer(tipo_buffer *buffer, t_write_memoria *escrib
     void *temp_stream = realloc(buffer->stream, nuevo_tamano);
     if (temp_stream == NULL)
     {
-        // Manejar el error de realloc, por ejemplo, liberar recursos o imprimir un error.
         return;
     }
     buffer->stream = temp_stream;

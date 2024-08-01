@@ -1,6 +1,5 @@
 #include "../include/tlb.h"
 
-// tlb_tabla *tlb;
 t_tlb *tlb_cpu;
 
 int obtener_tiempo_en_miliSegundos(char *tiempo)
@@ -90,27 +89,6 @@ int obtener_marco_tlb(t_tlb *tlb, int pid, int nro_pagina)
 
     return -1;
 }
-
-/*void imprimir_tlb(t_tlb *tlb)
-{
-    if (!list_is_empty(tlb->entradas_tlb))
-    {
-        printf_green("           TLB");
-        printf_green("------------------------");
-        printf_green("| PID | PAGINA | MARCO |");
-        for (int i = 0; i < list_size(tlb->entradas_tlb); ++i)
-        {
-            t_entrada_tlb *entrada = list_get(tlb->entradas_tlb, i);
-            printf_green("|  %d  |    %d   |   %d   |", entrada->pid, entrada->nro_pagina, entrada->nro_marco);
-            printf_green("------------------------");
-        }
-    }
-    else
-    {
-        printf_green("TLB VACIA\n");
-    }
-    return;
-}*/
 
 void tlb_iniciar(char *algoritmo, int cant_entradas)
 {

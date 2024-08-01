@@ -8,7 +8,7 @@ void realizar_operacion_gen(t_interfaz *interfaz)
     int unidades_tiempo = leer_buffer_enteroUint32(buffer_gen);
     int pid = leer_buffer_enteroUint32(buffer_gen);
     destruir_buffer(buffer_gen);
-
+    sem_post(bloqueo);
     if (instruccion == IO_GEN_SLEEP)
     {
         sleep_ms(unidades_tiempo * interfaz->tiempo_unidad_trabajo);
@@ -19,8 +19,6 @@ void realizar_operacion_gen(t_interfaz *interfaz)
     {
         log_error(logger, "ERROR - INSTRUCCION INCORRECTA");
     }
-
-    estoy_libre = 1;
 }
 
 void enviar_a_memoria(int socket_memoria, uint32_t direccion_fisica, int size, void *dato, int pid)
@@ -91,7 +89,7 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     int direccion_fisica = leer_buffer_enteroUint32(buffer_stdin);
     int pid = leer_buffer_enteroUint32(buffer_stdin);
     destruir_buffer(buffer_stdin);
-
+    sem_post(bloqueo);
     if (instruccion == IO_STDIN_READ)
     {
         log_info(logger, "PID: <%d> - Operacion: <IO_STDIN_READ>", pid);
@@ -104,7 +102,6 @@ void realizar_operacion_stdin(t_interfaz *interfaz)
     {
         log_error(logger, "ERROR - INSTRUCCION INCORRECTA");
     }
-    estoy_libre = 1;
 }
 
 void realizar_operacion_stdout(t_interfaz *interfaz)
@@ -151,15 +148,14 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
     {
         log_info(logger, "Hubo un error al traer la operacion IO_STDOUT_WRITE");
     }
-    estoy_libre = 1;
     destruir_buffer(buffer_sol_operacion);
+    sem_post(bloqueo);
 }
 
 void realizar_operacion_dialfs(t_interfaz *interfaz)
 {
     sleep_ms(interfaz->tiempo_unidad_trabajo);
     instrucciones_dialfs();
-    estoy_libre = 1;
 }
 
 // AUXILIARES

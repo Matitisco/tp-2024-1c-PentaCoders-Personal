@@ -1,25 +1,21 @@
 #include "../include/kernel.h"
 
-// COLAS
 colaEstado *cola_new_global;
 colaEstado *cola_ready_global;
 colaEstado *cola_ready_plus;
 colaEstado *cola_exec_global;
 colaEstado *cola_bloqueado_global;
 colaEstado *cola_exit_global;
-// INTEGERS
 int socket_memoria;
 int socket_cpu_dispatch;
 int socket_cpu_interrupt;
-char *nombre_recurso_recibido;
 int socket_disp_io;
 int habilitar_planificadores;
 int QUANTUM;
-int valorSem;
 int valor_grado_a_modificar;
-// Contadores Semaforos
+int servidor_para_io;
+int interruptor_switch_readys;
 sem_t *GRADO_MULTIPROGRAMACION;
-// Semaforos de binarios
 sem_t *binario_menu_lp;
 sem_t *b_largo_plazo_exit;
 sem_t *b_transicion_exec_ready;
@@ -27,23 +23,24 @@ sem_t *b_transicion_exec_blocked;
 sem_t *b_exec_libre;
 sem_t *sem_quantum;
 sem_t *sem_agregar_a_estado;
-
 sem_t *b_reanudar_largo_plazo;
 sem_t *b_reanudar_corto_plazo;
 sem_t *b_reanudar_exit_largo;
 sem_t *b_reanudar_exec_blocked;
 sem_t *b_reanudar_exec_ready;
 sem_t *b_reanudar_blocked_ready;
-
 sem_t *manejo_grado;
-
 sem_t *b_transicion_blocked_ready;
 sem_t *bloquearReady;
 sem_t *bloquearReadyPlus;
-
 sem_t *cant_procesos_en_new;
-
-// HILOS
+sem_t *b_detener_planificacion;
+sem_t *b_switch_readys;
+sem_t *sem_finalizar_proceso;
+sem_t *contador_readys;
+sem_t *orden_cpu_io;
+sem_t *io_conectada;
+sem_t *envio_info;
 pthread_t hiloMEMORIA;
 pthread_t hiloIO;
 pthread_t hiloLargoPlazo;
@@ -57,31 +54,21 @@ pthread_t t_transicion_exec_blocked;
 pthread_t t_transicion_blocked_ready;
 pthread_t hiloQuantum;
 pthread_t hiloMultiProg;
-
+pthread_t hilo_ordenes_cpu_io;
+pthread_t hilo_info_io;
+t_infoIO *informacion_interfaz;
+t_struct_io *io_con_info_buffer;
+config_kernel *valores_config;
+config_kernel *configuracion;
 t_cde *cde_interrumpido;
 t_list *lista_interfaces;
 extern t_log *logger;
 char *nombre_IO;
-int servidor_para_io;
-config_kernel *valores_config;
-
-sem_t *b_detener_planificacion;
-
-int interruptor_switch_readys;
-sem_t *b_switch_readys;
-sem_t *sem_finalizar_proceso;
-
-sem_t *contador_readys;
-char *comandos[] = {"EJECUTAR_SCRIPT", "INICIAR_PROCESO", "FINALIZAR_PROCESO", "DETENER_PLANIFICACION", "INICIAR_PLANIFICACION", "MULTIPROGRAMACION", "PROCESO_ESTADO", "HELP", NULL};
-char *ip_local;
-
-config_kernel *configuracion;
+char *nombre_recurso_recibido;
+tipo_buffer *buffer_con_instruccion;
 
 int main(int argc, char *argv[])
 {
-	ip_local = obtener_ip_local();
-	printf("IP LOCAL: %s", ip_local);
-
 	iniciar_kernel();
 
 	pthread_join(hiloMEMORIA, NULL);
@@ -95,8 +82,6 @@ int main(int argc, char *argv[])
 	pthread_join(t_transicion_exec_ready, NULL);
 	pthread_join(hiloQuantum, NULL);
 	pthread_join(hiloMultiProg, NULL);
-	free(ip_local);
-	printf("Kernel finalizado");
 }
 
 void iniciar_kernel()
@@ -114,20 +99,20 @@ void iniciar_kernel()
 
 void crear_hilos()
 {
-	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL); // Done
-	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL); // Done
-
+	pthread_create(&hiloLargoPlazo, NULL, largo_plazo, NULL);
+	pthread_create(&hiloCortoPlazo, NULL, corto_plazo, NULL);
 	pthread_create(&hiloConsola, NULL, iniciar_consola_interactiva, NULL);
 	pthread_create(&largo_plazo_exit, NULL, transicion_exit_largo_plazo, NULL);
 	pthread_create(&t_transicion_exec_blocked, NULL, transicion_exec_blocked, NULL);
 	pthread_create(&t_transicion_exec_ready, NULL, transicion_exec_ready, NULL);
 	pthread_create(&t_transicion_blocked_ready, NULL, transicion_blocked_ready, NULL);
-
 	pthread_create(&hiloMEMORIA, NULL, (void *)conexionAMemoria, NULL);
 	pthread_create(&hiloCPUDS, NULL, (void *)levantar_CPU_Dispatch, NULL);
 	pthread_create(&hiloCPUINT, NULL, (void *)levantar_CPU_Interrupt, NULL);
 	pthread_create(&hiloIO, NULL, conectar_interfaces, NULL);
 	pthread_create(&hiloMultiProg, NULL, (void *)manejarGrado, NULL);
+	pthread_create(&hilo_ordenes_cpu_io, NULL, (void *)recibir_orden_interfaces_de_cpu, NULL);
+	pthread_create(&hilo_info_io, NULL, (void *)interfaz_conectada, NULL);
 }
 
 void finalizar_hilos()
@@ -186,12 +171,10 @@ void iniciar_semaforos()
 	b_reanudar_largo_plazo = malloc(sizeof(sem_t));
 	b_reanudar_corto_plazo = malloc(sizeof(sem_t));
 	cant_procesos_en_new = malloc(sizeof(sem_t));
-
 	b_reanudar_exit_largo = malloc(sizeof(sem_t));
 	b_reanudar_exec_blocked = malloc(sizeof(sem_t));
 	b_reanudar_exec_ready = malloc(sizeof(sem_t));
 	b_reanudar_blocked_ready = malloc(sizeof(sem_t));
-
 	sem_agregar_a_estado = malloc(sizeof(sem_t));
 	b_largo_plazo_exit = malloc(sizeof(sem_t));
 	b_exec_libre = malloc(sizeof(sem_t));
@@ -205,18 +188,18 @@ void iniciar_semaforos()
 	b_switch_readys = malloc(sizeof(sem_t));
 	contador_readys = malloc(sizeof(sem_t));
 	sem_finalizar_proceso = malloc(sizeof(sem_t));
-
+	orden_cpu_io = malloc(sizeof(sem_t));
+	io_conectada = malloc(sizeof(sem_t));
+	envio_info = malloc(sizeof(sem_t));
 	sem_init(GRADO_MULTIPROGRAMACION, 0, valores_config->grado_multiprogramacion);
 	sem_init(cant_procesos_en_new, 0, 0);
 	sem_init(b_reanudar_largo_plazo, 0, 0);
 	sem_init(b_reanudar_corto_plazo, 0, 0);
 	sem_init(manejo_grado, 0, 0);
-
 	sem_init(b_reanudar_exit_largo, 0, 0);
 	sem_init(b_reanudar_exec_blocked, 0, 0);
 	sem_init(b_reanudar_exec_ready, 0, 0);
 	sem_init(b_reanudar_blocked_ready, 0, 0);
-
 	sem_init(sem_agregar_a_estado, 0, 0);
 	sem_init(b_exec_libre, 0, 1);
 	sem_init(b_largo_plazo_exit, 0, 0);
@@ -231,6 +214,9 @@ void iniciar_semaforos()
 	sem_init(contador_readys, 0, 0);
 	sem_init(binario_menu_lp, 0, 0);
 	sem_init(sem_finalizar_proceso, 0, 0);
+	sem_init(orden_cpu_io, 0, 0);
+	sem_init(io_conectada, 0, 1);
+	sem_init(envio_info, 0, 0);
 }
 
 config_kernel *inicializar_config_kernel()
@@ -356,7 +342,6 @@ t_pcb *transicion_generica(colaEstado *colaEstadoInicio, colaEstado *colaEstadoF
 	t_pcb *proceso = sacar_procesos_cola(colaEstadoInicio, planificacion);
 	evaluar_planificacion(planificacion);
 	agregar_a_estado(proceso, colaEstadoFinal);
-
 	return proceso;
 }
 
@@ -461,7 +446,7 @@ void levantar_CPU_Dispatch()
 
 		case INSTRUCCION_INTERFAZ:
 
-			tipo_buffer *buffer_interfaz = recibir_buffer(socket_cpu_dispatch); // DATOS DE INTERFAZ
+			buffer_con_instruccion = recibir_buffer(socket_cpu_dispatch); // DATOS DE INTERFAZ
 
 			if (strcmp(valores_config->algoritmo_planificacion, "RR") == 0 || strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
 			{
@@ -471,8 +456,7 @@ void levantar_CPU_Dispatch()
 			tipo_buffer *buffer_interfaz_cde = recibir_buffer(socket_cpu_dispatch); // CDE
 			cde_interrumpido = leer_cde(buffer_interfaz_cde);
 			sem_post(b_transicion_exec_blocked);
-			recibir_orden_interfaces_de_cpu(cde_interrumpido->pid, buffer_interfaz);
-			destruir_buffer(buffer_interfaz);
+			sem_post(orden_cpu_io);
 			destruir_buffer(buffer_interfaz_cde);
 
 			break;
@@ -605,23 +589,27 @@ char *obtener_interfaz(enum_interfaz interfaz)
 	return NULL;
 }
 
-void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccion)
+void recibir_orden_interfaces_de_cpu()
 {
-	op_code operacion_desde_cpu_dispatch = leer_buffer_enteroUint32(buffer_con_instruccion);
-	t_tipoDeInstruccion instruccion_interfaz = leer_buffer_enteroUint32(buffer_con_instruccion);
+	sem_wait(orden_cpu_io);
+	tipo_buffer *buffer = crear_buffer();
+	buffer = buffer_con_instruccion;
+	int pid = cde_interrumpido->pid;
+	op_code operacion_desde_cpu_dispatch = leer_buffer_enteroUint32(buffer);
+	t_tipoDeInstruccion instruccion_interfaz = leer_buffer_enteroUint32(buffer);
 
-	t_infoIO *informacion_interfaz;
+	informacion_interfaz;
 	uint32_t tamanioRegistro;
 	uint32_t direccion_fisica;
-	t_struct_io *io_con_info_buffer = malloc(sizeof(t_struct_io));
+	io_con_info_buffer = malloc(sizeof(t_struct_io));
 
 	switch (operacion_desde_cpu_dispatch)
 	{
 	case SOLICITUD_INTERFAZ_GENERICA:
 
-		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer_con_instruccion);
+		uint32_t unidades_trabajo = leer_buffer_enteroUint32(buffer);
 
-		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		nombre_IO = leer_buffer_string(buffer);
 		io_con_info_buffer->pid = pid;
 		io_con_info_buffer->instruccion = instruccion_interfaz;
 		io_con_info_buffer->unidades_trabajo = unidades_trabajo;
@@ -638,17 +626,17 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		}
 		else
 		{
-			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
+			sem_post(envio_info);
 		}
 		break;
 
 	case SOLICITUD_INTERFAZ_STDIN:
 
-		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
-		int tamanioMarco = leer_buffer_enteroUint32(buffer_con_instruccion);
-		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		tamanioRegistro = leer_buffer_enteroUint32(buffer);
+		int tamanioMarco = leer_buffer_enteroUint32(buffer);
+		direccion_fisica = leer_buffer_enteroUint32(buffer);
 
-		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		nombre_IO = leer_buffer_string(buffer);
 		io_con_info_buffer->tamanio_marco = tamanioMarco;
 		io_con_info_buffer->tamanio_reg = tamanioRegistro;
 		io_con_info_buffer->dir_fisica = direccion_fisica;
@@ -665,16 +653,16 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		}
 		else
 		{
-			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
+			sem_post(envio_info);
 		}
 		break;
 
 	case SOLICITUD_INTERFAZ_STDOUT:
 
-		tamanioRegistro = leer_buffer_enteroUint32(buffer_con_instruccion);
-		direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+		tamanioRegistro = leer_buffer_enteroUint32(buffer);
+		direccion_fisica = leer_buffer_enteroUint32(buffer);
 
-		nombre_IO = leer_buffer_string(buffer_con_instruccion);
+		nombre_IO = leer_buffer_string(buffer);
 		io_con_info_buffer->pid = pid;
 		io_con_info_buffer->tamanio_reg = tamanioRegistro;
 		io_con_info_buffer->dir_fisica = direccion_fisica;
@@ -690,7 +678,8 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		}
 		else
 		{
-			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
+			sem_post(envio_info);
+			// interfaz_conectada(informacion_interfaz, io_con_info_buffer);
 		}
 		break;
 
@@ -707,7 +696,7 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		case IO_FS_CREATE:
 		case IO_FS_DELETE:
 
-			nombre_IO = leer_buffer_string(buffer_con_instruccion);
+			nombre_IO = leer_buffer_string(buffer);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 
 			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
@@ -724,9 +713,9 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			break;
 
 		case IO_FS_TRUNCATE:
-			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
+			tamanio = leer_buffer_enteroUint32(buffer);
 
-			nombre_IO = leer_buffer_string(buffer_con_instruccion);
+			nombre_IO = leer_buffer_string(buffer);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
@@ -744,13 +733,13 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		case IO_FS_READ:
 			if (instruccion_interfaz == IO_FS_READ)
 			{
-				marco = leer_buffer_enteroUint32(buffer_con_instruccion);
+				marco = leer_buffer_enteroUint32(buffer);
 			}
-			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
-			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
-			puntero_archivo = leer_buffer_enteroUint32(buffer_con_instruccion);
+			tamanio = leer_buffer_enteroUint32(buffer);
+			direccion_fisica = leer_buffer_enteroUint32(buffer);
+			puntero_archivo = leer_buffer_enteroUint32(buffer);
 
-			nombre_IO = leer_buffer_string(buffer_con_instruccion);
+			nombre_IO = leer_buffer_string(buffer);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 			list_add(informacion_interfaz->procesos_espera, cde_interrumpido);
 			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
@@ -863,27 +852,26 @@ void interfaz_no_conectada(int pid, t_infoIO *informacion_interfaz)
 	}
 }
 
-void interfaz_conectada(t_infoIO *io, t_struct_io *informacion_buffer)
+void interfaz_conectada()
 {
-	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-	op_code operacion_io = recibir_op_code(io->cliente_io);
-	tipo_buffer *buffer_interfaz = crear_buffer();
+	sem_wait(envio_info);
 
-	if (operacion_io == ESTOY_LIBRE)
+	while (!list_is_empty(cola_bloqueado_global->estado))
 	{
-		enviar_buffer_interfaz(io, informacion_buffer);
-		operacion_io = recibir_op_code(io->cliente_io);
+		enviar_op_code(informacion_interfaz->cliente_io, CONSULTAR_DISPONIBILDAD);
+		enviar_buffer_interfaz(informacion_interfaz, io_con_info_buffer);
+		op_code operacion_io = recibir_op_code(informacion_interfaz->cliente_io);
+		log_info(logger, "OPERACION RECIBIDA :%d", operacion_io);
 		if (operacion_io == CONCLUI_OPERACION)
 		{
 			sem_post(b_transicion_blocked_ready);
-			list_remove(io->procesos_espera, 0);
+			list_remove(informacion_interfaz->procesos_espera, 0);
+			if (!list_is_emptyinformacion_interfaz->procesos_espera)
+			{
+				list_get(informacion_interfaz->procesos_espera, 0);
+			}
 		}
 	}
-	else
-	{
-		log_info(logger, "INTERFAZ: <%s> - OCUPADA POR OTRO PROCESO");
-	}
-	destruir_buffer(buffer_interfaz);
 }
 
 void enviar_buffer_interfaz(t_infoIO *interfaz, t_struct_io *info_buffer)

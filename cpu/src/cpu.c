@@ -1,38 +1,31 @@
 #include "../include/cpu.h"
 
 // VARIABLES GLOBALES
+t_cde *cde_recibido;
 config_cpu *valores_config_cpu;
+t_registros *registros;
 int interrupcion_rr;
-
 int interrrupcion_fifo;
 int interrupcion_entrada_salida;
 int interrupcion_io;
 int interrupcion_fs;
 int socket_memoria;
 int socket_kernel_dispatch;
-int socket_kernel_interrupt;
 int salida_exit;
 int desalojo_wait;
 int desalojo_signal;
 int tamanio_pagina;
+int interrupcion_exit;
 char *nombre_archivo_a_enviar;
 pthread_t hilo_CPU_CLIENTE;
 pthread_t hilo_CPU_SERVIDOR_DISPATCH;
 pthread_t hilo_CPU_SERVIDOR_INTERRUPT;
-tipo_buffer *buffer_instruccion_io;
 pthread_mutex_t *mutex_cde_ejecutando;
-sem_t *sem_check_interrupt;
-sem_t *sem_interface;
-t_cde *cde_recibido;
-int interrupcion_exit;
-char *ip_local;
-t_registros *registros;
 pthread_mutex_t mutex_salida_exit;
+
 int main(int argc, char *argv[])
 {
 	interrupcion_exit = 0;
-	ip_local = obtener_ip_local();
-	printf("IP LOCAL: %s\n", ip_local);
 
 	iniciar_modulo_cpu();
 
@@ -41,12 +34,11 @@ int main(int argc, char *argv[])
 	pthread_join(hilo_CPU_CLIENTE, NULL);
 
 	config_destroy(valores_config_cpu->config);
-	free(valores_config_cpu); // con esto es suficiente, los demás atributos se liberan con config_destroy (config_get_string_value retorna un puntero y no crea uno nuevo)
+	free(valores_config_cpu);
 
 	// eliminar_tlb();
 	free(registros);
 	liberar_conexion(&socket_memoria);
-	free(ip_local);
 	log_destroy(logger);
 }
 
@@ -70,11 +62,7 @@ void iniciar_modulo_cpu()
 void iniciar_semaforos_CPU()
 {
 	mutex_cde_ejecutando = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
-	sem_check_interrupt = (sem_t *)malloc(sizeof(sem_t));
-	sem_interface = (sem_t *)malloc(sizeof(sem_t));
 	sem_init(mutex_cde_ejecutando, 0, 0);
-	sem_init(sem_check_interrupt, 0, 1);
-	sem_init(sem_interface, 0, 0);
 	pthread_mutex_init(&mutex_salida_exit, NULL);
 }
 
@@ -137,12 +125,12 @@ void *levantar_kernel_dispatch()
 				log_info(logger, "PID: <%d> - FETCH - Program Counter: <%d>", cde_recibido->pid, cde_recibido->PC);
 				cde_recibido->PC++;
 				char **array_instruccion = decode(linea_instruccion);
-				// free(linea_instruccion); // agregado
 				execute(array_instruccion, cde_recibido);
-				// liberar_array_instruccion(array_instruccion);
+				string_array_destroy(array_instruccion);
 				check_interrupt();
 			}
-
+			free(cde_recibido->registros);
+			free(cde_recibido);
 			destruir_buffer(buffer_cde);
 			break;
 		default:
@@ -151,17 +139,6 @@ void *levantar_kernel_dispatch()
 			break;
 		}
 	}
-}
-
-void liberar_array_instruccion(char **array_instruccion)
-{
-	int i = 0;
-	while (array_instruccion[i] != NULL)
-	{
-		free(array_instruccion[i]);
-		i++;
-	}
-	free(array_instruccion);
 }
 
 void *levantar_kernel_interrupt()
@@ -175,9 +152,6 @@ void *levantar_kernel_interrupt()
 			op_code codigo = recibir_op_code(socket_kernel_interrupt);
 			if (codigo == -1)
 			{
-
-				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-				printf("\033[0m");
 				pthread_cancel(hilo_CPU_SERVIDOR_DISPATCH);
 				pthread_cancel(hilo_CPU_CLIENTE);
 				pthread_exit((void *)EXIT_FAILURE);
@@ -194,7 +168,6 @@ void *levantar_kernel_interrupt()
 				pthread_mutex_unlock(&mutex_salida_exit);
 				break;
 			default:
-				log_error(logger, "Codigo de operacion desconocido.");
 				break;
 			}
 		}
@@ -203,8 +176,10 @@ void *levantar_kernel_interrupt()
 
 void *levantar_conexion_a_memoria()
 {
-	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, string_itoa(valores_config_cpu->puerto_memoria));
+	char *puerto_memoria = string_itoa(valores_config_cpu->puerto_memoria);
+	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, puerto_memoria);
 	recibir_tamanio_pagina(socket_memoria);
+	free(puerto_memoria);
 }
 
 void recibir_tamanio_pagina(int socket_memoria)
@@ -238,15 +213,14 @@ char *fetch(t_cde *contexto)
 	}
 	else
 	{
-		log_error(logger, "CPU - ENVIO INSTRUCCION INCORRECTO");
 		return NULL;
 	}
 }
 
 char **decode(char *linea_de_instrucion)
 {
-
 	char **instruccion = string_split(linea_de_instrucion, " ");
+	free(linea_de_instrucion);
 	return instruccion;
 }
 

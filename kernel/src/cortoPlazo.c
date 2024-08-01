@@ -171,9 +171,10 @@ void *transicion_exec_blocked()
 void *transicion_blocked_ready()
 {
     while (1)
-    {
+    {   
+        log_info(logger, "Valor del semaforo blocked_ready: %d", valorSemaforo(b_transicion_blocked_ready));
         sem_wait(b_transicion_blocked_ready);
-
+        log_info(logger, "PASO EL SEMOFORO DE TRANS BLOCK A READY ");
         t_pcb *proceso;
         if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
         {
