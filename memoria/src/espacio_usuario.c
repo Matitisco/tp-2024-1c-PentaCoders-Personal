@@ -71,7 +71,7 @@ void *leer_espacio_usuario(uint32_t direccion_fisica, size_t tamanio, t_log *log
     int pagina = chequear_lectura_escritura_en_espacio_usuario(direccion_fisica, pid);
     if (pagina != -1)
     {
-        void *valor = malloc(tamanio);
+        void *valor = calloc(1,tamanio);
         if (valor == NULL)
         {
             return NULL;
