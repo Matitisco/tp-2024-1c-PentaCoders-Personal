@@ -112,6 +112,7 @@ void *levantar_kernel_dispatch()
 		if (codigo == -1)
 		{
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
+			printf("\033[0m");
 			pthread_mutex_lock(&mutex_salida_exit);
 			salida_exit = 1;
 			pthread_mutex_unlock(&mutex_salida_exit);
@@ -142,7 +143,7 @@ void *levantar_kernel_dispatch()
 				// liberar_array_instruccion(array_instruccion);
 				check_interrupt();
 			}
-
+			
 			destruir_buffer(buffer_cde);
 			break;
 		default:
@@ -203,7 +204,7 @@ void *levantar_kernel_interrupt()
 
 void *levantar_conexion_a_memoria()
 {
-	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, string_itoa(valores_config_cpu->puerto_memoria));
+	socket_memoria = levantarCliente(logger, "MEMORIA", valores_config_cpu->ip, valores_config_cpu->puerto_memoria);
 	recibir_tamanio_pagina(socket_memoria);
 }
 
@@ -550,7 +551,7 @@ config_cpu *configurar_cpu()
 	strcat(directorioActual, "/cpu.config");
 	valores_config_cpu->config = iniciar_config(directorioActual);
 	valores_config_cpu->ip = config_get_string_value(valores_config_cpu->config, "IP_MEMORIA");
-	valores_config_cpu->puerto_memoria = config_get_int_value(valores_config_cpu->config, "PUERTO_MEMORIA");
+	valores_config_cpu->puerto_memoria = config_get_string_value(valores_config_cpu->config, "PUERTO_MEMORIA");
 	valores_config_cpu->puerto_escucha_dispatch = config_get_int_value(valores_config_cpu->config, "PUERTO_ESCUCHA_DISPATCH");
 	valores_config_cpu->puerto_escucha_interrupt = config_get_int_value(valores_config_cpu->config, "PUERTO_ESCUCHA_INTERRUPT");
 	valores_config_cpu->algoritmo_tlb = config_get_string_value(valores_config_cpu->config, "ALGORITMO_TLB");

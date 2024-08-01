@@ -140,9 +140,10 @@ void finalizar_hilos()
 	pthread_cancel(t_transicion_exec_ready);
 	pthread_cancel(t_transicion_blocked_ready);
 	pthread_cancel(hiloMEMORIA);
-	pthread_cancel(hiloIO);
 	pthread_cancel(hiloCPUDS);
 	pthread_cancel(hiloCPUINT);
+	pthread_cancel(hiloIO);
+	pthread_cancel(hiloMultiProg);
 }
 
 void levantar_servidores()

@@ -43,7 +43,7 @@ void *escribir_espacio_usuario(uint32_t direccion_fisica, void *valor_a_escribir
     }
     else
     {
-        log_error(logger, "Se quiere escribir por fuera del espacio del proceso asignado");
+        //log_error(logger, "Se quiere escribir por fuera del espacio del proceso asignado");
     }
 
 

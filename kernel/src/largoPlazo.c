@@ -39,7 +39,7 @@ char *lista_pid()
 t_pcb *transicion_new_a_ready()
 {
     t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, "largo");
-    log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
+    //log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
     sem_post(contador_readys);
     proceso->estado = READY;
     return proceso;
