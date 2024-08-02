@@ -39,7 +39,7 @@ void finalizar_memoria()
 {
     liberar_conexion(&cliente_cpu);
     liberar_conexion(&cliente_kernel);
-    config_destroy(valores_config->config);// IMPORTANTE: con esto es suficiente, los demás atributos se liberan con config_destroy (config_get_string_value retorna un puntero y no crea uno nuevo)
+    config_destroy(valores_config->config); // IMPORTANTE: con esto es suficiente, los demás atributos se liberan con config_destroy (config_get_string_value retorna un puntero y no crea uno nuevo)
     free(valores_config);
     log_destroy(logger);
 
@@ -140,6 +140,7 @@ void *recibir_interfaz_io()
             log_error(logger, "Interfaz Desconectada de Memoria");
             pthread_exit((void *)0);
         }
+        sleep_ms(valores_config->retardo_respuesta); // retardo para cada pedido de instruccion
         switch (codigo_io)
         {
             sleep_ms(valores_config->retardo_respuesta);
@@ -169,7 +170,7 @@ void *recibirKernel()
             pthread_cancel(hiloIO);
             pthread_exit((void *)EXIT_FAILURE);
         }
-
+        sleep_ms(valores_config->retardo_respuesta); // retardo para cada pedido de instruccion
         switch (cod_op)
         {
         case SOLICITUD_INICIAR_PROCESO:
@@ -200,11 +201,12 @@ void *recibirCPU()
             log_error(logger, "CPU se desconecto. Terminando hilo");
             pthread_exit((void *)EXIT_FAILURE);
         }
-
+        sleep_ms(valores_config->retardo_respuesta); // retardo para cada pedido de instruccion
         switch (cod_op)
         {
-            sleep_ms(valores_config->retardo_respuesta);
+
         case PEDIDO_INSTRUCCION:
+
             pedido_instruccion_cpu_dispatch(cliente_cpu);
             break;
         case ACCESO_ESPACIO_USUARIO:
@@ -228,7 +230,6 @@ void *recibirCPU()
                 log_info(logger, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>", cde->pid, tamanio_actual, nuevo_tamanio);
                 ampliar_proceso(cde->pid, nuevo_tamanio, cliente_cpu);
             }
-            // imprimir_espacio_usuario(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
             destruir_buffer(buffer_cpu);
             free(cde->registros);
             free(cde);
@@ -365,7 +366,6 @@ void escritura(tipo_buffer *buffer, int cliente_solicitante)
         valor_string = leer_buffer_string(buffer);
         resultado = escribir_espacio_usuario(direccion_fisica, valor_string, tamanio, logger, pid_ejecutando);
     }
-    //(espacio_usuario, valores_config->tam_memoria, valores_config->tam_pagina, array_bitmap);
     if (resultado != -1)
     {
         enviar_op_code(cliente_solicitante, OK);
@@ -382,7 +382,7 @@ void lectura(tipo_buffer *buffer_lectura, int cliente_solicitante)
     uint32_t pid_ejecutando = leer_buffer_enteroUint32(buffer_lectura);
     uint32_t tamanio = leer_buffer_enteroUint32(buffer_lectura);
     tipoDato tipo_dato = leer_buffer_enteroUint32(buffer_lectura);
-    void *valor_leido = calloc(1,tamanio);
+    void *valor_leido = calloc(1, tamanio);
     valor_leido = leer_espacio_usuario(direccion_fisica, tamanio, logger, pid_ejecutando);
     uint32_t valor32;
     uint8_t valor8;

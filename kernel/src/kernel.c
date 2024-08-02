@@ -415,12 +415,6 @@ t_pcb *sacar_procesos_criterio_cola(colaEstado *cola_estado, char *planificacion
 	return pcb;
 }
 
-
-
-
-
-
-
 colaEstado *obtener_cola(t_estados estado)
 {
 	switch (estado)

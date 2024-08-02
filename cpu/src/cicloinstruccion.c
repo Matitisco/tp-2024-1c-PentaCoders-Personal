@@ -216,6 +216,7 @@ void exec_mov_in(char *datos, char *direccion, t_cde *cde)
         uint32_t valor = leer_buffer_enteroUint8(buffer_valor);
         exec_set(datos, valor);
         destruir_buffer(buffer_valor);
+        // log obligatorio
         log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, valor);
     }
     else
@@ -234,6 +235,7 @@ void exec_mov_out(char *direccion, char *datos, t_cde *cde)
 
     if (direccion_fisica != 1)
     {
+        // log obligatorio
         log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%d>", cde->pid, direccion_fisica, reg_valor);
     }
 }
@@ -287,6 +289,7 @@ void exec_copy_string(char *tamanio, t_cde *cde)
         tipo_buffer *buffer_valor = recibir_buffer(socket_memoria);
         valor = leer_buffer_string(buffer_valor);
         destruir_buffer(buffer_valor);
+        // log obligatorio
         log_info(logger, "PID: <%d> - Accion: <LEER> - Direccion Fisica: <%d> - Valor: <%s>", cde->pid, direccion_fisica_SI, valor);
     }
     else
@@ -294,14 +297,14 @@ void exec_copy_string(char *tamanio, t_cde *cde)
         log_error(logger, "DIRECCION INCORRECTA");
     }
 
-    // ESCRIBIR STRING LEIDO
-
     uint32_t tamanio_string = atoi(tamanio);
     uint32_t direccion_logica_DI = registros->DI;
     uint32_t direccion_fisica = escribir_dato_memoria(direccion_logica_DI, valor, tamanio_string, cde->pid);
 
     if (direccion_fisica != 1)
     {
+
+        // log obligatorio
         log_info(logger, "PID: <%d> - Accion: <ESCRIBIR> - Direccion Fisica: <%d> - Valor: <%s>", cde->pid, direccion_fisica, valor);
     }
     free(valor);
@@ -339,7 +342,7 @@ void exec_signal(char *recurso, t_cde *cde)
 void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
 {
     interrupcion_io = 1;
-    buffer_instruccion_io = crear_buffer();
+    tipo_buffer *buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_GENERICA);
@@ -347,6 +350,7 @@ void exec_io_gen_sleep(char *nombre_interfaz, uint32_t unidades_trabajo)
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, unidades_trabajo);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+    destruir_buffer(buffer_instruccion_io);
 }
 
 void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
@@ -356,17 +360,17 @@ void exec_io_stdin_read(char *interfaz, char *reg_direccion, char *reg_tamanio, 
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     uint32_t tamanio_registro = obtener_valor(reg_tamanio);
 
-    buffer_instruccion_io = crear_buffer();
+    tipo_buffer *buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_STDIN);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_STDIN_READ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio_registro);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio_pagina);
-    // agregar_buffer_para_enterosUint32(buffer_instruccion_io, paginas_necesarias);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
 
     agregar_buffer_para_string(buffer_instruccion_io, interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+    destruir_buffer(buffer_instruccion_io);
 }
 
 void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio, t_cde *cde)
@@ -376,7 +380,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
     uint32_t tamanio = obtener_valor(reg_tamanio);
 
-    buffer_instruccion_io = crear_buffer();
+    tipo_buffer *buffer_instruccion_io = crear_buffer();
 
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
@@ -386,6 +390,7 @@ void exec_io_stdout_write(char *interfaz, char *reg_direccion, char *reg_tamanio
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, direccion_fisica);
     agregar_buffer_para_string(buffer_instruccion_io, interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+    destruir_buffer(buffer_instruccion_io);
 }
 
 // INSTRUCCIONES DE FILE SYSTEM
@@ -394,32 +399,34 @@ void exec_io_fs_create(char *nombre_interfaz, char *nombre_archivo, t_cde *cde)
 {
     interrupcion_fs = 1;
     nombre_archivo_a_enviar = nombre_archivo;
-    buffer_instruccion_io = crear_buffer();
+    tipo_buffer *buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS); // enviar como buffer para que no haya problemas de sincronizacion
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_CREATE);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+    destruir_buffer(buffer_instruccion_io);
 }
 
 void exec_io_fs_delete(char *nombre_interfaz, char *nombre_archivo, t_cde *cde)
 {
     interrupcion_fs = 1;
     nombre_archivo_a_enviar = nombre_archivo;
-    buffer_instruccion_io = crear_buffer();
+    tipo_buffer *buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_DELETE);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+    destruir_buffer(buffer_instruccion_io);
 }
 
 void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char *reg_tamanio, t_cde *cde)
 {
     interrupcion_fs = 1;
     nombre_archivo_a_enviar = nombre_archivo;
-    buffer_instruccion_io = crear_buffer();
+    tipo_buffer *buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_TRUNCATE);
@@ -427,6 +434,7 @@ void exec_io_fs_truncate(char *nombre_interfaz, char *nombre_archivo, char *reg_
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, tamanio);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+    destruir_buffer(buffer_instruccion_io);
 }
 
 void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_direccion, char *reg_tamanio, char *puntero_archivo, t_cde *cde)
@@ -435,7 +443,7 @@ void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_dir
     nombre_archivo_a_enviar = nombre_archivo;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-    buffer_instruccion_io = crear_buffer();
+    tipo_buffer *buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
 
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
@@ -448,6 +456,7 @@ void exec_io_fs_write(char *nombre_interfaz, char *nombre_archivo, char *reg_dir
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, int_puntero);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+    destruir_buffer(buffer_instruccion_io);
 }
 
 void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_direccion, char *reg_tamanio, char *puntero_archivo, t_cde *cde)
@@ -456,7 +465,7 @@ void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_dire
     nombre_archivo_a_enviar = nombre_archivo;
     uint32_t direccion_logica = obtener_valor(reg_direccion);
     uint32_t direccion_fisica = traducir_direccion_mmu(direccion_logica);
-    buffer_instruccion_io = crear_buffer();
+    tipo_buffer *buffer_instruccion_io = crear_buffer();
     enviar_op_code(socket_kernel_dispatch, INSTRUCCION_INTERFAZ);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, SOLICITUD_INTERFAZ_DIALFS);
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, IO_FS_READ);
@@ -468,6 +477,7 @@ void exec_io_fs_read(char *nombre_interfaz, char *nombre_archivo, char *reg_dire
     agregar_buffer_para_enterosUint32(buffer_instruccion_io, puntero);
     agregar_buffer_para_string(buffer_instruccion_io, nombre_interfaz);
     enviar_buffer(buffer_instruccion_io, socket_kernel_dispatch);
+    destruir_buffer(buffer_instruccion_io);
 }
 
 // INSTRUCCION EXIT

@@ -11,9 +11,9 @@ void realizar_operacion_gen(t_interfaz *interfaz)
 
     if (instruccion == IO_GEN_SLEEP)
     {
-        sleep_ms(unidades_tiempo * interfaz->tiempo_unidad_trabajo);
         // log obligatorio
         log_info(logger, "PID: <%d> - Operacion: <IO_GEN_SLEEP>", pid);
+        sleep_ms(unidades_tiempo * interfaz->tiempo_unidad_trabajo);
     }
     else
     {
@@ -115,7 +115,6 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
     int tamanio = leer_buffer_enteroUint32(buffer_sol_operacion);
     int direccion_fisica = leer_buffer_enteroUint32(buffer_sol_operacion);
     int pid = leer_buffer_enteroUint32(buffer_sol_operacion);
-    log_info(logger, "TAMANIO : %d", tamanio);
     if (sol_operacion == IO_STDOUT_WRITE)
     {
         enviar_op_code(conexion_memoria, ACCESO_ESPACIO_USUARIO);
@@ -136,20 +135,15 @@ void realizar_operacion_stdout(t_interfaz *interfaz)
             char *texto_recibido = (char *)calloc(1, tamanio);
             tipo_buffer *lectura = recibir_buffer(conexion_memoria);
             texto_recibido = leer_buffer_string(lectura);
-            printf("PID: <%d> - Texto hallado: <%s>\n", pid, texto_recibido);
-            destruir_buffer(lectura);
-
             log_info(logger, "PID: <%d> - Operacion: <IO_STDOUT_WRITE>", pid);
+            printf("PID: <%d> - <%s>\n", pid, texto_recibido);
+            destruir_buffer(lectura);
             free(texto_recibido);
         }
         else if (codigo_memoria == ERROR_PEDIDO_LECTURA)
         {
             log_error(logger, "PID: <%d> - ERROR Operacion: <IO_STDOUT_WRITE>", pid);
         }
-    }
-    else
-    {
-        log_info(logger, "Hubo un error al traer la operacion IO_STDOUT_WRITE");
     }
     estoy_libre = 1;
     destruir_buffer(buffer_sol_operacion);

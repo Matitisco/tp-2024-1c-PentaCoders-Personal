@@ -28,12 +28,17 @@ int interrupcion_exit;
 char *ip_local;
 t_registros *registros;
 pthread_mutex_t mutex_salida_exit;
+sem_t *s_exit;
+
 int main(int argc, char *argv[])
 {
+	s_exit = malloc(sizeof(sem_t));
+	sem_init(s_exit, 0, 0);
 	interrupcion_exit = 0;
 	ip_local = obtener_ip_local();
 	printf("IP LOCAL: %s\n", ip_local);
 	salida_exit = 1;
+	sem_post(s_exit);
 	iniciar_modulo_cpu();
 
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
@@ -41,9 +46,9 @@ int main(int argc, char *argv[])
 	pthread_join(hilo_CPU_CLIENTE, NULL);
 
 	config_destroy(valores_config_cpu->config);
-	free(valores_config_cpu); // con esto es suficiente, los demás atributos se liberan con config_destroy (config_get_string_value retorna un puntero y no crea uno nuevo)
+	free(valores_config_cpu);
 
-	// eliminar_tlb();
+	eliminar_tlb();
 	free(registros);
 	liberar_conexion(&socket_memoria);
 	free(ip_local);
@@ -112,10 +117,6 @@ void *levantar_kernel_dispatch()
 		if (codigo == -1)
 		{
 			log_error(logger, "El KERNEL se desconecto de dispatch. Terminando servidor");
-			printf("\033[0m");
-			pthread_mutex_lock(&mutex_salida_exit);
-			salida_exit = 1;
-			pthread_mutex_unlock(&mutex_salida_exit);
 			pthread_cancel(hilo_CPU_SERVIDOR_INTERRUPT);
 			pthread_cancel(hilo_CPU_CLIENTE);
 			pthread_exit((void *)EXIT_FAILURE);
@@ -130,6 +131,7 @@ void *levantar_kernel_dispatch()
 			registros = cde_recibido->registros;
 			pthread_mutex_lock(&mutex_salida_exit);
 			salida_exit = 1;
+			sem_post(s_exit);
 			pthread_mutex_unlock(&mutex_salida_exit);
 			while (salida_exit)
 			{
@@ -138,12 +140,12 @@ void *levantar_kernel_dispatch()
 				log_info(logger, "PID: <%d> - FETCH - Program Counter: <%d>", cde_recibido->pid, cde_recibido->PC);
 				cde_recibido->PC++;
 				char **array_instruccion = decode(linea_instruccion);
-				// free(linea_instruccion); // agregado
 				execute(array_instruccion, cde_recibido);
-				// liberar_array_instruccion(array_instruccion);
 				check_interrupt();
+				string_array_destroy(array_instruccion);
 			}
-
+			free(cde_recibido->registros);
+			free(cde_recibido);
 			destruir_buffer(buffer_cde);
 			break;
 		default:
@@ -171,33 +173,34 @@ void *levantar_kernel_interrupt()
 	int socket_kernel_interrupt = esperar_cliente(logger, "CPU INTERRUPT", "Kernel", server_fd);
 	while (1)
 	{
-		if (salida_exit)
+		if (salida_exit == 0)
 		{
-			op_code codigo = recibir_op_code(socket_kernel_interrupt);
-			if (codigo == -1)
-			{
+			sem_wait(s_exit);
+		}
+		op_code codigo = recibir_op_code(socket_kernel_interrupt);
+		if (codigo == -1)
+		{
 
-				log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
-				printf("\033[0m");
-				pthread_cancel(hilo_CPU_SERVIDOR_DISPATCH);
-				pthread_cancel(hilo_CPU_CLIENTE);
-				pthread_exit((void *)EXIT_FAILURE);
-			}
+			log_error(logger, "El KERNEL se desconecto de interrupt. Terminando servidor");
+			printf("\033[0m");
+			pthread_cancel(hilo_CPU_SERVIDOR_DISPATCH);
+			pthread_cancel(hilo_CPU_CLIENTE);
+			pthread_exit((void *)EXIT_FAILURE);
+		}
 
-			switch (codigo)
-			{
-			case PROCESO_INTERRUMPIDO_QUANTUM:
-				interrupcion_rr = 1;
-				break;
-			case SOLICITUD_EXIT:
-				pthread_mutex_lock(&mutex_salida_exit);
-				interrupcion_exit = 1;
-				pthread_mutex_unlock(&mutex_salida_exit);
-				break;
-			default:
-				log_error(logger, "Codigo de operacion desconocido.");
-				break;
-			}
+		switch (codigo)
+		{
+		case PROCESO_INTERRUMPIDO_QUANTUM:
+			interrupcion_rr = 1;
+			break;
+		case SOLICITUD_EXIT:
+			pthread_mutex_lock(&mutex_salida_exit);
+			interrupcion_exit = 1;
+			pthread_mutex_unlock(&mutex_salida_exit);
+			break;
+		default:
+			log_error(logger, "Codigo de operacion desconocido.");
+			break;
 		}
 	}
 }
@@ -248,6 +251,7 @@ char **decode(char *linea_de_instrucion)
 {
 
 	char **instruccion = string_split(linea_de_instrucion, " ");
+	free(linea_de_instrucion);
 	return instruccion;
 }
 

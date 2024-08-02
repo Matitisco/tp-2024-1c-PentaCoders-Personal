@@ -421,6 +421,7 @@ void ampliar_archivo(t_archivo_data *archivo, int tamanio, int cantidad_bloques_
         {
             log_info(logger, "PID: <%d> - Inicio Compactacion", pid); // obligatorio
             int nuevo_bloque_inicial = compactar(tamanio, archivo);
+            sleep_ms(config_interfaz->retraso_compactacion); // sleep de compactar
             nombre_archivo_buscado = archivo->nombre_archivo;
             t_config *metadata = buscar_meta_data(archivo->nombre_archivo);
             t_archivo_data *archivo_compactado = list_find(archivos_fs, buscar_arch_por_nombre);

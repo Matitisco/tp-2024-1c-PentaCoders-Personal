@@ -28,16 +28,15 @@ int obtener_frame(int pagina)
     {
         frame = obtener_marco_tlb(tlb_cpu, cde_recibido->pid, pagina);
         if (frame == -1)
-        { // TLB MISS
+        { // log obligatorio
             log_info(logger, "PID: <%d> - TLB MISS - Pagina: <%d>", cde_recibido->pid, pagina);
             frame = pedir_frame_memoria(cde_recibido->pid, pagina);
             agregar_entrada_a_tlb(tlb_cpu, crear_entrada_tlb(cde_recibido->pid, pagina, frame));
         }
         else
-        { // TLB HIT
+        { // log obligatorio
             log_info(logger, "PID: <%d> - TLB HIT - Pagina: <%d>", cde_recibido->pid, pagina);
         }
-        //imprimir_tlb(tlb_cpu);
     }
     else
     {
@@ -63,7 +62,8 @@ int pedir_frame_memoria(int pid, int nroPagina)
         tipo_buffer *buffer_memoria_tlb = recibir_buffer(socket_memoria);
         frame_pedido = leer_buffer_enteroUint32(buffer_memoria_tlb);
         destruir_buffer(buffer_memoria_tlb);
-        log_info(logger, "PID: <%d> - MARCO OBTENIDO - Pagina: <%d> - Marco: <%d>", pid, nroPagina, frame_pedido);
+        // log obligatorio
+        log_info(logger, "PID: <%d> - OBTENER MARCO - Pagina: <%d> - Marco: <%d>", pid, nroPagina, frame_pedido);
     }
     else if (respuesta_mmu == PEDIDO_FRAME_INCORRECTO)
     {
