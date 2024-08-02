@@ -60,6 +60,11 @@ typedef struct
 	int tamanio_reg;
 	int dir_fisica;
 	int tamanio_marco;
+	char *nombre_archivo;
+	uint32_t marco;
+	uint32_t tamanio;
+	uint32_t direccion_fisica;
+	uint32_t puntero_archivo;
 } t_struct_io;
 
 typedef struct
@@ -200,7 +205,9 @@ void interfaz_conectada_stdout(t_tipoDeInstruccion instruccion_a_ejecutar, int t
 void interfaz_conectada_generica(int unidades_trabajo, t_tipoDeInstruccion instruccion_a_ejecutar, t_infoIO *io, int pid);
 void atender_interrupciones();
 char *buscar_recurso(char *recurso, int *posicion);
-
+void fs_create_delete(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, t_infoIO *io, t_struct_io *informacion_buffer);
+void fs_truncate(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, uint32_t tamanio, t_infoIO *io, t_struct_io *informacion_buffer);
+void fs_write_read(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, uint32_t marco, uint32_t tamanio, uint32_t reg_direccion, uint32_t puntero_archivo, t_infoIO *io, t_struct_io *informacion_buffer);
 int hayProcesosEnEstado(colaEstado *cola_estado);
 
 void bloquearSiReadysVacios();
@@ -218,6 +225,8 @@ void *manejar_conexiones_io();
 void *conectar_interfaz();
 t_recurso *obtener_recurso(char *nombre_recurso);
 t_pcb *sacar_procesos_criterio_cola(colaEstado *cola_estado, char *planificacion, bool (*condicion)(void*));
+
+
 
 
 #endif

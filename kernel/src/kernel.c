@@ -157,8 +157,6 @@ void finalizar_hilos()
 	pthread_cancel(hiloInterfazConectada);
 }
 
-
-
 void levantar_servidores()
 {
 	servidor_para_io = crear_servidor(valores_config->puerto_escucha);
@@ -404,7 +402,7 @@ t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char *planificacion)
 	return pcb;
 }
 
-t_pcb *sacar_procesos_criterio_cola(colaEstado *cola_estado, char *planificacion, bool (*condicion)(void*))
+t_pcb *sacar_procesos_criterio_cola(colaEstado *cola_estado, char *planificacion, bool (*condicion)(void *))
 {
 	evaluar_planificacion(planificacion);
 	sem_wait(cola_estado->contador);
@@ -583,7 +581,7 @@ void *conectar_interfaces()
 				infoIO->tipo_IO = tipo_interfaz_io;
 				infoIO->contador_espera = malloc(sizeof(sem_t));
 				sem_init(infoIO->contador_espera, 0, 0);
-				info_io_conectada =infoIO;
+				info_io_conectada = infoIO;
 				list_add(lista_interfaces, infoIO);
 
 				enviar_op_code(socket_disp_io, NO_ESTABA_CONECTADO);
@@ -597,22 +595,6 @@ void *conectar_interfaces()
 
 bool interfaz_no_esta_conectada(t_infoIO *informacion_interfaz)
 {
-	/*op_code codigo = CONFIRMAR_CONEXION;
-
-	int bytes_enviados = send(informacion_interfaz->cliente_io, &codigo, sizeof(op_code), 0);
-	if (bytes_enviados == -1)
-	{
-		return true;
-	}
-
-	op_code respuesta;
-	int bytes_recibidos = recv(informacion_interfaz->cliente_io, &respuesta, sizeof(op_code), MSG_WAITALL);
-	if (bytes_recibidos <= 0)
-	{
-		return true;
-	}
-
-	return respuesta != OK;*/
 	return false;
 }
 
@@ -659,12 +641,18 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		io_con_info_buffer->unidades_trabajo = unidades_trabajo;
 		io_con_info_buffer->cde = cde_interrumpido;
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
-		list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
-		info_io_conectada = informacion_interfaz;
-
-		sem_post(informacion_interfaz->contador_espera); // empieza a ejecutar hilo interfaz_conectada
-
-		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+		if (informacion_interfaz != NULL)
+		{
+			list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
+			info_io_conectada = informacion_interfaz;
+			sem_post(informacion_interfaz->contador_espera); // empieza a ejecutar hilo interfaz_conectada
+			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+		}
+		else
+		{
+			log_error(logger, "PID: <%d> - No se encontro la Interfaz", pid, nombre_IO);
+			finalizar_proceso(pid, INVALID_INTERFACE);
+		}
 
 		free(nombre_IO);
 
@@ -685,18 +673,20 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		io_con_info_buffer->cde = cde_interrumpido;
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 
-		sem_post(informacion_interfaz->contador_espera);
-		list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
-		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
-
-		/* if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
+		if (informacion_interfaz != NULL)
 		{
-			interfaz_no_conectada(pid, informacion_interfaz);
+			list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
+			info_io_conectada = informacion_interfaz;
+			sem_post(informacion_interfaz->contador_espera); // empieza a ejecutar hilo interfaz_conectada
+			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 		}
 		else
 		{
-			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
-		} */
+			log_error(logger, "PID: <%d> - No se encontro la Interfaz", pid, nombre_IO);
+			finalizar_proceso(pid, INVALID_INTERFACE);
+		}
+		free(nombre_IO);
+
 		break;
 
 	case SOLICITUD_INTERFAZ_STDOUT:
@@ -711,24 +701,27 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 		io_con_info_buffer->instruccion = instruccion_interfaz;
 		io_con_info_buffer->cde = cde_interrumpido;
 		informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
-		sem_post(informacion_interfaz->contador_espera);
-		list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
-		log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
-
-		/* if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
+		if (informacion_interfaz != NULL)
 		{
-			interfaz_no_conectada(pid, informacion_interfaz);
+			list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
+			info_io_conectada = informacion_interfaz;
+			sem_post(informacion_interfaz->contador_espera); // empieza a ejecutar hilo interfaz_conectada
+			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 		}
 		else
 		{
-			interfaz_conectada(informacion_interfaz, io_con_info_buffer);
-		} */
+			log_error(logger, "PID: <%d> - No se encontro la Interfaz", pid, nombre_IO);
+			finalizar_proceso(pid, INVALID_INTERFACE);
+		}
+		free(nombre_IO);
+
 		break;
 
 	case SOLICITUD_INTERFAZ_DIALFS:
 
 		tipo_buffer *buffer_archivo = recibir_buffer(socket_cpu_dispatch);
 		char *nombre_archivo = leer_buffer_string(buffer_archivo);
+		io_con_info_buffer->nombre_archivo = nombre_archivo;
 		uint32_t tamanio;
 		int marco;
 		uint32_t direccion_fisica;
@@ -740,43 +733,52 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
-			sem_post(informacion_interfaz->contador_espera);
-
 			io_con_info_buffer->cde = cde_interrumpido;
-
-			list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
-			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
-
-			if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
+			io_con_info_buffer->instruccion = instruccion_interfaz;
+			if (informacion_interfaz != NULL)
 			{
-				interfaz_no_conectada(pid, informacion_interfaz);
+				list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
+				info_io_conectada = informacion_interfaz;
+				sem_post(informacion_interfaz->contador_espera); // empieza a ejecutar hilo interfaz_conectada
+				log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
 			}
 			else
 			{
-				fs_create_delete(nombre_archivo, instruccion_interfaz, informacion_interfaz);
+				log_error(logger, "PID: <%d> - No se encontro la Interfaz", pid, nombre_IO);
+				finalizar_proceso(pid, INVALID_INTERFACE);
 			}
 			break;
 
 		case IO_FS_TRUNCATE:
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
-
+			io_con_info_buffer->tamanio = tamanio;
+			io_con_info_buffer->instruccion = instruccion_interfaz;
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
 
-			sem_post(informacion_interfaz->contador_espera);
-
 			io_con_info_buffer->cde = cde_interrumpido;
 
-			list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
-			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
-			if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
+			if (informacion_interfaz != NULL)
+			{
+				list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
+				info_io_conectada = informacion_interfaz;
+				sem_post(informacion_interfaz->contador_espera); // empieza a ejecutar hilo interfaz_conectada
+				log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+			}
+			else
+			{
+				log_error(logger, "PID: <%d> - No se encontro la Interfaz", pid, nombre_IO);
+				finalizar_proceso(pid, INVALID_INTERFACE);
+			}
+
+			/* if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 			{
 				interfaz_no_conectada(pid, informacion_interfaz);
 			}
 			else
 			{
 				fs_truncate(nombre_archivo, instruccion_interfaz, tamanio, informacion_interfaz);
-			}
+			} */
 			break;
 
 		case IO_FS_WRITE:
@@ -784,27 +786,45 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 			if (instruccion_interfaz == IO_FS_READ)
 			{
 				marco = leer_buffer_enteroUint32(buffer_con_instruccion);
+				io_con_info_buffer->marco = marco;
 			}
+
 			tamanio = leer_buffer_enteroUint32(buffer_con_instruccion);
+			io_con_info_buffer->tamanio = tamanio;
 			direccion_fisica = leer_buffer_enteroUint32(buffer_con_instruccion);
+			io_con_info_buffer->direccion_fisica = direccion_fisica;
 			puntero_archivo = leer_buffer_enteroUint32(buffer_con_instruccion);
+			io_con_info_buffer->puntero_archivo = puntero_archivo;
+			io_con_info_buffer->instruccion = instruccion_interfaz;
 
 			nombre_IO = leer_buffer_string(buffer_con_instruccion);
 			informacion_interfaz = list_find(lista_interfaces, interfaz_esta_en_lista);
-
-			sem_post(informacion_interfaz->contador_espera);
-
 			io_con_info_buffer->cde = cde_interrumpido;
-			list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
-			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
-			if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
+
+			if (informacion_interfaz != NULL)
+			{
+				list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
+				info_io_conectada = informacion_interfaz;
+				sem_post(informacion_interfaz->contador_espera); // empieza a ejecutar hilo interfaz_conectada
+				log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO);
+			}
+			else
+			{
+				log_error(logger, "PID: <%d> - No se encontro la Interfaz", pid, nombre_IO);
+				finalizar_proceso(pid, INVALID_INTERFACE);
+			}
+
+			/* list_add(informacion_interfaz->procesos_espera, io_con_info_buffer);
+			log_info(logger, "PID: <%d> - Bloqueado por : <%s>", pid, nombre_IO); */
+
+			/* if (informacion_interfaz == NULL || interfaz_no_esta_conectada(informacion_interfaz))
 			{
 				interfaz_no_conectada(pid, informacion_interfaz);
 			}
 			else
 			{
 				fs_write_read(nombre_archivo, instruccion_interfaz, marco, tamanio, direccion_fisica, puntero_archivo, informacion_interfaz);
-			}
+			} */
 			break;
 		default:
 			break;
@@ -817,85 +837,76 @@ void recibir_orden_interfaces_de_cpu(int pid, tipo_buffer *buffer_con_instruccio
 	// free(informacion_interfaz);
 }
 
-void fs_create_delete(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, t_infoIO *io)
+void fs_create_delete(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, t_infoIO *io, t_struct_io *informacion_buffer)
 {
+	op_code op_fs;
 	tipo_buffer *buffer_fs = crear_buffer();
-	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-	op_code op_fs = recibir_op_code(io->cliente_io);
+	enviar_op_code(io->cliente_io, INICIAR_OPERACION);
 
-	if (op_fs == ESTOY_LIBRE)
+	agregar_buffer_para_enterosUint32(buffer_fs, instruccion_interfaz);
+	agregar_buffer_para_enterosUint32(buffer_fs, cde_interrumpido->pid);
+	agregar_buffer_para_string(buffer_fs, nombre_archivo);
+
+	enviar_buffer(buffer_fs, io->cliente_io);
+
+	op_fs = recibir_op_code(io->cliente_io);
+	if (op_fs == CONCLUI_OPERACION)
 	{
-		agregar_buffer_para_enterosUint32(buffer_fs, instruccion_interfaz);
-		agregar_buffer_para_enterosUint32(buffer_fs, cde_interrumpido->pid);
-		agregar_buffer_para_string(buffer_fs, nombre_archivo);
-
-		enviar_buffer(buffer_fs, io->cliente_io);
-
-		op_fs = recibir_op_code(io->cliente_io);
-
-		if (op_fs == CONCLUI_OPERACION)
-		{
-			sem_post(b_transicion_blocked_ready);
-			list_remove(io->procesos_espera, 0);
-		}
-		else
-		{
-			log_error(logger, "Hubo un error al crear o eliminar el archivo %s", nombre_archivo);
-		}
+		vieneDeIO = 1;
+		pid_a_desbloquear = informacion_buffer->cde->pid;
+		sem_post(b_transicion_blocked_ready);
 	}
+	destruir_buffer(buffer_fs);
 }
 
-void fs_truncate(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, uint32_t tamanio, t_infoIO *io)
+void fs_truncate(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, uint32_t tamanio, t_infoIO *io, t_struct_io *informacion_buffer)
 {
+	op_code op_fs;
 	tipo_buffer *buffer_fs = crear_buffer();
-	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-	op_code op_fs = recibir_op_code(io->cliente_io);
+	enviar_op_code(io->cliente_io, INICIAR_OPERACION);
 
-	if (op_fs == ESTOY_LIBRE)
+	agregar_buffer_para_enterosUint32(buffer_fs, instruccion_interfaz);
+	agregar_buffer_para_enterosUint32(buffer_fs, cde_interrumpido->pid);
+	agregar_buffer_para_enterosUint32(buffer_fs, tamanio);
+	agregar_buffer_para_string(buffer_fs, nombre_archivo);
+	enviar_buffer(buffer_fs, io->cliente_io);
+
+	op_fs = recibir_op_code(io->cliente_io);
+	if (op_fs == CONCLUI_OPERACION)
 	{
-		agregar_buffer_para_enterosUint32(buffer_fs, instruccion_interfaz);
-		agregar_buffer_para_enterosUint32(buffer_fs, cde_interrumpido->pid);
-		agregar_buffer_para_enterosUint32(buffer_fs, tamanio);
-		agregar_buffer_para_string(buffer_fs, nombre_archivo);
-		enviar_buffer(buffer_fs, io->cliente_io);
-
-		op_fs = recibir_op_code(io->cliente_io);
-
-		if (op_fs == CONCLUI_OPERACION)
-		{
-			sem_post(b_transicion_blocked_ready);
-			list_remove(io->procesos_espera, 0);
-		}
+		vieneDeIO = 1;
+		pid_a_desbloquear = informacion_buffer->cde->pid;
+		sem_post(b_transicion_blocked_ready);
 	}
+	destruir_buffer(buffer_fs);
 }
 
-void fs_write_read(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, uint32_t marco, uint32_t tamanio, uint32_t reg_direccion, uint32_t puntero_archivo, t_infoIO *io)
+void fs_write_read(char *nombre_archivo, t_tipoDeInstruccion instruccion_interfaz, uint32_t marco, uint32_t tamanio, uint32_t reg_direccion, uint32_t puntero_archivo, t_infoIO *io, t_struct_io *informacion_buffer)
 {
+	op_code op_fs;
 	tipo_buffer *buffer_fs = crear_buffer();
-	enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-	op_code op_fs = recibir_op_code(io->cliente_io);
+	enviar_op_code(io->cliente_io, INICIAR_OPERACION);
 
-	if (op_fs == ESTOY_LIBRE)
+	agregar_buffer_para_enterosUint32(buffer_fs, instruccion_interfaz);
+	agregar_buffer_para_enterosUint32(buffer_fs, cde_interrumpido->pid);
+	agregar_buffer_para_enterosUint32(buffer_fs, tamanio);
+	agregar_buffer_para_enterosUint32(buffer_fs, reg_direccion);
+	agregar_buffer_para_enterosUint32(buffer_fs, puntero_archivo);
+	if (instruccion_interfaz == IO_FS_READ)
 	{
-		agregar_buffer_para_enterosUint32(buffer_fs, instruccion_interfaz);
-		agregar_buffer_para_enterosUint32(buffer_fs, cde_interrumpido->pid);
-		agregar_buffer_para_enterosUint32(buffer_fs, tamanio);
-		agregar_buffer_para_enterosUint32(buffer_fs, reg_direccion);
-		agregar_buffer_para_enterosUint32(buffer_fs, puntero_archivo);
-		if (instruccion_interfaz == IO_FS_READ)
-		{
-			agregar_buffer_para_enterosUint32(buffer_fs, marco);
-		}
-		agregar_buffer_para_string(buffer_fs, nombre_archivo);
-		enviar_buffer(buffer_fs, io->cliente_io);
-
-		op_fs = recibir_op_code(io->cliente_io);
-		if (op_fs == CONCLUI_OPERACION)
-		{
-			sem_post(b_transicion_blocked_ready);
-			list_remove(io->procesos_espera, 0);
-		}
+		agregar_buffer_para_enterosUint32(buffer_fs, marco);
 	}
+	agregar_buffer_para_string(buffer_fs, nombre_archivo);
+	enviar_buffer(buffer_fs, io->cliente_io);
+
+	op_fs = recibir_op_code(io->cliente_io);
+	if (op_fs == CONCLUI_OPERACION)
+	{
+		vieneDeIO = 1;
+		pid_a_desbloquear = informacion_buffer->cde->pid;
+		sem_post(b_transicion_blocked_ready);
+	}
+	destruir_buffer(buffer_fs);
 }
 
 void interfaz_no_conectada(int pid, t_infoIO *informacion_interfaz)
@@ -906,16 +917,14 @@ void interfaz_no_conectada(int pid, t_infoIO *informacion_interfaz)
 	}
 }
 
-void interfaz_conectada() // t_infoIO *io,t_struct_io *informacion_buffer
+void interfaz_conectada()
 {
-
 	op_code operacion_io;
-	t_infoIO* io= info_io_conectada;
+	t_infoIO *io = info_io_conectada;
 	t_struct_io *informacion_buffer = malloc(sizeof(t_struct_io));
 	while (1)
 	{
 		sem_wait(io->contador_espera);
-		
 		informacion_buffer = list_remove(io->procesos_espera, 0);
 		if (io == NULL || interfaz_no_esta_conectada(io))
 		{
@@ -923,40 +932,37 @@ void interfaz_conectada() // t_infoIO *io,t_struct_io *informacion_buffer
 		}
 		else
 		{
-			enviar_op_code(io->cliente_io, INICIAR_OPERACION); // posible recibir en el medio para tener un opcode que sincronice (como ESTOY_LIBRE)
-			tipo_buffer *buffer_interfaz = crear_buffer();
-			enviar_buffer_interfaz(io, informacion_buffer);
-			operacion_io = recibir_op_code(io->cliente_io);
-			if (operacion_io == CONCLUI_OPERACION)
+			if (io->tipo_IO != DIALFS)
 			{
-				vieneDeIO = 1;
-				pid_a_desbloquear = informacion_buffer->cde->pid;
-				sem_post(b_transicion_blocked_ready);
-				// list_remove(io->procesos_espera, 0);
+				enviar_op_code(io->cliente_io, INICIAR_OPERACION); // posible recibir en el medio para tener un opcode que sincronice (como ESTOY_LIBRE)
+				tipo_buffer *buffer_interfaz = crear_buffer();
+				enviar_buffer_interfaz(io, informacion_buffer);
+				operacion_io = recibir_op_code(io->cliente_io);
+				if (operacion_io == CONCLUI_OPERACION)
+				{
+					vieneDeIO = 1;
+					pid_a_desbloquear = informacion_buffer->cde->pid;
+					sem_post(b_transicion_blocked_ready);
+				}
+				destruir_buffer(buffer_interfaz);
 			}
-			destruir_buffer(buffer_interfaz);
+			else if (io->tipo_IO == DIALFS)
+			{
+				if (informacion_buffer->instruccion == IO_FS_CREATE || informacion_buffer->instruccion == IO_FS_DELETE)
+				{
+					fs_create_delete(informacion_buffer->nombre_archivo, informacion_buffer->instruccion, io, informacion_buffer);
+				}
+				else if (informacion_buffer->instruccion == IO_FS_READ || informacion_buffer->instruccion == IO_FS_WRITE)
+				{
+					fs_write_read(informacion_buffer->nombre_archivo, informacion_buffer->instruccion, informacion_buffer->marco, informacion_buffer->tamanio, informacion_buffer->direccion_fisica, informacion_buffer->puntero_archivo, io, informacion_buffer);
+				}
+				else if (informacion_buffer->instruccion == IO_FS_TRUNCATE)
+				{
+					fs_truncate(informacion_buffer->nombre_archivo, informacion_buffer->instruccion, informacion_buffer->tamanio, io, informacion_buffer);
+				}
+			}
 		}
 	}
-
-	/* enviar_op_code(io->cliente_io, CONSULTAR_DISPONIBILDAD);
-	op_code operacion_io = recibir_op_code(io->cliente_io);
-	tipo_buffer *buffer_interfaz = crear_buffer();
-
-	if (operacion_io == ESTOY_LIBRE)
-	{
-		enviar_buffer_interfaz(io, informacion_buffer);
-		operacion_io = recibir_op_code(io->cliente_io);
-		if (operacion_io == CONCLUI_OPERACION)
-		{
-			sem_post(b_transicion_blocked_ready);
-			list_remove(io->procesos_espera, 0);
-		}
-	}
-	else
-	{
-		log_info(logger, "INTERFAZ: <%s> - OCUPADA POR OTRO PROCESO");
-	}
-	destruir_buffer(buffer_interfaz); */
 }
 
 void enviar_buffer_interfaz(t_infoIO *interfaz, t_struct_io *info_buffer)
