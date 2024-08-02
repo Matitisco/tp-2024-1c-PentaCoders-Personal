@@ -64,7 +64,7 @@ void planificar_por_rr()
         log_info(logger, "PID: <%d> - Estado Anterior: <READY> - Estado Actual: <EXECUTE>", proceso->cde->pid);
         proceso->estado = EXEC;
         enviar_a_cpu_cde(proceso->cde);
-    
+
         inicio_quantum(QUANTUM);
     }
 }
@@ -84,7 +84,7 @@ void planificar_por_vrr()
             log_info(logger, "PID: <%d> - Estado Anterior: <READY+> - Estado Actual: <EXECUTE>", proceso->cde->pid);
             proceso->estado = EXEC;
             enviar_a_cpu_cde(proceso->cde);
-           
+
             inicio_quantum(proceso->quantum);
         }
         else
@@ -138,11 +138,10 @@ void *transicion_exec_ready()
         proceso->cde = cde_interrumpido;
         proceso->estado = READY;
 
-    
         sem_post(contador_readys);
         sem_post(b_exec_libre);
 
-         //log obligatorio
+        // log obligatorio
         log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <READY>", proceso->cde->pid);
     }
 }
@@ -172,16 +171,16 @@ void *transicion_blocked_ready()
 {
     t_pcb *proceso;
 
-    bool esIOBuscada(t_pcb* element)
-    { 
+    bool esIOBuscada(t_pcb * element)
+    {
         return (pid_a_desbloquear == element->cde->pid);
     }
 
-    void transicionA(colaEstado *final, char* planif)
+    void transicionA(colaEstado * final, char *planif)
     {
-        if(vieneDeIO)
+        if (vieneDeIO)
         {
-            proceso = sacar_procesos_criterio_cola(cola_bloqueado_global,planif,esIOBuscada);   //no lo encuentra y da null
+            proceso = sacar_procesos_criterio_cola(cola_bloqueado_global, planif, esIOBuscada); // no lo encuentra y da null
             evaluar_planificacion(planif);
             agregar_a_estado(proceso, final);
             vieneDeIO = 0;
@@ -196,14 +195,13 @@ void *transicion_blocked_ready()
     {
         sem_wait(b_transicion_blocked_ready);
 
-        
         if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
         {
             if (tiempo_transcurrido < QUANTUM)
             {
-                //Sacar proceso por remove chequeando vairable global de la io, se saca a dedo
-                
-                transicionA(cola_ready_plus,"blocked_ready");
+                // Sacar proceso por remove chequeando vairable global de la io, se saca a dedo
+
+                transicionA(cola_ready_plus, "blocked_ready");
 
                 proceso->estado = READY_PLUS;
                 proceso->quantum = QUANTUM - tiempo_transcurrido;
@@ -211,14 +209,14 @@ void *transicion_blocked_ready()
             else
             {
                 transicionA(cola_ready_global, "blocked_ready");
-                
+
                 proceso->estado = READY;
             }
         }
         else
         {
             transicionA(cola_ready_global, "corto");
-            
+
             proceso->estado = READY;
         }
 
@@ -242,7 +240,7 @@ int hayProcesosEnEstado(colaEstado *cola_estado)
 {
     int *valor = malloc(sizeof(int));
     sem_getvalue(cola_estado->contador, valor);
-    log_info(logger, "Hay %d procesos en el Estado %s", *valor, cola_estado->nombreEstado);
+    // log_info(logger, "Hay %d procesos en el Estado %s", *valor, cola_estado->nombreEstado);
     if (*valor > 0)
     {
         free(valor);

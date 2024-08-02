@@ -11,13 +11,12 @@ int main(int argc, char *argv[])
 
 void iniciar_modulo_io()
 {
-	printf("---------------------------------");
+	printf("---------------------------------\n");
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
-	printf("---------------------------------");
+	printf("---------------------------------\n");
 	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
-	printf("---------------------------------");
 	char *path_configuracion = readline("Ingrese el nombre del archivo con la configuracion de la interfaz (sin '.config'): ");
-	printf("---------------------------------");
+	printf("---------------------------------\n");
 	strcat(path_configuracion, ".config");
 	levantar_interfaz(nombre_interfaz, path_configuracion);
 	free(nombre_interfaz);
@@ -129,16 +128,12 @@ void conectarse_kernel(t_interfaz *interfaz)
 	agregar_buffer_para_string(buffer_interfaz_kernel, interfaz->nombre_interfaz);
 	enviar_buffer(buffer_interfaz_kernel, conexion_kernel);
 	destruir_buffer(buffer_interfaz_kernel);
-
+	printf("<%s> - Conexion exitosa con Kernel\n", interfaz->nombre_interfaz);
+	printf("---------------------------------\n");
 	op_code mensaje_kernel = recibir_op_code(conexion_kernel);
 	if (mensaje_kernel == ESTABA_CONECTADO)
 	{
 		exit(1);
-	}
-	else
-	{
-		printf("<%s> - Conexion exitosa con Kernel", interfaz->nombre_interfaz);
-		printf("---------------------------------");
 	}
 }
 
@@ -152,8 +147,8 @@ void conectarse_memoria(t_interfaz *interfaz)
 	}
 	else
 	{
-		printf("<%s> - Conexion exitosa con Memoria", interfaz->nombre_interfaz);
-		printf("---------------------------------");
+		printf("<%s> - Conexion exitosa con Memoria\n", interfaz->nombre_interfaz);
+		printf("---------------------------------\n");
 	}
 }
 

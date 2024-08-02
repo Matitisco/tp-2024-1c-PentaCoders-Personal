@@ -75,7 +75,8 @@ int crear_servidor(int puerto)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if (getaddrinfo(NULL, puerto_recibido, &hints, &servinfo) != 0) {
+    if (getaddrinfo(NULL, puerto_recibido, &hints, &servinfo) != 0)
+    {
         perror("getaddrinfo");
         free(puerto_recibido);
         exit(EXIT_FAILURE);
@@ -84,7 +85,8 @@ int crear_servidor(int puerto)
     printf("Servidor - Puerto <%d>\n", puerto);
 
     socket_servidor = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-    if (socket_servidor == -1) {
+    if (socket_servidor == -1)
+    {
         perror("socket");
         freeaddrinfo(servinfo);
         free(puerto_recibido);
@@ -92,7 +94,8 @@ int crear_servidor(int puerto)
     }
 
     int val = 1;
-    if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1) {
+    if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1)
+    {
         perror("setsockopt");
         close(socket_servidor);
         freeaddrinfo(servinfo);
@@ -100,7 +103,8 @@ int crear_servidor(int puerto)
         exit(EXIT_FAILURE);
     }
 
-    if (bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
+    if (bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen) == -1)
+    {
         perror("bind");
         close(socket_servidor);
         freeaddrinfo(servinfo);
@@ -108,7 +112,8 @@ int crear_servidor(int puerto)
         exit(EXIT_FAILURE);
     }
 
-    if (listen(socket_servidor, SOMAXCONN) == -1) {
+    if (listen(socket_servidor, SOMAXCONN) == -1)
+    {
         perror("listen");
         close(socket_servidor);
         freeaddrinfo(servinfo);
@@ -121,7 +126,6 @@ int crear_servidor(int puerto)
 
     return socket_servidor;
 }
-
 
 // ESPERAR CONEXION DE CLIENTE EN UN SERVER ABIERTO
 int esperar_cliente(t_log *logger, const char *name_server, const char *name_client, int socket_servidor)
