@@ -74,11 +74,25 @@ void arrancar_interfaz(t_interfaz *interfaz)
 			pthread_exit((void *)EXIT_FAILURE);*/
 			break;
 		}
-		if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
+		if (consulta_kernel == INICIAR_OPERACION)
+		{
+			if (estoy_libre) // cambiar por semaforo si se puede?? x ahora no hay espera activa
+			{
+				// enviar_op_code(conexion_kernel, ESTOY_LIBRE);
+				realizar_operacion(interfaz);
+				enviar_op_code(conexion_kernel, CONCLUI_OPERACION);
+			}
+		}
+		else if (consulta_kernel == CONFIRMAR_CONEXION)
+		{
+			enviar_op_code(conexion_kernel, OK);
+		}
+
+		/* if (consulta_kernel == CONSULTAR_DISPONIBILDAD)
 		{
 			if (estoy_libre)
 			{
-				enviar_op_code(conexion_kernel, ESTOY_LIBRE);
+				//enviar_op_code(conexion_kernel, ESTOY_LIBRE);
 				realizar_operacion(interfaz);
 				enviar_op_code(conexion_kernel, CONCLUI_OPERACION);
 			}
@@ -87,14 +101,11 @@ void arrancar_interfaz(t_interfaz *interfaz)
 				enviar_op_code(conexion_kernel, NO_ESTOY_LIBRE);
 			}
 		}
-		else if (consulta_kernel == CONFIRMAR_CONEXION)
-		{
-			enviar_op_code(conexion_kernel, OK);
-		}
+
 		else
 		{
 			log_error(logger, "ERROR - CONSULTA KERNEL DESCONOCIDA");
-		}
+		}*/
 	}
 }
 

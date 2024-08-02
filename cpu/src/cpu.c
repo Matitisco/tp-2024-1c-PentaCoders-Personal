@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	interrupcion_exit = 0;
 	ip_local = obtener_ip_local();
 	printf("IP LOCAL: %s\n", ip_local);
-
+	salida_exit = 1;
 	iniciar_modulo_cpu();
 
 	pthread_join(hilo_CPU_SERVIDOR_INTERRUPT, NULL);
@@ -143,7 +143,7 @@ void *levantar_kernel_dispatch()
 				// liberar_array_instruccion(array_instruccion);
 				check_interrupt();
 			}
-			
+
 			destruir_buffer(buffer_cde);
 			break;
 		default:
