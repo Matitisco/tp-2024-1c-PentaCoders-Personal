@@ -64,7 +64,6 @@ int iniciar_servidor(t_log *logger, const char *name, char *ip, char *puerto)
 
 int crear_servidor(int puerto)
 {
-
     int socket_servidor;
 
     const char *puerto_recibido = string_itoa(puerto);
@@ -76,24 +75,53 @@ int crear_servidor(int puerto)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    getaddrinfo(NULL, puerto_recibido, &hints, &servinfo);
+    if (getaddrinfo(NULL, puerto_recibido, &hints, &servinfo) != 0) {
+        perror("getaddrinfo");
+        free(puerto_recibido);
+        exit(EXIT_FAILURE);
+    }
 
     printf("Servidor - Puerto <%d>\n", puerto);
 
     socket_servidor = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+    if (socket_servidor == -1) {
+        perror("socket");
+        freeaddrinfo(servinfo);
+        free(puerto_recibido);
+        exit(EXIT_FAILURE);
+    }
 
     int val = 1;
-    setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+    if (setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1) {
+        perror("setsockopt");
+        close(socket_servidor);
+        freeaddrinfo(servinfo);
+        free(puerto_recibido);
+        exit(EXIT_FAILURE);
+    }
 
-    bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
+    if (bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
+        perror("bind");
+        close(socket_servidor);
+        freeaddrinfo(servinfo);
+        free(puerto_recibido);
+        exit(EXIT_FAILURE);
+    }
 
-    listen(socket_servidor, SOMAXCONN);
+    if (listen(socket_servidor, SOMAXCONN) == -1) {
+        perror("listen");
+        close(socket_servidor);
+        freeaddrinfo(servinfo);
+        free(puerto_recibido);
+        exit(EXIT_FAILURE);
+    }
 
     freeaddrinfo(servinfo);
     free(puerto_recibido);
 
     return socket_servidor;
 }
+
 
 // ESPERAR CONEXION DE CLIENTE EN UN SERVER ABIERTO
 int esperar_cliente(t_log *logger, const char *name_server, const char *name_client, int socket_servidor)
@@ -181,7 +209,7 @@ char *obtener_ip_local()
                 if (inet_ntop(family, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr, ip, INET_ADDRSTRLEN) != NULL)
                 {
                     freeifaddrs(ifaddr);
-                    printf("Direccion de memoria de la IP local: %p", ip);
+                    printf("Direccion de memoria de la IP local: %p\n", ip);
                     return ip;
                 }
                 else

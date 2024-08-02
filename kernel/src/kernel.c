@@ -89,7 +89,7 @@ config_kernel *configuracion;
 int main(int argc, char *argv[])
 {
 	ip_local = obtener_ip_local();
-	printf("IP LOCAL: %s", ip_local);
+	printf("IP LOCAL: %s \n", ip_local);
 
 	iniciar_kernel();
 
