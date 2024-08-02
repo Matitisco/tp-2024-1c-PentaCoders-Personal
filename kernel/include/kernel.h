@@ -53,13 +53,13 @@ typedef struct
 
 typedef struct
 {
+	t_cde *cde;
 	t_tipoDeInstruccion instruccion;
 	int unidades_trabajo;
 	int pid;
 	int tamanio_reg;
 	int dir_fisica;
 	int tamanio_marco;
-
 } t_struct_io;
 
 typedef struct
@@ -67,8 +67,8 @@ typedef struct
 	int cliente_io;
 	char *nombre_io;
 	enum_interfaz tipo_IO;
-	t_list *procesos_espera;
-	sem_t* sem_orden_interfaz;
+	t_list *procesos_espera;	//va a tener t_struct_io
+	sem_t* contador_espera;
 } t_infoIO;
 
 // VARIABLES
@@ -182,7 +182,7 @@ void eliminar_proceso(t_pcb *proceso);
 t_pcb *buscar_pcb_en_colas(int pid);
 t_pcb *buscarProceso(uint32_t pid);
 void finalizar_proceso(uint32_t PID, motivoFinalizar motivo);
-
+void interfaz_conectada();
 // FUNCIONES DE ENTRADA/SALIDA
 
 char *obtener_interfaz(enum_interfaz interfaz);

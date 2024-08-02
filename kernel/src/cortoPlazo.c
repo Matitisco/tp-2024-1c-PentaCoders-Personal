@@ -179,6 +179,13 @@ void *transicion_blocked_ready()
         {
             if (tiempo_transcurrido < QUANTUM)
             {
+                //Sacar proceso por remove chequeando vairable global de la io, se saca a dedo
+                /* bool esIOBuscada(void* element)
+                { 
+                    t_cde* cde = element;
+                    return (var_global == cde->pid);
+                }
+                list_remove_by_condition(cola_bloqueado_global,esIOBuscada); */
 
                 proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "blocked_ready"); // READY+
                 proceso->estado = READY_PLUS;

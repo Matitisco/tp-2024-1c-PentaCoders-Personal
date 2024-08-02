@@ -676,17 +676,7 @@ void liberar_marco(int nroMarco)
 {
     array_bitmap[nroMarco].bit_ocupado = 0;
 }
-/* void imprimir_estado_marcos()
-{
-    printf_yellow("ESTADO DE LOS MARCOS");
-    printf_yellow("---------------------");
-    printf_yellow("|MARCO   | OCUPADO |");
-    for (int i = 0; i < cant_marcos; i++)
-    {
-        printf_yellow("|  %d      |    %d   |", i, array_bitmap[i].bit_ocupado);
-        printf_yellow("---------------------");
-    }
-} */
+
 void ampliar_proceso(uint32_t pid, uint32_t tamanio, int cliente_cpu)
 {
     t_tabla_paginas *tabla_paginas = buscar_en_lista_global(pid);
