@@ -34,7 +34,7 @@ void realizar_operacion_gen(t_interfaz *interfaz);
 void realizar_operacion_stdin(t_interfaz *interfaz);
 void realizar_operacion_stdout(t_interfaz *interfaz);
 void realizar_operacion_dialfs(t_interfaz *interfaz);
-
+t_list *cargar_archivos_metadata();
 void iniciar_modulo_io();
 void liberar_modulo_io();
 

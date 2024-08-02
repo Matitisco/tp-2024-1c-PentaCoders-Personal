@@ -17,6 +17,7 @@ char *path_meta_data;
 char *path_bitmap;
 char *path_arch_bloques;
 int tamanio_meta_data;
+extern t_list *archivos_fs;
 t_bitarray *bitarray;
 FILE *arch_bloque;
 FILE *bit_map;
@@ -43,7 +44,8 @@ void reducir_archivo(t_archivo_data *archivo, int tamanio_nuevo, int cantidad_bl
 void levantar_archivo_bloques();
 t_config *crear_meta_data_archivo(char *nombre_archivo);
 void instrucciones_dialfs();
-
+t_archivo_data *agregar_archivo(char *nombre_archivo);
+t_list *cargar_archivos_metadata();
 char *obtener_ruta_archivo(char *nombre_archivo);
 _Bool hay_espacio_disponible(uint32_t cant_bloques_agregar);
 void sacar_bloque(t_config *archivo_meta_data_buscado, uint32_t bloques_a_eliminar, uint32_t tamanio_a_aplicar);
@@ -54,7 +56,7 @@ int liberarBloque(uint32_t bit);
 bool espacio_disponible_es_contiguo(int cantidad_bloques_agregar, t_archivo_data *archivo);
 int *obtener_bloques_archivo(char *nombre_archivo);
 int compactar(int nuevo_tamanio, t_archivo_data *archivo);
-//void compactar();
+// void compactar();
 void mover_archivo_al_final_del_fs(char *nombre_archivo);
 void desplazar_archivos_y_eliminar_bloques_libres();
 void mover_archivo_al_primer_bloque_libre(int primer_bloque_libre, char *nombre_archivo, int cantidad_bloques_agregar, t_config *metadata);

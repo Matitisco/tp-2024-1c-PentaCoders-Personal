@@ -1,6 +1,7 @@
 #include "../include/entrada_salida.h"
 
 config_io *config_interfaz;
+t_list *archivos_fs;
 
 int main(int argc, char *argv[])
 {
@@ -55,6 +56,7 @@ void arrancar_interfaz(t_interfaz *interfaz)
 	}
 	if (interfaz->tipo_interfaz == DIALFS)
 	{
+		archivos_fs = cargar_archivos_metadata();
 		levantar_archivo_bloques();
 		levantar_bitmap();
 	}

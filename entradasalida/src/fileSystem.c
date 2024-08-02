@@ -2,11 +2,10 @@
 
 int conexion_kernel, conexion_memoria, estoy_libre;
 void *bloquesMapeado;
-t_list *archivos_fs;
 char *nombre_archivo_buscado;
 int bloque_inicial_archivo;
-
 // INICIAR BITMAP FS EN MEMORIA
+
 void levantar_bitmap()
 {
     char cwd[1024];
@@ -44,6 +43,56 @@ void levantar_bitmap()
     }
 }
 
+t_list *cargar_archivos_metadata()
+{
+    char directorio[2048];
+    getcwd(directorio, sizeof(directorio));
+    char *ultimo_dir = basename(directorio);
+    if (strcmp(ultimo_dir, "bin") == 0)
+    {
+        chdir("..");
+        getcwd(directorio, sizeof(directorio));
+    }
+    strcat(directorio, "/dialfs");
+
+    DIR *dir;
+    struct dirent *entry;
+
+    if ((dir = opendir(directorio)) == NULL)
+    {
+        perror("opendir");
+        return NULL;
+    }
+
+    t_list *lista = list_create();
+
+    while ((entry = readdir(dir)) != NULL)
+    {
+        if (entry->d_type == DT_REG)
+        { // Si es un archivo regular
+            const char *nombre = entry->d_name;
+            const char *ext = strrchr(nombre, '.');
+            if (ext && strcmp(ext, ".txt") == 0)
+            {
+                char *ruta_archivo = obtener_ruta_archivo(nombre);
+                t_config *metadata = config_create(ruta_archivo);
+
+                int bloque_inicial = config_get_int_value(metadata, "BLOQUE_INICIAL");
+                int tamanio_archivo = config_get_int_value(metadata, "TAMANIO_ARCHIVO");
+
+                t_archivo_data *archivo_a_agregar = malloc(sizeof(t_archivo_data));
+                archivo_a_agregar->nombre_archivo = strdup(nombre); // Copiar el nombre del archivo
+                archivo_a_agregar->tamanio = tamanio_archivo;
+                archivo_a_agregar->bloque_inicial = bloque_inicial;
+
+                list_add(lista, archivo_a_agregar);
+            }
+        }
+    }
+    closedir(dir);
+    return lista;
+}
+
 // INICIAR ARCHIVO DE BLOQUES EN MEMORIA
 void levantar_archivo_bloques()
 {
@@ -53,7 +102,6 @@ void levantar_archivo_bloques()
 
     int tamArchivoBloques = config_interfaz->block_size * config_interfaz->block_count;
 
-    archivos_fs = list_create();
     int file_descriptor;
     if (fbloques == NULL)
     {
@@ -90,6 +138,7 @@ void instrucciones_dialfs()
     uint32_t tamanio_marco;
     uint32_t direccion_fisica;
     uint32_t puntero_archivo;
+    sleep_ms(config_interfaz->tiempo_unidad_trabajo);
     switch (codigo)
     {
     case IO_FS_CREATE:
@@ -173,7 +222,7 @@ t_config *crear_meta_data_archivo(char *nombre_archivo)
 
     t_archivo_data *archivo = malloc(sizeof(t_archivo_data));
     archivo->bloque_inicial = prim_bloq_libre;
-    archivo->nombre_archivo = nombre_archivo;
+    archivo->nombre_archivo = strdup(nombre_archivo);
     archivo->tamanio = tamanio;
     list_add(archivos_fs, archivo);
     fclose(meta_data_archivo);
@@ -207,10 +256,15 @@ void eliminar_arch(void *data)
 void eliminar_archivo(char *nombre_archivo, uint32_t pid)
 {
     nombre_archivo_buscado = nombre_archivo;
-    list_remove_and_destroy_by_condition(archivos_fs, buscar_arch_por_nombre, eliminar_arch);
+    t_archivo_data *archivo_a_eliminar = list_find(archivos_fs, buscar_arch_por_nombre);
+    if (archivo_a_eliminar != NULL)
+    {
+        list_remove_and_destroy_by_condition(archivos_fs, buscar_arch_por_nombre, eliminar_arch);
+    }
+
     t_config *metadata_buscado = buscar_meta_data(nombre_archivo);
-    double tamanio_archivo = config_get_int_value(metadata_buscado, "TAMANIO_ARCHIVO");
-    double tamanio_bloque = config_interfaz->block_size;
+    double tamanio_archivo = (double)config_get_int_value(metadata_buscado, "TAMANIO_ARCHIVO");
+    double tamanio_bloque = (double)config_interfaz->block_size;
     double cant_bloques_ocupados;
 
     if (tamanio_archivo == 0)
@@ -219,6 +273,7 @@ void eliminar_archivo(char *nombre_archivo, uint32_t pid)
         cant_bloques_ocupados = ceil(tamanio_archivo / tamanio_bloque);
 
     int posicion_inicial = config_get_int_value(metadata_buscado, "BLOQUE_INICIAL");
+
     for (int i = 0; i < cant_bloques_ocupados; i++)
     {
         liberarBloque(posicion_inicial + i);
@@ -300,8 +355,6 @@ t_archivo_data *agregar_archivo(char *nombre_archivo)
     archivo_a_agregar->tamanio = tamanio_archivo;
     archivo_a_agregar->bloque_inicial = bloque_inicial;
     list_add(archivos_fs, archivo_a_agregar);
-    config_destroy(metadata);
-    free(ruta_archivo);
     return archivo_a_agregar;
 }
 
@@ -316,8 +369,8 @@ void cambiar_tamanio_archivo(char *nombre_archivo, int tamanio_nuevo, int pid)
     }
 
     int tamanio_anterior = archivo->tamanio;
-    int bloques_usados = (int)ceil((double)tamanio_anterior / (double)config_interfaz->block_size);
-    int blqoues_totales = (int)ceil((double)tamanio_nuevo / (double)config_interfaz->block_size);
+    int bloques_usados = ceil((double)tamanio_anterior / (double)config_interfaz->block_size);
+    int blqoues_totales = ceil((double)tamanio_nuevo / (double)config_interfaz->block_size);
     int cantidad_bloques_agregar = blqoues_totales - bloques_usados;
 
     if (tamanio_nuevo > tamanio_anterior)
@@ -514,24 +567,6 @@ void mover_bloque(int origen, int destino)
     free(contenido_bloque);
 }
 
-int actualizar_metadata_archivo(int nuevo_bloque_inicial) // de los archivos, NO EL QUE QUEREMOS TRUNCAR
-{
-    char *nuevo_bloque_string = string_itoa(nuevo_bloque_inicial);
-    t_archivo_data *archivo = list_find(archivos_fs, buscar_por_bloque);
-    if (archivo == NULL)
-    {
-        return 0;
-    }
-    else
-    {
-        archivo->bloque_inicial = nuevo_bloque_inicial;
-        t_config *metadata = buscar_meta_data(archivo->nombre_archivo);
-        config_set_value(metadata, "BLOQUE_INICIAL", nuevo_bloque_string); // actualizar el de los otros archivos
-        config_save(metadata);
-    }
-    return ceil((double)archivo->tamanio / (double)config_interfaz->block_size);
-}
-
 _Bool buscar_por_bloque(void *data)
 {
     t_archivo_data *archivo = (t_archivo_data *)data;
@@ -551,9 +586,17 @@ char *obtener_informacion_archivo(t_archivo_data *archivo, int bloques_totales)
     return contenido_bloques; /// contneido de los blqoues
 }
 
+bool comparador_bloque_inicial(void *a, void *b)
+{
+    t_archivo_data *archivo_a = (t_archivo_data *)a;
+    t_archivo_data *archivo_b = (t_archivo_data *)b;
+    return archivo_a->bloque_inicial < archivo_b->bloque_inicial;
+}
+
 int compactar(int nuevo_tamanio, t_archivo_data *archivo)
 {
 
+    list_sort(archivos_fs, comparador_bloque_inicial);
     int bloques_totales = bloques_necesarios(archivo->tamanio);
     char *contenido_archivo_a_truncar = calloc(1, bloques_totales);
     contenido_archivo_a_truncar = obtener_informacion_archivo(archivo, bloques_totales);
@@ -562,6 +605,7 @@ int compactar(int nuevo_tamanio, t_archivo_data *archivo)
     for (int i = 0; i < list_size(archivos_fs); i++)
     {
         t_archivo_data *arch_a_liberar = list_get(archivos_fs, i);
+
         if (arch_a_liberar->bloque_inicial == archivo->bloque_inicial)
         {
             continue;
@@ -586,6 +630,7 @@ int compactar(int nuevo_tamanio, t_archivo_data *archivo)
         }
     }
     int nuevo_bloque_inicial_archivo = copiar_contenido_a(contenido_archivo_a_truncar, nuevo_tamanio);
+    return nuevo_bloque_inicial_archivo;
 }
 
 int obtener_cantidad_bloques_archivo(t_archivo_data *archivo)
