@@ -170,36 +170,55 @@ void *transicion_exec_blocked()
 // BLOCKED -> READY
 void *transicion_blocked_ready()
 {
+    t_pcb *proceso;
+
+    bool esIOBuscada(t_pcb* element)
+    { 
+        return (pid_a_desbloquear == element->cde->pid);
+    }
+
+    void transicionA(colaEstado *final, char* planif)
+    {
+        if(vieneDeIO)
+        {
+            proceso = sacar_procesos_criterio_cola(cola_bloqueado_global,planif,esIOBuscada);   //no lo encuentra y da null
+            evaluar_planificacion(planif);
+            agregar_a_estado(proceso, final);
+            vieneDeIO = 0;
+        }
+        else
+        {
+            proceso = transicion_generica(cola_bloqueado_global, final, planif); // READY+
+        }
+    }
+
     while (1)
     {
         sem_wait(b_transicion_blocked_ready);
 
-        t_pcb *proceso;
+        
         if (strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
         {
             if (tiempo_transcurrido < QUANTUM)
             {
                 //Sacar proceso por remove chequeando vairable global de la io, se saca a dedo
-                /* bool esIOBuscada(void* element)
-                { 
-                    t_cde* cde = element;
-                    return (var_global == cde->pid);
-                }
-                list_remove_by_condition(cola_bloqueado_global,esIOBuscada); */
+                
+                transicionA(cola_ready_plus,"blocked_ready");
 
-                proceso = transicion_generica(cola_bloqueado_global, cola_ready_plus, "blocked_ready"); // READY+
                 proceso->estado = READY_PLUS;
                 proceso->quantum = QUANTUM - tiempo_transcurrido;
             }
             else
             {
-                proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "blocked_ready"); // READY+
+                transicionA(cola_ready_global, "blocked_ready");
+                
                 proceso->estado = READY;
             }
         }
         else
         {
-            proceso = transicion_generica(cola_bloqueado_global, cola_ready_global, "corto");
+            transicionA(cola_ready_global, "corto");
+            
             proceso->estado = READY;
         }
 

@@ -130,6 +130,11 @@ extern sem_t *bloquearReadyPlus;
 extern int valorSem;
 extern int valor_grado_a_modificar;
 
+extern int pid_a_desbloquear;
+extern int vieneDeIO;
+
+
+
 extern config_kernel *configuracion;
 // FUNCIONES
 void crear_hilos();
@@ -212,5 +217,7 @@ void manejarGrado();
 void *manejar_conexiones_io();
 void *conectar_interfaz();
 t_recurso *obtener_recurso(char *nombre_recurso);
+t_pcb *sacar_procesos_criterio_cola(colaEstado *cola_estado, char *planificacion, bool (*condicion)(void*));
+
 
 #endif

@@ -17,6 +17,8 @@ int habilitar_planificadores;
 int QUANTUM;
 int valorSem;
 int valor_grado_a_modificar;
+int vieneDeIO;
+int pid_a_desbloquear;
 // Contadores Semaforos
 sem_t *GRADO_MULTIPROGRAMACION;
 // Semaforos de binarios
@@ -109,6 +111,7 @@ int main(int argc, char *argv[])
 void iniciar_kernel()
 {
 	habilitar_planificadores = 0;
+	vieneDeIO = 0;
 	inicializarEstados();
 	logger = iniciar_logger("kernel.log", "KERNEL");
 	lista_interfaces = list_create();
@@ -400,6 +403,23 @@ t_pcb *sacar_procesos_cola(colaEstado *cola_estado, char *planificacion)
 	pthread_mutex_unlock(cola_estado->mutex_estado);
 	return pcb;
 }
+
+t_pcb *sacar_procesos_criterio_cola(colaEstado *cola_estado, char *planificacion, bool (*condicion)(void*))
+{
+	evaluar_planificacion(planificacion);
+	sem_wait(cola_estado->contador);
+	evaluar_planificacion(planificacion);
+	pthread_mutex_lock(cola_estado->mutex_estado);
+	t_pcb *pcb = list_remove_by_condition(cola_estado->estado, condicion);
+	pthread_mutex_unlock(cola_estado->mutex_estado);
+	return pcb;
+}
+
+
+
+
+
+
 
 colaEstado *obtener_cola(t_estados estado)
 {
@@ -897,7 +917,7 @@ void interfaz_conectada() // t_infoIO *io,t_struct_io *informacion_buffer
 
 	op_code operacion_io;
 	t_infoIO* io= info_io_conectada;
-	t_struct_io *informacion_buffer;
+	t_struct_io *informacion_buffer = malloc(sizeof(t_struct_io));
 	while (1)
 	{
 		sem_wait(io->contador_espera);
@@ -915,6 +935,8 @@ void interfaz_conectada() // t_infoIO *io,t_struct_io *informacion_buffer
 			operacion_io = recibir_op_code(io->cliente_io);
 			if (operacion_io == CONCLUI_OPERACION)
 			{
+				vieneDeIO = 1;
+				pid_a_desbloquear = informacion_buffer->cde->pid;
 				sem_post(b_transicion_blocked_ready);
 				// list_remove(io->procesos_espera, 0);
 			}
