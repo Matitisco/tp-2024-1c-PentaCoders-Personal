@@ -11,9 +11,13 @@ int main(int argc, char *argv[])
 
 void iniciar_modulo_io()
 {
+	printf("---------------------------------");
 	char *nombre_interfaz = readline("Ingrese el nombre de la interfaz: ");
+	printf("---------------------------------");
 	logger = iniciar_logger("entrada_salida.log", nombre_interfaz);
+	printf("---------------------------------");
 	char *path_configuracion = readline("Ingrese el nombre del archivo con la configuracion de la interfaz (sin '.config'): ");
+	printf("---------------------------------");
 	strcat(path_configuracion, ".config");
 	levantar_interfaz(nombre_interfaz, path_configuracion);
 	free(nombre_interfaz);
@@ -131,8 +135,10 @@ void conectarse_kernel(t_interfaz *interfaz)
 	{
 		exit(1);
 	}
-	else if (mensaje_kernel == NO_ESTABA_CONECTADO)
+	else
 	{
+		printf("<%s> - Conexion exitosa con Kernel", interfaz->nombre_interfaz);
+		printf("---------------------------------");
 	}
 }
 
@@ -143,6 +149,11 @@ void conectarse_memoria(t_interfaz *interfaz)
 	if (conexion_memoria == 0)
 	{
 		exit(1);
+	}
+	else
+	{
+		printf("<%s> - Conexion exitosa con Memoria", interfaz->nombre_interfaz);
+		printf("---------------------------------");
 	}
 }
 
