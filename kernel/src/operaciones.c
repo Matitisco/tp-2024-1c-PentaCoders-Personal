@@ -267,7 +267,7 @@ void liberar_recursos(t_pcb *proceso)
         int instancias_recurso;
         sem_getvalue(recurso_a_liberar_del_proceso->instancias, &instancias_recurso);
 
-        log_info(logger, "%d INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO <%d>", instancias_recurso, recurso_a_liberar_del_proceso->nombre, proceso->cde->pid);
+        //log_info(logger, "%d INSTANCIAS DEL RECURSO %s QUE TIENE EL PROCESO <%d>", instancias_recurso, recurso_a_liberar_del_proceso->nombre, proceso->cde->pid);
         for (int i = 0; i < instancias_recurso; i++)
         {
             sem_wait(recurso_a_liberar_del_proceso->instancias);
@@ -297,8 +297,8 @@ void liberar_recursos(t_pcb *proceso)
                 }
             }
         }
-        free(recurso_a_liberar_del_proceso->nombre);
-        sem_destroy(recurso_a_liberar_del_proceso->instancias);
+        //free(recurso_a_liberar_del_proceso->nombre);
+        //sem_destroy(recurso_a_liberar_del_proceso->instancias);
     }
     list_destroy(proceso->recursosAsignados);
 }

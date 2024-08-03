@@ -144,6 +144,10 @@ void *transicion_exec_ready()
 
         // log obligatorio
         log_info(logger, "PID: <%d> - Estado Anterior: <EXECUTE> - Estado Actual: <READY>", proceso->cde->pid);
+	char* lista_char = lista_pid();
+	log_info(logger, "Cola Ready / Ready Prioridad : [%s]",lista_char);
+	free(lista_char);
+	
     }
 }
 // EXEC -> BLOCKED
@@ -223,6 +227,9 @@ void *transicion_blocked_ready()
         sem_post(contador_readys);
 
         log_info(logger, "PID: <%d> - Estado Anterior: <BLOCKED> - Estado Actual: <READY>", proceso->cde->pid);
+	char* lista_char = lista_pid();
+	log_info(logger ,"Cola Ready / Ready Prioridad : [%s]",lista_char);
+	free(lista_char);
     }
 }
 

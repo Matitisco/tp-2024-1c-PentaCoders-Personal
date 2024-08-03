@@ -9,7 +9,10 @@ void *largo_plazo()
         sem_wait(cant_procesos_en_new);
         sem_wait(GRADO_MULTIPROGRAMACION);
         t_pcb *proceso = transicion_new_a_ready();
+	char*lista_pid_char = lista_pid();
         log_info(logger, "PID: %d - Estado Anterior: <NEW> - Estado Actual: <READY>", proceso->cde->pid);
+	log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
+	//free(lista_pid_char);
     }
 }
 
@@ -29,7 +32,7 @@ char *lista_pid()
 
         if (i != list_size(cola_ready_global->estado) - 1)
         {
-            strcat(pids_en_ready, ",");
+            string_append(&pids_en_ready, ",");
         }
     }
     return pids_en_ready;
@@ -39,7 +42,7 @@ char *lista_pid()
 t_pcb *transicion_new_a_ready()
 {
     t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, "largo");
-    log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
+//    log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
     sem_post(contador_readys);
     proceso->estado = READY;
     return proceso;
