@@ -143,7 +143,6 @@ void *recibir_interfaz_io()
         sleep_ms(valores_config->retardo_respuesta); // retardo para cada pedido de instruccion
         switch (codigo_io)
         {
-            sleep_ms(valores_config->retardo_respuesta);
         case ACCESO_ESPACIO_USUARIO:
             CLIENTE_ESPACIO_USUARIO = dispositivo_io;
             acceso_a_espacio_usuario();

@@ -109,7 +109,8 @@ void inicio_quantum(int quantum)
 {
     quantum_usable = quantum;
     pthread_create(&hiloQuantum, NULL, hilo_quantum, NULL);
-    pthread_detach(&hiloQuantum);
+    pthread_join(hiloQuantum, NULL);
+    //pthread_detach(&hiloQuantum);
 }
 
 void *hilo_quantum()

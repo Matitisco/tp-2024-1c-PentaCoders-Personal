@@ -135,7 +135,7 @@ void *levantar_kernel_dispatch()
 			pthread_mutex_unlock(&mutex_salida_exit);
 			while (salida_exit)
 			{
-				sleep_ms(1000);
+				//sleep_ms(1000);
 				char *linea_instruccion = fetch(cde_recibido);
 				log_info(logger, "PID: <%d> - FETCH - Program Counter: <%d>", cde_recibido->pid, cde_recibido->PC);
 				cde_recibido->PC++;
