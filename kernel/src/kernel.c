@@ -461,6 +461,10 @@ void levantar_CPU_Dispatch()
 		{
 		case FINALIZAR_PROCESO:
 
+if (strcmp(valores_config->algoritmo_planificacion, "RR") == 0 || strcmp(valores_config->algoritmo_planificacion, "VRR") == 0)
+			{
+				pthread_cancel(hiloQuantum);
+			}
 			tipo_buffer *buffer_cpu_fin = recibir_buffer(socket_cpu_dispatch);
 			cde_interrumpido = leer_cde(buffer_cpu_fin);
 			motivoFinalizar motivo = leer_buffer_enteroUint32(buffer_cpu_fin);
