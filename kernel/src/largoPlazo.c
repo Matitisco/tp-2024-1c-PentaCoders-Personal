@@ -11,8 +11,8 @@ void *largo_plazo()
         t_pcb *proceso = transicion_new_a_ready();
 	char*lista_pid_char = lista_pid();
         log_info(logger, "PID: %d - Estado Anterior: <NEW> - Estado Actual: <READY>", proceso->cde->pid);
-	log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
-	//free(lista_pid_char);
+	log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid_char);
+	free(lista_pid_char);
     }
 }
 
@@ -42,11 +42,7 @@ char *lista_pid()
 t_pcb *transicion_new_a_ready()
 {
     t_pcb *proceso = transicion_generica(cola_new_global, cola_ready_global, "largo");
-<<<<<<< HEAD
-//    log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
-=======
-    //log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
->>>>>>> refs/remotes/origin/main
+    log_info(logger, "Cola Ready / Ready Prioridad : [%s]", lista_pid());
     sem_post(contador_readys);
     proceso->estado = READY;
     return proceso;

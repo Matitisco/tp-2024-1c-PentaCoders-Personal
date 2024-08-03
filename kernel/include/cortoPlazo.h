@@ -25,4 +25,5 @@ _Bool esta_bloqueado_por_falta_de_recurso(t_recurso *recurso);
 void enviar_a_cpu_cde(t_cde* cde);
 t_pcb *transicion_ready_exec();
 void inicio_quantum();
+char *lista_pid();
 #endif

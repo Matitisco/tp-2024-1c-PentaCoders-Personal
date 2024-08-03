@@ -127,6 +127,8 @@ t_pcb *transicion_ready_exec()
     proceso->estado = EXEC;
     return proceso;
 }
+
+
 // EXEC -> READY
 void *transicion_exec_ready()
 {
