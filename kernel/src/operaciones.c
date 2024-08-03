@@ -120,7 +120,7 @@ void finalizar_proceso(uint32_t pid, motivoFinalizar motivo)
 {
     pid_a_finalizar = pid;
     t_pcb *proceso = list_find(cola_exec_global->estado, buscar_por_pid); // busca en EXEC
-
+    
     if (proceso == NULL) // NEW, READY, READY+ y BLOCKED
     {
         proceso = buscar_pcb_en_colas(pid); // se fija en el resto
